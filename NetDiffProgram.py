@@ -1,4 +1,5 @@
 from NetDiffInterpretation import NetDiffInterpretation
+import copy
 
 class NetDiffProgram:
 
@@ -8,18 +9,29 @@ class NetDiffProgram:
 		self._facts = facts
 		self._local_rules = local_rules
 		self._global_rules = global_rules
+		self._interp = None
 
 	def diffusion(self):
-		interp = NetDiffInterpretation(self._net_diff_graph, self._tmax)
+		self._interp = NetDiffInterpretation(self._net_diff_graph, self._tmax)
 		for fact in self._facts:
-			interp.applyFact(fact)
+			self._interp.applyFact(fact)
 
-		for t in range(self._tmax + 1):
-			for rule in self._local_rules:
-				interp.applyLocalRule(rule, t)
+		old_interp = copy.deepcopy(self._interp)
+		self._apply_local_rules()
 
+		#this while will be executed until a fixed point is reached
+		while not old_interp == self._interp:
+			old_interp = copy.deepcopy(self._interp)
+			self._apply_local_rules()
+
+		#global rules are not necessary for classic MANCaLog , I have used them in a MANCaLog extension
 		for t in range(self._tmax + 1):
 			for rule in self._global_rules:
-				interp.applyGlobalRule(rule, t)
+				self._interp.applyGlobalRule(rule, t)
 
-		return interp
+		return self._interp
+
+	def _apply_local_rules(self):
+		for t in range(self._tmax + 1):
+			for rule in self._local_rules:
+				self._interp.applyLocalRule(rule, t)

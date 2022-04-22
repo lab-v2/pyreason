@@ -13,3 +13,6 @@ class Label(ABC):
 
 	def __str__(self):
 		return self._value
+
+	def __hash__(self):
+		return hash(str(self))

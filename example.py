@@ -39,6 +39,7 @@ net_diff_node = list(graph.nodes)
 #mancalog rule that says "red nodes that are blue with confidence between 0.5 and 1
 #will be influenced next time by neighbors that are yellow with confidence between 0.5 and 1 according to function Tipping"
 local_rule1 = NetDiffLocalRule(red, [(blue, portion.closed(0.5,1))], 1,[(yellow, portion.closed(0.5, 1))], None, Tipping(0.5, portion.closed(0.7, 1)))
+
 #mancalog rule that says "blue nodes that are red with confidence between 0.7 and 1
 #will be influenced next time by neighbors that are yellow with confidence between 0.5 and 1 according to function Tipping"
 local_rule2 = NetDiffLocalRule(blue, [(red, portion.closed(0.7,1))], 1,[(yellow, portion.closed(0.5, 1))], None, Tipping(0.5, portion.closed(0.7, 1)))

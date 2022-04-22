@@ -10,10 +10,11 @@ class NetDiffInterpretation:
 		self._tmax = tmax
 		self._net_diff_graph = net_diff_graph
 		for t in range(0, self._tmax + 1):
-			nas = []
+			nas = {}
 			for comp in self._net_diff_graph.get_components():
-				nas.append((comp, comp.getInitialWorld()))
-			nas.append((self._net_diff_graph, self._net_diff_graph.getInitialWorld()))
+				nas[comp] = comp.getInitialWorld()
+			
+			nas[self._net_diff_graph] = self._net_diff_graph.getInitialWorld()
 			self._interpretations.append(nas)
 
 		
@@ -21,10 +22,8 @@ class NetDiffInterpretation:
 	def isSatisfied(self, time, comp, na):
 		result = False
 		if (not (na[0] is None or na[1] is None)):
-			for (n, world) in self._interpretations[time]:
-				if (n.equals(comp)):
-					result = world.isSatisfied(na[0], na[1])
-					break
+			world = self._interpretations[time][comp]
+			result = world.isSatisfied(na[0], na[1])
 		else:
 			result = True
 		return result
@@ -38,10 +37,8 @@ class NetDiffInterpretation:
 
 	def applyFact(self, fact):
 		for t in range(fact.getTimeLower(), fact.getTimeUpper() + 1):
-			for (c, world) in self._interpretations[t]:
-				if c.equals(fact.getComponent()):
-					world.update(fact.getLabel(), fact.getBound())
-					break
+			world = self._interpretations[t][fact.getComponent()]
+			world.update(fact.getLabel(), fact.getBound())
 
 
 	def applyLocalRule(self, rule, t):
@@ -69,17 +66,14 @@ class NetDiffInterpretation:
 
 	def getBound(self, time, comp, label):
 		result = None
-		for (c, world) in self._interpretations[time]:
-			if(c.equals(comp)):
-				result = world.getBound(label)
-				break
+		world = self._interpretations[time][comp]
+		result = world.getBound(label)
 
 		return result
 
 
 	def _get_neighbours(self, node):
 		return list(self._net_diff_graph.neighbors(node))
-		#return self._net_diff_graph.get_neighbours(node)
 
 	def _get_qualified_neigh(self, time, node, nc_node = None, nc_edge = None):
 		result = []
@@ -98,18 +92,35 @@ class NetDiffInterpretation:
 		return result
 
 	def _na_update(self, time, comp, na):
-		for (c, world) in self._interpretations[time]:
-			if comp.equals(c):
-				world.update(na[0], na[1])
-				break
+		world = self._interpretations[time][comp]
+		world.update(na[0], na[1])
 		
 
 	def __str__(self):
 		result = ''
 		for t in range(0, len(self._interpretations)):
 			result = result + 'time: ' + str(t) + '\n'
-			for (c, world) in self._interpretations[t]:
-					result = result + str(c) + '\n'
-					result = result + str(world)
+			for c in self._interpretations[t].keys():
+				world = self._interpretations[t][c]
+				result = result + str(c) + '\n'
+				result = result + str(world)
+
+		return result
+
+	def __eq__(self, interp):
+		result = True
+		for t in range(0, self._tmax + 1):
+			for comp in self._net_diff_graph.get_components():
+				labels = comp.get_labels()
+				for label in labels:
+					if self.getBound(t, comp, label) != interp.getBound(t, comp, label):
+						result = False
+						break
+				
+				if not result:
+					break
+
+			if not result:
+				break
 
 		return result

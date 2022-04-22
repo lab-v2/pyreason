@@ -67,14 +67,6 @@ class NetDiffGraph(NetDiffGraphElement, Graph):
 	def __str__(self):
 		return self._id
 
-	'''def get_neighbours(self, node):
-		result = []
-
-		for edge in self._netDiffEdges:
-			if (edge.getTarget() == node.getId()):
-				result.append(NetDiffNode(edge.getSource()))
-			elif (edge.getSource() == node.getId()):
-				result.append(NetDiffNode(edge.getTarget()))
-
-		return result'''
+	def __hash__(self):
+		return hash(str(self))
 
