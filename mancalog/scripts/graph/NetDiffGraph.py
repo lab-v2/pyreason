@@ -1,9 +1,9 @@
-from NetDiffNode import NetDiffNode
-from NetDiffEdge import NetDiffEdge
-from NetDiffGraphElement import NetDiffGraphElement
+from mancalog.scripts.components.node import Node
+from mancalog.scripts.components.edge import Edge
+from mancalog.scripts.components.graph_component import GraphComponent
 from networkx import Graph
 
-class NetDiffGraph(NetDiffGraphElement, Graph):
+class NetDiffGraph(GraphComponent, Graph):
 
 	def __init__(self, id, nodes = [], edges = []):
 		super().__init__()
@@ -44,7 +44,7 @@ class NetDiffGraph(NetDiffGraphElement, Graph):
 		return list(self.nodes)
 
 	def add_node(self, node):
-		net_diff_node = NetDiffNode(node)
+		net_diff_node = Node(node)
 		super().add_node(net_diff_node)
 	
 	def getEdges(self):
@@ -56,9 +56,9 @@ class NetDiffGraph(NetDiffGraphElement, Graph):
 		return net_diff_edges
 
 	def add_edge(self, edge):
-		net_diff_node1 = NetDiffNode(edge[0])
-		net_diff_node2 = NetDiffNode(edge[1])
-		net_diff_edge = NetDiffEdge(edge[0], edge[1])
+		net_diff_node1 = Node(edge[0])
+		net_diff_node2 = Node(edge[1])
+		net_diff_edge = Edge(edge[0], edge[1])
 		super().add_edges_from([(net_diff_node1, net_diff_node2, {"net_diff_edge": net_diff_edge})])
 
 	def getId(self):

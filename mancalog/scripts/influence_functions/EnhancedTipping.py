@@ -1,5 +1,5 @@
 import portion
-from Diffusion_Process.AbstractInfluenceFunction import AbstractInfluenceFunction
+from mancalog.scripts.influence_functions.AbstractInfluenceFunction import AbstractInfluenceFunction
 
 class EnhancedTipping(AbstractInfluenceFunction):
 	

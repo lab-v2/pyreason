@@ -1,4 +1,4 @@
-from NetDiffInterpretation import NetDiffInterpretation
+from mancalog.scripts.interpretation.NetDiffInterpretation import NetDiffInterpretation
 import copy
 
 class NetDiffProgram:

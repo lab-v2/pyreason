@@ -1,13 +1,12 @@
-from NetDiffProgram import NetDiffProgram
+from mancalog.scripts.program.NetDiffProgram import NetDiffProgram
 from NetDiffFact import NetDiffFact
-from NetDiffLocalRule import NetDiffLocalRule
-from Tipping import Tipping
-from NetDiffGraph import NetDiffGraph
-from NetDiffNode import NetDiffNode
-from NetDiffEdge import NetDiffEdge
-from Label import Label
-from ELocalLabel import ELocalLabel
-from NLocalLabel import NLocalLabel
+from mancalog.scripts.rules.NetDiffLocalRule import NetDiffLocalRule
+from mancalog.scripts.influence_functions.Tipping import Tipping
+from mancalog.scripts.graph.NetDiffGraph import NetDiffGraph
+from mancalog.scripts.components.node import Node
+from mancalog.scripts.components.edge import Edge
+from mancalog.scripts.components.label import Label
+from mancalog.scripts.components.NLocalLabel import NLocalLabel
 import portion
 import networkx as nx
 
@@ -28,9 +27,9 @@ red = NLocalLabel('red')
 nllabels = [blue, yellow, red]
 
 #nllabels is assigned as the set of labels that can be applied to the nodes
-NetDiffNode._labels = nllabels
+Node._labels = nllabels
 #the set of labels that can be applied to the edges is empty
-NetDiffEdge._labels = []
+Edge._labels = []
 
 #NetDiffGraph is an extension of a networkx graph
 graph = NetDiffGraph('graph', nodes, edges)

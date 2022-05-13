@@ -1,7 +1,7 @@
 import portion
-from NetDiffWorld import NetDiffWorld
-from NetDiffNode import NetDiffNode
-from NetDiffEdge import NetDiffEdge
+from mancalog.scripts.components.world import World
+from mancalog.scripts.components.node import Node
+from mancalog.scripts.components.edge import Edge
 
 class NetDiffInterpretation:
 
@@ -84,7 +84,7 @@ class NetDiffInterpretation:
 					candidatos.remove(n)
 		if(nc_edge != None):
 			for n in candidatos:
-				if(not self.areSatisfied(time, NetDiffEdge(n.getId(), node.getId()), nc_edge)):
+				if(not self.areSatisfied(time, Edge(n.getId(), node.getId()), nc_edge)):
 					candidatos.remove(n)
 
 		result = candidatos

@@ -1,5 +1,5 @@
 import portion
-from AbstractInfluenceFunction import AbstractInfluenceFunction
+from mancalog.scripts.influence_functions.AbstractInfluenceFunction import AbstractInfluenceFunction
 
 class Tipping(AbstractInfluenceFunction):
 	

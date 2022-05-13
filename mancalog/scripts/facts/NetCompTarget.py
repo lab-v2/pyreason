@@ -1,7 +1,7 @@
 import portion
-from NetDiffGraph import NetDiffGraph
-from NetDiffNode import NetDiffNode
-from NetDiffEdge import NetDiffEdge
+from mancalog.scripts.graph.NetDiffGraph import NetDiffGraph
+from mancalog.scripts.components.node import Node
+from mancalog.scripts.components.edge import Edge
 
 class NetCompTarget:
 

@@ -1,6 +1,6 @@
 import portion
 
-class NetDiffWorld:
+class World:
 
 	def __init__(self, labels):
 		self._world = {}

@@ -1,6 +1,6 @@
-from abc import ABC,abstractmethod
+from abc import ABC, abstractmethod
 
-class AbstractInfluenceFunction:
+class AbstractInfluenceFunction(ABC):
 	
 	@abstractmethod
 	def influence(self, neigh, qualified_neigh, nas):

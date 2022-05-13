@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from NetDiffWorld import NetDiffWorld
+from mancalog.scripts.components.world import World
 
-class NetDiffGraphElement(ABC):
+class GraphComponent(ABC):
 	_labels = []
 
 	@abstractmethod
@@ -12,4 +12,4 @@ class NetDiffGraphElement(ABC):
 		return isinstance(element, type(self)) and self._id == element.getId()
 
 	def getInitialWorld(self):
-		return NetDiffWorld(self.get_labels())
+		return World(self.get_labels())

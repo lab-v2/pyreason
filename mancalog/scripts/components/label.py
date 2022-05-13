@@ -1,4 +1,5 @@
 from abc import ABC
+
 class Label(ABC):
 
 	def __init__(self, value):

@@ -1,14 +1,14 @@
 import random
-from NetDiffGraphElement import NetDiffGraphElement
+from mancalog.scripts.components.graph_component import GraphComponent
 
-class NetDiffNode(NetDiffGraphElement):
+class Node(GraphComponent):
 
 	def __init__(self, id):
 		self._id = id
 		self._color = "blue"
 
 	def get_labels(self):
-		return NetDiffNode._labels
+		return Node._labels
 
 	def __str__(self):
 		return 'node(' + self._id + ')'

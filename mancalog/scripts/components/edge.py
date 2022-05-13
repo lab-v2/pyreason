@@ -1,6 +1,6 @@
-from NetDiffGraphElement import NetDiffGraphElement
+from mancalog.scripts.components.graph_component import GraphComponent
 
-class NetDiffEdge(NetDiffGraphElement):
+class Edge(GraphComponent):
 
 	def __init__(self, source, target):
 		self._source = source
@@ -8,7 +8,7 @@ class NetDiffEdge(NetDiffGraphElement):
 		self._id = "(" + source + ',' + target + ')'
 	
 	def get_labels(self):
-		return NetDiffEdge._labels
+		return Edge._labels
 
 	def __str__(self):
 		return 'edge' + self._id
