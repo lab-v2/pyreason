@@ -1,5 +1,6 @@
 from mancalog.scripts.facts.component_target import ComponentTarget
 
+
 class Fact(ComponentTarget):
 	
 	def __init__(self, component, label, interval, t_lower, t_upper):

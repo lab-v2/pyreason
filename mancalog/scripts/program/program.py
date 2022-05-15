@@ -1,6 +1,7 @@
 from mancalog.scripts.interpretation.interpretation import Interpretation
 import copy
 
+
 class Program:
 
 	def __init__(self, net_diff_graph, tmax, facts = [], local_rules = [], global_rules = []):

@@ -1,8 +1,9 @@
 import random
 from mancalog.scripts.components.graph_component import GraphComponent
 
-class Node(GraphComponent):
 
+class Node(GraphComponent):
+	
 	def __init__(self, id):
 		self._id = id
 		self._color = "blue"

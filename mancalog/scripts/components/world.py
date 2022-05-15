@@ -1,7 +1,8 @@
 import portion
 
-class World:
 
+class World:
+	
 	def __init__(self, labels):
 		self._world = {}
 		for label in labels:

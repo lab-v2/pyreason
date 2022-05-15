@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from mancalog.scripts.components.world import World
 
+
 class GraphComponent(ABC):
 	_labels = []
 

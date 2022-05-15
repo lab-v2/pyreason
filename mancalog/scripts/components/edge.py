@@ -1,7 +1,8 @@
 from mancalog.scripts.components.graph_component import GraphComponent
 
-class Edge(GraphComponent):
 
+class Edge(GraphComponent):
+	
 	def __init__(self, source, target):
 		self._source = source
 		self._target = target

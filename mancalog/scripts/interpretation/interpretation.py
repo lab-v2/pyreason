@@ -3,6 +3,7 @@ from mancalog.scripts.components.world import World
 from mancalog.scripts.components.node import Node
 from mancalog.scripts.components.edge import Edge
 
+
 class Interpretation:
 
 	def __init__(self, net_diff_graph, tmax = 1):
