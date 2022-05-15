@@ -3,7 +3,7 @@ from mancalog.scripts.components.edge import Edge
 from mancalog.scripts.components.graph_component import GraphComponent
 from networkx import Graph
 
-class NetDiffGraph(GraphComponent, Graph):
+class NetworkGraph(GraphComponent, Graph):
 
 	def __init__(self, id, nodes = [], edges = []):
 		super().__init__()
@@ -30,7 +30,7 @@ class NetDiffGraph(GraphComponent, Graph):
 		return result
 
 	def get_labels(self):
-		return NetDiffGraph._labels
+		return NetworkGraph._labels
 
 	def get_components(self):
 		components = list(self.nodes)

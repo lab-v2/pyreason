@@ -1,6 +1,6 @@
-from NetCompTarget import NetCompTarget
+from mancalog.scripts.facts.component_target import ComponentTarget
 
-class NetDiffFact(NetCompTarget):
+class Fact(ComponentTarget):
 	
 	def __init__(self, component, label, interval, t_lower, t_upper):
 		super().__init__(component, label, interval)

@@ -1,7 +1,7 @@
 import portion
-from mancalog.scripts.influence_functions.AbstractInfluenceFunction import AbstractInfluenceFunction
+from mancalog.scripts.influence_functions.abstract_influentce_function import AbstractInfluenceFunction
 
-class Tipping(AbstractInfluenceFunction):
+class TippingFunction(AbstractInfluenceFunction):
 	
 	def __init__(self, threshold, bound_update):
 		self._threshold = threshold

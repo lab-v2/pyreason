@@ -1,7 +1,7 @@
-from mancalog.scripts.interpretation.NetDiffInterpretation import NetDiffInterpretation
+from mancalog.scripts.interpretation.interpretation import Interpretation
 import copy
 
-class NetDiffProgram:
+class Program:
 
 	def __init__(self, net_diff_graph, tmax, facts = [], local_rules = [], global_rules = []):
 		self._net_diff_graph = net_diff_graph
@@ -12,7 +12,7 @@ class NetDiffProgram:
 		self._interp = None
 
 	def diffusion(self):
-		self._interp = NetDiffInterpretation(self._net_diff_graph, self._tmax)
+		self._interp = Interpretation(self._net_diff_graph, self._tmax)
 		for fact in self._facts:
 			self._interp.applyFact(fact)
 

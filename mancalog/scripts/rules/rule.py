@@ -1,4 +1,4 @@
-class NetDiffLocalRule:
+class Rule:
 
 	def __init__(self, target, tc, delta, neigh_nodes, neigh_edges, inf):
 		self._target = target
