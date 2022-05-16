@@ -1,7 +1,7 @@
 import argparse
 import networkx as nx
 
-from mancalog.scripts.program import Program
+from mancalog.scripts.program.program import Program
 from mancalog.scripts.components.node import Node
 from mancalog.scripts.components.edge import Edge
 from mancalog.scripts.components.label import Label
@@ -20,7 +20,7 @@ def main():
 
     # Read graph & retrieve tmax
     tmax = args.timesteps
-    graph_data = nx.read_graphml(args.graoh_path)
+    graph_data = nx.read_graphml(args.graph_path)
 
     # Initialize labels
     success = Label('success')
