@@ -18,7 +18,7 @@ class Edge(GraphComponent):
 		return hash(str(self))
 	
 	def to_json_string(self):
-		return '{"id":"'+ str(self._id) +'", "from":'+ str(self._source) + ', "to":' + str(self._target) + ', "color": "black" ' + '}'
+		return '{"id":"'+ str(self._id) +'", "from":'+ str(self._source) + ', "to":' + str(self._target) + '}'
 
 	def getSource(self):
 		return self._source

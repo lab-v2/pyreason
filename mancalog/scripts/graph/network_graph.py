@@ -3,6 +3,7 @@ from mancalog.scripts.components.edge import Edge
 from mancalog.scripts.components.graph_component import GraphComponent
 from networkx import Graph
 
+
 class NetworkGraph(GraphComponent, Graph):
 
 	def __init__(self, id, nodes = [], edges = []):
