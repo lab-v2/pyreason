@@ -9,7 +9,7 @@ class Node(GraphComponent):
 		# self._color = "blue"
 
 	def get_labels(self):
-		return Node._labels
+		return Node.available_labels
 
 	def __str__(self):
 		return f'node({self._id})'

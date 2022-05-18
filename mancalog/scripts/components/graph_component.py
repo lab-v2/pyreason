@@ -3,7 +3,7 @@ from mancalog.scripts.components.world import World
 
 
 class GraphComponent(ABC):
-	_labels = []
+	available_labels = []
 
 	@abstractmethod
 	def get_labels(self):

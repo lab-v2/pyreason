@@ -9,7 +9,7 @@ class Edge(GraphComponent):
 		self._id = "(" + source + ',' + target + ')'
 	
 	def get_labels(self):
-		return Edge._labels
+		return Edge.available_labels
 
 	def __str__(self):
 		return 'edge' + self._id

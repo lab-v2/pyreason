@@ -10,7 +10,7 @@ import portion
 import networkx as nx
 
 #max time for diffusion process
-tmax = 2
+tmax = 3
 
 #list of ids representing the nodes in the graph
 nodes = ['0', '1', '2', '3']
@@ -26,9 +26,9 @@ red = Label('red')
 nllabels = [blue, yellow, red]
 
 #nllabels is assigned as the set of labels that can be applied to the nodes
-Node._labels = nllabels
+Node.available_labels = nllabels
 #the set of labels that can be applied to the edges is empty
-Edge._labels = []
+Edge.available_labels = []
 
 #NetDiffGraph is an extension of a networkx graph
 graph = NetworkGraph('graph', nodes, edges)
@@ -59,4 +59,5 @@ program = Program(graph, tmax, facts, local_rules)
 #mancalog interpretation that contains the final bounds for each label in each node and edge
 interp = program.diffusion()
 
+# interp.p()
 print(str(interp))

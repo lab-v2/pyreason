@@ -31,7 +31,7 @@ class NetworkGraph(GraphComponent, Graph):
 		return result
 
 	def get_labels(self):
-		return NetworkGraph._labels
+		return NetworkGraph.available_labels
 
 	def get_components(self):
 		components = list(self.nodes)

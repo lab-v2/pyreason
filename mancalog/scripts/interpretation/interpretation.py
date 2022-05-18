@@ -100,11 +100,11 @@ class Interpretation:
 	def __str__(self):
 		result = ''
 		for t in range(0, len(self._interpretations)):
-			result = result + 'time: ' + str(t) + '\n'
+			result = result + 'TIME: ' + str(t) + '\n'
 			for c in self._interpretations[t].keys():
 				world = self._interpretations[t][c]
-				result = result + str(c) + '\n'
-				result = result + str(world)
+				result = result + str(c) + ':' + '\n'
+				result = result + str(world) + '\n'
 
 		return result
 
