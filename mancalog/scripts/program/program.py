@@ -15,7 +15,7 @@ class Program:
 	def diffusion(self):
 		self._interp = Interpretation(self._net_diff_graph, self._tmax)
 		for fact in self._facts:
-			self._interp.applyFact(fact)
+			self._interp.apply_fact(fact)
 
 		old_interp = copy.deepcopy(self._interp)
 		self._apply_local_rules()
@@ -28,11 +28,11 @@ class Program:
 		#global rules are not necessary for classic MANCaLog , I have used them in a MANCaLog extension
 		for t in range(self._tmax + 1):
 			for rule in self._global_rules:
-				self._interp.applyGlobalRule(rule, t)
+				self._interp.apply_global_rule(rule, t)
 
 		return self._interp
 
 	def _apply_local_rules(self):
 		for t in range(self._tmax + 1):
 			for rule in self._local_rules:
-				self._interp.applyLocalRule(rule, t)
+				self._interp.apply_local_rule(rule, t)

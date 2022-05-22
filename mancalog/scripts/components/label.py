@@ -6,7 +6,7 @@ class Label(ABC):
 	def __init__(self, value):
 		self._value = value
 
-	def getValue(self):
+	def get_value(self):
 		return self._value
 
 	def __eq__(self, label):

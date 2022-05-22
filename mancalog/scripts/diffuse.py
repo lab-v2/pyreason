@@ -2,7 +2,6 @@ import argparse
 import portion
 import random
 import networkx as nx
-from torch import rand
 
 from mancalog.scripts.facts.fact import Fact
 from mancalog.scripts.rules.rule import Rule

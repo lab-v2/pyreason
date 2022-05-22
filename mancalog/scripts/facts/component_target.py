@@ -11,13 +11,13 @@ class ComponentTarget:
 		self._label = label
 		self._interval = interval
 
-	def getBound(self):
+	def get_bound(self):
 		return self._interval
 
-	def getLabel(self):
+	def get_label(self):
 		return self._label
 
-	def getComponent(self):
+	def get_component(self):
 		return self._component
 
 	def __str__(self):

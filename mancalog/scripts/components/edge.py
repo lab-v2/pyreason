@@ -20,13 +20,13 @@ class Edge(GraphComponent):
 	def to_json_string(self):
 		return '{"id":"'+ str(self._id) +'", "from":'+ str(self._source) + ', "to":' + str(self._target) + '}'
 
-	def getSource(self):
+	def get_source(self):
 		return self._source
 
-	def getTarget(self):
+	def get_target(self):
 		return self._target
 
-	def getId(self):
+	def get_id(self):
 		return self._id
 
 	def __eq__(self, edge):

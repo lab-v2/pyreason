@@ -41,14 +41,14 @@ class NetworkGraph(GraphComponent, Graph):
 		
 		return components
 
-	def getNodes(self):
+	def get_nodes(self):
 		return list(self.nodes)
 
 	def add_node(self, node):
 		net_diff_node = Node(node)
 		super().add_node(net_diff_node)
 	
-	def getEdges(self):
+	def get_edges(self):
 		net_diff_edges = []
 		for edge in self.edges:
 			net_diff_edge = self.edges[edge[0], edge[1]]["net_diff_edge"]
@@ -62,7 +62,7 @@ class NetworkGraph(GraphComponent, Graph):
 		net_diff_edge = Edge(edge[0], edge[1])
 		super().add_edges_from([(net_diff_node1, net_diff_node2, {"net_diff_edge": net_diff_edge})])
 
-	def getId(self):
+	def get_id(self):
 		return self._id
 
 	def __str__(self):

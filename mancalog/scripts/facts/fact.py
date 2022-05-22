@@ -8,10 +8,10 @@ class Fact(ComponentTarget):
 		self._t_upper = t_upper
 		self._t_lower = t_lower
 
-	def getTimeUpper(self):
+	def get_time_upper(self):
 		return self._t_upper
 
-	def getTimeLower(self):
+	def get_time_lower(self):
 		return self._t_lower
 
 	def __str__(self):

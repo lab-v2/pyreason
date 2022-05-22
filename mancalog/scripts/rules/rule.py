@@ -8,22 +8,22 @@ class Rule:
 		self._neigh_edges = neigh_edges
 		self._inf = inf
 
-	def getTarget(self):
+	def get_target(self):
 		return self._target
 
-	def getTargetCriteria(self):
+	def get_target_criteria(self):
 		return self._tc
 
-	def getDelta(self):
+	def get_delta(self):
 		return self._delta
 
-	def getNeighNodes(self):
+	def get_neigh_nodes(self):
 		return self._neigh_nodes
 
-	def getNeighEdges(self):
+	def get_neigh_edges(self):
 		return self._neigh_edges
 
-	def getInf(self):
+	def get_inf(self):
 		return self._inf
 	
 	def influence(self, neigh, qualified_neigh, nas):

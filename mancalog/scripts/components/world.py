@@ -8,7 +8,7 @@ class World:
 		for label in labels:
 			self._world[label] = portion.closed(0,1)
 
-	def isSatisfied(self, label, interval):
+	def is_satisfied(self, label, interval):
 		result = False
 		
 		bnd = self._world[label]
@@ -24,7 +24,7 @@ class World:
 		new_bnd = current_bnd & interval
 		self._world[label] = new_bnd
 
-	def getBound(self, label):
+	def get_bound(self, label):
 		result = None
 
 		result = self._world[label] 

@@ -26,7 +26,7 @@ class Node(GraphComponent):
 	# def get_color(self):
 	# 	return self._color
 
-	def getId(self):
+	def get_id(self):
 		return self._id
 
 	def __eq__(self, node):

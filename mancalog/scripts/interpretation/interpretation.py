@@ -20,7 +20,7 @@ class Interpretation:
 
 		
 
-	def isSatisfied(self, time, comp, na):
+	def is_satisfied(self, time, comp, na):
 		result = False
 		if (not (na[0] is None or na[1] is None)):
 			world = self._interpretations[time][comp]
@@ -29,43 +29,43 @@ class Interpretation:
 			result = True
 		return result
 
-	def areSatisfied(self, time, comp, nas):
+	def are_satisfied(self, time, comp, nas):
 		result = True
 		for (label, interval) in nas:
-			result = result and self.isSatisfied(time, comp, (label, interval))
+			result = result and self.is_satisfied(time, comp, (label, interval))
 
 		return result
 
-	def applyFact(self, fact):
+	def apply_fact(self, fact):
 		for t in range(fact.getTimeLower(), fact.getTimeUpper() + 1):
 			world = self._interpretations[t][fact.getComponent()]
 			world.update(fact.getLabel(), fact.getBound())
 
 
-	def applyLocalRule(self, rule, t):
+	def apply_local_rule(self, rule, t):
 		if t <= self._tmax:
 			tDelta = t - rule.getDelta()
 			if (tDelta >= 0):
 				for n in self._net_diff_graph.getNodes():
-					if (self.areSatisfied(tDelta, n, rule.getTargetCriteria())):
+					if (self.are_satisfied(tDelta, n, rule.getTargetCriteria())):
 						a = self._get_neighbours(n)
 						b = self._get_qualified_neigh(tDelta, n, rule.getNeighNodes(), rule.getNeighEdges())
 						c = self._interpretations[tDelta]
 						bnd = rule.influence(neigh = a, qualified_neigh = b, nas = c)
 						self._na_update(t, n, (rule.getTarget(), bnd))
 
-	def applyGlobalRule(self, rule, t):
+	def apply_global_rule(self, rule, t):
 		bounds = []
 		if t <= self._tmax:
 			for n in self._net_diff_graph.getNodes():
-				if (self.areSatisfied(t, n, rule.getLocalTarget())):
-					bnd = self.getBound(t, n, rule.getLocalLabel())
+				if (self.are_satisfied(t, n, rule.getLocalTarget())):
+					bnd = self.get_bound(t, n, rule.getLocalLabel())
 					bounds.append(bnd)
 			updated_bnd = rule.aggregate(bounds)
 			self._na_update(t, self._net_diff_graph, (rule.getGlobalLabel(), updated_bnd))
 
 
-	def getBound(self, time, comp, label):
+	def get_bound(self, time, comp, label):
 		result = None
 		world = self._interpretations[time][comp]
 		result = world.getBound(label)
@@ -81,11 +81,11 @@ class Interpretation:
 		candidatos = self._get_neighbours(node)
 		if(nc_node != None):
 			for n in candidatos:
-				if(not self.areSatisfied(time, n, nc_node)):
+				if(not self.are_satisfied(time, n, nc_node)):
 					candidatos.remove(n)
 		if(nc_edge != None):
 			for n in candidatos:
-				if(not self.areSatisfied(time, Edge(n.getId(), node.getId()), nc_edge)):
+				if(not self.are_satisfied(time, Edge(n.getId(), node.getId()), nc_edge)):
 					candidatos.remove(n)
 
 		result = candidatos
@@ -114,7 +114,7 @@ class Interpretation:
 			for comp in self._net_diff_graph.get_components():
 				labels = comp.get_labels()
 				for label in labels:
-					if self.getBound(t, comp, label) != interp.getBound(t, comp, label):
+					if self.get_bound(t, comp, label) != interp.getBound(t, comp, label):
 						result = False
 						break
 				
