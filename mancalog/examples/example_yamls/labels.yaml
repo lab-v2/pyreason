@@ -1,0 +1,6 @@
+# Example format for labels
+# DO NOT MODIFY! THIS IS FOR EXAMPLE PURPOSES ONLY
+---
+labels:
+    - success
+    - failure

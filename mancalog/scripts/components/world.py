@@ -34,7 +34,7 @@ class World:
 	def __str__(self):
 		result = ''
 		for label in self._world.keys():
-			result = result + label.getValue() + ',' + str(self._world[label]) + '\n'
+			result = result + label.get_value() + ',' + str(self._world[label]) + '\n'
 
 		return result
 

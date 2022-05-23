@@ -34,6 +34,6 @@ class Edge(GraphComponent):
 		if isinstance(self, type(edge)):
 			result = self is edge
 
-			result = result or (self._source == edge.getSource() and self._target == edge.getTarget())
+			result = result or (self._source == edge.get_source() and self._target == edge.get_target())
 
 		return result

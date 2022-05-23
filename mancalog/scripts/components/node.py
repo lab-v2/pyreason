@@ -34,6 +34,6 @@ class Node(GraphComponent):
 		if isinstance(self, type(node)):
 			result = self is node
 
-			result = result or (self._id == node.getId())
+			result = result or (self._id == node.get_id())
 
 		return result

@@ -10,7 +10,7 @@ class Label(ABC):
 		return self._value
 
 	def __eq__(self, label):
-		result = (self._value == label.getValue()) and isinstance(label, type(self))
+		result = (self._value == label.get_value()) and isinstance(label, type(self))
 		return result
 
 	def __str__(self):

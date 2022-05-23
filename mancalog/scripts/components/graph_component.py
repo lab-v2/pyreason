@@ -10,7 +10,7 @@ class GraphComponent(ABC):
 		pass
 
 	def equals(self, element):
-		return isinstance(element, type(self)) and self._id == element.getId()
+		return isinstance(element, type(self)) and self._id == element.get_id()
 
 	def get_initial_world(self):
 		return World(self.get_labels())

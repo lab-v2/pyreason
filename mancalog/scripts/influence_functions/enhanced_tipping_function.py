@@ -14,9 +14,9 @@ class EnhancedTippingFunction(AbstractInfluenceFunction):
 
 		for c in neigh:
 			world = nas[c]
-			labels = c.getLabels()
+			labels = c.get_labels()
 			for l in labels:
-				if world.isSatisfied(l, portion.closed(1,1)):
+				if world.is_satisfied(l, portion.closed(1,1)):
 					reduced_neigh += 1
 					break
 

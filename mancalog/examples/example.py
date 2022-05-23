@@ -1,63 +1,74 @@
-from mancalog.scripts.program.program import Program
+import argparse
+import portion
+import random
+import networkx as nx
+
 from mancalog.scripts.facts.fact import Fact
 from mancalog.scripts.rules.rule import Rule
-from mancalog.scripts.influence_functions.tipping_function import TippingFunction
-from mancalog.scripts.graph.network_graph import NetworkGraph
 from mancalog.scripts.components.node import Node
 from mancalog.scripts.components.edge import Edge
 from mancalog.scripts.components.label import Label
-import portion
-import networkx as nx
-
-#max time for diffusion process
-tmax = 3
-
-#list of ids representing the nodes in the graph
-nodes = ['0', '1', '2', '3']
-#list of tuples representing the edges in the graph
-edges = [('0', '1'), ('2', '1'), ('2', '3')]
-
-#three labels that can be applied to the nodes
-blue = Label('blue')
-yellow = Label('yellow')
-red = Label('red')
+from mancalog.scripts.program.program import Program
+from mancalog.scripts.graph.network_graph import NetworkGraph
+from mancalog.scripts.influence_functions.tipping_function import TippingFunction
 
 
-nllabels = [blue, yellow, red]
-
-#nllabels is assigned as the set of labels that can be applied to the nodes
-Node.available_labels = nllabels
-#the set of labels that can be applied to the edges is empty
-Edge.available_labels = []
-
-#NetDiffGraph is an extension of a networkx graph
-graph = NetworkGraph('graph', nodes, edges)
-net_diff_node = list(graph.nodes)
-
-#mancalog rule that says "red nodes that are blue with confidence between 0.5 and 1
-#will be influenced next time by neighbors that are yellow with confidence between 0.5 and 1 according to function Tipping"
-local_rule1 = Rule(red, [(blue, portion.closed(0.5,1))], 1,[(yellow, portion.closed(0.5, 1))], None, TippingFunction(0.5, portion.closed(0.7, 1)))
-
-#mancalog rule that says "blue nodes that are red with confidence between 0.7 and 1
-#will be influenced next time by neighbors that are yellow with confidence between 0.5 and 1 according to function Tipping"
-local_rule2 = Rule(blue, [(red, portion.closed(0.7,1))], 1,[(yellow, portion.closed(0.5, 1))], None, TippingFunction(0.5, portion.closed(0.7, 1)))
-
-local_rules = [local_rule2, local_rule1]
+def argparser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--graph_path", type=str, required=True)
+    parser.add_argument("--timesteps", type=int, required=True)
+    return parser.parse_args()
 
 
-#mancalog fact that says "node 1 is blue with confidence interval [0.5, 1] at time [0, tmax]"
-net_diff_fact1 = Fact(net_diff_node[1], blue, portion.closed(0.5, 1), 0, tmax)
-#mancalog fact that says "node 0 is yellow with confidence interval [0.5, 1] at time [0, tmax]"
-net_diff_fact2 = Fact(net_diff_node[0], yellow, portion.closed(0.5, 1), 0, tmax)
-#mancalog fact that says "node 2 is yellow with confidence interval [0.7, 1] at time [0, tmax]"
-net_diff_fact3 = Fact(net_diff_node[2], yellow, portion.closed(0.7, 1), 0, tmax)
-facts = [net_diff_fact1, net_diff_fact2, net_diff_fact3]
+def main():
+    args = argparser()
+
+    # Read graph & retrieve tmax
+    tmax = args.timesteps
+    graph_data = nx.read_graphml(args.graph_path)
+    # graph_data = nx.subgraph(graph_data, ['n2825', 'n2625', 'n2989'])
+    # print(graph_data.nodes)
+
+    # Initialize labels
+    # TODO: Make a parser to read the labels needed
+    success = Label('success')
+    failure = Label('failure')
+    labels = [success, failure]
+    Node.available_labels = labels
+    Edge.available_labels = []
+
+    graph = NetworkGraph('graph', list(graph_data.nodes), list(graph_data.edges))
+
+    # Rules come here
+    # TODO: Make a parser to read the rules from a csv
+    # Nodes that have the success label with bounds between 0 and 1, will be influenced next timestep if half its neighbors have success between 0.5 and 1
+    rule1 = Rule(success, [(success, portion.closed(0,1))], 1, [(success, portion.closed(0.5, 1))], None, TippingFunction(0.5, portion.closed(0.7, 1)))
+    rule2 = Rule(failure, [(failure, portion.closed(0,1))], 1, [(failure, portion.closed(0.5, 1))], None, TippingFunction(0.5, portion.closed(0.7, 1)))
+    rules = [rule1, rule2]
+
+    # Facts come here
+    # TODO: Make a parser to read the facts from a csv
+    facts = []
+    for node in list(graph.nodes):
+        success_bnd = [random.randint(0, 10)/10 for i in range(2)]
+        failure_bnd = [random.randint(0, 10)/10 for i in range(2)]
+        success_bnd.sort()
+        failure_bnd.sort()
+        success_fact = Fact(node, success, portion.closed(success_bnd[0], success_bnd[1]), 0, 0)
+        failure_fact = Fact(node, failure, portion.closed(failure_bnd[0], failure_bnd[1]), 0, 0)
+        facts.append(success_fact)
+        facts.append(failure_fact)
 
 
-program = Program(graph, tmax, facts, local_rules)
+    # Program comes here
+    program = Program(graph, tmax, facts, rules)
 
-#mancalog interpretation that contains the final bounds for each label in each node and edge
-interp = program.diffusion()
+    # Diffusion process
+    interpretation = program.diffusion()
 
-# interp.p()
-print(str(interp))
+    # Print if needed
+    # print(str(interpretation))
+
+
+if __name__ == "__main__":
+    main()
