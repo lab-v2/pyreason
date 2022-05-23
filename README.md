@@ -8,10 +8,10 @@ Paper: [https://arxiv.org/abs/1301.0302](https://arxiv.org/abs/1301.0302)
 <details>
   <summary>Table of Contents</summary>
   
-1. [Setup on the ASU Agave Cluster](#1-setup-on-the-asu-agave-cluster)
-2. [Setup on your Local System](#2-setup-on-your-local-system)
-3. [Run on the Agave Cluster](#3-run-on-the-agave-cluster)
-4. [Run on your Local System](#4-run-on-your-local-system)
+1. [Setup on the ASU Agave Cluster](#setup-on-the-asu-agave-cluster)
+2. [Setup on your Local System](#setup-on-your-local-system)
+3. [Run on the Agave Cluster](#run-on-the-agave-cluster)
+4. [Run on your Local System](#run-on-your-local-system)
 </details>
 
 ## Setup on the ASU Agave Cluster
