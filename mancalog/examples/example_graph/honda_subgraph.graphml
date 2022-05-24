@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+<key id="isin" for="node" attr.name="isin" attr.type="string"/>
+<key id="name" for="node" attr.name="name" attr.type="string"/>
+<key id="marketcap" for="node" attr.name="marketcap" attr.type="double"/>
+<key id="gics" for="node" attr.name="gics" attr.type="string"/>
+<key id="type" for="edge" attr.name="type" attr.type="string"/>
+<key id="value" for="edge" attr.name="value" attr.type="double"/>
+<key id="cost" for="edge" attr.name="cost" attr.type="double"/>
+<graph id="G" edgedefault="directed">
+<node id="n2625"><data key="name">Qlik Technologies Inc</data><data key="marketcap">337400.0</data><data key="gics">451030</data><data key="isin">US74733T1051</data></node>
+<node id="n2825"><data key="name">Cie Generale des Etablissements Michelin</data><data key="marketcap">2210000.0</data><data key="gics">251010</data><data key="isin">FR0000121261</data></node>
+<node id="n2989"><data key="name">Alfa Laval AB</data><data key="marketcap">7640.0</data><data key="gics">201060</data><data key="isin">SE0000695876</data></node>
+
+<edge id="e0" source="n2625" target="n2825"><data key="type">CAPEX</data><data key="value">654.0</data><data key="cost">0.12</data></edge>
+<edge id="e1" source="n2989" target="n2825"><data key="type">COGS</data><data key="value">3.31</data><data key="cost">0.1</data></edge>
+</graph>
+</graphml>

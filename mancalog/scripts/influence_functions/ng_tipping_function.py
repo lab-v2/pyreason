@@ -2,11 +2,11 @@ import portion
 from mancalog.scripts.influence_functions.abstract_influentce_function import AbstractInfluenceFunction
 
 
-class TippingFunction(AbstractInfluenceFunction):
+class NgTippingFunction(AbstractInfluenceFunction):
 	
 	def __init__(self):
-		self._threshold = 0.5
-		self._bnd_update = portion.closed(1,1)
+		self._threshold = 1.0
+		self._bnd_update = portion.closed(0,0.2)
 
 	def influence(self, neigh, qualified_neigh, nas):
 		bnd = portion.closed(0,1)
@@ -15,4 +15,3 @@ class TippingFunction(AbstractInfluenceFunction):
 				bnd = self._bnd_update
 
 		return bnd
-
