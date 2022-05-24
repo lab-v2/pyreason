@@ -8,16 +8,16 @@ Paper: [https://arxiv.org/abs/1301.0302](https://arxiv.org/abs/1301.0302)
 <details>
   <summary>Table of Contents</summary>
   
-1. [Usage](#usage)
-2. [Setup](#setup)
-    * [Setup on the ASU Agave Cluster](#setup-on-the-asu-agave-cluster)
-    * [Setup on your Local System](#setup-on-your-local-system)
-3. [Run](#run)
-    * [Run on the Agave Cluster](#run-on-the-agave-cluster)
-    * [Run on your Local System](#run-on-your-local-system)
+1. [Usage](#1-usage)
+2. [Setup](#2-setup)
+    * [Setup on the ASU Agave Cluster](#21-setup-on-the-asu-agave-cluster)
+    * [Setup on your Local System](#22-setup-on-your-local-system)
+3. [Run](#3-run)
+    * [Run on the Agave Cluster](#31-run-on-the-agave-cluster)
+    * [Run on your Local System](#32-run-on-your-local-system)
 </details>
 
-## Usage
+## 1. Usage
 To run mancalog you need 3 files:
 
 1. A YAML file containing the mancalog rules
@@ -35,9 +35,9 @@ python3 -m mancalog.examples.example
 ```
 This example file uses the example yaml files for rules, facts and labels.
 
-## Setup
+## 2. Setup
 
-### Setup on the ASU Agave Cluster
+### 2.1 Setup on the ASU Agave Cluster
 Log into your ASURITE agave account, and open a terminal.
 
 To create an Anaconda environment and activate it, type the following in your terminal:
@@ -55,7 +55,7 @@ cd mancalog
 pip install -r requirements.txt
 ```
 
-### Setup on your Local System
+### 2.2 Setup on your Local System
 Clone the repository and install the necessary packages to make mancalog run
 
 ```bash
@@ -64,7 +64,7 @@ cd mancalog
 pip install -r requirements.txt
 ```
 
-## Run
+## 3. Run
 
 To Run mancalog, you need to provide the following as command line arguments:
 
@@ -74,7 +74,7 @@ To Run mancalog, you need to provide the following as command line arguments:
 4. The path to the YAML facts file
 5. The path to the YAML labels file
 
-### Run on the Agave Cluster
+### 3.1 Run on the Agave Cluster
 Start an interactive session in your terminal by typing the following:
 ```bash
 interactive -n 16 -N 1 -t 0-0:10
@@ -87,7 +87,7 @@ Now type this into your terminal to run MANCaLog. Make sure you are in the top `
 python3 -m mancalog.scripts.diffuse --graph_path /path/to/graphml/file --timesteps {integer number of timesteps to run} --rules_yaml_path /path/to/rules.yaml --facts_yaml_path /path/to/facts.yaml --labels_yaml_path /path/to/labels.yaml
 ```
 
-### Run on your Local System
+### 3.2 Run on your Local System
 Type this into your terminal to run MANCaLog. Make sure you are in the top `mancalog` directory. Don't forget to replace the placeholders with the correct values.
 ```bash
 python3 -m mancalog.scripts.diffuse --graph_path /path/to/graphml/file --timesteps {integer number of timesteps to run} --rules_yaml_path /path/to/rules.yaml --facts_yaml_path /path/to/facts.yaml --labels_yaml_path /path/to/labels.yaml
