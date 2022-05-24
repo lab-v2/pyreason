@@ -15,6 +15,7 @@ Paper: [https://arxiv.org/abs/1301.0302](https://arxiv.org/abs/1301.0302)
 3. [Run](#3-run)
     * [Run on the Agave Cluster](#31-run-on-the-agave-cluster)
     * [Run on your Local System](#32-run-on-your-local-system)
+4. [Profiling](#4-profiling)
 </details>
 
 ## 1. Usage
@@ -93,3 +94,8 @@ Type this into your terminal to run MANCaLog. Make sure you are in the top `manc
 python3 -m mancalog.scripts.diffuse --graph_path /path/to/graphml/file --timesteps {integer number of timesteps to run} --rules_yaml_path /path/to/rules.yaml --facts_yaml_path /path/to/facts.yaml --labels_yaml_path /path/to/labels.yaml
 ```
 
+## 4. Profiling
+To Profile the code with cProfile:
+```bash
+python3 -m mancalog.scripts.diffuse --graph_path /path/to/graphml/file --timesteps {integer number of timesteps to run} --rules_yaml_path /path/to/rules.yaml --facts_yaml_path /path/to/facts.yaml --labels_yaml_path /path/to/labels.yaml --profile true --profile_output output.txt
+```

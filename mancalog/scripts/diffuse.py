@@ -1,4 +1,7 @@
+import io
 import argparse
+import cProfile
+import pstats
 import networkx as nx
 
 from mancalog.scripts.components.node import Node
@@ -15,11 +18,12 @@ def argparser():
     parser.add_argument("--labels_yaml_path", type=str, required=True)
     parser.add_argument("--rules_yaml_path", type=str, required=True)
     parser.add_argument("--facts_yaml_path", type=str, required=True)
+    parser.add_argument("--profile", type=bool, required=False, default=False)
+    parser.add_argument("--profile_output", type=str)
     return parser.parse_args()
 
 
-def main():
-    args = argparser()
+def main(args):
     yaml_parser = YAMLParser()
 
     # Read graph & retrieve tmax
@@ -53,4 +57,17 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    args = argparser()
+    if args.profile:
+        profiler = cProfile.Profile()
+        profiler.enable()
+        main(args)
+        profiler.disable()
+        s = io.StringIO()
+        stats = pstats.Stats(profiler, stream=s).sort_stats('tottime')
+        stats.print_stats()
+        with open('mancalog/profiling/' + args.profile_output, 'w+') as f:
+            f.write(s.getvalue())
+
+    else:
+        main(args)
