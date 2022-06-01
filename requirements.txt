@@ -1,3 +1,0 @@
-networkx
-portion
-pyyaml
