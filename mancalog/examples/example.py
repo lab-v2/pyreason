@@ -6,6 +6,7 @@ from mancalog.scripts.components.edge import Edge
 from mancalog.scripts.program.program import Program
 from mancalog.scripts.graph.network_graph import NetworkGraph
 from mancalog.scripts.utils.yaml_parser import YAMLParser
+from mancalog.scripts.utils.output import Output
 
 
 def argparser():
@@ -21,6 +22,7 @@ def argparser():
 def main():
     args = argparser()
     yaml_parser = YAMLParser()
+    output = Output()
 
     # Read graph & retrieve tmax
     tmax = args.timesteps
@@ -45,8 +47,19 @@ def main():
     # Diffusion process
     interpretation = program.diffusion()
 
-    # Print if needed
-    print(str(interpretation))
+    # Write output to a pickle file. The output is a list of panda dataframes. The index of the list corresponds to the timestep
+    output.write(interpretation)
+
+    # Comment out the below code if you do not want to print the output
+    # Read the pickle file, and print the dataframes for each timestep
+    nodes = output.read('nodes')
+    edges = output.read('edges')
+
+    for df in nodes:
+        print(df, '\n')
+
+    for df in edges:
+        print(df, '\n')
 
 
 if __name__ == "__main__":

@@ -14,3 +14,7 @@ class GraphComponent(ABC):
 
 	def get_initial_world(self):
 		return World(self.get_labels())
+
+	@abstractmethod
+	def get_type(self):
+		pass

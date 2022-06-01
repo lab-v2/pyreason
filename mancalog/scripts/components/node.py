@@ -29,6 +29,9 @@ class Node(GraphComponent):
 	def get_id(self):
 		return self._id
 
+	def get_type(self):
+		return 'node'
+
 	def __eq__(self, node):
 		result = False
 		if isinstance(self, type(node)):

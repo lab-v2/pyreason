@@ -7,7 +7,7 @@ from mancalog.scripts.components.edge import Edge
 class Interpretation:
 
 	def __init__(self, net_diff_graph, tmax = 1):
-		self._interpretations = []
+		self.interpretations = []
 		self._tmax = tmax
 		self._net_diff_graph = net_diff_graph
 		for t in range(0, self._tmax + 1):
@@ -15,15 +15,15 @@ class Interpretation:
 			for comp in self._net_diff_graph.get_components():
 				nas[comp] = comp.get_initial_world()
 			
-			nas[self._net_diff_graph] = self._net_diff_graph.get_initial_world()
-			self._interpretations.append(nas)
+			# nas[self._net_diff_graph] = self._net_diff_graph.get_initial_world()
+			self.interpretations.append(nas)
 
 		
 
 	def is_satisfied(self, time, comp, na):
 		result = False
 		if (not (na[0] is None or na[1] is None)):
-			world = self._interpretations[time][comp]
+			world = self.interpretations[time][comp]
 			result = world.is_satisfied(na[0], na[1])
 		else:
 			result = True
@@ -38,7 +38,7 @@ class Interpretation:
 
 	def apply_fact(self, fact):
 		for t in range(fact.get_time_lower(), fact.get_time_upper() + 1):
-			world = self._interpretations[t][fact.get_component()]
+			world = self.interpretations[t][fact.get_component()]
 			world.update(fact.get_label(), fact.get_bound())
 
 
@@ -50,7 +50,7 @@ class Interpretation:
 					if (self.are_satisfied(tDelta, n, rule.get_target_criteria())):
 						a = self._get_neighbours(n)
 						b = self._get_qualified_neigh(tDelta, n, rule.get_neigh_nodes(), rule.get_neigh_edges())
-						c = self._interpretations[tDelta]
+						c = self.interpretations[tDelta]
 						bnd = rule.influence(neigh = a, qualified_neigh = b, nas = c)
 						self._na_update(t, n, (rule.get_target(), bnd))
 
@@ -67,7 +67,7 @@ class Interpretation:
 
 	def get_bound(self, time, comp, label):
 		result = None
-		world = self._interpretations[time][comp]
+		world = self.interpretations[time][comp]
 		result = world.get_bound(label)
 
 		return result
@@ -93,16 +93,16 @@ class Interpretation:
 		return result
 
 	def _na_update(self, time, comp, na):
-		world = self._interpretations[time][comp]
+		world = self.interpretations[time][comp]
 		world.update(na[0], na[1])
 		
 
 	def __str__(self):
 		result = ''
-		for t in range(0, len(self._interpretations)):
+		for t in range(0, len(self.interpretations)):
 			result = result + 'TIME: ' + str(t) + '\n'
-			for c in self._interpretations[t].keys():
-				world = self._interpretations[t][c]
+			for c in self.interpretations[t].keys():
+				world = self.interpretations[t][c]
 				result = result + str(c) + ':' + '\n'
 				result = result + str(world) + '\n'
 

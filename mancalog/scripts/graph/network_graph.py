@@ -65,6 +65,9 @@ class NetworkGraph(GraphComponent, Graph):
 	def get_id(self):
 		return self._id
 
+	def get_type(self):
+		return 'graph'
+
 	def __str__(self):
 		return self._id
 

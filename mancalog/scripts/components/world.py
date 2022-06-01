@@ -30,6 +30,13 @@ class World:
 		result = self._world[label] 
 		return result
 
+	def get_world(self):
+		world = []
+		for label in self._world.keys():
+			bnd = self._world[label]
+			world.append((label.get_value(), [bnd.lower, bnd.upper]))
+		return world
+
 
 	def __str__(self):
 		result = ''
@@ -37,4 +44,3 @@ class World:
 			result = result + label.get_value() + ',' + str(self._world[label]) + '\n'
 
 		return result
-

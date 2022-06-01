@@ -6,7 +6,7 @@ class Edge(GraphComponent):
 	def __init__(self, source, target):
 		self._source = source
 		self._target = target
-		self._id = "(" + source + ',' + target + ')'
+		self._id = "(" + source + ':' + target + ')'
 	
 	def get_labels(self):
 		return Edge.available_labels
@@ -28,6 +28,9 @@ class Edge(GraphComponent):
 
 	def get_id(self):
 		return self._id
+
+	def get_type(self):
+		return 'edge'
 
 	def __eq__(self, edge):
 		result = False
