@@ -33,10 +33,10 @@ else
     echo Creating MANCALOG conda environment
     conda create -n MANCALOG
     source activate MANCALOG
+    echo Installing necessary packages
+    pip install -r requirements.txt
 fi
 
-echo Installing necessary packages
-pip install -r requirements.txt
 
 # Run mancalog
 python3 -m mancalog.scripts.diffuse --graph_path $graph_path --timesteps $timesteps --rules_yaml_path $rules_yaml_path  --facts_yaml_path $facts_yaml_path --labels_yaml_path $labels_yaml_path --profile $profile --profile_out $profile_out
