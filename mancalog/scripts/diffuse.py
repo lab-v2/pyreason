@@ -80,7 +80,7 @@ if __name__ == "__main__":
         s = io.StringIO()
         stats = pstats.Stats(profiler, stream=s).sort_stats('tottime')
         stats.print_stats()
-        with open('profiling/' + args.profile_output, 'w+') as f:
+        with open('./profiling/' + args.profile_output, 'w+') as f:
             f.write(s.getvalue())
 
     else:

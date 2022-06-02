@@ -31,9 +31,9 @@ class Output:
             dfs_edges.append(pd.DataFrame(data_edges, columns=columns_edges))
 
         # Save list of dataframes for both nodes and edges
-        with open('output/nodes.pkl', 'wb') as file:
+        with open('./output/nodes.pkl', 'wb') as file:
             pickle.dump(dfs_nodes, file)
-        with open('output/edges.pkl', 'wb') as file:
+        with open('./output/edges.pkl', 'wb') as file:
             pickle.dump(dfs_edges, file)
 
 
@@ -42,8 +42,8 @@ class Output:
         #     print(type(nodes[0]))
     def read(self, component_type):
         if component_type == 'nodes':
-            with open('output/nodes.pkl', 'rb') as file:
+            with open('./output/nodes.pkl', 'rb') as file:
                 return pickle.load(file)
         elif component_type == 'edges':
-            with open('output/edges.pkl', 'rb') as file:
+            with open('./output/edges.pkl', 'rb') as file:
                 return pickle.load(file)
