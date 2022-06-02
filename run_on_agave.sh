@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Please change the following variables based on your needs
-timesteps = 2
-graph_path = ~/Documents/honda/JP3854600008_honda.graphml
-rules_yaml_path = mancalog/examples/example_yamls/rules.yaml
-facts_yaml_path = mancalog/examples/example_yamls/facts.yaml
-labels_yaml_path = mancalog/examples/example_yamls/labels.yaml
-profile = false
-profile_out = profile.txt
+timesteps=2
+graph_path=~/Documents/honda/JP3854600008_honda.graphml
+rules_yaml_path=mancalog/examples/example_yamls/rules.yaml
+facts_yaml_path=mancalog/examples/example_yamls/facts.yaml
+labels_yaml_path=mancalog/examples/example_yamls/labels.yaml
+profile=false
+profile_out=profile.txt
 
 #--------------------- DO NOT TOUCH! -------------------------------------
 #-------------------------------------------------------------------------
