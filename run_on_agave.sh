@@ -22,7 +22,7 @@ rules_yaml_path=mancalog/examples/example_yamls/rules.yaml
 facts_yaml_path=mancalog/examples/example_yamls/facts.yaml
 labels_yaml_path=mancalog/examples/example_yamls/labels.yaml
 profile=false
-profile_out=profile.txt
+profile_out=agave_1cpu_1core.txt
 #-------------------------------------------------------------------------
 
 
