@@ -1,10 +1,10 @@
 from mancalog.scripts.components.node import Node
 from mancalog.scripts.components.edge import Edge
 from mancalog.scripts.components.graph_component import GraphComponent
-from networkx import Graph
+from networkx import DiGraph
 
 
-class NetworkGraph(GraphComponent, Graph):
+class NetworkGraph(GraphComponent, DiGraph):
 
 	def __init__(self, id, nodes = [], edges = []):
 		super().__init__()
