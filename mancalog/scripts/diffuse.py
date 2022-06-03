@@ -3,6 +3,7 @@ import argparse
 import cProfile
 import pstats
 import networkx as nx
+import portion
 
 from mancalog.scripts.components.node import Node
 from mancalog.scripts.components.edge import Edge
@@ -31,6 +32,7 @@ def main(args):
     # Read graph & retrieve tmax
     tmax = args.timesteps
     graph_data = nx.read_graphml(args.graph_path)
+    print(graph_data['n2825'])
 
     # Take a subgraph of the actual data
     # graph_data = nx.subgraph(graph_data, ['n2825', 'n2625', 'n2989'])
@@ -61,6 +63,11 @@ def main(args):
     # Read the pickle file, and print the dataframes for each timestep
     nodes = output.read('nodes')
     edges = output.read('edges')
+
+    # This is how you filter the dataframe to show only nodes that have success in a certain interval
+    # t = 0
+    # interval = portion.closed(0.7, 1)
+    # filtered_df = nodes[t].loc[(nodes[t]['success'] <= interval) & (nodes[t]['success'] >= interval)]
 
     # The code below will print all the dataframes from each timestep for both edges and nodes
     # for df in nodes:

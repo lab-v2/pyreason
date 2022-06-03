@@ -6,13 +6,13 @@ class Edge(GraphComponent):
 	def __init__(self, source, target):
 		self._source = source
 		self._target = target
-		self._id = "(" + source + ':' + target + ')'
-	
+		self._id = source + ':' + target 
+
 	def get_labels(self):
 		return Edge.available_labels
 
 	def __str__(self):
-		return 'edge' + self._id
+		return self._id
 
 	def __hash__(self):
 		return hash(str(self))

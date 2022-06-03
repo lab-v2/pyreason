@@ -12,7 +12,7 @@ class Node(GraphComponent):
 		return Node.available_labels
 
 	def __str__(self):
-		return f'node({self._id})'
+		return self._id
 
 	def __hash__(self):
 		return hash(str(self))

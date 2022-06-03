@@ -34,7 +34,7 @@ class World:
 		world = []
 		for label in self._world.keys():
 			bnd = self._world[label]
-			world.append((label.get_value(), [bnd.lower, bnd.upper]))
+			world.append((label.get_value(), portion.closed(bnd.lower, bnd.upper)))
 		return world
 
 

@@ -1,9 +1,3 @@
-import portion
-from mancalog.scripts.graph.network_graph import Graph
-from mancalog.scripts.components.node import Node
-from mancalog.scripts.components.edge import Edge
-
-
 class ComponentTarget:
 	
 	def __init__(self, component, label = None, interval = None):
