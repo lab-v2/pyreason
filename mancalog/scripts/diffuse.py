@@ -10,6 +10,7 @@ from mancalog.scripts.components.edge import Edge
 from mancalog.scripts.program.program import Program
 from mancalog.scripts.graph.network_graph import NetworkGraph
 from mancalog.scripts.utils.yaml_parser import YAMLParser
+from mancalog.scripts.utils.filter import Filter
 from mancalog.scripts.utils.output import Output
 
 
@@ -27,7 +28,6 @@ def argparser():
 
 def main(args):
     yaml_parser = YAMLParser()
-    output = Output()
 
     # Read graph & retrieve tmax
     tmax = args.timesteps
@@ -57,6 +57,7 @@ def main(args):
     interpretation = program.diffusion()
 
     # Write output to a pickle file. The output is a list of panda dataframes. The index of the list corresponds to the timestep
+    output = Output()
     output.write(interpretation)
 
     # Comment out the below code if you do not want to print the output
@@ -65,9 +66,8 @@ def main(args):
     edges = output.read('edges')
 
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
-    # t = 0
-    # interval = portion.closed(0.7, 1)
-    # filtered_df = nodes[t].loc[(nodes[t]['success'] <= interval) & (nodes[t]['success'] >= interval)]
+    filterer = Filter()
+    filterer.filter_by_bound(dataframe=nodes[0], label='success', bound=portion.closed(0.7,1))
 
     # The code below will print all the dataframes from each timestep for both edges and nodes
     # for df in nodes:
