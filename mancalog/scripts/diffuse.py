@@ -32,7 +32,6 @@ def main(args):
     # Read graph & retrieve tmax
     tmax = args.timesteps
     graph_data = nx.read_graphml(args.graph_path)
-    print(graph_data['n2825'])
 
     # Take a subgraph of the actual data
     # graph_data = nx.subgraph(graph_data, ['n2825', 'n2625', 'n2989'])
@@ -67,7 +66,8 @@ def main(args):
 
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
     filterer = Filter()
-    filterer.filter_by_bound(dataframe=nodes[0], label='success', bound=portion.closed(0.7,1))
+    filtered_df = filterer.filter_by_bound(dataframe=nodes[0], label='success', bound=portion.closed(0.7,1))
+    print(filtered_df)
 
     # The code below will print all the dataframes from each timestep for both edges and nodes
     # for df in nodes:
