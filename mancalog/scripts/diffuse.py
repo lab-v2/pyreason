@@ -4,6 +4,7 @@ import cProfile
 import pstats
 import networkx as nx
 import portion
+from numba import jit
 
 from mancalog.scripts.components.node import Node
 from mancalog.scripts.components.edge import Edge
@@ -25,7 +26,7 @@ def argparser():
     parser.add_argument("--profile_output", type=str)
     return parser.parse_args()
 
-
+@jit
 def main(args):
     yaml_parser = YAMLParser()
 
