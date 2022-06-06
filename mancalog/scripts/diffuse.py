@@ -26,7 +26,7 @@ def argparser():
     parser.add_argument("--profile_output", type=str)
     return parser.parse_args()
 
-@jit
+jit(target="cuda")
 def main(args):
     yaml_parser = YAMLParser()
 

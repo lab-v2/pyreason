@@ -1,5 +1,4 @@
 from mancalog.scripts.interpretation.interpretation import Interpretation
-import copy
 
 
 class Program:
