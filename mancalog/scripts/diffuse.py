@@ -66,7 +66,7 @@ def main(args):
 
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
     filterer = Filter()
-    filtered_df = filterer.filter_by_bound(dataframe=nodes[0], label='success', bound=portion.closed(0.7,1))
+    filtered_df = filterer.filter_by_bound(dataframe=nodes[args.timesteps-1], label='success', bound=portion.closed(0.7,1))
     print(filtered_df)
 
     # The code below will print all the dataframes from each timestep for both edges and nodes

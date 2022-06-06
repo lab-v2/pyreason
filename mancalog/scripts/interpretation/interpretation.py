@@ -95,6 +95,13 @@ class Interpretation:
 	def _na_update(self, time, comp, na):
 		world = self.interpretations[time][comp]
 		world.update(na[0], na[1])
+
+	def copy(self, interpretation):
+		for t in range(0, self._tmax + 1):
+			for comp in self._net_diff_graph.get_components():
+				labels = comp.get_labels()
+				for label in labels:
+					self._na_update(t, comp, (label, interpretation.get_bound(t, comp, label)))
 		
 
 	def __str__(self):

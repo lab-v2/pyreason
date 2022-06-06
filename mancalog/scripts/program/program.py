@@ -14,15 +14,16 @@ class Program:
 
 	def diffusion(self):
 		self._interp = Interpretation(self._net_diff_graph, self._tmax)
+		old_interp = Interpretation(self._net_diff_graph, self._tmax)
 		for fact in self._facts:
 			self._interp.apply_fact(fact)
 
-		old_interp = copy.deepcopy(self._interp)
+		old_interp.copy(self._interp)
 		self._apply_local_rules()
 
 		#this while will be executed until a fixed point is reached
 		while not old_interp == self._interp:
-			old_interp = copy.deepcopy(self._interp)
+			old_interp.copy(self._interp)
 			self._apply_local_rules()
 
 		#global rules are not necessary for classic MANCaLog , I have used them in a MANCaLog extension

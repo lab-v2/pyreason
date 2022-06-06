@@ -2,10 +2,11 @@
 
 #-------------------------------------------------------------------------
 #SBATCH -N 1                   # number of nodes
-#SBATCH -n 1                   # number of "tasks" (default: allocates 1 core per task)
+#SBATCH -n 32                  # number of "tasks" (default: allocates 1 core per task)
 #SBATCH -t 0-00:02:00          # time in d-hh:mm:ss
-#SBATCH -p serial              # partition 
-#SBATCH -q normal              # QOS
+#SBATCH -p gpu                 # partition 
+#SBATCH -q wildfire            # QOS
+#SBATCH --gres=gpu:2           # number of gpus requested 
 #SBATCH -o ./jobs/slurm.%j.out # file to save job's STDOUT (%j = JobId)
 #SBATCH -e ./jobs/slurm.%j.err # file to save job's STDERR (%j = JobId)
 #SBATCH --mail-type=END,FAIL   # Send an e-mail when a job stops, or fails
@@ -22,7 +23,7 @@ rules_yaml_path=mancalog/examples/example_yamls/rules.yaml
 facts_yaml_path=mancalog/examples/example_yamls/facts.yaml
 labels_yaml_path=mancalog/examples/example_yamls/labels.yaml
 profile=true
-profile_out=agave_1cpu_1core.txt
+profile_out=agave_gpu2_1cpu_32core.txt
 #-------------------------------------------------------------------------
 
 
