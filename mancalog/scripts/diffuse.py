@@ -4,6 +4,7 @@ import cProfile
 import pstats
 import networkx as nx
 import portion
+import cugraph as cnx
 
 from mancalog.scripts.components.node import Node
 from mancalog.scripts.components.edge import Edge
@@ -31,7 +32,7 @@ def main(args):
 
     # Read graph & retrieve tmax
     tmax = args.timesteps
-    graph_data = nx.read_graphml(args.graph_path)
+    graph_data = cnx.read_graphml(args.graph_path)
 
     # Take a subgraph of the actual data
     # graph_data = nx.subgraph(graph_data, ['n2825', 'n2625', 'n2989'])

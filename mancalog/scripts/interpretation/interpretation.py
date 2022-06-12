@@ -41,8 +41,12 @@ class Interpretation:
 			world = self.interpretations[t][fact.get_component()]
 			world.update(fact.get_label(), fact.get_bound())
 
+	def apply_local_rules(self, rules):
+		for t in range(self._tmax + 1):
+			for rule in rules:
+				self._apply_local_rule(rule, t)
 
-	def apply_local_rule(self, rule, t):
+	def _apply_local_rule(self, rule, t):
 		if t <= self._tmax:
 			tDelta = t - rule.get_delta()
 			if (tDelta >= 0):
