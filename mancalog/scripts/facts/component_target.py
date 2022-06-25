@@ -15,4 +15,4 @@ class ComponentTarget:
 		return self._component
 
 	def __str__(self):
-		return str(self._component) + '\n' + str(self._label) + '\n' + str(self._interval)
+		return str(self._component) + '\n' + str(self._label) + '\n' + self._interval.to_str()

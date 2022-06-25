@@ -1,4 +1,5 @@
 import portion
+import mancalog.scripts.interval.interval as interval
 
 
 class World:
@@ -6,7 +7,7 @@ class World:
 	def __init__(self, labels):
 		self._world = {}
 		for label in labels:
-			self._world[label] = portion.closed(0,1)
+			self._world[label] = interval.closed(0, 1)
 
 	def is_satisfied(self, label, interval):
 		result = False
@@ -21,7 +22,7 @@ class World:
 		bwanted = None 
 		
 		current_bnd = self._world[label]
-		new_bnd = current_bnd & interval
+		new_bnd = current_bnd.intersection(interval)
 		self._world[label] = new_bnd
 
 	def get_bound(self, label):
@@ -34,13 +35,13 @@ class World:
 		world = []
 		for label in self._world.keys():
 			bnd = self._world[label]
-			world.append((label.get_value(), portion.closed(bnd.lower, bnd.upper)))
+			world.append((label.get_value(), interval.closed(bnd.lower, bnd.upper)))
 		return world
 
 
 	def __str__(self):
 		result = ''
 		for label in self._world.keys():
-			result = result + label.get_value() + ',' + str(self._world[label]) + '\n'
+			result = result + label.get_value() + ',' + self._world[label].to_str() + '\n'
 
 		return result

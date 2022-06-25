@@ -1,8 +1,8 @@
-from ast import Raise
 import portion
 import yaml
-from mancalog.scripts.facts.fact import Fact
 
+import mancalog.scripts.interval.interval as interval
+from mancalog.scripts.facts.fact import Fact
 from mancalog.scripts.rules.rule import Rule
 from mancalog.scripts.components.node import Node
 from mancalog.scripts.components.label import Label
@@ -28,7 +28,7 @@ class YAMLParser:
             if values['target_criteria'] is not None:
                 target_criteria = []
                 for tc in values['target_criteria']:
-                    target_criteria.append((Label(tc[0]), portion.closed(tc[1], tc[2])))
+                    target_criteria.append((Label(tc[0]), interval.closed(tc[1], tc[2])))
 
             # Set delta t
             delta_t = values['delta_t']
@@ -38,14 +38,14 @@ class YAMLParser:
             if values['neigh_nodes'] is not None:
                 neigh_nodes = []
                 for nn in values['neigh_nodes']:
-                    neigh_nodes.append((Label(nn[0]), portion.closed(nn[1], nn[2])))
+                    neigh_nodes.append((Label(nn[0]), interval.closed(nn[1], nn[2])))
 
             # Set neigh_edges
             neigh_edges = None
             if values['neigh_edges'] is not None:
                 neigh_edges = []
                 for ne in values['neigh_edges']:
-                    neigh_edges.append((Label(ne[0]), portion.closed(ne[1], ne[2])))
+                    neigh_edges.append((Label(ne[0]), interval.closed(ne[1], ne[2])))
 
             # Set influence function
             influence = self._get_influence_function(values['influence'])
@@ -64,7 +64,7 @@ class YAMLParser:
         for _, values in facts_yaml.items():
             node = Node(values['node'])
             label = Label(values['label'])
-            bound = portion.closed(values['bound'][0], values['bound'][1])
+            bound = interval.closed(values['bound'][0], values['bound'][1])
             t_lower = values['t_lower']
             t_upper = values['t_upper']
             fact = Fact(node, label, bound, t_lower, t_upper)

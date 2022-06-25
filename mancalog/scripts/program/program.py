@@ -14,14 +14,15 @@ class Program:
 	def diffusion(self):
 		self._interp = Interpretation(self._net_diff_graph, self._tmax)
 		old_interp = Interpretation(self._net_diff_graph, self._tmax)
-		for fact in self._facts:
-			self._interp.apply_fact(fact)
+		
+		self._interp.apply_facts(self._facts)
 
 		old_interp.copy(self._interp)
 		self._interp.apply_local_rules(self._local_rules)
 
 		#this while will be executed until a fixed point is reached
 		while not old_interp == self._interp:
+			print("hi")
 			old_interp.copy(self._interp)
 			self._interp.apply_local_rules(self._local_rules)
 

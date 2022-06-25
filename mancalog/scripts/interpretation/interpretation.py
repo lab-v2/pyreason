@@ -2,6 +2,7 @@ import portion
 from mancalog.scripts.components.world import World
 from mancalog.scripts.components.node import Node
 from mancalog.scripts.components.edge import Edge
+from numba import jit, prange
 
 
 class Interpretation:
@@ -36,10 +37,16 @@ class Interpretation:
 
 		return result
 
-	def apply_fact(self, fact):
-		for t in range(fact.get_time_lower(), fact.get_time_upper() + 1):
-			world = self.interpretations[t][fact.get_component()]
-			world.update(fact.get_label(), fact.get_bound())
+	def apply_facts(self, facts):
+		self._apply_facts(self.interpretations, facts)
+
+	@staticmethod
+	# @jit(nopython=True, parallel=True)
+	def _apply_facts(interpretations, facts):
+		for i in prange(len(facts)):
+			for t in prange(facts[i].get_time_lower(), facts[i].get_time_upper() + 1):
+				world = interpretations[t][facts[i].get_component()]
+				world.update(facts[i].get_label(), facts[i].get_bound())
 
 	def apply_local_rules(self, rules):
 		for t in range(self._tmax + 1):
@@ -54,8 +61,7 @@ class Interpretation:
 					if (self.are_satisfied(tDelta, n, rule.get_target_criteria())):
 						a = self._get_neighbours(n)
 						b = self._get_qualified_neigh(tDelta, n, rule.get_neigh_nodes(), rule.get_neigh_edges())
-						c = self.interpretations[tDelta]
-						bnd = rule.influence(neigh = a, qualified_neigh = b, nas = c)
+						bnd = rule.influence(neigh = a, qualified_neigh = b)
 						self._na_update(t, n, (rule.get_target(), bnd))
 
 	def apply_global_rule(self, rule, t):

@@ -18,6 +18,6 @@ class Fact(ComponentTarget):
 		net_diff_dict = {}
 		net_diff_dict["component"] = str(self._component)
 		net_diff_dict["label"] = str(self._label)
-		net_diff_dict["confidence"] = str(self._interval)
+		net_diff_dict["confidence"] = self._interval.to_str()
 		net_diff_dict["time"] = '[' + str(self._t_lower) + ',' + str(self._t_upper) + ']'
 		return str(net_diff_dict)

@@ -4,8 +4,8 @@ import cProfile
 import pstats
 import networkx as nx
 import portion
-import cugraph as cnx
 
+import mancalog.scripts.interval.interval as interval
 from mancalog.scripts.components.node import Node
 from mancalog.scripts.components.edge import Edge
 from mancalog.scripts.program.program import Program
@@ -32,7 +32,7 @@ def main(args):
 
     # Read graph & retrieve tmax
     tmax = args.timesteps
-    graph_data = cnx.read_graphml(args.graph_path)
+    graph_data = nx.read_graphml(args.graph_path)
 
     # Take a subgraph of the actual data
     # graph_data = nx.subgraph(graph_data, ['n2825', 'n2625', 'n2989'])
@@ -67,7 +67,7 @@ def main(args):
 
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
     filterer = Filter()
-    filtered_df = filterer.filter_by_bound(dataframe=nodes[args.timesteps-1], label='success', bound=portion.closed(0.7,1))
+    filtered_df = filterer.filter_by_bound(dataframe=nodes[args.timesteps-1], label='success', bound=interval.closed(0.7,1))
     print(filtered_df)
 
     # The code below will print all the dataframes from each timestep for both edges and nodes
