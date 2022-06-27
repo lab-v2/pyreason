@@ -26,6 +26,6 @@ class Rule:
 	def get_inf(self):
 		return self._inf
 	
-	def influence(self, neigh, qualified_neigh, nas):
-		return self._inf.influence(neigh, qualified_neigh, nas)
+	def influence(self, neigh, qualified_neigh):
+		return self._inf.influence(neigh, qualified_neigh)
 
