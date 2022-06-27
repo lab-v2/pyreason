@@ -1,4 +1,3 @@
-import portion
 import mancalog.scripts.interval.interval as interval
 from mancalog.scripts.influence_functions.abstract_influentce_function import AbstractInfluenceFunction
 

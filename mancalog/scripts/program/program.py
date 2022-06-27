@@ -22,7 +22,6 @@ class Program:
 
 		#this while will be executed until a fixed point is reached
 		while not old_interp == self._interp:
-			print("hi")
 			old_interp.copy(self._interp)
 			self._interp.apply_local_rules(self._local_rules)
 

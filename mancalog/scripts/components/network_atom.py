@@ -1,6 +1,3 @@
-import portion
-
-
 class NetworkAtom:
 	
 	def __init__(self, label, interval):

@@ -1,4 +1,3 @@
-import portion
 import mancalog.scripts.interval.interval as interval
 
 

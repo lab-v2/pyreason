@@ -3,7 +3,6 @@ import argparse
 import cProfile
 import pstats
 import networkx as nx
-import portion
 
 import mancalog.scripts.interval.interval as interval
 from mancalog.scripts.components.node import Node
