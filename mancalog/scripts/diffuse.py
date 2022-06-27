@@ -57,18 +57,18 @@ def main(args):
     interpretation = program.diffusion()
 
     # Write output to a pickle file. The output is a list of panda dataframes. The index of the list corresponds to the timestep
-    # output = Output()
-    # output.write(interpretation)
+    output = Output()
+    output.write(interpretation)
 
     # Comment out the below code if you do not want to print the output
     # Read the pickle file, and print the dataframes for each timestep
-    # nodes = output.read('nodes')
-    # edges = output.read('edges')
+    nodes = output.read('nodes')
+    edges = output.read('edges')
 
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
-    # filterer = Filter()
-    # filtered_df = filterer.filter_by_bound(dataframe=nodes[args.timesteps-1], label='success', bound=interval.closed(0.7,1))
-    # print(filtered_df)
+    filterer = Filter()
+    filtered_df = filterer.filter_by_bound(dataframe=nodes[args.timesteps-1], label='success', bound=interval.closed(0.7,1))
+    print(filtered_df)
 
     # The code below will print all the dataframes from each timestep for both edges and nodes
     # for df in nodes:

@@ -40,18 +40,44 @@ class Interval:
 	def __repr__(self):
 		return self.to_str()
 
+	def __lt__(self, other):
+		if self.upper < other.lower:
+			return True
+		else:
+			return False
+
+	def __le__(self, other):
+		if self.upper <= other.upper:
+			return True
+		else:
+			return False
+
+	def __gt__(self, other):
+		if self.lower > other.upper:
+			return True
+		else:
+			return False
+
+	def __ge__(self, other):
+		if self.lower >= other.lower:
+			return True
+		else:
+			return False
+
+
+
 
 def closed(lower, upper):
 	return Interval('[', lower, upper, ']')
 
 
-def open(lower, upper):
-	return Interval('(', lower, upper, ')')
+# def open(lower, upper):
+# 	return Interval('(', lower, upper, ')')
 
 
-def closedopen(lower, upper):
-	return Interval('[', lower, upper, ')')
+# def closedopen(lower, upper):
+# 	return Interval('[', lower, upper, ')')
 
 
-def openclosed(lower, upper):
-	return Interval('(', lower, upper, ']')
+# def openclosed(lower, upper):
+# 	return Interval('(', lower, upper, ']')
