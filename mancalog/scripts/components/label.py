@@ -1,7 +1,4 @@
-from abc import ABC
-
-
-class Label(ABC):
+class Label:
 	
 	def __init__(self, value):
 		self._value = value

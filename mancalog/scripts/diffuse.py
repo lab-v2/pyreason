@@ -26,12 +26,12 @@ def argparser():
     return parser.parse_args()
 
 
-def main(args):
+def main(args, graph_data):
     yaml_parser = YAMLParser()
 
     # Read graph & retrieve tmax
     tmax = args.timesteps
-    graph_data = nx.read_graphml(args.graph_path)
+    # graph_data = nx.read_graphml(args.graph_path)
 
     # Take a subgraph of the actual data
     # graph_data = nx.subgraph(graph_data, ['n2825', 'n2625', 'n2989'])
@@ -53,7 +53,11 @@ def main(args):
     program = Program(graph, tmax, facts, rules)
 
     # Diffusion process
+    import time
+    start = time.time()
     interpretation = program.diffusion()
+    end = time.time()
+    print(end-start)
 
     # Write output to a pickle file. The output is a list of panda dataframes. The index of the list corresponds to the timestep
     output = Output()
@@ -79,10 +83,15 @@ def main(args):
 
 if __name__ == "__main__":
     args = argparser()
+    import random
+    sampled_graph = nx.read_graphml(args.graph_path)
+    # sampled_nodes = random.sample(list(graph_data.nodes), 10000)
+    # sampled_graph = graph_data.subgraph(sampled_nodes+['n2825'])
+
     if args.profile:
         profiler = cProfile.Profile()
         profiler.enable()
-        main(args)
+        main(args, sampled_graph)
         profiler.disable()
         s = io.StringIO()
         stats = pstats.Stats(profiler, stream=s).sort_stats('tottime')
@@ -91,4 +100,4 @@ if __name__ == "__main__":
             f.write(s.getvalue())
 
     else:
-        main(args)
+        main(args, sampled_graph)
