@@ -31,15 +31,15 @@ class Node:
 
     def get_type(self):
         return 'node'
+		
+    def __eq__(self, node):
+        result = False
+        if isinstance(self, type(node)):
+            result = self is node
 
-	# def __eq__(self, node):
-	# 	result = False
-	# 	if isinstance(self, type(node)):
-	# 		result = self is node
+            result = result or (self._id == node.get_id())
 
-	# 		result = result or (self._id == node.get_id())
-
-	# 	return result
+        return result
 
 
 # Create new numba type
@@ -70,13 +70,13 @@ def type_node(context):
 class NodeModel(models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [
-            ('_id', types.string)
+            ('id', types.string)
             ]
         models.StructModel.__init__(self, dmm, fe_type, members)
 
 
 # Expose datamodel attributes
-make_attribute_wrapper(NodeType, '_id', '_id')
+make_attribute_wrapper(NodeType, 'id', 'id')
 
 # Implement constructor
 @lower_builtin(Node, types.string)
@@ -84,45 +84,51 @@ def impl_node(context, builder, sig, args):
     typ = sig.return_type
     _id = args[0]
     node = cgutils.create_struct_proxy(typ)(context, builder)
-    node._id = _id
+    node.id = _id
     return node._getvalue()
 
 # Expose properties
 @overload_method(NodeType, "get_id")
 def get_id(node):
     def getter(node):
-        return node._id
+        return node.id
     return getter
 
 
 
 # Tell numba how to make native
 
-
 # Return class values from numba functions
-# @unbox(NodeType)
-# def unbox_interval(typ, obj, c):
-#     """
-#     Convert a Interval object to a native interval structure.
-#     """
-#     id_obj = c.pyapi.object_getattr_string(obj, "id")
-#     node = cgutils.create_struct_proxy(typ)(c.context, c.builder)
-#     node.id = c.pyapi.string_as_string(id_obj)
-#     c.pyapi.decref(id_obj)
-#     is_error = cgutils.is_not_null(c.builder, c.pyapi.err_occurred())
-#     return NativeValue(node._getvalue(), is_error=is_error)
+@unbox(NodeType)
+def unbox_interval(typ, obj, c):
+    """
+    Convert a Node object to a native node structure.
+    """
+    ok, data, length, kind, is_ascii, hashv = c.pyapi.string_as_string_size_and_kind(obj)
+    node = cgutils.create_struct_proxy(typ)(c.context, c.builder)
+    node.id.data = data
+    node.id.length = length
+    node.id.kind = kind
+    node.id.is_ascii = is_ascii
+    node.id.hash = hashv
+    node.id.meminfo = c.pyapi.nrt_meminfo_new_from_pyobject(
+        data,  # the borrowed data pointer
+        obj,   # the owner pyobject; the call will incref it.
+    )
+    node.id.parent = obj
 
-# @unbox(NodeType)
-# def unbox_interval(typ, obj, c):
-#     """
-#     Convert a Interval object to a native interval structure.
-#     """
-#     id_obj = c.pyapi.object_getattr_string(obj, "_id")
-#     node = cgutils.create_struct_proxy(typ)(c.context, c.builder)
-#     node._id = c.pyapi.string_as_string(id_obj)
-#     c.pyapi.decref(id_obj)
-#     is_error = cgutils.is_not_null(c.builder, c.pyapi.err_occurred())
-#     return NativeValue(node._getvalue(), is_error=is_error)
+    
+
+    is_error = cgutils.is_not_null(c.builder, c.pyapi.err_occurred())
+    return NativeValue(node._getvalue(), is_error=is_error)
+    # id_obj = c.pyapi.object_getattr_string(obj, "id")
+    # node = cgutils.create_struct_proxy(typ)(c.context, c.builder)
+    # node.id = c.pyapi.string_as_string(id_obj)
+    # c.pyapi.decref(id_obj)
+    # is_error = cgutils.is_not_null(c.builder, c.pyapi.err_occurred())
+    # return NativeValue(node._getvalue(), is_error=is_error)
+
+
 
 # @box(NodeType)
 # def box_interval(typ, val, c):
@@ -141,9 +147,7 @@ from numba import jit
 
 
 @jit(nopython=True)
-def f():
-    n = Node('abc')
-    
-    return n._id
+def f(n):
+    return n.id
 
-print(f())
+print(f(Node('abc')))

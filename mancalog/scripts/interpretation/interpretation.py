@@ -1,5 +1,3 @@
-from numpy import block
-from torch import mul
 from mancalog.scripts.components.world import World
 from mancalog.scripts.components.node import Node
 from mancalog.scripts.components.edge import Edge

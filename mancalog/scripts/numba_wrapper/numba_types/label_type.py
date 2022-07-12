@@ -16,6 +16,9 @@ class Label:
 	def __hash__(self):
 		return hash(str(self))
 
+	def test(self, array):
+		return array[0].value
+
 
 from numba import types
 from numba.extending import typeof_impl
@@ -89,12 +92,20 @@ def __str__(label):
         return label.value
     return getter
 
+@overload_method(LabelType, "test")
+def test(array):
+	def getter(array):
+		return array[0].value
+	return getter
+
 
 # Test
-from numba import jit
+from numba import jit, typeof
+import numpy as np
 @jit(nopython=True)
 def f():
-    n = Label('abc')
-    return n.get_value()
+	n = Label('abc')
+	a = [n]
+	return n.test(a)
 
 print(f())
