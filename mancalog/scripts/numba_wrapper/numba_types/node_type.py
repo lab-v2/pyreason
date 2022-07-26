@@ -1,16 +1,3 @@
-from numba import types
-from numba.extending import typeof_impl
-from numba.extending import type_callable
-from numba.extending import models, register_model
-from numba.extending import make_attribute_wrapper
-from numba.extending import overload_method
-from numba.extending import lower_builtin
-from numba.core import cgutils
-from numba.extending import unbox, NativeValue, box
-from numba import njit
-# from numba import cuda
-
-
 class Node:
     available_labels = []
     
@@ -40,6 +27,18 @@ class Node:
             result = result or (self._id == node.get_id())
 
         return result
+
+
+import operator
+from numba import types
+from numba.extending import typeof_impl
+from numba.extending import type_callable
+from numba.extending import models, register_model
+from numba.extending import make_attribute_wrapper
+from numba.extending import overload_method, overload
+from numba.extending import lower_builtin
+from numba.core import cgutils
+from numba.extending import unbox, NativeValue, box
 
 
 # Create new numba type
@@ -94,60 +93,51 @@ def get_id(node):
         return node.id
     return getter
 
+@overload(operator.eq)
+def node_eq(node_1, node_2):
+	if isinstance(node_1, NodeType) and isinstance(node_2, NodeType):
+		def impl(node_1, node_2):
+			if node_1.id == node_2.id:
+				return True
+			else:
+				return False 
+		return impl
+
+@overload(hash)
+def node_hash(node):
+	def impl(node):
+		return hash(node.id)
+	return impl
 
 
 # Tell numba how to make native
-
-# Return class values from numba functions
 @unbox(NodeType)
-def unbox_interval(typ, obj, c):
-    """
-    Convert a Node object to a native node structure.
-    """
-    ok, data, length, kind, is_ascii, hashv = c.pyapi.string_as_string_size_and_kind(obj)
+def unbox_node(typ, obj, c):
+    id_obj = c.pyapi.object_getattr_string(obj, "_id")
     node = cgutils.create_struct_proxy(typ)(c.context, c.builder)
-    node.id.data = data
-    node.id.length = length
-    node.id.kind = kind
-    node.id.is_ascii = is_ascii
-    node.id.hash = hashv
-    node.id.meminfo = c.pyapi.nrt_meminfo_new_from_pyobject(
-        data,  # the borrowed data pointer
-        obj,   # the owner pyobject; the call will incref it.
-    )
-    node.id.parent = obj
-
-    
-
+    node.id = c.unbox(types.string, id_obj).value
+    c.pyapi.decref(id_obj)
     is_error = cgutils.is_not_null(c.builder, c.pyapi.err_occurred())
     return NativeValue(node._getvalue(), is_error=is_error)
-    # id_obj = c.pyapi.object_getattr_string(obj, "id")
-    # node = cgutils.create_struct_proxy(typ)(c.context, c.builder)
-    # node.id = c.pyapi.string_as_string(id_obj)
-    # c.pyapi.decref(id_obj)
-    # is_error = cgutils.is_not_null(c.builder, c.pyapi.err_occurred())
-    # return NativeValue(node._getvalue(), is_error=is_error)
 
 
 
-# @box(NodeType)
-# def box_interval(typ, val, c):
-#     """
-#     Convert a native interval structure to an Interval object.
-#     """
-#     node = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
-#     id_obj = c.pyapi.string_from_string(node._id)
-#     class_obj = c.pyapi.unserialize(c.pyapi.serialize_object(Node))
-#     res = c.pyapi.call_function_objargs(class_obj, (id_obj))
-#     c.pyapi.decref(id_obj)
-#     c.pyapi.decref(class_obj)
-#     return res
-
-from numba import jit
+@box(NodeType)
+def box_node(typ, val, c):
+    node = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
+    class_obj = c.pyapi.unserialize(c.pyapi.serialize_object(Node))
+    id_obj = c.box(types.string, node.id)
+    res = c.pyapi.call_function_objargs(class_obj, (id_obj,))
+    c.pyapi.decref(id_obj)
+    c.pyapi.decref(class_obj)
+    return res
 
 
-@jit(nopython=True)
-def f(n):
-    return n.id
+# TEST
+# import numba
+# @numba.njit
+# def f(n):
+#     a = Node('abc')
+#     return n
 
-print(f(Node('abc')))
+# print(f(Node('abc'))._id)

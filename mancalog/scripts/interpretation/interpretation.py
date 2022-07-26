@@ -2,7 +2,6 @@ from mancalog.scripts.components.world import World
 from mancalog.scripts.components.node import Node
 from mancalog.scripts.components.edge import Edge
 # from numba import jit, prange
-import multiprocessing
 import itertools
 
 
@@ -10,7 +9,6 @@ import itertools
 class Interpretation:
 
 	def __init__(self, net_diff_graph, tmax = 1):
-		self.pool = multiprocessing.Pool(multiprocessing.cpu_count()-3)
 		self.interpretations = []
 		self._tmax = tmax
 		self._net_diff_graph = net_diff_graph
@@ -58,16 +56,6 @@ class Interpretation:
 
 
 	def apply_facts(self, facts):
-		# Parallelized
-		# param_list = []
-		# for fact in facts:
-		# 	param_list += [*zip(itertools.repeat(self.interpretations, fact.get_time_upper()+1-fact.get_time_lower()), itertools.repeat(fact, fact.get_time_upper()+1-fact.get_time_lower()), list(range(fact.get_time_lower(), fact.get_time_upper() + 1)))]
-		# interpretation = self.pool.starmap(self._apply_fact_stat, param_list)
-		# self.interpretations = interpretation[0]
-		# self.pool.close()
-		# self.pool.join()
-
-		# Non parallelized
 		param_list = []
 		for fact in facts:
 			param_list += [*zip(itertools.repeat(fact, fact.get_time_upper()+1-fact.get_time_lower()), list(range(fact.get_time_lower(), fact.get_time_upper() + 1)))]
@@ -85,32 +73,15 @@ class Interpretation:
 		return interpretations
 
 	def apply_local_rules(self, rules):
-		# Non parallelized
-		# for t in range(self._tmax + 1):
-		# 	param_list = []
-		# 	nodes = self._net_diff_graph.get_nodes()
-		# 	param_list = list(itertools.product(rules, [t], nodes))
-		# 	for param in param_list:
-		# 		self._apply_local_rule(*param)
-		# 	# for rule in rules:
-		# 	# 	self._apply_local_rule(rule, t)
-
-		# Parallelized
-		pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
-		for t in range(self._tmax+1):
+		for t in range(self._tmax + 1):
 			param_list = []
 			nodes = self._net_diff_graph.get_nodes()
-			param_list = list(itertools.product([self.interpretations], [self._net_diff_graph], rules, [t], nodes))
-			print(len(param_list))
-			interpretations = self.pool.starmap(self._apply_local_rule_stat, param_list)
+			param_list = list(itertools.product(rules, [t], nodes))
+			for param in param_list:
+				self._apply_local_rule(*param)
+			# for rule in rules:
+			# 	self._apply_local_rule(rule, t)
 
-			print(type(interpretations[0]))
-			self.interpretations = interpretations[0]
-			print(type(self.interpretations))
-		# self.pool.close()
-		# self.pool.join()
-		# pool.close()
-		# pool.join()
 
 
 	def _apply_local_rule(self, rule, t, n):
@@ -123,15 +94,21 @@ class Interpretation:
 				self._na_update(t, n, (rule.get_target(), bnd))
 
 	@staticmethod
-	def _apply_local_rule_stat(interpretations, graph, rule, t, node):
-		tDelta = t - rule.get_delta()
-		if (tDelta >= 0):
-			if Interpretation.are_satisfied_stat(interpretations, tDelta, node, rule.get_target_criteria()):
-				a = Interpretation._get_neighbours_stat(graph, node)
-				b = Interpretation._get_qualified_neigh_stat(interpretations, graph, tDelta, node, rule.get_neigh_nodes(), rule.get_neigh_edges())
-				bnd = rule.influence(neigh=a, qualified_neigh=b)
-				new_interpretations = Interpretation._na_update_stat(interpretations, t, node, (rule.get_target(), bnd))
-		return interpretations
+	def _apply_local_rule_stat(interpretations, tmax, rules, nodes):
+		for t in range(tmax+1):
+			for rule in rules:
+				tDelta = t - rule.get_delta()
+				if (tDelta >= 0):
+					for node in nodes:
+						if Interpretation.are_satisfied_stat(interpretations, tDelta, node, rule.get_target_criteria()):
+		# tDelta = t - rule.get_delta()
+		# if (tDelta >= 0):
+		# 	if Interpretation.are_satisfied_stat(interpretations, tDelta, node, rule.get_target_criteria()):
+		# 		a = Interpretation._get_neighbours_stat(graph, node)
+		# 		b = Interpretation._get_qualified_neigh_stat(interpretations, graph, tDelta, node, rule.get_neigh_nodes(), rule.get_neigh_edges())
+		# 		bnd = rule.influence(neigh=a, qualified_neigh=b)
+		# 		new_interpretations = Interpretation._na_update_stat(interpretations, t, node, (rule.get_target(), bnd))
+		# return interpretations
 
 	def apply_global_rule(self, rule, t):
 		bounds = []

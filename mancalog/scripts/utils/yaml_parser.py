@@ -1,6 +1,8 @@
 import yaml
+import numba
 
-import mancalog.scripts.interval.interval as interval
+# import mancalog.scripts.interval.interval as interval
+import mancalog.scripts.numba_wrapper.numba_types.interval_type as interval
 from mancalog.scripts.facts.fact import Fact
 from mancalog.scripts.rules.rule import Rule
 from mancalog.scripts.components.node import Node
@@ -16,7 +18,7 @@ class YAMLParser:
         with open(path, 'r') as file:
             rules_yaml = yaml.safe_load(file)
 
-        rules = []
+        rules = numba.typed.List()
         for _, values in rules_yaml.items():
 
             # Set rule target
