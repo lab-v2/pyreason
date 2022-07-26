@@ -81,17 +81,13 @@ class Interpretation:
 
 	def _get_qualified_neigh(self, time, node, nc_node = None, nc_edge = None):
 		result = []
-		candidatos = self._get_neighbours(node)
+		candidates = self._get_neighbours(node)
 		if(nc_node != None):
-			for n in candidatos:
-				if(not self.are_satisfied(time, n, nc_node)):
-					candidatos.remove(n)
+			candidates[:] = (n for n in candidates if self.are_satisfied(time, n, nc_node))
 		if(nc_edge != None):
-			for n in candidatos:
-				if(not self.are_satisfied(time, Edge(n.get_id(), node.get_id()), nc_edge)):
-					candidatos.remove(n)
+			candidates[:] = (n for n in candidates if self.are_satisfied(time, Edge(n.get_id(), node.get_id()), nc_edge))
 
-		result = candidatos
+		result = candidates
 
 		return result
 

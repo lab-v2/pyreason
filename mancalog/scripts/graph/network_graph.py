@@ -60,7 +60,7 @@ class NetworkGraph(GraphComponent, DiGraph):
 		net_diff_node1 = Node(edge[0])
 		net_diff_node2 = Node(edge[1])
 		net_diff_edge = Edge(edge[0], edge[1])
-		super().add_edges_from([(net_diff_node1, net_diff_node2, {"net_diff_edge": net_diff_edge})])
+		super().add_edges_from([(net_diff_node2, net_diff_node1, {"net_diff_edge": net_diff_edge})])
 
 	def get_id(self):
 		return self._id
