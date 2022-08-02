@@ -1,72 +1,72 @@
 class Interval:
-	"""
-	No support for open, closedopen, openclosed
-	"""
-	def __init__(self, left, lower, upper, right):
-		self._lower = lower
-		self._upper = upper
-		self._left = left
-		self._right = right
-		# self.name = hash(f'{self._left}{self._lower},{self._upper}{self._right}')
+    """
+    No support for open, closedopen, openclosed
+    """
+    def __init__(self, left, lower, upper, right):
+        self._lower = lower
+        self._upper = upper
+        self._left = left
+        self._right = right
+        # self.name = hash(f'{self._left}{self._lower},{self._upper}{self._right}')
 
-	@property
-	def lower(self):
-		return self._lower
+    @property
+    def lower(self):
+        return self._lower
 
-	@property
-	def upper(self):
-		return self._upper
+    @property
+    def upper(self):
+        return self._upper
 
-	def to_str(self):
-		interval = f'{self._left}{self._lower},{self._upper}{self._right}'
-		return interval
+    def to_str(self):
+        interval = f'{self._left}{self._lower},{self._upper}{self._right}'
+        return interval
 
-	def intersection(self, interval):
-		lower = max(self._lower, interval.lower)
-		upper = min(self._upper, interval.upper)
-		return Interval('[', lower, upper, ']')
+    def intersection(self, interval):
+        lower = max(self._lower, interval.lower)
+        upper = min(self._upper, interval.upper)
+        return Interval('[', lower, upper, ']')
 
-	def __hash__(self):
-		return hash(self.to_str())
+    def __hash__(self):
+        return hash(self.to_str())
 
-	def __contains__(self, item):
-		if self._lower <= item.lower and self._upper >= item.upper:
-			return True
-		else:
-			return False
+    def __contains__(self, item):
+        if self._lower <= item.lower and self._upper >= item.upper:
+            return True
+        else:
+            return False
 
-	def __eq__(self, interval):
-		if self.lower == interval.lower and self.upper == interval.upper:
-			return True
-		else:
-			return False
+    def __eq__(self, interval):
+        if self.lower == interval.lower and self.upper == interval.upper:
+            return True
+        else:
+            return False
 
-	def __repr__(self):
-		return self.to_str()
+    def __repr__(self):
+        return self.to_str()
 
-	def __lt__(self, other):
-		if self.upper < other.lower:
-			return True
-		else:
-			return False
+    def __lt__(self, other):
+        if self.upper < other.lower:
+            return True
+        else:
+            return False
 
-	def __le__(self, other):
-		if self.upper <= other.upper:
-			return True
-		else:
-			return False
+    def __le__(self, other):
+        if self.upper <= other.upper:
+            return True
+        else:
+            return False
 
-	def __gt__(self, other):
-		if self.lower > other.upper:
-			return True
-		else:
-			return False
+    def __gt__(self, other):
+        if self.lower > other.upper:
+            return True
+        else:
+            return False
 
-	def __ge__(self, other):
-		if self.lower >= other.lower:
-			return True
-		else:
-			return False
+    def __ge__(self, other):
+        if self.lower >= other.lower:
+            return True
+        else:
+            return False
 
 
 
@@ -144,14 +144,14 @@ make_attribute_wrapper(IntervalType, 'right', 'right')
 # Implement constructor
 @lower_builtin(Interval, types.UnicodeType, types.Float, types.Float, types.UnicodeType)
 def impl_node(context, builder, sig, args):
-	typ = sig.return_type
-	left, low, up, right = args
-	interval = cgutils.create_struct_proxy(typ)(context, builder)
-	interval.low = low
-	interval.up = up
-	interval.left = left
-	interval.right = right
-	return interval._getvalue()
+    typ = sig.return_type
+    left, low, up, right = args
+    interval = cgutils.create_struct_proxy(typ)(context, builder)
+    interval.low = low
+    interval.up = up
+    interval.left = left
+    interval.right = right
+    return interval._getvalue()
 
 # Expose properties
 @overload_attribute(IntervalType, "lower")
@@ -166,22 +166,45 @@ def get_upper(interval):
         return interval.up
     return getter
 
+@overload_method(IntervalType, 'intersection')
+def intersection(interval_1, interval_2):
+    def impl(interval_1, interval_2):
+        lower = max(interval_1.lower, interval_2.lower)
+        upper = min(interval_1.upper, interval_2.upper)
+        return Interval('[', lower, upper, ']')
+    return impl
+
+# @overload_method(IntervalType, 'to_str')
+# def to_str(interval):
+#     def impl(interval):
+#         return f'{interval.left}{interval.lower},{interval.upper}{interval.right}'
+#     return impl
+
 
 @overload(operator.eq)
 def interval_eq(interval_1, interval_2):
-	if isinstance(interval_1, IntervalType) and isinstance(interval_2, IntervalType):
-		def impl(interval_1, interval_2):
-			if interval_1.lower == interval_2.lower and interval_1.upper == interval_2.upper:
-				return True
-			else:
-				return False 
-		return impl
+    if isinstance(interval_1, IntervalType) and isinstance(interval_2, IntervalType):
+        def impl(interval_1, interval_2):
+            if interval_1.lower == interval_2.lower and interval_1.upper == interval_2.upper:
+                return True
+            else:
+                return False 
+        return impl
 
 @overload(hash)
 def interval_hash(interval):
-	def impl(interval):
-		return hash((interval.left, interval.low, interval.up, interval.right))
-	return impl
+    def impl(interval):
+        return hash((interval.left, interval.low, interval.up, interval.right))
+    return impl
+
+@overload(operator.contains)
+def interval_contains(interval_1, interval_2):
+    def impl(interval_1, interval_2):
+        if interval_1.lower <= interval_2.lower and interval_1.upper >= interval_2.upper:
+            return True
+        else:
+            return False
+    return impl
 
 
 
@@ -224,15 +247,16 @@ def box_node(typ, val, c):
     return res
 
 
-import numba
+from numba import njit
 
-@numba.njit
+@njit
 def closed(lower, upper):
-	return Interval('[', lower, upper, ']')
+    return Interval('[', lower, upper, ']')
 
 
 # @numba.njit
 # def f(a):
-#     return a
+#     b = closed(1.5, 2.1)
+#     return a.intersection(b)
 
 # print(f(closed(1.0,2.0)))

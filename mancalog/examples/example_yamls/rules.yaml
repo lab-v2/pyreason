@@ -10,12 +10,12 @@ rule_1:
 
     target_criteria:    # List of all target criteria
         # All criteria come here in the form [label, lower_bound, upper_bound]
-        - [success, 0, 1]
+        - [success, 0.0, 1.0]
 
     delta_t: 1          # Delta t, time when this rule is applicable
 
     neigh_nodes:        # List of all neighbour nodes
-        - [success, 0.5, 1]
+        - [success, 0.5, 1.0]
 
     neigh_edges:        # List of all neighbour edges (null for None)
         null
@@ -26,10 +26,10 @@ rule_1:
 rule_2:
     target: failure
     target_criteria:
-        - [failure, 0, 1]
+        - [failure, 0.0, 1.0]
     delta_t: 1
     neigh_nodes:
-        - [failure, 0.5, 1]
+        - [failure, 0.5, 1.0]
     neigh_edges: null
     influence: sft_tp
 

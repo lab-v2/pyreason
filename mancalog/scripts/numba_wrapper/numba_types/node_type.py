@@ -1,3 +1,6 @@
+import mancalog.scripts.numba_wrapper.numba_types.world_type as world
+
+
 class Node:
     available_labels = []
     
@@ -18,7 +21,10 @@ class Node:
 
     def get_type(self):
         return 'node'
-		
+
+    def get_initial_world(self):
+        return world.World(self.get_labels())
+        
     def __eq__(self, node):
         result = False
         if isinstance(self, type(node)):
@@ -93,21 +99,28 @@ def get_id(node):
         return node.id
     return getter
 
+@overload_method(NodeType, "get_initial_world")
+def get_initial_world(node, labels):
+    def impl(node, labels):
+        return world.World(labels)
+    return impl
+
+
 @overload(operator.eq)
 def node_eq(node_1, node_2):
-	if isinstance(node_1, NodeType) and isinstance(node_2, NodeType):
-		def impl(node_1, node_2):
-			if node_1.id == node_2.id:
-				return True
-			else:
-				return False 
-		return impl
+    if isinstance(node_1, NodeType) and isinstance(node_2, NodeType):
+        def impl(node_1, node_2):
+            if node_1.id == node_2.id:
+                return True
+            else:
+                return False 
+        return impl
 
 @overload(hash)
 def node_hash(node):
-	def impl(node):
-		return hash(node.id)
-	return impl
+    def impl(node):
+        return hash(node.id)
+    return impl
 
 
 # Tell numba how to make native
@@ -135,9 +148,21 @@ def box_node(typ, val, c):
 
 # TEST
 # import numba
+# import label_type as label
+# import interval_type as interval
 # @numba.njit
 # def f(n):
 #     a = Node('abc')
+#     a.get_labels()
 #     return n
 
-# print(f(Node('abc'))._id)
+# f(1)
+
+# # print(f(Node('abc'))._id)
+# tuple_type = types.Tuple((label.label_type, interval.interval_type))
+# d = numba.typed.Dict.empty(key_type=types.string, value_type=tuple_type)
+# i = interval.closed(0.0, 1.0)
+# l = label.Label('a')
+
+# d['a'] = (l, i)
+# print(d)

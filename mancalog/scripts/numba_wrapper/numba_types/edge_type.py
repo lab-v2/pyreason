@@ -1,3 +1,6 @@
+import mancalog.scripts.numba_wrapper.numba_types.world_type as world
+
+
 class Edge:
     available_labels = []
     
@@ -26,6 +29,9 @@ class Edge:
 
     def get_type(self):
         return 'edge'
+
+    def get_initial_world(self):
+        return world.World(self.get_labels())
         
     def __eq__(self, edge):
         result = False
@@ -92,11 +98,20 @@ make_attribute_wrapper(EdgeType, 'id', 'id')
 # Implement constructor
 @lower_builtin(Edge, types.string, types.string)
 def impl_edge(context, builder, sig, args):
-    typ = sig.return_type
-    source, target = args
-    edge = cgutils.create_struct_proxy(typ)(context, builder)
-    edge.source = source
-    edge.target = target
+    def make_id(source, target):
+        edge = Edge(source, target)
+        # edge.source = source
+        # edge.target = target
+        edge.id = f'{source}:{target}'
+        return edge
+
+    # typ = sig.return_type
+    # source, target = args
+    # edge = cgutils.create_struct_proxy(typ)(context, builder)
+    # edge.source = source
+    # edge.target = target
+    # edge.id = builder.fadd(edge.source, edge.target)
+    edge = context.compile_internal(builder, make_id, sig, args)
     # edge.id = str(edge.source) + str(edge.target)
     return edge._getvalue()
 
@@ -106,6 +121,12 @@ def get_id(edge):
     def getter(edge):
         return edge.id
     return getter
+
+@overload_method(EdgeType, "get_initial_world")
+def get_initial_world(edge, labels):
+    def impl(edge, labels):
+        return world.World(labels)
+    return impl
 
 
 @overload(operator.eq)
@@ -157,10 +178,10 @@ def box_edge(typ, val, c):
 
 
 # TEST
-import numba
-@numba.njit
-def f(n):
-    a = Edge('abc', 'a')
-    return a.id
+# import numba
+# @numba.njit
+# def f(n):
+#     a = Edge('abc', 'a')
+#     return a.id
 
-print(f(Edge('abc', 'a')))
+# print(f(Edge('abc', 'a')))

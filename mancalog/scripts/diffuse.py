@@ -51,6 +51,8 @@ def main(args, graph_data):
 
     # Program comes here
     program = Program(graph, tmax, facts, rules)
+    program.available_labels_node = labels
+    program.available_labels_edge = []
 
     # Diffusion process
     import time
@@ -67,11 +69,13 @@ def main(args, graph_data):
     # Read the pickle file, and print the dataframes for each timestep
     nodes = output.read('nodes')
     edges = output.read('edges')
+    # for i in range(args.timesteps):
+    #     print(nodes[i])
 
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
     filterer = Filter()
     filtered_df = filterer.filter_by_bound(dataframe=nodes[args.timesteps-1], label='success', bound=interval.closed(0.7,1))
-    print(filtered_df)
+    # print(filtered_df)
 
     # The code below will print all the dataframes from each timestep for both edges and nodes
     # for df in nodes:
