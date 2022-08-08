@@ -6,8 +6,9 @@ import mancalog.scripts.numba_wrapper.numba_types.interval_type as interval
 import mancalog.scripts.numba_wrapper.numba_types.label_type as label
 import mancalog.scripts.numba_wrapper.numba_types.node_type as node
 import mancalog.scripts.numba_wrapper.numba_types.rule_type as rule
+import mancalog.scripts.numba_wrapper.numba_types.fact_type as fact
 
-from mancalog.scripts.facts.fact import Fact
+# from mancalog.scripts.facts.fact import Fact
 # from mancalog.scripts.rules.rule import Rule
 # from mancalog.scripts.components.node import Node
 # from mancalog.scripts.components.label import Label
@@ -66,15 +67,15 @@ class YAMLParser:
         with open(path, 'r') as file:
             facts_yaml = yaml.safe_load(file)
 
-        facts = []
+        facts = numba.typed.List()
         for _, values in facts_yaml.items():
             n = node.Node(values['node'])
             l = label.Label(values['label'])
             bound = interval.closed(values['bound'][0], values['bound'][1])
             t_lower = values['t_lower']
             t_upper = values['t_upper']
-            fact = Fact(n, l, bound, t_lower, t_upper)
-            facts.append(fact)
+            f = fact.Fact(n, l, bound, t_lower, t_upper)
+            facts.append(f)
 
         return facts
 

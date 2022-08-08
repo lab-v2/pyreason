@@ -10,7 +10,7 @@ import mancalog.scripts.numba_wrapper.numba_types.label_type as label
 class World:
     
     def __init__(self, labels):
-        self.labels = labels
+        self._labels = labels
         self._world = numba.typed.Dict.empty(key_type=label.label_type, value_type=interval.interval_type)
         for l in labels:
             self._world[l] = interval.closed(0.0, 1.0)
@@ -50,15 +50,14 @@ class World:
         return world
 
 
-    def __str__(self):
-        result = ''
-        for label in self._world.keys():
-            result = result + label.get_value() + ',' + self._world[label].to_str() + '\n'
+    # def __str__(self):
+    #     result = ''
+    #     for label in self._world.keys():
+    #         result = result + label.get_value() + ',' + self._world[label].to_str() + '\n'
 
-        return result
+    #     return result
 
-# a=World([label.Label('a'), label.Label('b')])
-# print(numba.typeof(a._world))
+
 import operator
 from numba import types
 from numba.extending import typeof_impl
@@ -69,6 +68,7 @@ from numba.extending import overload_method, overload
 from numba.extending import lower_builtin
 from numba.core import cgutils
 from numba.extending import unbox, NativeValue, box
+from numba.core.typing import signature
 
 
 # Create new numba type
@@ -88,8 +88,15 @@ def typeof_world(val, c):
 # Construct object from Numba functions
 @type_callable(World)
 def type_world(context):
+    def typer(labels, world):
+        if isinstance(labels, types.ListType) and isinstance(world, types.DictType):
+            return world_type
+    return typer
+
+@type_callable(World)
+def type_world(context):
     def typer(labels):
-        if isinstance(labels, types.List):
+        if isinstance(labels, types.ListType):
             return world_type
     return typer
 
@@ -99,38 +106,46 @@ def type_world(context):
 class WorldModel(models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [
-            ('world', types.DictType(label.label_type, interval.interval_type)),
-            ('labels', types.List(label.label_type))
+            ('labels', types.ListType(label.label_type)),
+            ('world', types.DictType(label.label_type, interval.interval_type))
             ]
         models.StructModel.__init__(self, dmm, fe_type, members)
 
 
 # Expose datamodel attributes
-make_attribute_wrapper(WorldType, 'world', 'world')
 make_attribute_wrapper(WorldType, 'labels', 'labels')
+make_attribute_wrapper(WorldType, 'world', 'world')
 
 # Implement constructor
-@lower_builtin(World, types.List(label.label_type))
+@lower_builtin(World, types.ListType(label.label_type), types.DictType(label.label_type, interval.interval_type))
 def impl_world(context, builder, sig, args):
-    def make_world(labels, world):
-        # world = World(labels)
-        # w = numba.typed.Dict.empty(key_type=label.label_type, value_type=interval.interval_type)
-        for l in labels:
-            world[l] = interval.closed(0.0, 1.0)
-        return world
+    # context.build_map(builder, )
+    typ = sig.return_type
+    l, wo = args
+    context.nrt.incref(builder, types.DictType(label.label_type, interval.interval_type), wo)
+    context.nrt.incref(builder, types.ListType(label.label_type), l)
+    w = cgutils.create_struct_proxy(typ)(context, builder)
+    w.labels = l
+    w.world = wo
+    return w._getvalue()
+
+@lower_builtin(World, types.ListType(label.label_type))
+def impl_world(context, builder, sig, args):
+    def make_world(l):
+        d = numba.typed.Dict.empty(key_type=label.label_type, value_type=interval.interval_type)
+        for lab in l:
+            d[lab] = interval.closed(0.0, 1.0)
+        w = World(l, d)
+        return w
+
 
     typ = sig.return_type
-    world = cgutils.create_struct_proxy(typ)(context, builder)
-    labels = args[0]
-    # print(numba.typeof(labels))
-    world.labels = labels
-    # make_world(world)
-    # world.make_world()
-    # print(numba.typeof(labels))
+    w = cgutils.create_struct_proxy(typ)(context, builder)
+    # w.labels = l
+    # inner_sig = signature(typ, *sig.args + (world_type,))
+    w = context.compile_internal(builder, make_world, sig, args)
+    return w
 
-    context.compile_internal(builder, make_world, sig, (labels, world.world))
-        
-    return world._getvalue()
 
 # Expose properties
 @overload_method(WorldType, 'is_satisfied')
@@ -159,14 +174,22 @@ def get_bound(world, label):
         return result
     return impl
 
+# @overload_method(WorldType, 'make_world')
+# def make_world(world, labels):
+#     def impl(world, labels):
+#         # world.labels = labels
+#         for l in labels:
+#             world.world[l] = interval.closed(0.0, 1.0)
+#     return impl
+
 
 # Tell numba how to make native
 @unbox(WorldType)
 def unbox_world(typ, obj, c):
-    labels_obj = c.pyapi.object_getattr_string(obj, "labels")
+    labels_obj = c.pyapi.object_getattr_string(obj, "_labels")
     world_obj = c.pyapi.object_getattr_string(obj, "_world")
     world = cgutils.create_struct_proxy(typ)(c.context, c.builder)
-    world.labels = c.unbox(types.List(label.label_type), labels_obj).value
+    world.labels = c.unbox(types.ListType(label.label_type), labels_obj).value
     world.world = c.unbox(types.DictType(label.label_type, interval.interval_type), world_obj).value
     c.pyapi.decref(labels_obj)
     c.pyapi.decref(world_obj)
@@ -177,11 +200,14 @@ def unbox_world(typ, obj, c):
 
 @box(WorldType)
 def box_world(typ, val, c):
-    world = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
+    w = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
     class_obj = c.pyapi.unserialize(c.pyapi.serialize_object(World.make_world))
-    labels_obj = c.box(types.List(label.label_type), world.labels)
-    world_obj = c.box(types.DictType(label.label_type, interval.interval_type), world.world)
-    res = c.pyapi.call_function_objargs(class_obj, (labels_obj,world_obj))
+    labels_obj = c.box(types.ListType(label.label_type), w.labels)
+    world_obj = c.box(types.DictType(label.label_type, interval.interval_type), w.world)
+    # c.pyapi.object_dump(class_obj)
+    # c.pyapi.object_dump(labels_obj)
+    # c.pyapi.object_dump(world_obj)
+    res = c.pyapi.call_function_objargs(class_obj, (labels_obj, world_obj))
     c.pyapi.decref(labels_obj)
     c.pyapi.decref(world_obj)
     c.pyapi.decref(class_obj)
@@ -189,23 +215,37 @@ def box_world(typ, val, c):
 
 # import numba
 # @numba.njit
-# def f(a):
-#     w = World([label.Label('a')])
+# def f(b,c):
+#     # b = numba.typed.List()
+#     # b.append(label.Label('a'))
+#     # c = numba.typed.Dict.empty(key_type=label.label_type, value_type=interval.interval_type)
+#     # c[label.Label('a')] = interval.closed(0.0,1.1)
+#     # w = World(numba.typed.List(b), c)
+#     w = World(b)
+#     # print('working')
+#     # print(w.labels)
 #     # i = interval.closed(0.2, 0.8)
 #     # l = label.Label('a')
 #     # a.update(l,i)
-#     return a
+#     return w
 #     # return a.world
 
-# l = numba.typed.List()
-# l = []
-# l.append(label.Label('a'))
-# a = World(l)
-# b = World([label.Label('b')])
-# b._world[label.Label('b')] = interval.closed(3.0,4.0)
+# # l = numba.typed.List()
+# # l = []
+# # l.append(label.Label('a'))
+# # a = World(l)
+# # b = World([label.Label('b')])
+# # b._world[label.Label('b')] = interval.closed(3.0,4.0)
 # # a = World([label.Label('a')])
-# b = f(a)
-# print(b)
+# b = numba.typed.List()
+# b.append(label.Label('a'))
+# b.append(label.Label('b'))
+# b.append(label.Label('c'))
+# b.append(label.Label('c'))
+# c = numba.typed.Dict.empty(key_type=label.label_type, value_type=interval.interval_type)
+# c[label.Label('a')] = interval.closed(0.0,1.1)
+# d = f(b, c)
+# print(d._world)
 # # d = numba.typed.Dict.empty(key_type=label.label_type, value_type=world_type)
 # # d[label.Label('a')] = a
 # # d[label.Label('a')] = b

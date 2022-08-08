@@ -65,7 +65,7 @@ def typeof_rule(val, c):
 @type_callable(Rule)
 def type_rule(context):
     def typer(target, tc, delta, neigh_nodes, neigh_edges, inf):
-        if isinstance(target, label.label_type) and (isinstance(tc, types.NoneType) or isinstance(tc, types.ListType)) and isinstance(delta, types.Integer) and (isinstance(neigh_nodes, types.NoneType) or isinstance(neigh_nodes, types.ListType)) and (isinstance(neigh_edges, types.NoneType) or isinstance(neigh_edges, types.ListType)) and isinstance(inf, sft_tipping.SftTippingType):
+        if isinstance(target, label.LabelType) and (isinstance(tc, types.NoneType) or isinstance(tc, types.ListType)) and isinstance(delta, types.Integer) and (isinstance(neigh_nodes, types.NoneType) or isinstance(neigh_nodes, types.ListType)) and (isinstance(neigh_edges, types.NoneType) or isinstance(neigh_edges, types.ListType)) and isinstance(inf, sft_tipping.SftTippingType):
             return rule_type
     return typer
 
