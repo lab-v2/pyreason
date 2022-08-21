@@ -1,7 +1,10 @@
-from mancalog.scripts.components.node import Node
-from mancalog.scripts.components.edge import Edge
+# from mancalog.scripts.components.node import Node
+# from mancalog.scripts.components.edge import Edge
 from mancalog.scripts.components.graph_component import GraphComponent
 from networkx import DiGraph
+
+import mancalog.scripts.numba_wrapper.numba_types.node_type as node
+import mancalog.scripts.numba_wrapper.numba_types.edge_type as edge
 
 
 class NetworkGraph(GraphComponent, DiGraph):
@@ -9,21 +12,21 @@ class NetworkGraph(GraphComponent, DiGraph):
 	def __init__(self, id, nodes = [], edges = []):
 		super().__init__()
 		self._id = id
-		for node in nodes:
-			self.add_node(node)
+		for n in nodes:
+			self.add_node(n)
 
-		for edge in edges:
-			self.add_edge(edge)
+		for e in edges:
+			self.add_edge(e)
 
 	def to_json_string(self):
 		result = '{"nodes": ['
-		for node in self.nodes:
-			result = result + node.to_json_string() + ","
+		for n in self.nodes:
+			result = result + n.to_json_string() + ","
 		result = result[: (len(result) - 1)]
 		result = result + '], "edges": ['
 
-		for edge in self.edges:
-			result = result + edge["net_diff_edge"].to_json_string() + ","
+		for e in self.edges:
+			result = result + e["net_diff_edge"].to_json_string() + ","
 
 		result = result[: (len(result) - 1)]
 		result = result + ']}'
@@ -35,8 +38,8 @@ class NetworkGraph(GraphComponent, DiGraph):
 
 	def get_components(self):
 		components = list(self.nodes)
-		for edge in self.edges:
-			net_diff_edge = self.edges[edge[0], edge[1]]["net_diff_edge"]
+		for e in self.edges:
+			net_diff_edge = self.edges[e[0], e[1]]["net_diff_edge"]
 			components.append(net_diff_edge)
 		
 		return components
@@ -44,22 +47,22 @@ class NetworkGraph(GraphComponent, DiGraph):
 	def get_nodes(self):
 		return list(self.nodes)
 
-	def add_node(self, node):
-		net_diff_node = Node(node)
+	def add_node(self, n):
+		net_diff_node = node.Node(n)
 		super().add_node(net_diff_node)
 	
 	def get_edges(self):
 		net_diff_edges = []
-		for edge in self.edges:
-			net_diff_edge = self.edges[edge[0], edge[1]]["net_diff_edge"]
+		for e in self.edges:
+			net_diff_edge = self.edges[e[0], e[1]]["net_diff_edge"]
 			net_diff_edges.append(net_diff_edge)
 
 		return net_diff_edges
 
-	def add_edge(self, edge):
-		net_diff_node1 = Node(edge[0])
-		net_diff_node2 = Node(edge[1])
-		net_diff_edge = Edge(edge[0], edge[1])
+	def add_edge(self, e):
+		net_diff_node1 = node.Node(e[0])
+		net_diff_node2 = node.Node(e[1])
+		net_diff_edge = edge.Edge(e[0], e[1])
 		super().add_edges_from([(net_diff_node2, net_diff_node1, {"net_diff_edge": net_diff_edge})])
 
 	def get_id(self):

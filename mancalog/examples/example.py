@@ -29,9 +29,9 @@ def main():
     graph_data = nx.read_graphml(args.graph_path)
 
     # Initialize labels
-    labels = yaml_parser.parse_labels(args.labels_yaml_path)
-    Node.available_labels = labels
-    Edge.available_labels = []
+    node_labels, edge_labels = yaml_parser.parse_labels(args.labels_yaml_path)
+    Node.available_labels = node_labels
+    Edge.available_labels = edge_labels
 
     graph = NetworkGraph('graph', list(graph_data.nodes), list(graph_data.edges))
 
