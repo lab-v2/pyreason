@@ -166,15 +166,11 @@ class Interpretation:
 
 	def _get_qualified_neigh(self, time, node, nc_node = None, nc_edge = None):
 		result = []
-		candidates = self._get_neighbors(node)
+		candidates = self._get_neighbours(node)
 		if(nc_node != None):
-			for n in candidates:
-				if(not self.are_satisfied(time, n, nc_node)):
-					candidates.remove(n)
+			candidates[:] = (n for n in candidates if self.are_satisfied(time, n, nc_node))
 		if(nc_edge != None):
-			for n in candidates:
-				if(not self.are_satisfied(time, Edge(n.get_id(), node.get_id()), nc_edge)):
-					candidates.remove(n)
+			candidates[:] = (n for n in candidates if self.are_satisfied(time, Edge(n.get_id(), node.get_id()), nc_edge))
 
 		result = candidates
 
