@@ -10,11 +10,11 @@ class Output:
         dfs_edges = []
         columns_nodes = ['component']
         columns_edges = ['component']
-        for t in range(0, len(interpretation.interpretations)):
+        for t in range(0, len(interpretation.interpretations_node)):
             data_nodes = []
             data_edges = []
-            for i, c in enumerate(interpretation.interpretations[t].keys()):
-                world = interpretation.interpretations[t][c].get_world()
+            for i, c in enumerate(interpretation.interpretations_node[t].keys()):
+                world = interpretation.interpretations_node[t][c].get_world()
                 if c.get_type() == 'node':
                     data_nodes.append([str(c)])
                     for atom in world:

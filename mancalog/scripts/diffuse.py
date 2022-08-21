@@ -26,20 +26,20 @@ def argparser():
     return parser.parse_args()
 
 
-def main(args):
+def main(args, graph_data):
     yaml_parser = YAMLParser()
 
     # Read graph & retrieve tmax
     tmax = args.timesteps
-    graph_data = nx.read_graphml(args.graph_path)
+    # graph_data = nx.read_graphml(args.graph_path)
 
     # Take a subgraph of the actual data
     # graph_data = nx.subgraph(graph_data, ['n2825', 'n2625', 'n2989'])
 
     # Initialize labels
-    labels = yaml_parser.parse_labels(args.labels_yaml_path)
-    Node.available_labels = labels
-    Edge.available_labels = []
+    node_labels, edge_labels = yaml_parser.parse_labels(args.labels_yaml_path)
+    Node.available_labels = node_labels
+    Edge.available_labels = edge_labels
 
     graph = NetworkGraph('graph', list(graph_data.nodes), list(graph_data.edges))
 
@@ -51,18 +51,28 @@ def main(args):
 
     # Program comes here
     program = Program(graph, tmax, facts, rules)
+    program.available_labels_node = node_labels
+    program.available_labels_edge = edge_labels
 
     # Diffusion process
+    print('Graph loaded successfully, rules, labels and facts parsed successfully')
+    print('Starting diffusion')
     interpretation = program.diffusion()
+    print('Finished diffusion')
 
     # Write output to a pickle file. The output is a list of panda dataframes. The index of the list corresponds to the timestep
+    # Warning: writing for a large graph can be very time consuming
+    print('Writing dataframe to pickle files (this may take a while, remove this if not necessary)')
     output = Output()
     output.write(interpretation)
+    print('Finished writing dataframe to pickle files')
 
     # Comment out the below code if you do not want to print the output
     # Read the pickle file, and print the dataframes for each timestep
+    print('Reading dataframe from pickled files')
     nodes = output.read('nodes')
     edges = output.read('edges')
+    print('Finished reading dataframe')
 
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
     filterer = Filter()
@@ -79,10 +89,15 @@ def main(args):
 
 if __name__ == "__main__":
     args = argparser()
+    import random
+    sampled_graph = nx.read_graphml(args.graph_path)
+    # sampled_nodes = random.sample(list(graph_data.nodes), 10000)
+    # sampled_graph = graph_data.subgraph(sampled_nodes+['n2825'])
+
     if args.profile:
         profiler = cProfile.Profile()
         profiler.enable()
-        main(args)
+        main(args, sampled_graph)
         profiler.disable()
         s = io.StringIO()
         stats = pstats.Stats(profiler, stream=s).sort_stats('tottime')
@@ -91,4 +106,4 @@ if __name__ == "__main__":
             f.write(s.getvalue())
 
     else:
-        main(args)
+        main(args, sampled_graph)
