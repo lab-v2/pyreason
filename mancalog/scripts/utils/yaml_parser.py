@@ -30,12 +30,17 @@ class YAMLParser:
             # Set rule target
             target = label.Label(values['target'])
             
-            # Set rule target criteria
-            target_criteria = None
-            if values['target_criteria'] is not None:
-                target_criteria = numba.typed.List()
-                for tc in values['target_criteria']:
-                    target_criteria.append((label.Label(tc[0]), interval.closed(tc[1], tc[2])))
+            # Set rule target criteria (for node labels)
+            target_criteria_node = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
+            if values['target_criteria_node'] is not None:
+                for tc in values['target_criteria_node']:
+                    target_criteria_node.append((label.Label(tc[0]), interval.closed(tc[1], tc[2])))
+            
+            # Set rule target criteria (for edge labels)
+            target_criteria_edge = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
+            if values['target_criteria_edge'] is not None:
+                for tc in values['target_criteria_edge']:
+                    target_criteria_edge.append((label.Label(tc[0]), interval.closed(tc[1], tc[2])))
 
             # Set delta t
             delta_t = values['delta_t']
@@ -57,7 +62,7 @@ class YAMLParser:
             # Set influence function
             influence = self._get_influence_function(values['influence'])
             
-            r = rule.Rule(target, target_criteria, delta_t, neigh_nodes, neigh_edges, influence)
+            r = rule.Rule(target, target_criteria_node, target_criteria_edge, delta_t, neigh_nodes, neigh_edges, influence)
             rules.append(r)
 
         return rules
@@ -84,13 +89,17 @@ class YAMLParser:
         with open(path, 'r') as file:
             labels_yaml = yaml.safe_load(file)
 
-        labels = []
-        for _, values in labels_yaml.items():
-            for label_name in values:
-                l = label.Label(label_name)
-                labels.append(l)
+        node_labels = []
+        edge_labels = []
+        for label_name in labels_yaml['node_labels']:
+            l = label.Label(label_name)
+            node_labels.append(l)
 
-        return labels
+        for label_name in labels_yaml['edge_labels']:
+            l = label.Label(label_name)
+            edge_labels.append(l)
+
+        return node_labels, edge_labels
 
 
     def _get_influence_function(self, influence_function):

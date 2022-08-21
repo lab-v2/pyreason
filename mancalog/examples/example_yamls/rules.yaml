@@ -8,9 +8,10 @@
 rule_1:
     target: success      # Target label
 
-    target_criteria:    # List of all target criteria
+    target_criteria_node:    # List of all target criteria (for node labels)
         # All criteria come here in the form [label, lower_bound, upper_bound]
         - [success, 0.0, 1.0]
+    target_criteria_edge: null # List of all target criteria (for edge labels)
 
     delta_t: 1          # Delta t, time when this rule is applicable
 
@@ -25,8 +26,9 @@ rule_1:
 # Start of next rule
 rule_2:
     target: failure
-    target_criteria:
+    target_criteria_node:
         - [failure, 0.0, 1.0]
+    target_criteria_edge: null
     delta_t: 1
     neigh_nodes:
         - [failure, 0.5, 1.0]

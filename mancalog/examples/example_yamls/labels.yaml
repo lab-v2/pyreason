@@ -1,6 +1,8 @@
 # Example format for labels
 # DO NOT MODIFY! THIS IS FOR EXAMPLE PURPOSES ONLY
 ---
-labels:
+node_labels:
     - success
     - failure
+
+edge_labels: []

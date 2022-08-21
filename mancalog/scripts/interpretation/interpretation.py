@@ -2,27 +2,32 @@ from mancalog.scripts.components.edge import Edge
 import mancalog.scripts.numba_wrapper.numba_types.node_type as node
 import mancalog.scripts.numba_wrapper.numba_types.edge_type as edge
 import mancalog.scripts.numba_wrapper.numba_types.world_type as world
+import mancalog.scripts.numba_wrapper.numba_types.label_type as label
 
 import numba
-import time
 
 
-# TODO: Add support for edge labels and facts for edges etc: regarding interpretations_edge. This is not supported currently
+# TODO: Add support for edge labels and facts for edges etc: regarding interpretations_edge. This is not fully supported currently
 class Interpretation:
 	available_labels_node = []
 	available_labels_edge = []
 
-	def __init__(self, net_diff_graph, tmax = 1):
-		# self.interpretations = []
+	def __init__(self, net_diff_graph, tmax):
 		self._tmax = tmax
 		self._net_diff_graph = net_diff_graph
 
-		start = time.time()
-		self.interpretations_node = Interpretation._init_interpretations_node(self._tmax, numba.typed.List(self._net_diff_graph.get_nodes()), numba.typed.List(self.available_labels_node))
-		# self.interpretations_edge = Interpretation._init_interpretations_edge(self._tmax, numba.typed.List(self._net_diff_graph.get_edges()), numba.typed.List(self.available_labels_edge))
-		end = time.time()
-		print('here', end-start)
+		# Make sure they are correct type
+		if len(self.available_labels_node)==0:
+			self.available_labels_node = numba.typed.List.empty_list(label.label_type)
+		else:
+			self.available_labels_node = numba.typed.List(self.available_labels_node)
+		if len(self.available_labels_edge)==0:
+			self.available_labels_edge = numba.typed.List.empty_list(label.label_type)
+		else:
+			self.available_labels_edge = numba.typed.List(self.available_labels_edge)
 
+		self.interpretations_node = Interpretation._init_interpretations_node(self._tmax, numba.typed.List(self._net_diff_graph.get_nodes()), self.available_labels_node)
+		self.interpretations_edge = Interpretation._init_interpretations_edge(self._tmax, numba.typed.List(self._net_diff_graph.get_edges()), self.available_labels_edge)
 		
 		# Setup graph neighbors
 		self.neighbors = numba.typed.Dict.empty(key_type=node.node_type, value_type=numba.types.ListType(node.node_type))
@@ -96,7 +101,7 @@ class Interpretation:
 		
 
 	def apply_local_rules(self, rules):
-		self._apply_local_rule_stat(self.interpretations_node, self._tmax, rules, numba.typed.List(self._net_diff_graph.get_nodes()), self.neighbors)
+		self._apply_local_rule_stat(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._net_diff_graph.get_nodes()), numba.typed.List(self._net_diff_graph.get_edges()), self.neighbors)
 
 
 	def _apply_local_rule(self, rule, t):
@@ -111,17 +116,27 @@ class Interpretation:
 
 	@staticmethod
 	@numba.njit
-	def _apply_local_rule_stat(interpretations, tmax, rules, nodes, neighbors):
+	def _apply_local_rule_stat(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors):
 		for t in range(tmax+1):
 			for rule in rules:
 				tDelta = t - rule.get_delta()
 				if (tDelta >= 0):
+					# Go through all nodes and check if any rules apply to them
 					for n in nodes:
-						if are_satisfied_stat(interpretations, tDelta, n, rule.get_target_criteria()):
+						if are_satisfied_stat_node(interpretations_node, tDelta, n, rule.get_target_criteria_node()):
 							a = neighbors[n]
-							b = _get_qualified_neigh_stat(interpretations, neighbors[n], tDelta, n, rule.get_neigh_nodes(), rule.get_neigh_edges())
+							b = _get_qualified_neigh_stat(interpretations_node, neighbors[n], tDelta, n, rule.get_neigh_nodes(), rule.get_neigh_edges())
 							bnd = rule.influence(neigh=a, qualified_neigh=b)
-							_na_update_stat(interpretations, t, n, (rule.get_target(), bnd))
+							_na_update_stat(interpretations_node, t, n, (rule.get_target(), bnd))
+					# Go through all nodes and check if any rules apply to them.
+					# Comment out the following lines if there are no labels or rules that deal with edges. It will be an unnecessary loop
+					for e in edges:
+						if are_satisfied_stat_edge(interpretations_edge, tDelta, e, rule.get_target_criteria_edge()):
+							# If needed make some influence function for the edge target. As of now, edges don't have neighbors!
+							# When making this, refer to the nodes loop section (4 lines above)
+							pass
+			print('Completed timestep:', t)
+							
 
 	def apply_global_rule(self, rule, t):
 		bounds = []
@@ -203,7 +218,7 @@ class Interpretation:
 def _get_qualified_neigh_stat(interpretations, candidates, time, node, nc_node, nc_edge):
 	result = numba.typed.List()
 	if(nc_node != None):
-		[result.append(n) for n in candidates if are_satisfied_stat(interpretations, time, n, nc_node)]
+		[result.append(n) for n in candidates if are_satisfied_stat_node(interpretations, time, n, nc_node)]
 	# NOTE: For some reason the following lines do not work with jit. These are not necessary when labels are for nodes only
 	# if(nc_edge != None):
 	# 	[result.append(n) for n in candidates if are_satisfied_stat_edge(interpretations, time, edge.Edge(n.get_id(), node.get_id()), nc_edge)]
@@ -216,14 +231,33 @@ def _na_update_stat(interpretations, time, comp, na):
 	world.update(na[0], na[1])
 
 @numba.njit
-def are_satisfied_stat(interpretations, time, comp, nas):
+def are_satisfied_stat_node(interpretations, time, comp, nas):
 	result = True
-	for (label, interval) in nas:
-		result = result and is_satisfied_stat(interpretations, time, comp, (label, interval))
+	if len(nas)>0:
+		for (label, interval) in nas:
+			result = result and is_satisfied_stat_node(interpretations, time, comp, (label, interval))
 	return result
 
 @numba.njit
-def is_satisfied_stat(interpretations, time, comp, na):
+def is_satisfied_stat_node(interpretations, time, comp, na):
+	result = False
+	if (not (na[0] is None or na[1] is None)):
+		world = interpretations[time][comp]
+		result = world.is_satisfied(na[0], na[1])
+	else:
+		result = True
+	return result
+
+@numba.njit
+def are_satisfied_stat_edge(interpretations, time, comp, nas):
+	result = True
+	if len(nas)>0:
+		for (label, interval) in nas:
+			result = result and is_satisfied_stat_edge(interpretations, time, comp, (label, interval))
+	return result
+
+@numba.njit
+def is_satisfied_stat_edge(interpretations, time, comp, na):
 	result = False
 	if (not (na[0] is None or na[1] is None)):
 		world = interpretations[time][comp]

@@ -37,9 +37,9 @@ def main(args, graph_data):
     # graph_data = nx.subgraph(graph_data, ['n2825', 'n2625', 'n2989'])
 
     # Initialize labels
-    labels = yaml_parser.parse_labels(args.labels_yaml_path)
-    Node.available_labels = labels
-    Edge.available_labels = []
+    node_labels, edge_labels = yaml_parser.parse_labels(args.labels_yaml_path)
+    Node.available_labels = node_labels
+    Edge.available_labels = edge_labels
 
     graph = NetworkGraph('graph', list(graph_data.nodes), list(graph_data.edges))
 
@@ -51,31 +51,33 @@ def main(args, graph_data):
 
     # Program comes here
     program = Program(graph, tmax, facts, rules)
-    program.available_labels_node = labels
-    program.available_labels_edge = []
+    program.available_labels_node = node_labels
+    program.available_labels_edge = edge_labels
 
     # Diffusion process
-    import time
-    start = time.time()
+    print('Graph loaded successfully, rules, labels and facts parsed successfully')
+    print('Starting diffusion')
     interpretation = program.diffusion()
-    end = time.time()
-    print(end-start)
+    print('Finished diffusion')
 
     # Write output to a pickle file. The output is a list of panda dataframes. The index of the list corresponds to the timestep
-    # output = Output()
-    # output.write(interpretation)
+    # Warning: writing for a large graph can be very time consuming
+    print('Writing dataframe to pickle files (this may take a while, remove this if not necessary)')
+    output = Output()
+    output.write(interpretation)
+    print('Finished writing dataframe to pickle files')
 
     # Comment out the below code if you do not want to print the output
     # Read the pickle file, and print the dataframes for each timestep
-    # nodes = output.read('nodes')
-    # edges = output.read('edges')
-    # for i in range(args.timesteps):
-    #     print(nodes[i])
+    print('Reading dataframe from pickled files')
+    nodes = output.read('nodes')
+    edges = output.read('edges')
+    print('Finished reading dataframe')
 
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
-    # filterer = Filter()
-    # filtered_df = filterer.filter_by_bound(dataframe=nodes[args.timesteps-1], label='success', bound=interval.closed(0.7,1))
-    # print(filtered_df)
+    filterer = Filter()
+    filtered_df = filterer.filter_by_bound(dataframe=nodes[args.timesteps-1], label='success', bound=interval.closed(0.7,1))
+    print(filtered_df)
 
     # The code below will print all the dataframes from each timestep for both edges and nodes
     # for df in nodes:
