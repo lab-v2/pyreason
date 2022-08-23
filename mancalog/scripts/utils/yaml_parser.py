@@ -46,16 +46,14 @@ class YAMLParser:
             delta_t = values['delta_t']
 
             # Set neigh_nodes
-            neigh_nodes = None
+            neigh_nodes = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
             if values['neigh_nodes'] is not None:
-                neigh_nodes = numba.typed.List()
                 for nn in values['neigh_nodes']:
                     neigh_nodes.append((label.Label(nn[0]), interval.closed(nn[1], nn[2])))
 
             # Set neigh_edges
-            neigh_edges = None
+            neigh_edges = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
             if values['neigh_edges'] is not None:
-                neigh_edges = numba.typed.List()
                 for ne in values['neigh_edges']:
                     neigh_edges.append((label.Label(ne[0]), interval.closed(ne[1], ne[2])))
 

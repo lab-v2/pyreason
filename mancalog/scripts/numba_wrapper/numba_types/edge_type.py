@@ -77,6 +77,14 @@ def type_edge(context):
             return edge_type
     return typer
 
+# Constructor for internal use only
+@type_callable(Edge)
+def type_edge(context):
+    def typer(source, target, Id):
+        if isinstance(source, types.UnicodeType) and isinstance(target, types.UnicodeType) and isinstance(Id, types.UnicodeType):
+            return edge_type
+    return typer
+
 
 # Define native representation: datamodel
 @register_model(EdgeType)
@@ -98,21 +106,23 @@ make_attribute_wrapper(EdgeType, 'id', 'id')
 # Implement constructor
 @lower_builtin(Edge, types.string, types.string)
 def impl_edge(context, builder, sig, args):
-    def make_id(source, target):
-        edge = Edge(source, target)
-        # edge.source = source
-        # edge.target = target
-        edge.id = f'{source}:{target}'
+    def make_edge(source, target):
+        edge = Edge(source, target, source + ':' + target)
         return edge
 
-    # typ = sig.return_type
-    # source, target = args
-    # edge = cgutils.create_struct_proxy(typ)(context, builder)
-    # edge.source = source
-    # edge.target = target
-    # edge.id = builder.fadd(edge.source, edge.target)
-    edge = context.compile_internal(builder, make_id, sig, args)
-    # edge.id = str(edge.source) + str(edge.target)
+    edge = context.compile_internal(builder, make_edge, sig, args)
+    return edge
+
+# Constructor for internal use only
+@lower_builtin(Edge, types.string, types.string, types.string)
+def impl_edge(context, builder, sig, args):
+    typ = sig.return_type
+    source, target, i = args
+    context.nrt.incref(builder, types.string, i)
+    edge = cgutils.create_struct_proxy(typ)(context, builder)
+    edge.source = source
+    edge.target = target
+    edge.id = i
     return edge._getvalue()
 
 # Expose properties
@@ -170,6 +180,7 @@ def box_edge(typ, val, c):
     class_obj = c.pyapi.unserialize(c.pyapi.serialize_object(Edge))
     source_obj = c.box(types.string, edge.source)
     target_obj = c.box(types.string, edge.target)
+    id_obj = c.box(types.string, edge.id)
     res = c.pyapi.call_function_objargs(class_obj, (source_obj, target_obj))
     c.pyapi.decref(source_obj)
     c.pyapi.decref(target_obj)
@@ -182,6 +193,7 @@ def box_edge(typ, val, c):
 # @numba.njit
 # def f(n):
 #     a = Edge('abc', 'a')
-#     return a.id
+#     print(a.get_id())
+#     return a
 
 # print(f(Edge('abc', 'a')))

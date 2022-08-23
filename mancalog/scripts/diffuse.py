@@ -26,7 +26,8 @@ def argparser():
     return parser.parse_args()
 
 
-def main(args, graph_data):
+def main(args):
+    graph_data = nx.read_graphml(args.graph_path)
     yaml_parser = YAMLParser()
 
     # Read graph & retrieve tmax
@@ -89,15 +90,11 @@ def main(args, graph_data):
 
 if __name__ == "__main__":
     args = argparser()
-    import random
-    sampled_graph = nx.read_graphml(args.graph_path)
-    # sampled_nodes = random.sample(list(graph_data.nodes), 10000)
-    # sampled_graph = graph_data.subgraph(sampled_nodes+['n2825'])
 
     if args.profile:
         profiler = cProfile.Profile()
         profiler.enable()
-        main(args, sampled_graph)
+        main(args)
         profiler.disable()
         s = io.StringIO()
         stats = pstats.Stats(profiler, stream=s).sort_stats('tottime')
@@ -106,4 +103,4 @@ if __name__ == "__main__":
             f.write(s.getvalue())
 
     else:
-        main(args, sampled_graph)
+        main(args)

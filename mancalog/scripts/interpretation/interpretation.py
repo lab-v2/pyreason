@@ -7,7 +7,6 @@ import mancalog.scripts.numba_wrapper.numba_types.label_type as label
 import numba
 
 
-# TODO: Add support for edge labels and facts for edges etc: regarding interpretations_edge. This is not fully supported currently
 class Interpretation:
 	available_labels_node = []
 	available_labels_edge = []
@@ -125,10 +124,10 @@ class Interpretation:
 					for n in nodes:
 						if are_satisfied_stat_node(interpretations_node, tDelta, n, rule.get_target_criteria_node()):
 							a = neighbors[n]
-							b = _get_qualified_neigh_stat(interpretations_node, neighbors[n], tDelta, n, rule.get_neigh_nodes(), rule.get_neigh_edges())
+							b = _get_qualified_neigh_stat(interpretations_node, interpretations_edge, neighbors[n], tDelta, n, rule.get_neigh_nodes(), rule.get_neigh_edges())
 							bnd = rule.influence(neigh=a, qualified_neigh=b)
 							_na_update_stat(interpretations_node, t, n, (rule.get_target(), bnd))
-					# Go through all nodes and check if any rules apply to them.
+					# Go through all edges and check if any rules apply to them.
 					# Comment out the following lines if there are no labels or rules that deal with edges. It will be an unnecessary loop
 					for e in edges:
 						if are_satisfied_stat_edge(interpretations_edge, tDelta, e, rule.get_target_criteria_edge()):
@@ -211,13 +210,12 @@ class Interpretation:
 
 
 @numba.njit
-def _get_qualified_neigh_stat(interpretations, candidates, time, node, nc_node, nc_edge):
+def _get_qualified_neigh_stat(interpretations_node, interpretations_edge, candidates, time, node, nc_node, nc_edge):
 	result = numba.typed.List()
-	if(nc_node != None):
-		[result.append(n) for n in candidates if are_satisfied_stat_node(interpretations, time, n, nc_node)]
-	# NOTE: For some reason the following lines do not work with jit. These are not necessary when labels are for nodes only
-	# if(nc_edge != None):
-	# 	[result.append(n) for n in candidates if are_satisfied_stat_edge(interpretations, time, edge.Edge(n.get_id(), node.get_id()), nc_edge)]
+	if(len(nc_node)>0):
+		[result.append(n) for n in candidates if are_satisfied_stat_node(interpretations_node, time, n, nc_node)]
+	if(len(nc_edge)>0):
+		[result.append(n) for n in candidates if are_satisfied_stat_edge(interpretations_edge, time, edge.Edge(n.get_id(), node.get_id()), nc_edge)]
 
 	return result
 
