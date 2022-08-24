@@ -32,17 +32,13 @@ def main(args):
 
     # Read graph & retrieve tmax
     tmax = args.timesteps
-    # graph_data = nx.read_graphml(args.graph_path)
 
     # Take a subgraph of the actual data
     # graph_data = nx.subgraph(graph_data, ['n2825', 'n2625', 'n2989'])
+    graph = NetworkGraph('graph', list(graph_data.nodes), list(graph_data.edges))
 
     # Initialize labels
-    node_labels, edge_labels = yaml_parser.parse_labels(args.labels_yaml_path)
-    Node.available_labels = node_labels
-    Edge.available_labels = edge_labels
-
-    graph = NetworkGraph('graph', list(graph_data.nodes), list(graph_data.edges))
+    node_labels, edge_labels, specific_node_labels, specific_edge_labels = yaml_parser.parse_labels(args.labels_yaml_path)
 
     # Rules come here
     rules = yaml_parser.parse_rules(args.rules_yaml_path)
@@ -54,6 +50,8 @@ def main(args):
     program = Program(graph, tmax, facts, rules)
     program.available_labels_node = node_labels
     program.available_labels_edge = edge_labels
+    program.specific_node_labels = specific_node_labels
+    program.specific_edge_labels = specific_edge_labels
 
     # Diffusion process
     print('Graph loaded successfully, rules, labels and facts parsed successfully')

@@ -1,8 +1,18 @@
 # Example format for labels
 # DO NOT MODIFY! THIS IS FOR EXAMPLE PURPOSES ONLY
 ---
+# Labels that apply to all nodes
 node_labels:
     - success
     - failure
 
+# Labels that apply to all edges
 edge_labels: []
+
+# Labels that apply to specific nodes
+node_specific_labels:
+    special_node_label: [n2825]
+
+# Labels that apply to specific edges
+edge_specific_labels:
+    special_edge_label: [[n2625, n2825], [n2989, n2825]]

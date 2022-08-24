@@ -1,17 +1,13 @@
 import yaml
 import numba
 
-# import mancalog.scripts.interval.interval as interval
 import mancalog.scripts.numba_wrapper.numba_types.interval_type as interval
 import mancalog.scripts.numba_wrapper.numba_types.label_type as label
 import mancalog.scripts.numba_wrapper.numba_types.node_type as node
+import mancalog.scripts.numba_wrapper.numba_types.edge_type as edge
 import mancalog.scripts.numba_wrapper.numba_types.rule_type as rule
 import mancalog.scripts.numba_wrapper.numba_types.fact_type as fact
 
-# from mancalog.scripts.facts.fact import Fact
-# from mancalog.scripts.rules.rule import Rule
-# from mancalog.scripts.components.node import Node
-# from mancalog.scripts.components.label import Label
 from mancalog.scripts.influence_functions.tipping_function import TippingFunction
 from mancalog.scripts.influence_functions.sft_tipping_function import SftTippingFunction
 from mancalog.scripts.influence_functions.ng_tipping_function import NgTippingFunction
@@ -97,7 +93,22 @@ class YAMLParser:
             l = label.Label(label_name)
             edge_labels.append(l)
 
-        return node_labels, edge_labels
+        specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(node.node_type))
+        for label_name in labels_yaml['node_specific_labels']:
+            l = label.Label(label_name)
+            specific_node_labels[l] = numba.typed.List.empty_list(node.node_type)
+            for n in labels_yaml['node_specific_labels'][label_name]:
+                specific_node_labels[l].append(node.Node(n))
+
+        specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(edge.edge_type))
+        for label_name in labels_yaml['edge_specific_labels']:
+            l = label.Label(label_name)
+            specific_edge_labels[l] = numba.typed.List.empty_list(edge.edge_type)
+            for e in labels_yaml['edge_specific_labels'][label_name]:
+                specific_edge_labels[l].append(edge.Edge(e[0], e[1]))
+
+
+        return node_labels, edge_labels, specific_node_labels, specific_edge_labels
 
 
     def _get_influence_function(self, influence_function):
