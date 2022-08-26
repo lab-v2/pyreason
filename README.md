@@ -9,13 +9,11 @@ Paper: [https://arxiv.org/abs/1301.0302](https://arxiv.org/abs/1301.0302)
   <summary>Table of Contents</summary>
   
 1. [Usage](#1-usage)
-2. [Setup](#2-setup)
-    * [Setup on the ASU Agave Cluster](#21-setup-on-the-asu-agave-cluster)
-    * [Setup on your Local System](#22-setup-on-your-local-system)
-3. [Run](#3-run)
-    * [Run on the Agave Cluster](#31-run-on-the-agave-cluster)
-    * [Run on your Local System](#32-run-on-your-local-system)
-4. [Profiling](#4-profiling)
+2. [Setup & Run](#2-setup--run)
+    * [Setup & Run on the ASU Agave Cluster (interactive)](#21-setup--run-on-the-asu-agave-cluster-interactive)
+    * [Setup & Run on the ASU Agave Cluster (sbatch)](#22-setup--run-on-the-asu-agave-cluster-sbatch)
+    * [Setup & Run on your Local System](#23-setup--run-on-your-local-system)
+3. [Profiling](#3-profiling)
 </details>
 
 ## 1. Usage
@@ -36,36 +34,11 @@ python3 -m mancalog.examples.example
 ```
 This example file uses the example yaml files for rules, facts and labels.
 
-## 2. Setup
-
-### 2.1 Setup on the ASU Agave Cluster
-Log into your ASURITE agave account, and open a terminal.
-
-To create an Anaconda environment and activate it, type the following in your terminal:
-```bash
-module load anaconda/py3
-conda create -n mancalog
-source activate mancalog
-```
-
-Now clone the repository and install the necessary packages to make mancalog run
-
-```bash
-git clone https://github.com/DyumanAditya/mancalog
-cd mancalog
-pip install -r requirements.txt
-```
-
-### 2.2 Setup on your Local System
-Clone the repository and install the necessary packages to make mancalog run
-
-```bash
-git clone https://github.com/DyumanAditya/mancalog
-cd mancalog
-pip install -r requirements.txt
-```
-
-## 3. Run
+## 2. Setup & Run
+There are three ways of running MANCaLog:
+1. interactive session (on Agave cluster)
+2. sbatch (on Agave cluster)
+3. locally
 
 To Run mancalog, you need to provide the following as command line arguments:
 
@@ -75,26 +48,49 @@ To Run mancalog, you need to provide the following as command line arguments:
 4. The path to the YAML facts file
 5. The path to the YAML labels file
 
-### 3.1 Run on the Agave Cluster
-Start an interactive session in your terminal by typing the following:
+### 2.1 Setup & Run on the ASU Agave Cluster (interactive)
+To create an Anaconda environment and activate it, and then clone the repository, type the following in your Agave terminal:
 ```bash
-interactive -n 16 -N 1 -t 0-0:10
+module load anaconda/py3
+conda create -n mancalog
+source activate mancalog
+git clone https://github.com/DyumanAditya/mancalog
+cd mancalog
+pip install -r requirements.txt
 ```
-This starts an interactive session using 16 cores on one node for 10 minutes. You can change the parameters based on your needs.
-
-
-Now type this into your terminal to run MANCaLog. Make sure you are in the top `mancalog` directory. Don't forget to replace the placeholders with the correct values.
+Now create an interavtive session with:
 ```bash
-python3 -m mancalog.scripts.diffuse --graph_path /path/to/graphml/file --timesteps {integer number of timesteps to run} --rules_yaml_path /path/to/rules.yaml --facts_yaml_path /path/to/facts.yaml --labels_yaml_path /path/to/labels.yaml
+interactive -N 1 -n 50 -p htc -t 0-0:10
 ```
+This starts an interactive session using 50 cores on one node for 10 minutes. You can change the time parameter based on your needs.
 
-### 3.2 Run on your Local System
-Type this into your terminal to run MANCaLog. Make sure you are in the top `mancalog` directory. Don't forget to replace the placeholders with the correct values.
+To run MANCaLog, type the following in your Agave terminal. Make sure you are in the top mancalog directory. Don't forget to replace the placeholders with the correct values.
 ```bash
-python3 -m mancalog.scripts.diffuse --graph_path /path/to/graphml/file --timesteps {integer number of timesteps to run} --rules_yaml_path /path/to/rules.yaml --facts_yaml_path /path/to/facts.yaml --labels_yaml_path /path/to/labels.yaml
+python3 -m mancalog.scripts.diffuse --graph_path /path/to/graphml/file --timesteps {number of timesteps to run} --rules_yaml_path /path/to/rules.yaml --facts_yaml_path /path/to/facts.yaml --labels_yaml_path /path/to/labels.yaml
 ```
 
-## 4. Profiling
+
+### 2.2 Setup & Run on the ASU Agave Cluster (sbatch)
+Open the run_on_agave.sh in a text editor, and modify the paths for the graph file, the rules file, the facts file and the labels file. In addition specify the number of timesteps to run for. Then in your Agave terminal, type:
+```bash
+sbatch run_on_agave.sh
+```
+This will submit a job to the cluster
+
+### 2.3 Setup & Run on your Local System
+Clone the repository and install the necessary packages to make mancalog run
+
+```bash
+git clone https://github.com/DyumanAditya/mancalog
+cd mancalog
+pip install -r requirements.txt
+```
+To run MANCaLog, type the following in your Agave terminal. Make sure you are in the top mancalog directory. Don't forget to replace the placeholders with the correct values.
+```bash
+python3 -m mancalog.scripts.diffuse --graph_path /path/to/graphml/file --timesteps {number of timesteps to run} --rules_yaml_path /path/to/rules.yaml --facts_yaml_path /path/to/facts.yaml --labels_yaml_path /path/to/labels.yaml
+```
+
+## 3. Profiling
 To Profile the code with cProfile:
 ```bash
 python3 -m mancalog.scripts.diffuse --graph_path /path/to/graphml/file --timesteps {integer number of timesteps to run} --rules_yaml_path /path/to/rules.yaml --facts_yaml_path /path/to/facts.yaml --labels_yaml_path /path/to/labels.yaml --profile true --profile_output output.txt
