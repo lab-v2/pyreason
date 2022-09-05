@@ -68,7 +68,7 @@ class YAMLParser:
 
         facts = numba.typed.List()
         for _, values in facts_yaml.items():
-            n = node.Node(values['node'])
+            n = node.Node(str(values['node']))
             l = label.Label(values['label'])
             bound = interval.closed(values['bound'][0], values['bound'][1])
             t_lower = values['t_lower']
@@ -98,14 +98,14 @@ class YAMLParser:
             l = label.Label(label_name)
             specific_node_labels[l] = numba.typed.List.empty_list(node.node_type)
             for n in labels_yaml['node_specific_labels'][label_name]:
-                specific_node_labels[l].append(node.Node(n))
+                specific_node_labels[l].append(node.Node(str(n)))
 
         specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(edge.edge_type))
         for label_name in labels_yaml['edge_specific_labels']:
             l = label.Label(label_name)
             specific_edge_labels[l] = numba.typed.List.empty_list(edge.edge_type)
             for e in labels_yaml['edge_specific_labels'][label_name]:
-                specific_edge_labels[l].append(edge.Edge(e[0], e[1]))
+                specific_edge_labels[l].append(edge.Edge(str(e[0]), str(e[1])))
 
 
         return node_labels, edge_labels, specific_node_labels, specific_edge_labels

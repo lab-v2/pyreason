@@ -24,6 +24,9 @@ class Node:
 
     def get_initial_world(self):
         return world.World(self.get_labels())
+
+    def __repr__(self):
+        return self.get_id()
         
     def __eq__(self, node):
         result = False

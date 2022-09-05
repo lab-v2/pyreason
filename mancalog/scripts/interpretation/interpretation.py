@@ -40,6 +40,7 @@ class Interpretation:
 
 
 
+
 	@staticmethod
 	@numba.njit
 	def _init_interpretations_node(tmax, nodes, available_labels, specific_labels):
@@ -52,7 +53,7 @@ class Interpretation:
 			# Specific labels
 			for l, ns in specific_labels.items():
 				for n in ns:
-					nas[n].world[l] = interval.closed(0.0, 0.1)
+					nas[n].world[l] = interval.closed(0.0, 1.0)
 			interpretations.append(nas)
 		return interpretations
 	
@@ -68,7 +69,7 @@ class Interpretation:
 			# Specific labels
 			for l, es in specific_labels.items():
 				for e in es:
-					nas[e].world[l] = interval.closed(0.0, 0.1)
+					nas[e].world[l] = interval.closed(0.0, 1.0)
 			interpretations.append(nas)
 		return interpretations
 		

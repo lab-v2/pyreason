@@ -1,20 +1,23 @@
 class Label:
-	
-	def __init__(self, value):
-		self._value = value
+    
+    def __init__(self, value):
+        self._value = value
 
-	def get_value(self):
-		return self._value
+    def get_value(self):
+        return self._value
 
-	def __eq__(self, label):
-		result = (self._value == label.get_value()) and isinstance(label, type(self))
-		return result
+    def __eq__(self, label):
+        result = (self._value == label.get_value()) and isinstance(label, type(self))
+        return result
 
-	def __str__(self):
-		return self._value
+    def __str__(self):
+        return self._value
 
-	def __hash__(self):
-		return hash(str(self))
+    def __hash__(self):
+        return hash(str(self))
+
+    def __repr__(self):
+        return self.get_value()
 
 
 import operator
@@ -83,19 +86,19 @@ def get_id(label):
 
 @overload(operator.eq)
 def label_eq(label_1, label_2):
-	if isinstance(label_1, LabelType) and isinstance(label_2, LabelType):
-		def impl(label_1, label_2):
-			if label_1.value == label_2.value:
-				return True
-			else:
-				return False 
-		return impl
+    if isinstance(label_1, LabelType) and isinstance(label_2, LabelType):
+        def impl(label_1, label_2):
+            if label_1.value == label_2.value:
+                return True
+            else:
+                return False 
+        return impl
 
 @overload(hash)
 def label_hash(label):
-	def impl(label):
-		return hash(label.value)
-	return impl
+    def impl(label):
+        return hash(label.value)
+    return impl
 
 
 

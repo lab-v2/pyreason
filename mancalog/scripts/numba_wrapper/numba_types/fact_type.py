@@ -67,7 +67,7 @@ def typeof_fact(val, c):
 @type_callable(Fact)
 def type_fact(context):
     def typer(component, l, bnd, t_lower, t_upper):
-        if isinstance(component, node.NodeType) and isinstance(l, label.LabelType) and isinstance(bnd, interval.IntervalType) and isinstance(t_lower, numba.types.Float) and isinstance(t_upper, numba.types.Float):
+        if isinstance(component, node.NodeType) and isinstance(l, label.LabelType) and isinstance(bnd, interval.IntervalType) and isinstance(t_lower, numba.types.Integer) and isinstance(t_upper, numba.types.Integer):
             return fact_type
     return typer
 
@@ -80,8 +80,8 @@ class FactModel(models.StructModel):
             ('component', node.node_type),
             ('l', label.label_type),
             ('bnd', interval.interval_type),
-            ('t_lower', numba.types.float64),
-            ('t_upper', numba.types.float64)
+            ('t_lower', numba.types.int64),
+            ('t_upper', numba.types.int64)
             ]
         models.StructModel.__init__(self, dmm, fe_type, members)
 
@@ -95,7 +95,7 @@ make_attribute_wrapper(FactType, 't_upper', 't_upper')
 
 
 # Implement constructor
-@lower_builtin(Fact, node.node_type, label.label_type, interval.interval_type, numba.types.float64, numba.types.float64)
+@lower_builtin(Fact, node.node_type, label.label_type, interval.interval_type, numba.types.int64, numba.types.int64)
 def impl_fact(context, builder, sig, args):
     typ = sig.return_type
     component, l, bnd, t_lower, t_upper = args
@@ -151,8 +151,8 @@ def unbox_fact(typ, obj, c):
     fact.component = c.unbox(node.node_type, component_obj).value
     fact.l = c.unbox(label.label_type, l_obj).value
     fact.bnd = c.unbox(interval.interval_type, bnd_obj).value
-    fact.t_lower = c.unbox(numba.types.float64, t_lower_obj).value
-    fact.t_upper = c.unbox(numba.types.float64, t_upper_obj).value
+    fact.t_lower = c.unbox(numba.types.int64, t_lower_obj).value
+    fact.t_upper = c.unbox(numba.types.int64, t_upper_obj).value
     c.pyapi.decref(component_obj)
     c.pyapi.decref(l_obj)
     c.pyapi.decref(bnd_obj)
@@ -170,8 +170,8 @@ def box_fact(typ, val, c):
     component_obj = c.box(node.node_type, fact.component)
     l_obj = c.box(label.label_type, fact.l)
     bnd_obj = c.box(interval.interval_type, fact.bnd)
-    t_lower_obj = c.box(numba.types.float64, fact.t_lower)
-    t_upper_obj = c.box(numba.types.float64, fact.t_upper)
+    t_lower_obj = c.box(numba.types.int64, fact.t_lower)
+    t_upper_obj = c.box(numba.types.int64, fact.t_upper)
     res = c.pyapi.call_function_objargs(class_obj, (component_obj, l_obj, bnd_obj, t_lower_obj, t_upper_obj))
     c.pyapi.decref(component_obj)
     c.pyapi.decref(l_obj)

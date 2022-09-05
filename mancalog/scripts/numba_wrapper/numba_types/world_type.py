@@ -43,11 +43,7 @@ class World:
         return result
 
     def get_world(self):
-        world = []
-        for label in self._world.keys():
-            bnd = self._world[label]
-            world.append((label.get_value(), interval.closed(bnd.lower, bnd.upper)))
-        return world
+        return self._world
 
 
     # def __str__(self):

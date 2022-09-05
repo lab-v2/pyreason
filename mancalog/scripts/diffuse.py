@@ -2,14 +2,12 @@ import io
 import argparse
 import cProfile
 import pstats
-import networkx as nx
 
 import mancalog.scripts.interval.interval as interval
-from mancalog.scripts.components.node import Node
-from mancalog.scripts.components.edge import Edge
 from mancalog.scripts.program.program import Program
 from mancalog.scripts.graph.network_graph import NetworkGraph
 from mancalog.scripts.utils.yaml_parser import YAMLParser
+from mancalog.scripts.utils.graphml_parser import GraphmlParser
 from mancalog.scripts.utils.filter import Filter
 from mancalog.scripts.utils.output import Output
 
@@ -25,10 +23,16 @@ def argparser():
     parser.add_argument("--profile_output", type=str)
     return parser.parse_args()
 
-
+# TODO: Make facts for edges supported
 def main(args):
-    graph_data = nx.read_graphml(args.graph_path)
+    graphml_parser = GraphmlParser()
     yaml_parser = YAMLParser()
+    graph_data = graphml_parser.parse_graph(args.graph_path)
+    import time
+    start = time.time()
+    non_fluent_facts, specific_node_labels, specific_edge_labels = graphml_parser.parse_graph_attributes(args.timesteps) 
+    end = time.time()
+    print(end-start)
 
     # Read graph & retrieve tmax
     tmax = args.timesteps
@@ -38,13 +42,16 @@ def main(args):
     graph = NetworkGraph('graph', list(graph_data.nodes), list(graph_data.edges))
 
     # Initialize labels
-    node_labels, edge_labels, specific_node_labels, specific_edge_labels = yaml_parser.parse_labels(args.labels_yaml_path)
+    node_labels, edge_labels, snl, sel = yaml_parser.parse_labels(args.labels_yaml_path)
+    specific_node_labels.update(snl)
+    specific_edge_labels.update(sel)
 
     # Rules come here
     rules = yaml_parser.parse_rules(args.rules_yaml_path)
 
     # Facts come here
     facts = yaml_parser.parse_facts(args.facts_yaml_path)
+    facts += non_fluent_facts
 
     # Program comes here
     program = Program(graph, tmax, facts, rules)
@@ -62,7 +69,7 @@ def main(args):
     # Write output to a pickle file. The output is a list of panda dataframes. The index of the list corresponds to the timestep
     # Warning: writing for a large graph can be very time consuming
     print('Writing dataframe to pickle files (this may take a while, remove this if not necessary)')
-    output = Output()
+    output = Output(args.timesteps)
     output.write(interpretation)
     print('Finished writing dataframe to pickle files')
 
@@ -74,16 +81,10 @@ def main(args):
     print('Finished reading dataframe')
 
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
+    print('Filtering data...')
     filterer = Filter()
-    filtered_df = filterer.filter_by_bound(dataframe=nodes[args.timesteps-1], label='success', bound=interval.closed(0.7,1))
+    filtered_df = filterer.filter_by_bound(dataframe=nodes[0], label='success', bound=interval.closed(0.7,1), display_other_labels=True)
     print(filtered_df)
-
-    # The code below will print all the dataframes from each timestep for both edges and nodes
-    # for df in nodes:
-    #     print(df, '\n')
-
-    # for df in edges:
-    #     print(df, '\n')
 
 
 if __name__ == "__main__":

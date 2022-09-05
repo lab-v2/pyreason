@@ -18,6 +18,9 @@ class Edge:
     def __hash__(self):
         return hash(str(self))
 
+    def __repr__(self):
+        return get_id()
+
     def get_source(self):
         return self._source
 
