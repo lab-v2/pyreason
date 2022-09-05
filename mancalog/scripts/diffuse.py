@@ -21,6 +21,8 @@ def argparser():
     parser.add_argument("--facts_yaml_path", type=str, required=True)
     parser.add_argument("--profile", type=bool, required=False, default=False)
     parser.add_argument("--profile_output", type=str)
+    parser.add_argument("--read_graph_attributes", type=bool, default=True)
+
     return parser.parse_args()
 
 # TODO: Make facts for edges supported
@@ -28,11 +30,11 @@ def main(args):
     graphml_parser = GraphmlParser()
     yaml_parser = YAMLParser()
     graph_data = graphml_parser.parse_graph(args.graph_path)
-    import time
-    start = time.time()
-    non_fluent_facts, specific_node_labels, specific_edge_labels = graphml_parser.parse_graph_attributes(args.timesteps) 
-    end = time.time()
-    print(end-start)
+
+    if args.read_graph_attributes:
+        non_fluent_facts, specific_node_labels, specific_edge_labels = graphml_parser.parse_graph_attributes(args.timesteps) 
+
+
 
     # Read graph & retrieve tmax
     tmax = args.timesteps
@@ -43,8 +45,12 @@ def main(args):
 
     # Initialize labels
     node_labels, edge_labels, snl, sel = yaml_parser.parse_labels(args.labels_yaml_path)
-    specific_node_labels.update(snl)
-    specific_edge_labels.update(sel)
+    if args.read_graph_attributes:
+        specific_node_labels.update(snl)
+        specific_edge_labels.update(sel)
+    else:
+        specific_node_labels = snl
+        specific_edge_labels = sel
 
     # Rules come here
     rules = yaml_parser.parse_rules(args.rules_yaml_path)
