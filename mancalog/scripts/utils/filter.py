@@ -1,7 +1,5 @@
 import pandas as pd
 
-from mancalog.scripts.numba_wrapper.numba_types.node_type import Node
-
 
 class Filter:
 
@@ -14,8 +12,6 @@ class Filter:
         df = pd.DataFrame(columns=columns)
         d = {}
         for row in dataframe:
-            if row['component'] == Node('n2825'):
-                print(row['success'], row['success'] in bound)
             if label in row.keys() and row[label] in bound:
                 d['component'] = row['component']
                 d[label] = row[label]
