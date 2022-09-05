@@ -34,8 +34,6 @@ def main(args):
     if args.read_graph_attributes:
         non_fluent_facts, specific_node_labels, specific_edge_labels = graphml_parser.parse_graph_attributes(args.timesteps) 
 
-
-
     # Read graph & retrieve tmax
     tmax = args.timesteps
 
@@ -89,7 +87,7 @@ def main(args):
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
     print('Filtering data...')
     filterer = Filter()
-    filtered_df = filterer.filter_by_bound(dataframe=nodes[0], label='success', bound=interval.closed(0.7,1), display_other_labels=True)
+    filtered_df = filterer.filter_by_bound(dataframe=nodes[args.timesteps], label='success', bound=interval.closed(0.7,1), display_other_labels=True)
     print(filtered_df)
 
 
