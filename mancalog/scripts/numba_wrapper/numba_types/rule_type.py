@@ -65,7 +65,7 @@ def typeof_rule(val, c):
 @type_callable(Rule)
 def type_rule(context):
     def typer(target, tc_node, tc_edge, delta, neigh_nodes, neigh_edges, inf):
-        if isinstance(target, label.LabelType) and (isinstance(tc_node, types.NoneType) or isinstance(tc_node, types.ListType)) and (isinstance(tc_edge, types.NoneType) or isinstance(tc_edge, types.ListType)) and isinstance(delta, types.Integer) and (isinstance(neigh_nodes, types.NoneType) or isinstance(neigh_nodes, types.ListType)) and (isinstance(neigh_edges, types.NoneType) or isinstance(neigh_edges, types.ListType)) and isinstance(inf, sft_tipping.SftTippingType):
+        if isinstance(target, label.LabelType) and isinstance(tc_node, (types.NoneType, types.ListType)) and isinstance(tc_edge, (types.NoneType, types.ListType)) and isinstance(delta, types.Integer) and isinstance(neigh_nodes, (types.NoneType, types.ListType)) and isinstance(neigh_edges, (types.NoneType, types.ListType)) and isinstance(inf, sft_tipping.SftTippingType):
             return rule_type
     return typer
 
@@ -78,7 +78,7 @@ class RuleModel(models.StructModel):
             ('target', label.label_type),
             ('tc_node', types.ListType(types.Tuple((label.label_type, interval.interval_type)))),
             ('tc_edge', types.ListType(types.Tuple((label.label_type, interval.interval_type)))),
-            ('delta', types.int64),
+            ('delta', types.int8),
             ('neigh_nodes', types.ListType(types.Tuple((label.label_type, interval.interval_type)))),
             ('neigh_edges', types.ListType(types.Tuple((label.label_type, interval.interval_type)))),
             ('inf', sft_tipping.sft_tipping_type)
@@ -96,7 +96,7 @@ make_attribute_wrapper(RuleType, 'neigh_edges', 'neigh_edges')
 make_attribute_wrapper(RuleType, 'inf', 'inf')
 
 # Implement constructor
-@lower_builtin(Rule, label.label_type, types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.int64, types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.ListType(types.Tuple((label.label_type, interval.interval_type))), sft_tipping.sft_tipping_type)
+@lower_builtin(Rule, label.label_type, types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.int8, types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.ListType(types.Tuple((label.label_type, interval.interval_type))), sft_tipping.sft_tipping_type)
 def impl_rule(context, builder, sig, args):
     typ = sig.return_type
     target, tc_node, tc_edge, delta, neigh_nodes, neigh_edges, inf = args
@@ -170,7 +170,7 @@ def unbox_rule(typ, obj, c):
     rule.target = c.unbox(label.label_type, target_obj).value
     rule.tc_node = c.unbox(types.ListType(types.Tuple((label.label_type, interval.interval_type))), tc_node_obj).value
     rule.tc_edge = c.unbox(types.ListType(types.Tuple((label.label_type, interval.interval_type))), tc_edge_obj).value
-    rule.delta = c.unbox(types.int64, delta_obj).value
+    rule.delta = c.unbox(types.int8, delta_obj).value
     rule.neigh_nodes = c.unbox(types.ListType(types.Tuple((label.label_type, interval.interval_type))), neigh_nodes_obj).value
     rule.neigh_edges = c.unbox(types.ListType(types.Tuple((label.label_type, interval.interval_type))), neigh_edges_obj).value
     rule.inf = c.unbox(sft_tipping.sft_tipping_type, inf_obj).value
@@ -193,7 +193,7 @@ def box_rule(typ, val, c):
     target_obj = c.box(label.label_type, rule.target)
     tc_node_obj = c.box(types.ListType(types.Tuple((label.label_type, interval.interval_type))), rule.tc_node)
     tc_edge_obj = c.box(types.ListType(types.Tuple((label.label_type, interval.interval_type))), rule.tc_edge)
-    delta_obj = c.box(types.int64, rule.delta)
+    delta_obj = c.box(types.int8, rule.delta)
     neigh_nodes_obj = c.box(types.ListType(types.Tuple((label.label_type, interval.interval_type))), rule.neigh_nodes)
     neigh_edges_obj = c.box(types.ListType(types.Tuple((label.label_type, interval.interval_type))), rule.neigh_edges)
     inf_obj = c.box(sft_tipping.sft_tipping_type, rule.inf)

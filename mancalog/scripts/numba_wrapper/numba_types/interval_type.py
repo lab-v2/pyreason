@@ -88,6 +88,7 @@ class Interval:
 
 
 import operator
+import numpy as np
 from numba import types
 from numba.extending import typeof_impl
 from numba.extending import type_callable
@@ -108,13 +109,13 @@ interval_type = IntervalType()
 
 # Type inference
 @typeof_impl.register(Interval)
-def typeof_node(val, c):
+def typeof_interval(val, c):
     return interval_type
 
 
 # Construct object from Numba functions
 @type_callable(Interval)
-def type_node(context):
+def type_interval(context):
     def typer(left, low, up, right):
         if isinstance(low, types.Float) and isinstance(up, types.Float) and isinstance(left, types.UnicodeType) and isinstance(right, types.UnicodeType):
             return interval_type
@@ -126,8 +127,8 @@ def type_node(context):
 class IntervalModel(models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [
-            ('low', types.float64),
-            ('up', types.float64),
+            ('low', types.float32),
+            ('up', types.float32),
             ('left', types.string),
             ('right', types.string),
             ]
@@ -142,8 +143,8 @@ make_attribute_wrapper(IntervalType, 'right', 'right')
 
 
 # Implement constructor
-@lower_builtin(Interval, types.UnicodeType, types.Float, types.Float, types.UnicodeType)
-def impl_node(context, builder, sig, args):
+@lower_builtin(Interval, types.string, types.float32, types.float32, types.string)
+def impl_interval(context, builder, sig, args):
     typ = sig.return_type
     left, low, up, right = args
     interval = cgutils.create_struct_proxy(typ)(context, builder)
@@ -218,8 +219,8 @@ def unbox_interval(typ, obj, c):
     right_obj = c.pyapi.object_getattr_string(obj, "_right")
     interval = cgutils.create_struct_proxy(typ)(c.context, c.builder)
     interval.left = c.unbox(types.string, left_obj).value
-    interval.low = c.unbox(types.float64, lower_obj).value
-    interval.up = c.unbox(types.float64, upper_obj).value
+    interval.low = c.unbox(types.float32, lower_obj).value
+    interval.up = c.unbox(types.float32, upper_obj).value
     interval.right = c.unbox(types.string, right_obj).value
     c.pyapi.decref(left_obj)
     c.pyapi.decref(lower_obj)
@@ -231,12 +232,12 @@ def unbox_interval(typ, obj, c):
 
 
 @box(IntervalType)
-def box_node(typ, val, c):
+def box_interval(typ, val, c):
     interval = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
     class_obj = c.pyapi.unserialize(c.pyapi.serialize_object(Interval))
     left_obj = c.box(types.string, interval.left)
-    lower_obj = c.box(types.float64, interval.low)
-    upper_obj = c.box(types.float64, interval.up)
+    lower_obj = c.box(types.float32, interval.low)
+    upper_obj = c.box(types.float32, interval.up)
     right_obj = c.box(types.string, interval.right)
     res = c.pyapi.call_function_objargs(class_obj, (left_obj, lower_obj, upper_obj, right_obj))
     c.pyapi.decref(left_obj)
@@ -248,15 +249,8 @@ def box_node(typ, val, c):
 
 
 from numba import njit
+import numpy as np
 
 @njit
 def closed(lower, upper):
-    return Interval('[', lower, upper, ']')
-
-
-# @numba.njit
-# def f(a):
-#     b = closed(1.5, 2.1)
-#     return a.intersection(b)
-
-# print(f(closed(1.0,2.0)))
+    return Interval('[', np.float32(lower), np.float32(upper), ']')

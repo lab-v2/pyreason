@@ -39,7 +39,7 @@ class YAMLParser:
                     target_criteria_edge.append((label.Label(tc[0]), interval.closed(tc[1], tc[2])))
 
             # Set delta t
-            delta_t = values['delta_t']
+            delta_t = numba.types.int8(values['delta_t'])
 
             # Set neigh_nodes
             neigh_nodes = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))

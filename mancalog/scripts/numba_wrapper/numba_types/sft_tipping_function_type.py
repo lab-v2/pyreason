@@ -54,7 +54,7 @@ def type_sft_tipping(context):
 class SftTippingModel(models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [
-            ('threshold', types.float64),
+            ('threshold', types.float32),
             ('bnd_update', interval.interval_type)
             ]
         models.StructModel.__init__(self, dmm, fe_type, members)
@@ -93,7 +93,7 @@ def unbox_sft_tipping(typ, obj, c):
     threshold_obj = c.pyapi.object_getattr_string(obj, "_threshold")
     bnd_update_obj = c.pyapi.object_getattr_string(obj, "_bnd_update")
     sft_tipping = cgutils.create_struct_proxy(typ)(c.context, c.builder)
-    sft_tipping.threshold = c.unbox(types.float64, threshold_obj).value
+    sft_tipping.threshold = c.unbox(types.float32, threshold_obj).value
     sft_tipping.bnd_update = c.unbox(interval.interval_type, bnd_update_obj).value
     c.pyapi.decref(threshold_obj)
     c.pyapi.decref(bnd_update_obj)
