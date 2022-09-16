@@ -40,6 +40,7 @@ def main(args):
     # Take a subgraph of the actual data
     # graph_data = nx.subgraph(graph_data, ['n2825', 'n2625', 'n2989'])
     graph = NetworkGraph('graph', list(graph_data.nodes), list(graph_data.edges))
+    del graph_data
 
     # Initialize labels
     node_labels, edge_labels, snl, sel = yaml_parser.parse_labels(args.labels_yaml_path)
@@ -87,7 +88,7 @@ def main(args):
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
     print('Filtering data...')
     filterer = Filter()
-    filtered_df = filterer.filter_by_bound(dataframe=nodes[args.timesteps], label='success', bound=interval.closed(0.7,1), display_other_labels=True)
+    filtered_df = filterer.filter_by_bound(dataframe=nodes[args.timesteps], label='success', bound=interval.closed(0.7,1), display_other_labels=False)
     print(filtered_df)
 
 

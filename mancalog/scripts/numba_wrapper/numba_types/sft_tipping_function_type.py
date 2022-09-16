@@ -1,4 +1,3 @@
-# import interval_type as interval
 import mancalog.scripts.numba_wrapper.numba_types.interval_type as interval
 
 class SftTippingFunction():
@@ -16,6 +15,7 @@ class SftTippingFunction():
         return bnd
 
 
+import numpy as np
 from numba import types
 from numba.extending import typeof_impl
 from numba.extending import type_callable
@@ -69,7 +69,7 @@ make_attribute_wrapper(SftTippingType, 'bnd_update', 'bnd_update')
 def impl_sft_tipping(context, builder, sig, args):
     typ = sig.return_type
     sft_tipping = cgutils.create_struct_proxy(typ)(context, builder)
-    sft_tipping.threshold = 0.5
+    sft_tipping.threshold = np.float32(0.5)
     sft_tipping.bnd_update = interval.closed(0.7, 1.0)
     return sft_tipping._getvalue()
 

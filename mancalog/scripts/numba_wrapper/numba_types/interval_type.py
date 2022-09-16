@@ -3,8 +3,8 @@ class Interval:
     No support for open, closedopen, openclosed
     """
     def __init__(self, left, lower, upper, right):
-        self._lower = lower
-        self._upper = upper
+        self._lower = round(lower, 7)
+        self._upper = round(upper, 7)
         self._left = left
         self._right = right
         # self.name = hash(f'{self._left}{self._lower},{self._upper}{self._right}')
@@ -24,7 +24,7 @@ class Interval:
     def intersection(self, interval):
         lower = max(self._lower, interval.lower)
         upper = min(self._upper, interval.upper)
-        return Interval('[', lower, upper, ']')
+        return Interval('[', lower, upper, ']')    
 
     def __hash__(self):
         return hash(self.to_str())
@@ -158,13 +158,13 @@ def impl_interval(context, builder, sig, args):
 @overload_attribute(IntervalType, "lower")
 def get_lower(interval):
     def getter(interval):
-        return interval.low
+        return round(interval.low, 7)
     return getter
 
 @overload_attribute(IntervalType, "upper")
 def get_upper(interval):
     def getter(interval):
-        return interval.up
+        return round(interval.up, 7)
     return getter
 
 @overload_method(IntervalType, 'intersection')
@@ -187,6 +187,16 @@ def interval_eq(interval_1, interval_2):
     if isinstance(interval_1, IntervalType) and isinstance(interval_2, IntervalType):
         def impl(interval_1, interval_2):
             if interval_1.lower == interval_2.lower and interval_1.upper == interval_2.upper:
+                return True
+            else:
+                return False 
+        return impl
+
+@overload(operator.ne)
+def interval_ne(interval_1, interval_2):
+    if isinstance(interval_1, IntervalType) and isinstance(interval_2, IntervalType):
+        def impl(interval_1, interval_2):
+            if interval_1.lower != interval_2.lower or interval_1.upper != interval_2.upper:
                 return True
             else:
                 return False 
