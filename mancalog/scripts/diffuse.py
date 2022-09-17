@@ -22,6 +22,7 @@ def argparser():
     parser.add_argument("--profile", type=bool, required=False, default=False)
     parser.add_argument("--profile_output", type=str)
     parser.add_argument("--read_graph_attributes", type=bool, default=True)
+    parser.add_argument("--history", type=bool, default=False)
 
     return parser.parse_args()
 
@@ -68,13 +69,14 @@ def main(args):
     # Diffusion process
     print('Graph loaded successfully, rules, labels and facts parsed successfully')
     print('Starting diffusion')
-    interpretation = program.diffusion()
+    interpretation = program.diffusion(args.history)
     print('Finished diffusion')
 
     # Write output to a pickle file. The output is a list of panda dataframes. The index of the list corresponds to the timestep
     # Warning: writing for a large graph can be very time consuming
     print('Writing dataframe to pickle files (this may take a while, remove this if not necessary)')
-    output = Output(args.timesteps)
+    timesteps = args.timesteps if args.history else 0
+    output = Output(timesteps)
     output.write(interpretation)
     print('Finished writing dataframe to pickle files')
 
@@ -88,7 +90,8 @@ def main(args):
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
     print('Filtering data...')
     filterer = Filter()
-    filtered_df = filterer.filter_by_bound(dataframe=nodes[args.timesteps], label='success', bound=interval.closed(0.7,1), display_other_labels=False)
+    idx = args.timesteps if args.history else 0
+    filtered_df = filterer.filter_by_bound(dataframe=nodes[idx], label='success', bound=interval.closed(0.7,1), display_other_labels=False)
     print(filtered_df)
 
 

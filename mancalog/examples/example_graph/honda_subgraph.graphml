@@ -12,7 +12,7 @@
 <node id="n2825"><data key="name">Cie Generale des Etablissements Michelin</data><data key="marketcap">2210000.0</data><data key="gics">251010</data><data key="isin">FR0000121261</data></node>
 <node id="n2989"><data key="name">Alfa Laval AB</data><data key="marketcap">7640.0</data><data key="gics">201060</data><data key="isin">SE0000695876</data></node>
 
-<edge id="e0" source="n2625" target="n2825"><data key="type">CAPEX</data><data key="value">654.0</data><data key="cost">0.12</data></edge>
+<edge id="e0" source="n2825" target="n2625"><data key="type">CAPEX</data><data key="value">654.0</data><data key="cost">0.12</data></edge>
 <edge id="e1" source="n2989" target="n2825"><data key="type">COGS</data><data key="value">3.31</data><data key="cost">0.1</data></edge>
 </graph>
 </graphml>
