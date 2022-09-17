@@ -22,7 +22,7 @@ def argparser():
     parser.add_argument("--profile", type=bool, required=False, default=False)
     parser.add_argument("--profile_output", type=str)
     parser.add_argument("--read_graph_attributes", type=bool, default=True)
-    parser.add_argument("--history", type=bool, default=False)
+    parser.add_argument("--history", type=bool, default=True)
 
     return parser.parse_args()
 
