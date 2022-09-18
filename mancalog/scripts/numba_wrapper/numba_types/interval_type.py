@@ -175,11 +175,31 @@ def intersection(interval_1, interval_2):
         return Interval('[', lower, upper, ']')
     return impl
 
-# @overload_method(IntervalType, 'to_str')
-# def to_str(interval):
-#     def impl(interval):
-#         return f'{interval.left}{interval.lower},{interval.upper}{interval.right}'
-#     return impl
+@overload_method(IntervalType, 'set_lower')
+def set_lower(interval, l):
+    def impl(interval, l):
+        interval.low = l
+    return impl
+
+@overload_method(IntervalType, 'set_lower')
+def set_lower(interval, l):
+    def impl(interval, l):
+        interval.low = np.float32(l)
+    return impl
+
+@overload_method(IntervalType, 'set_upper')
+def set_upper(interval, u):
+    def impl(interval, u):
+        interval.up = np.float32(u)
+    return impl
+
+@overload_method(IntervalType, 'set_lower_upper')
+def set_lower_upper(interval, l, u):
+    def impl(interval, l, u):
+        interval.low = np.float32(l)
+        interval.up = np.float32(u)
+    return impl
+
 
 
 @overload(operator.eq)
