@@ -79,7 +79,7 @@ def influence(sft_tipping, neigh_len, qualified_neigh_len):
     def getter(sft_tipping, neigh_len, qualified_neigh_len):
         bnd = interval.closed(0.0, 1.0)
         if neigh_len != 0:
-            if (qualified_neigh_len / neigh_len) > sft_tipping.threshold:
+            if (qualified_neigh_len / neigh_len) >= sft_tipping.threshold:
                 bnd = sft_tipping.bnd_update
         return bnd
     return getter

@@ -1,7 +1,9 @@
 import io
+import time
 import argparse
 import cProfile
 import pstats
+import sys
 
 import mancalog.scripts.interval.interval as interval
 from mancalog.scripts.program.program import Program
@@ -21,6 +23,7 @@ def argparser():
     parser.add_argument("--facts_yaml_path", type=str, required=True)
     parser.add_argument("--profile", type=bool, required=False, default=False)
     parser.add_argument("--profile_output", type=str)
+    parser.add_argument("--save_output_to_file", type=bool, default=False)
     parser.add_argument("--read_graph_attributes", type=bool, default=True)
     parser.add_argument("--history", type=bool, default=True)
 
@@ -28,19 +31,31 @@ def argparser():
 
 # TODO: Make facts for edges supported
 def main(args):
+    if args.save_output_to_file:
+        sys.stdout = open("./output/mancalog_output.txt", "w")
+
     graphml_parser = GraphmlParser()
     yaml_parser = YAMLParser()
+    start = time.time()
     graph_data = graphml_parser.parse_graph(args.graph_path)
+    end = time.time()
+    print('Time to read graph:', end-start)
 
     if args.read_graph_attributes:
+        start = time.time()
         non_fluent_facts, specific_node_labels, specific_edge_labels = graphml_parser.parse_graph_attributes(args.timesteps) 
+        end = time.time()
+        print('Time to read graph attributes:', end-start)
 
     # Read graph & retrieve tmax
     tmax = args.timesteps
 
     # Take a subgraph of the actual data
     # graph_data = nx.subgraph(graph_data, ['n2825', 'n2625', 'n2989'])
+    start = time.time()
     graph = NetworkGraph('graph', list(graph_data.nodes), list(graph_data.edges))
+    end = time.time()
+    print('Time to initialize graph for diffusion:', end-start)
     del graph_data
 
     # Initialize labels
@@ -69,7 +84,10 @@ def main(args):
     # Diffusion process
     print('Graph loaded successfully, rules, labels and facts parsed successfully')
     print('Starting diffusion')
+    start = time.time()
     interpretation = program.diffusion(args.history)
+    end = time.time()
+    print('Time to complete diffusion:', end-start)
     print('Finished diffusion')
 
     # Write output to a pickle file. The output is a list of panda dataframes. The index of the list corresponds to the timestep

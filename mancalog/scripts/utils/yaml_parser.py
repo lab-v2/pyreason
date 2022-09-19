@@ -54,7 +54,7 @@ class YAMLParser:
                     neigh_edges.append((label.Label(ne[0]), interval.closed(ne[1], ne[2])))
 
             # Set influence function
-            influence = self._get_influence_function(values['influence'])
+            influence = self._get_influence_function(values['influence'][0], values['influence'][1])
             
             r = rule.Rule(target, target_criteria_node, target_criteria_edge, delta_t, neigh_nodes, neigh_edges, influence)
             rules.append(r)
@@ -111,13 +111,14 @@ class YAMLParser:
         return node_labels, edge_labels, specific_node_labels, specific_edge_labels
 
 
-    def _get_influence_function(self, influence_function):
+    def _get_influence_function(self, influence_function, threshold):
         f = SftTippingFunction()
         if influence_function == 'tp':
             f._threshold = 0.5
             f._bnd_update = interval.closed(1.0, 1.0)
             return f
         elif influence_function == 'sft_tp':
+            f._threshold = threshold
             return f
         elif influence_function == 'ng_tp':
             f._threshold = 1.0
