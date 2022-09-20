@@ -18,7 +18,7 @@ class Interpretation:
 		self._tmax = tmax
 		self._graph = graph
 		self._history = history
-		print(self._history)
+
 		# Initialize list of tuples for rules to be applied, only if history is off
 		if not self._history:
 			self.rules_to_be_applied_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, node.node_type, label.label_type, interval.interval_type)))
