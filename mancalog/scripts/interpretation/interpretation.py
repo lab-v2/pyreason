@@ -156,19 +156,19 @@ class Interpretation:
 				# General labels
 				for n in nodes:
 					for l in labels_node:
-						interpretations_node[0][n].world[l].set_lower_upper(0, 1)
+						interpretations_node[0][n].world[l] = interval.closed(0.0, 1.0)
 				# Specific labels
 				for l, ns in specific_labels_node.items():
 					for n in ns:
-						interpretations_node[0][n].world[l].set_lower_upper(0, 1)
+						interpretations_node[0][n].world[l] = interval.closed(0.0, 1.0)
 				# Reset edges
 				# General labels
 				for e in edges:
-					interpretations_edge[0][e].world[l].set_lower_upper(0, 1)
+					interpretations_edge[0][e].world[l] = interval.closed(0.0, 1.0)
 				# Specific labels
 				for l, es in specific_labels_edge.items():
 					for e in es:
-						interpretations_edge[0][e].world[l].set_lower_upper(0, 1)
+						interpretations_edge[0][e].world[l] = interval.closed(0.0, 1.0)
 
 			for fact in facts:
 				if t in range(fact.get_time_lower(), fact.get_time_upper() + 1):

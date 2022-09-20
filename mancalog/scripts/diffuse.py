@@ -4,6 +4,7 @@ import argparse
 import cProfile
 import pstats
 import sys
+import memory_profiler as mp
 
 import mancalog.scripts.interval.interval as interval
 from mancalog.scripts.program.program import Program
@@ -25,7 +26,7 @@ def argparser():
     parser.add_argument("--profile_output", type=str)
     parser.add_argument("--save_output_to_file", type=bool, default=False)
     parser.add_argument("--read_graph_attributes", type=bool, default=True)
-    parser.add_argument("--history", type=bool, default=True)
+    parser.add_argument("--history", type=int, default=1)
 
     return parser.parse_args()
 
@@ -116,6 +117,7 @@ def main(args):
 if __name__ == "__main__":
     args = argparser()
 
+
     if args.profile:
         profiler = cProfile.Profile()
         profiler.enable()
@@ -128,4 +130,7 @@ if __name__ == "__main__":
             f.write(s.getvalue())
 
     else:
-        main(args)
+        start_mem = mp.memory_usage(max_usage=True)
+        mem_usage = mp.memory_usage((main, [args]), max_usage=True)
+        print(f"\nProgram used {mem_usage-start_mem} MB of memory")
+        # main(args)
