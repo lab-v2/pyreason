@@ -26,7 +26,7 @@ def argparser():
     parser.add_argument("--profile_output", type=str)
     parser.add_argument("--save_output_to_file", type=bool, default=False)
     parser.add_argument("--read_graph_attributes", type=bool, default=True)
-    parser.add_argument("--history", type=int, default=1)
+    parser.add_argument("--history", type=bool, default=False)
 
     return parser.parse_args()
 
