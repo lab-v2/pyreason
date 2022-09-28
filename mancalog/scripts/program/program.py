@@ -7,12 +7,12 @@ class Program:
 	specific_node_labels = []
 	specific_edge_labels = []
 
-	def __init__(self, net_diff_graph, tmax, facts = [], local_rules = [], global_rules = []):
+	def __init__(self, net_diff_graph, tmax, facts, rules, ipls):
 		self._net_diff_graph = net_diff_graph
 		self._tmax = tmax
 		self._facts = facts
-		self._local_rules = local_rules
-		self._global_rules = global_rules
+		self._rules = rules
+		self._ipls = ipls
 		self._interp = None
 
 	def diffusion(self, history):
@@ -28,7 +28,7 @@ class Program:
 		self._interp.apply_facts(self._facts)
 
 		old_interp.copy(self._interp)
-		self._interp.apply_rules(self._local_rules, self._facts)
+		self._interp.apply_rules(self._rules, self._facts)
 
 		#this while will be executed until a fixed point is reached
 		fp_op_cnt = 1
@@ -36,7 +36,7 @@ class Program:
 		while not old_interp == self._interp:
 			fp_op_cnt += 1
 			old_interp.copy(self._interp)
-			self._interp.apply_rules(self._local_rules, self._facts)
+			self._interp.apply_rules(self._rules, self._facts)
 			print('Fixed Point iteration:', fp_op_cnt)
 
 		return self._interp		

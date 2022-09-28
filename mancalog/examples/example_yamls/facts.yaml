@@ -2,16 +2,26 @@
 # DO NOT MODIFY! THIS IS FOR EXAMPLE PURPOSES ONLY
 ---
 # List all facts below
-fact_1:
-    node: n2825         # Name of the node
-    label: success      # Name of the label of the node
-    bound: [0.6, 0.8]   # Bound of the label
-    t_lower: 0          # Starting time
-    t_upper: 0          # Ending time. In this case it will be active for the first timestep t=0
+nodes:
+    fact_1:
+        node: n2825         # Name of the node
+        label: success      # Name of the label of the node
+        bound: [0.6, 0.8]   # Bound of the label
+        t_lower: 0          # Starting time
+        t_upper: 0          # Ending time. In this case it will be active for the first timestep t=0
 
-fact_2:
-    node: n2825
-    label: failure
-    bound: [0.1, 0.5]
-    t_lower: 0
-    t_upper: 0
+    fact_2:
+        node: n2825
+        label: failure
+        bound: [0.1, 0.5]
+        t_lower: 0
+        t_upper: 0
+
+edges:
+    fact_1:
+        source: n2989       # Source of the edge
+        target: n2825       # Target of the edge
+        label: success      # Name of the label of the node
+        bound: [0.6, 0.8]   # Bound of the label
+        t_lower: 0          # Starting time
+        t_upper: 0          # Ending time. In this case it will be active for the first timestep t=0

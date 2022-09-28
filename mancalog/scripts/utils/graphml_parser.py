@@ -1,7 +1,7 @@
 import networkx as nx
 import numba
 
-import mancalog.scripts.numba_wrapper.numba_types.fact_type as fact
+import mancalog.scripts.numba_wrapper.numba_types.fact_node_type as fact
 import mancalog.scripts.numba_wrapper.numba_types.node_type as node
 import mancalog.scripts.numba_wrapper.numba_types.edge_type as edge
 import mancalog.scripts.numba_wrapper.numba_types.label_type as label

@@ -1,0 +1,5 @@
+# Inconsistent predicate list
+# Add any other inconsistencies below if necessary
+---
+ipl:
+    - [success, failre]
