@@ -30,13 +30,12 @@ class Program:
 		old_interp.copy(self._interp)
 		self._interp.apply_rules(self._rules, self._facts)
 
-		#this while will be executed until a fixed point is reached
-		fp_op_cnt = 1
-		print('Fixed Point iteration:', fp_op_cnt)
+		# This while will be executed until a fixed point is reached
+		fp_op_cnt = 0
 		while not old_interp == self._interp:
-			fp_op_cnt += 1
+			fp_op_cnt += self._tmax
 			old_interp.copy(self._interp)
 			self._interp.apply_rules(self._rules, self._facts)
-			print('Fixed Point iteration:', fp_op_cnt)
 
+		print('Fixed Point iterations:', fp_op_cnt)
 		return self._interp		
