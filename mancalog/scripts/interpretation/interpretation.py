@@ -6,6 +6,7 @@ import mancalog.scripts.numba_wrapper.numba_types.label_type as label
 import mancalog.scripts.numba_wrapper.numba_types.interval_type as interval
 
 import numba
+import operator
 
 
 class Interpretation:
@@ -136,7 +137,7 @@ class Interpretation:
 						if are_satisfied_node(interpretations_node, tDelta, n, rule.get_target_criteria_node()):
 							a = neighbors[n]
 							b = _get_qualified_neigh(interpretations_node, interpretations_edge, neighbors[n], tDelta, n, rule.get_neigh_nodes(), rule.get_neigh_edges())
-							bnd = rule.influence(neigh=a, qualified_neigh=b)
+							bnd = influence(inf_name=rule.get_influence(), neigh=a, qualified_neigh=b, thresholds=rule.get_thresholds())
 							_na_update_node(interpretations_node, t, n, (rule.get_target(), bnd))
 					# Go through all edges and check if any rules apply to them.
 					# Comment out the following lines if there are no labels or rules that deal with edges. It will be an unnecessary loop
@@ -191,7 +192,7 @@ class Interpretation:
 					if are_satisfied_node(interpretations_node, 0, n, rule.get_target_criteria_node()):
 						a = neighbors[n]
 						b = _get_qualified_neigh(interpretations_node, interpretations_edge, neighbors[n], 0, n, rule.get_neigh_nodes(), rule.get_neigh_edges())
-						bnd = rule.influence(neigh=a, qualified_neigh=b)
+						bnd = influence(inf_name=rule.get_influence(), neigh=a, qualified_neigh=b, thresholds=rule.get_thresholds())
 						rules_to_be_applied_node.append((numba.types.int8(t+rule.get_delta()), n, rule.get_target(), bnd))
 				# Go through all edges and check if any rules apply to them.
 				# Comment out the following lines if there are no labels or rules that deal with edges. It will be an unnecessary loop
@@ -282,14 +283,27 @@ def _get_bound_edge(interpretations_edge, time, comp, l):
 
 
 @numba.njit
-def _get_qualified_neigh(interpretations_node, interpretations_edge, candidates, time, node, nc_node, nc_edge):
-	result = numba.typed.List()
-	if(len(nc_node)>0):
-		[result.append(n) for n in candidates if are_satisfied_node(interpretations_node, time, n, nc_node)]
-	if(len(nc_edge)>0):
-		[result.append(n) for n in candidates if are_satisfied_edge(interpretations_edge, time, edge.Edge(n.get_id(), node.get_id()), nc_edge)]
+def _get_qualified_neigh(interpretations_node, interpretations_edge, candidates, time, _node, nc_node, nc_edge):
+	result_node = numba.typed.List.empty_list(numba.typed.List.empty_list(node.node_type))
+	result_edge = numba.typed.List.empty_list(numba.typed.List.empty_list(node.node_type))
+	for _ in range(len(nc_node)):
+		result_node.append(numba.typed.List.empty_list(node.node_type))
+	for _ in range(len(nc_edge)):
+		result_edge.append(numba.typed.List.empty_list(node.node_type))
 
-	return result
+	# Get 2D array of qualified neighbors for neighbor criteria. Each element corresponds to 1 nc
+	if(len(nc_node)>0):
+		for i, nc in enumerate(nc_node):
+			[result_node[i].append(n) for n in candidates if are_satisfied_node(interpretations_node, time, n, [nc])]
+			
+	if(len(nc_edge)>0):
+		for i, nc in enumerate(nc_edge):
+			[result_edge[i].append(n) for n in candidates if are_satisfied_edge(interpretations_edge, time, edge.Edge(n.get_id(), _node.get_id()), [nc])]
+
+	# Merge all qualifed neigh into one
+	for i in result_edge:
+		result_node.append(i)
+	return result_node
 
 @numba.njit
 def _na_update_node(interpretations, time, comp, na):
@@ -352,3 +366,62 @@ def is_satisfied_edge(interpretations, time, comp, na):
 	else:
 		result = True
 	return result
+
+@numba.njit
+def influence(inf_name, neigh, qualified_neigh, thresholds):
+	# For each value in qualified neigh, check if it satisfies threshold. len(thresholds) = len(qualified_neigh)
+	result = False
+	for i in range(len(qualified_neigh)):
+		if thresholds[i][1]=='number':
+			if thresholds[i][0]=='greater_equal':
+				result = True if len(qualified_neigh[i]) >= thresholds[i][2] else False
+			elif thresholds[i][0]=='greater':
+				result = True if len(qualified_neigh[i]) > thresholds[i][2] else False
+			elif thresholds[i][0]=='less_equal':
+				result = True if len(qualified_neigh[i]) <= thresholds[i][2] else False
+			elif thresholds[i][0]=='less':
+				result = True if len(qualified_neigh[i]) < thresholds[i][2] else False
+			elif thresholds[i][0]=='equal':
+				result = True if len(qualified_neigh[i]) == thresholds[i][2] else False
+			
+		elif thresholds[i][1]=='percent' and len(neigh)!=0:
+			if thresholds[i][0]=='greater_equal':
+				result = True if len(qualified_neigh[i])/len(neigh) >= thresholds[i][2]*0.01 else False
+			elif thresholds[i][0]=='greater':
+				result = True if len(qualified_neigh[i])/len(neigh)  > thresholds[i][2]*0.01 else False
+			elif thresholds[i][0]=='less_equal':
+				result = True if len(qualified_neigh[i])/len(neigh)  <= thresholds[i][2]*0.01 else False
+			elif thresholds[i][0]=='less':
+				result = True if len(qualified_neigh[i])/len(neigh)  < thresholds[i][2]*0.01 else False
+			elif thresholds[i][0]=='equal':
+				result = True if len(qualified_neigh[i])/len(neigh)  == thresholds[i][2]*0.01 else False
+		
+		if result==False:
+			break
+	
+	# If result is true, then all qualified neighbors have passed and we can influence the node
+	if result:
+		if inf_name=='sft_tp':
+			return interval.closed(0.7, 1)
+		if inf_name=='ng_tp':
+			return interval.closed(0, 0.2)
+		if inf_name=='tp':
+			return interval.closed(1, 1)
+	else:
+		return interval.closed(0,1)
+
+
+@numba.njit
+def check_for_inconsistency(w, ipl):
+	for (a, b) in ipl:
+		bnd_a = interval.closed(0,1)
+		bnd_b = interval.closed(0,1)
+		for l, bnd in w.world.items():
+			if l==a:
+				bnd_a = bnd
+			if l==b:
+				bnd_b = bnd
+
+
+
+

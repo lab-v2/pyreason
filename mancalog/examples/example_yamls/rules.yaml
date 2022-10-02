@@ -15,13 +15,13 @@ rule_1:
 
     delta_t: 1          # Delta t, time when this rule is applicable
 
-    neigh_nodes:        # List of all neighbour nodes
-        - [success, 0.5, 1.0]
+    neigh_nodes:        # List of all neighbour nodes in the form [label, [lower_bound, upper_bound], [equal/greater/less/greater_equal/less_equal, number/percent, value]]
+        - [success, [0.5, 1.0], [greater_equal, percent, 50]]
 
     neigh_edges:        # List of all neighbour edges (null for None)
         null
 
-    influence: [sft_tp, 0.5]   # Influence function name along with the threshold value. Available influence functions are: tp, ng_tp, sft_tp
+    influence: sft_tp   # Influence function name. Available influence functions are: tp, ng_tp, sft_tp
 
 # Start of next rule
 rule_2:
@@ -31,9 +31,9 @@ rule_2:
     target_criteria_edge: null
     delta_t: 1
     neigh_nodes:
-        - [failure, 0.5, 1.0]
+        - [failure, [0.5, 1.0], [greater_equal, percent, 50]]
     neigh_edges: null
-    influence: [sft_tp, 0.5]
+    influence: sft_tp
 
 
 

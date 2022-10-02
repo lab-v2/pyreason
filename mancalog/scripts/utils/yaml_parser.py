@@ -42,22 +42,26 @@ class YAMLParser:
             # Set delta t
             delta_t = numba.types.int8(values['delta_t'])
 
+            # Array of thresholds to keep track of for each neighbor criterion. Form [(comparison, number/percent, thresh)]
+            thresholds = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.string, numba.types.float64)))
+
             # Set neigh_nodes
             neigh_nodes = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
             if values['neigh_nodes'] is not None:
                 for nn in values['neigh_nodes']:
-                    neigh_nodes.append((label.Label(nn[0]), interval.closed(nn[1], nn[2])))
+                    neigh_nodes.append((label.Label(nn[0]), interval.closed(nn[1][0], nn[1][1])))
+                    thresholds.append((nn[2][0], nn[2][1], nn[2][2]))
 
             # Set neigh_edges
             neigh_edges = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
             if values['neigh_edges'] is not None:
                 for ne in values['neigh_edges']:
-                    neigh_edges.append((label.Label(ne[0]), interval.closed(ne[1], ne[2])))
-
-            # Set influence function
-            influence = self._get_influence_function(values['influence'][0], values['influence'][1])
+                    neigh_edges.append((label.Label(ne[0]), interval.closed(ne[1][0], ne[1][1])))
+                    thresholds.append((ne[2][0], ne[2][1], ne[2][2]))
             
-            r = rule.Rule(target, target_criteria_node, target_criteria_edge, delta_t, neigh_nodes, neigh_edges, influence)
+            inf = values['influence']
+
+            r = rule.Rule(target, target_criteria_node, target_criteria_edge, delta_t, neigh_nodes, neigh_edges, inf, thresholds)
             rules.append(r)
 
         return rules
