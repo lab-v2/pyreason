@@ -24,6 +24,9 @@ class Interval:
     def intersection(self, interval):
         lower = max(self._lower, interval.lower)
         upper = min(self._upper, interval.upper)
+        if lower > upper:
+            lower = 0
+            upper = 1
         return Interval('[', lower, upper, ']')    
 
     def __hash__(self):
@@ -172,6 +175,9 @@ def intersection(interval_1, interval_2):
     def impl(interval_1, interval_2):
         lower = max(interval_1.lower, interval_2.lower)
         upper = min(interval_1.upper, interval_2.upper)
+        if lower > upper:
+            lower = np.float32(0)
+            upper = np.float32(1)
         return Interval('[', lower, upper, ']')
     return impl
 
