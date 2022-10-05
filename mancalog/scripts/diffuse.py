@@ -18,7 +18,7 @@ from mancalog.scripts.utils.args import argparser
 # TODO: Make facts for edges supported
 def main(args):
     if args.output_to_file:
-        sys.stdout = open("./output/mancalog_output.txt", "w")
+        sys.stdout = open(f"./output/{args.output_file_name}.txt", "w")
 
     graphml_parser = GraphmlParser()
     yaml_parser = YAMLParser()
@@ -61,10 +61,10 @@ def main(args):
     facts_node += non_fluent_facts
 
     # Inconsistent predicate list
-    ipls = yaml_parser.parse_ipl(args.ipl_yaml_path)
+    ipl = yaml_parser.parse_ipl(args.ipl_yaml_path)
 
     # Program comes here
-    program = Program(graph, tmax, facts_node, rules, ipls)
+    program = Program(graph, tmax, facts_node, rules, ipl)
     program.available_labels_node = node_labels
     program.available_labels_edge = edge_labels
     program.specific_node_labels = specific_node_labels
