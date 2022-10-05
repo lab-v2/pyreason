@@ -18,6 +18,7 @@ def argparser():
     # Output form - on screen or in file
     parser.add_argument("--no-output_to_file", dest='output_to_file', action='store_false')
     parser.add_argument("--output_to_file", dest='output_to_file', action='store_true')
+    parser.add_argument("--output_file_name", type=str, default='mancalog_output')
     parser.set_defaults(output_to_file=False)
     # Graph attribute parsing
     parser.add_argument("--no-graph_attribute_parsing", dest='graph_attribute_parsing', action='store_false')
