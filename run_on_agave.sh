@@ -3,7 +3,7 @@
 #-------------------------------------------------------------------------
 #SBATCH -N 3                   # number of nodes
 #SBATCH -n 50                  # number of "tasks" (default: allocates 1 core per task)
-#SBATCH -t 0-00:02:00          # time in d-hh:mm:ss
+#SBATCH -t 0-02:00:00          # time in d-hh:mm:ss
 #SBATCH -p htc                 # partition 
 #SBATCH -o ./jobs/slurm.%j.out # file to save job's STDOUT (%j = JobId)
 #SBATCH -e ./jobs/slurm.%j.err # file to save job's STDERR (%j = JobId)
