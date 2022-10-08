@@ -72,24 +72,26 @@ class YAMLParser:
             facts_yaml = yaml.safe_load(file)
 
         facts_node = numba.typed.List()
-        for _, values in facts_yaml['nodes'].items():
-            n = node.Node(str(values['node']))
-            l = label.Label(values['label'])
-            bound = interval.closed(values['bound'][0], values['bound'][1])
-            t_lower = values['t_lower']
-            t_upper = values['t_upper']
-            f = fact_node.Fact(n, l, bound, t_lower, t_upper)
-            facts_node.append(f)
+        if facts_yaml['nodes'] is not None:
+            for _, values in facts_yaml['nodes'].items():
+                n = node.Node(str(values['node']))
+                l = label.Label(values['label'])
+                bound = interval.closed(values['bound'][0], values['bound'][1])
+                t_lower = values['t_lower']
+                t_upper = values['t_upper']
+                f = fact_node.Fact(n, l, bound, t_lower, t_upper)
+                facts_node.append(f)
 
         facts_edge = numba.typed.List()
-        for _, values in facts_yaml['edges'].items():
-            e = edge.Edge(str(values['source']), str(values['target']))
-            l = label.Label(values['label'])
-            bound = interval.closed(values['bound'][0], values['bound'][1])
-            t_lower = values['t_lower']
-            t_upper = values['t_upper']
-            f = fact_edge.Fact(e, l, bound, t_lower, t_upper)
-            facts_edge.append(f)
+        if facts_yaml['edges'] is not None:
+            for _, values in facts_yaml['edges'].items():
+                e = edge.Edge(str(values['source']), str(values['target']))
+                l = label.Label(values['label'])
+                bound = interval.closed(values['bound'][0], values['bound'][1])
+                t_lower = values['t_lower']
+                t_upper = values['t_upper']
+                f = fact_edge.Fact(e, l, bound, t_lower, t_upper)
+                facts_edge.append(f)
 
         return facts_node, facts_edge
 
@@ -129,11 +131,12 @@ class YAMLParser:
         with open(path, 'r') as file:
             ipl_yaml = yaml.safe_load(file)
 
-        ipls = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, label.label_type)))
-        for labels in ipl_yaml['ipl']:
-            ipls.append((label.Label(labels[0]), label.Label(labels[1])))
+        ipl = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, label.label_type)))
+        if ipl_yaml['ipl'] is not None:
+            for labels in ipl_yaml['ipl']:
+                ipl.append((label.Label(labels[0]), label.Label(labels[1])))
 
-        return ipls
+        return ipl
 
 
     def _get_influence_function(self, influence_function, threshold):

@@ -2,12 +2,13 @@ class Interval:
     """
     No support for open, closedopen, openclosed
     """
-    def __init__(self, left, lower, upper, right):
-        self._lower = round(lower, 7)
-        self._upper = round(upper, 7)
+    def __init__(self, left, interval, right, static):
+        self._lower = round(interval[0], 7)
+        self._upper = round(interval[1], 7)
         self._left = left
         self._right = right
-        # self.name = hash(f'{self._left}{self._lower},{self._upper}{self._right}')
+        self._interval = interval
+        self._static = static
 
     @property
     def lower(self):
@@ -27,7 +28,7 @@ class Interval:
         if lower > upper:
             lower = 0
             upper = 1
-        return Interval('[', lower, upper, ']')    
+        return Interval('[', [lower, upper], ']', [False])
 
     def __hash__(self):
         return hash(self.to_str())
@@ -92,13 +93,13 @@ class Interval:
 
 import operator
 import numpy as np
-from numba import types
+from numba import types, typed
 from numba.extending import typeof_impl
 from numba.extending import type_callable
 from numba.extending import models, register_model
 from numba.extending import make_attribute_wrapper
 from numba.extending import overload_method, overload_attribute, overload
-from numba.extending import lower_builtin
+from numba.extending import lower_builtin, lower_setattr
 from numba.core import cgutils
 from numba.extending import unbox, NativeValue, box
 
@@ -119,8 +120,8 @@ def typeof_interval(val, c):
 # Construct object from Numba functions
 @type_callable(Interval)
 def type_interval(context):
-    def typer(left, low, up, right):
-        if isinstance(low, types.Float) and isinstance(up, types.Float) and isinstance(left, types.UnicodeType) and isinstance(right, types.UnicodeType):
+    def typer(left, interval, right, static):
+        if isinstance(left, types.UnicodeType) and isinstance(right, types.UnicodeType) and isinstance(interval, types.ListType) and isinstance(static, types.ListType):
             return interval_type
     return typer
 
@@ -130,44 +131,46 @@ def type_interval(context):
 class IntervalModel(models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [
-            ('low', types.float32),
-            ('up', types.float32),
+            ('interval', types.ListType(types.float32)),
             ('left', types.string),
             ('right', types.string),
+            ('static', types.ListType(types.boolean))
             ]
         models.StructModel.__init__(self, dmm, fe_type, members)
 
 
 # Expose datamodel attributes
-make_attribute_wrapper(IntervalType, 'low', 'low')
-make_attribute_wrapper(IntervalType, 'up', 'up')
+make_attribute_wrapper(IntervalType, 'interval', 'interval')
 make_attribute_wrapper(IntervalType, 'left', 'left')
 make_attribute_wrapper(IntervalType, 'right', 'right')
+make_attribute_wrapper(IntervalType, 'static', 'static')
 
 
 # Implement constructor
-@lower_builtin(Interval, types.string, types.float32, types.float32, types.string)
+@lower_builtin(Interval, types.string, types.ListType(types.float32), types.string, types.ListType(types.boolean))
 def impl_interval(context, builder, sig, args):
     typ = sig.return_type
-    left, low, up, right = args
+    left, i, right, static = args
+    context.nrt.incref(builder, types.ListType(types.float32), i)
+    context.nrt.incref(builder, types.ListType(types.boolean), static)
     interval = cgutils.create_struct_proxy(typ)(context, builder)
-    interval.low = low
-    interval.up = up
+    interval.interval = i
     interval.left = left
     interval.right = right
+    interval.static = static
     return interval._getvalue()
 
 # Expose properties
 @overload_attribute(IntervalType, "lower")
 def get_lower(interval):
     def getter(interval):
-        return round(interval.low, 7)
+        return round(interval.interval[0], 7)
     return getter
 
 @overload_attribute(IntervalType, "upper")
 def get_upper(interval):
     def getter(interval):
-        return round(interval.up, 7)
+        return round(interval.interval[1], 7)
     return getter
 
 @overload_method(IntervalType, 'intersection')
@@ -178,32 +181,39 @@ def intersection(interval_1, interval_2):
         if lower > upper:
             lower = np.float32(0)
             upper = np.float32(1)
-        return Interval('[', lower, upper, ']')
-    return impl
+        return Interval('[', typed.List([lower, upper]), ']', typed.List([False]))
+    return impl   
+
 
 @overload_method(IntervalType, 'set_lower')
 def set_lower(interval, l):
     def impl(interval, l):
-        interval.low = l
-    return impl
-
-@overload_method(IntervalType, 'set_lower')
-def set_lower(interval, l):
-    def impl(interval, l):
-        interval.low = np.float32(l)
+        interval.interval[0] = np.float32(l)
     return impl
 
 @overload_method(IntervalType, 'set_upper')
 def set_upper(interval, u):
     def impl(interval, u):
-        interval.up = np.float32(u)
+        interval.interval[1] = np.float32(u)
     return impl
 
 @overload_method(IntervalType, 'set_lower_upper')
 def set_lower_upper(interval, l, u):
     def impl(interval, l, u):
-        interval.low = np.float32(l)
-        interval.up = np.float32(u)
+        interval.interval[0] = np.float32(l)
+        interval.interval[1] = np.float32(u)
+    return impl
+
+@overload_method(IntervalType, 'set_static')
+def set_static(interval, value):
+    def impl(interval, value):
+        interval.static[0] = value
+    return impl
+
+@overload_method(IntervalType, 'is_static')
+def is_static(interval):
+    def impl(interval):
+        return interval.static[0]
     return impl
 
 
@@ -231,7 +241,7 @@ def interval_ne(interval_1, interval_2):
 @overload(hash)
 def interval_hash(interval):
     def impl(interval):
-        return hash((interval.left, interval.low, interval.up, interval.right))
+        return hash((interval.left, interval.interval[0], interval.interval[1], interval.right))
     return impl
 
 @overload(operator.contains)
@@ -244,24 +254,22 @@ def interval_contains(interval_1, interval_2):
     return impl
 
 
-
-
 # Tell numba how to make native
 @unbox(IntervalType)
 def unbox_interval(typ, obj, c):
     left_obj = c.pyapi.object_getattr_string(obj, "_left")
-    lower_obj = c.pyapi.object_getattr_string(obj, "_lower")
-    upper_obj = c.pyapi.object_getattr_string(obj, "_upper")
+    interval_obj = c.pyapi.object_getattr_string(obj, "_interval")
     right_obj = c.pyapi.object_getattr_string(obj, "_right")
+    static_obj = c.pyapi.object_getattr_string(obj, "_static")
     interval = cgutils.create_struct_proxy(typ)(c.context, c.builder)
     interval.left = c.unbox(types.string, left_obj).value
-    interval.low = c.unbox(types.float32, lower_obj).value
-    interval.up = c.unbox(types.float32, upper_obj).value
     interval.right = c.unbox(types.string, right_obj).value
+    interval.interval = c.unbox(types.ListType(types.float32), interval_obj).value
+    interval.static = c.unbox(types.ListType(types.boolean), static_obj).value
     c.pyapi.decref(left_obj)
-    c.pyapi.decref(lower_obj)
-    c.pyapi.decref(upper_obj)
     c.pyapi.decref(right_obj)
+    c.pyapi.decref(interval_obj)
+    c.pyapi.decref(static_obj)
     is_error = cgutils.is_not_null(c.builder, c.pyapi.err_occurred())
     return NativeValue(interval._getvalue(), is_error=is_error)
 
@@ -269,17 +277,17 @@ def unbox_interval(typ, obj, c):
 
 @box(IntervalType)
 def box_interval(typ, val, c):
-    interval = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
+    i = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
     class_obj = c.pyapi.unserialize(c.pyapi.serialize_object(Interval))
-    left_obj = c.box(types.string, interval.left)
-    lower_obj = c.box(types.float32, interval.low)
-    upper_obj = c.box(types.float32, interval.up)
-    right_obj = c.box(types.string, interval.right)
-    res = c.pyapi.call_function_objargs(class_obj, (left_obj, lower_obj, upper_obj, right_obj))
+    left_obj = c.box(types.string, i.left)
+    right_obj = c.box(types.string, i.right)
+    interval_obj = c.box(types.ListType(types.float32), i.interval)
+    static_obj = c.box(types.ListType(types.boolean), i.static)
+    res = c.pyapi.call_function_objargs(class_obj, (left_obj, interval_obj, right_obj, static_obj))
     c.pyapi.decref(left_obj)
-    c.pyapi.decref(lower_obj)
-    c.pyapi.decref(upper_obj)
     c.pyapi.decref(right_obj)
+    c.pyapi.decref(interval_obj)
+    c.pyapi.decref(static_obj)
     c.pyapi.decref(class_obj)
     return res
 
@@ -287,6 +295,7 @@ def box_interval(typ, val, c):
 from numba import njit
 import numpy as np
 
+
 @njit
 def closed(lower, upper):
-    return Interval('[', np.float32(lower), np.float32(upper), ']')
+    return Interval('[', typed.List([np.float32(lower), np.float32(upper)]), ']', typed.List([False]))

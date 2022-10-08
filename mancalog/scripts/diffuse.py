@@ -87,7 +87,6 @@ def main(args):
     df_nodes, df_edges = output.write(interpretation)
     print('Finished writing interpretation')
 
-    # Comment out the below code if you do not want to print the output
     # Read the pickle file, and print the dataframes for each timestep
     # print('Reading dataframe from pickled files')
     # nodes = output.read('nodes')
