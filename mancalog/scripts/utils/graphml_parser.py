@@ -27,7 +27,7 @@ class GraphmlParser:
                 if label.Label(l) not in specific_node_labels.keys():
                     specific_node_labels[label.Label(l)] = numba.typed.List.empty_list(node.node_type)
                 specific_node_labels[label.Label(l)].append(node.Node(n))
-                f = fact.Fact(node.Node(n), label.Label(l), interval.closed(1.0,1.0), 0, timesteps)
+                f = fact.Fact(node.Node(n), label.Label(l), interval.closed(1.0,1.0), 0, timesteps, static=True)
                 facts.append(f)
         for e in self.graph.edges:
             for key, value in self.graph.edges[e].items():

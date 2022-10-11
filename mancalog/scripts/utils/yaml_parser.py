@@ -15,6 +15,8 @@ from mancalog.scripts.influence_functions.ng_tipping_function import NgTippingFu
 
 
 class YAMLParser:
+    def __init__(self, tmax):
+        self.tmax = tmax
 
     def parse_rules(self, path):
         with open(path, 'r') as file:
@@ -77,9 +79,15 @@ class YAMLParser:
                 n = node.Node(str(values['node']))
                 l = label.Label(values['label'])
                 bound = interval.closed(values['bound'][0], values['bound'][1])
-                t_lower = values['t_lower']
-                t_upper = values['t_upper']
-                f = fact_node.Fact(n, l, bound, t_lower, t_upper)
+                if values['static']:
+                    static = True
+                    t_lower = 0
+                    t_upper = self.tmax
+                else:
+                    static = False
+                    t_lower = values['t_lower']
+                    t_upper = values['t_upper']
+                f = fact_node.Fact(n, l, bound, t_lower, t_upper, static)
                 facts_node.append(f)
 
         facts_edge = numba.typed.List()

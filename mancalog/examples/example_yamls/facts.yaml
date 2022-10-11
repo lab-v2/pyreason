@@ -7,6 +7,7 @@ nodes:
         node: n2825         # Name of the node
         label: success      # Name of the label of the node
         bound: [0.6, 0.8]   # Bound of the label
+        static: false       # Whether it applies to all timesteps and cannot change
         t_lower: 0          # Starting time
         t_upper: 0          # Ending time. In this case it will be active for the first timestep t=0
 
@@ -14,6 +15,7 @@ nodes:
         node: n2825
         label: failure
         bound: [0.1, 0.5]
+        static: false
         t_lower: 0
         t_upper: 0
 
@@ -23,5 +25,6 @@ edges:
         target: n2825       # Target of the edge
         label: success      # Name of the label of the node
         bound: [0.6, 0.8]   # Bound of the label
+        static: false
         t_lower: 0          # Starting time
         t_upper: 0          # Ending time. In this case it will be active for the first timestep t=0

@@ -24,12 +24,6 @@ class Program:
 		interp = Interpretation(self._graph, self._tmax, history, self._ipl)
 		
 		interp.apply_facts(self._facts)
+		interp.apply_rules(self._rules)
 
-		update = True
-		fp_op_cnt = 0
-		while update:
-			update = interp.apply_rules(self._rules, self._facts)
-			fp_op_cnt += self._tmax
-
-		print('Fixed Point iterations:', fp_op_cnt)
 		return interp		

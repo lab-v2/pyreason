@@ -6,7 +6,6 @@ import mancalog.scripts.numba_wrapper.numba_types.label_type as label
 import mancalog.scripts.numba_wrapper.numba_types.interval_type as interval
 
 import numba
-import operator
 
 
 class Interpretation:
@@ -21,15 +20,11 @@ class Interpretation:
 		self._history = history
 		self._ipl = ipl
 
-		# Variable specific if no history. First fp operation
-		if not self._history:
-			self.first_fp = True
-
 		# Initialize list of tuples for rules/facts to be applied
 		self.rules_to_be_applied_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, node.node_type, label.label_type, interval.interval_type)))
 		self.rules_to_be_applied_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, edge.edge_type, label.label_type, interval.interval_type)))
-		self.facts_to_be_applied_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, node.node_type, label.label_type, interval.interval_type)))
-		self.facts_to_be_applied_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, edge.edge_type, label.label_type, interval.interval_type)))
+		self.facts_to_be_applied_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, node.node_type, label.label_type, interval.interval_type, numba.types.boolean)))
+		self.facts_to_be_applied_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, edge.edge_type, label.label_type, interval.interval_type, numba.types.boolean)))
 
 		# Make sure they are correct type
 		if len(self.available_labels_node)==0:
@@ -119,40 +114,39 @@ class Interpretation:
 	def _apply_fact(facts, facts_to_be_applied_node):
 		for fact in facts:
 			for t in range(fact.get_time_lower(), fact.get_time_upper() + 1):
-				facts_to_be_applied_node.append((numba.types.int8(t), fact.get_component(), fact.get_label(), fact.get_bound()))
+				facts_to_be_applied_node.append((numba.types.int8(t), fact.get_component(), fact.get_label(), fact.get_bound(), fact.static))
 
 		
 
-	def apply_rules(self, rules, facts):
+	def apply_rules(self, rules):
 		if self._history:
-			update = self._apply_rules(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._graph.get_nodes()), numba.typed.List(self._graph.get_edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self._ipl)
+			fp_cnt = self._apply_rules(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._graph.get_nodes()), numba.typed.List(self._graph.get_edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self._ipl)
 		else:
-			update = self._apply_rules_no_history(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._graph.get_nodes()), numba.typed.List(self._graph.get_edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.available_labels_node, self.available_labels_edge, self.specific_node_labels, self.specific_edge_labels, self._ipl)
-			update = True if self.first_fp else update
-			self.first_fp = False
-		return update
+			fp_cnt = self._apply_rules_no_history(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._graph.get_nodes()), numba.typed.List(self._graph.get_edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.available_labels_node, self.available_labels_edge, self.specific_node_labels, self.specific_edge_labels, self._ipl)
+		print('Fixed Point iterations:', fp_cnt)
 
 	@staticmethod
 	@numba.njit
 	def _apply_rules(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, facts_to_be_applied_node, facts_to_be_applied_edge, ipl):
-		update = False
-		for t in range(tmax+1):
-			# List of all the indices that need to be removed if applied to interpretation
-			idx_to_be_removed = numba.typed.List.empty_list(numba.types.int64)
-			
+		t = 0
+		fp_cnt = 0
+		# List of all the indices that need to be removed if applied to interpretation
+		idx_to_be_removed = numba.typed.List.empty_list(numba.types.int64)
+		while t<=tmax:
 			# Start by applying the facts
 			# Nodes
+			idx_to_be_removed.clear()
 			for i in range(len(facts_to_be_applied_node)):
 				if facts_to_be_applied_node[i][0]==t:
 					idx_to_be_removed.append(i)
-					comp, l, bnd = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3]
+					comp, l, bnd, static = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4]
 					# Check for inconsistencies
 					if check_consistent_node(interpretations_node, t, comp, (l, bnd)):
-						update = _na_update_node(interpretations_node, t, comp, (l, bnd), ipl) or update
+						_na_update_node(interpretations_node, t, comp, (l, bnd), ipl)
+						interpretations_node[t][comp].world[l].set_static(static)
 					# Resolve inconsistency
 					else:
 						resolve_inconsistency_node(interpretations_node, t, comp, (l, bnd), ipl, tmax, True)
-						update = True
 			
 			# Delete facts that have been applied
 			facts_to_be_applied_node_copy = numba.typed.List(facts_to_be_applied_node)
@@ -164,196 +158,237 @@ class Interpretation:
 			for i in range(len(facts_to_be_applied_edge)):
 				if facts_to_be_applied_edge[i][0]==t:
 					idx_to_be_removed.append(i)
-					comp, l, bnd = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3]
+					comp, l, bnd, static = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3], facts_to_be_applied_edge[i][4]
 					# Check for inconsistencies
 					if check_consistent_edge(interpretations_edge, t, comp, (l, bnd)):
-						update = _na_update_edge(interpretations_edge, t, comp, (l, bnd), ipl) or update
+						_na_update_edge(interpretations_edge, t, comp, (l, bnd), ipl)
+						interpretations_edge[t][comp].world[l].set_static(static)
 					# Resolve inconsistency
 					else:
 						resolve_inconsistency_edge(interpretations_edge, t, comp, (l, bnd), ipl, tmax, True)
-						update = True
 
 			# Delete facts that have been applied
 			facts_to_be_applied_edge_copy = numba.typed.List(facts_to_be_applied_edge)
 			for i in idx_to_be_removed:
 				facts_to_be_applied_edge.remove(facts_to_be_applied_edge_copy[i])
 
-			# Apply the rules that need to be applied at this timestep and check of inconsistencies
-			# Iterate through rules to be applied, and check if any timesteps match
-			# Nodes
-			idx_to_be_removed.clear()
-			for i in range(len(rules_to_be_applied_node)):
-				if rules_to_be_applied_node[i][0]==t:
-					idx_to_be_removed.append(i)
-					comp, l, bnd = rules_to_be_applied_node[i][1], rules_to_be_applied_node[i][2], rules_to_be_applied_node[i][3]
+			update = True
+			while update:
+				# Has the interpretation changed?
+				update = False
+				fp_cnt += 1
 
-					# Check for inconsistencies
-					if check_consistent_node(interpretations_node, t, comp, (l, bnd)):
-						update = _na_update_node(interpretations_node, t, comp, (l, bnd), ipl) or update
-					# Resolve inconsistency
-					else:
-						resolve_inconsistency_node(interpretations_node, t, comp, (l, bnd), ipl, tmax, True)
-						update = True
+				# Apply the rules that need to be applied at this timestep and check of inconsistencies
+				# Iterate through rules to be applied, and check if any timesteps match
+				# Nodes
+				idx_to_be_removed.clear()
+				for i in range(len(rules_to_be_applied_node)):
+					if rules_to_be_applied_node[i][0]==t:
+						idx_to_be_removed.append(i)
+						comp, l, bnd = rules_to_be_applied_node[i][1], rules_to_be_applied_node[i][2], rules_to_be_applied_node[i][3]
 
-			# Delete rules that have been applied from list
-			rules_to_be_applied_node_copy = numba.typed.List(rules_to_be_applied_node)
-			for i in idx_to_be_removed:
-				rules_to_be_applied_node.remove(rules_to_be_applied_node_copy[i])
-			
-			# Edges
-			idx_to_be_removed.clear()
-			for i in range(len(rules_to_be_applied_edge)):
-				if rules_to_be_applied_edge[i][0]==t:
-					idx_to_be_removed.append(i)
-					comp, l, bnd = rules_to_be_applied_edge[i][1], rules_to_be_applied_edge[i][2], rules_to_be_applied_edge[i][3]
+						# Check for inconsistencies
+						if check_consistent_node(interpretations_node, t, comp, (l, bnd)):
+							update = _na_update_node(interpretations_node, t, comp, (l, bnd), ipl) or update
+						# Resolve inconsistency
+						else:
+							resolve_inconsistency_node(interpretations_node, t, comp, (l, bnd), ipl, tmax, True)
+							update = True
 
-					# Check for inconsistencies
-					if check_consistent_edge(interpretations_edge, t, comp, (l, bnd)):
-						update = _na_update_edge(interpretations_edge, t, comp, (l, bnd), ipl) or update
-					# Resolve inconsistency
-					else:
-						resolve_inconsistency_edge(interpretations_edge, t, comp, (l, bnd), ipl, tmax, True)
-						update = True
+				# Delete rules that have been applied from list
+				rules_to_be_applied_node_copy = numba.typed.List(rules_to_be_applied_node)
+				for i in idx_to_be_removed:
+					rules_to_be_applied_node.remove(rules_to_be_applied_node_copy[i])
+				
+				# Edges
+				idx_to_be_removed.clear()
+				for i in range(len(rules_to_be_applied_edge)):
+					if rules_to_be_applied_edge[i][0]==t:
+						idx_to_be_removed.append(i)
+						comp, l, bnd = rules_to_be_applied_edge[i][1], rules_to_be_applied_edge[i][2], rules_to_be_applied_edge[i][3]
 
-			# Delete rules that have been applied from list
-			rules_to_be_applied_edge_copy = numba.typed.List(rules_to_be_applied_edge)
-			for i in idx_to_be_removed:
-				rules_to_be_applied_edge.remove(rules_to_be_applied_edge_copy[i])
+						# Check for inconsistencies
+						if check_consistent_edge(interpretations_edge, t, comp, (l, bnd)):
+							update = _na_update_edge(interpretations_edge, t, comp, (l, bnd), ipl) or update
+						# Resolve inconsistency
+						else:
+							resolve_inconsistency_edge(interpretations_edge, t, comp, (l, bnd), ipl, tmax, True)
+							update = True
 
-			# Final step, add more rules to the list if applicable
-			for rule in rules:
-				if t+rule.get_delta()<=tmax:
-					for n in nodes:
-						if are_satisfied_node(interpretations_node, t, n, rule.get_target_criteria_node()):
-							a = neighbors[n]
-							b = _get_qualified_neigh(interpretations_node, interpretations_edge, neighbors[n], t, n, rule.get_neigh_nodes(), rule.get_neigh_edges())
-							bnd = influence(inf_name=rule.get_influence(), neigh=a, qualified_neigh=b, thresholds=rule.get_thresholds())
-							rules_to_be_applied_node.append((numba.types.int8(t+rule.get_delta()), n, rule.get_target(), bnd))
-					# Go through all edges and check if any rules apply to them.
-					# Comment out the following lines if there are no labels or rules that deal with edges. It will be an unnecessary loop
-					for e in edges:
-						if are_satisfied_edge(interpretations_edge, t, e, rule.get_target_criteria_edge()):
-							# If needed make some influence function for the edge target. As of now, edges don't have neighbors!
-							# When making this, refer to the nodes loop section (4 lines above)
-							# Then append the information to rules_to_be_applied_edge
-							pass
-		return update
+				# Delete rules that have been applied from list
+				rules_to_be_applied_edge_copy = numba.typed.List(rules_to_be_applied_edge)
+				for i in idx_to_be_removed:
+					rules_to_be_applied_edge.remove(rules_to_be_applied_edge_copy[i])
 
+				# Final step, add more rules to the list if applicable
+				for rule in rules:
+					if t+rule.get_delta()<=tmax:
+						for n in nodes:
+							if are_satisfied_node(interpretations_node, t, n, rule.get_target_criteria_node()):
+								a = neighbors[n]
+								b = _get_qualified_neigh(interpretations_node, interpretations_edge, neighbors[n], t, n, rule.get_neigh_nodes(), rule.get_neigh_edges())
+								bnd = influence(inf_name=rule.get_influence(), neigh=a, qualified_neigh=b, thresholds=rule.get_thresholds())
+								rules_to_be_applied_node.append((numba.types.int8(t+rule.get_delta()), n, rule.get_target(), bnd))
+								update = True if (rule.get_delta()==0 or update) else False
+						# Go through all edges and check if any rules apply to them.
+						# Comment out the following lines if there are no labels or rules that deal with edges. It will be an unnecessary loop
+						for e in edges:
+							if are_satisfied_edge(interpretations_edge, t, e, rule.get_target_criteria_edge()):
+								# If needed make some influence function for the edge target. As of now, edges don't have neighbors!
+								# When making this, refer to the nodes loop section (4 lines above)
+								# Then append the information to rules_to_be_applied_edge
+					
+								pass
+
+			# There are no more updates for this timestep, continue to next
+			t += 1
+
+		return fp_cnt
 
 
 	@staticmethod
 	@numba.njit
 	def _apply_rules_no_history(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, facts_to_be_applied_node, facts_to_be_applied_edge, labels_node, labels_edge, specific_labels_node, specific_labels_edge, ipl):
-		update = False
-		for t in range(tmax+1):
-			# Apply facts and reset interpretation before starting
+		t = 0
+		fp_cnt = 0
+		# List of all the indices that need to be removed if applied to interpretation
+		idx_to_be_removed = numba.typed.List.empty_list(numba.types.int64)
+		while t<=tmax:
+			# Reset Interpretation at beginning of timestep
 			if t>0:
-				# Reset nodes
+				# Reset nodes (only if not static)
 				# General labels
 				for n in nodes:
 					for l in labels_node:
-						interpretations_node[0][n].world[l].set_lower_upper(0, 1)
+						if not interpretations_node[0][n].world[l].is_static():
+							interpretations_node[0][n].world[l] = interval.closed(0, 1)
 				# Specific labels
 				for l, ns in specific_labels_node.items():
 					for n in ns:
-						interpretations_node[0][n].world[l].set_lower_upper(0, 1)
+						if not interpretations_node[0][n].world[l].is_static():
+							interpretations_node[0][n].world[l] = interval.closed(0, 1)
 				# Reset edges
 				# General labels
 				for e in edges:
 					for l in labels_edge:
-						interpretations_edge[0][e].world[l].set_lower_upper(0, 1)
+						if not interpretations_edge[0][e].world[l].is_static():
+							interpretations_edge[0][e].world[l] = interval.closed(0, 1)
 				# Specific labels
 				for l, es in specific_labels_edge.items():
 					for e in es:
-						interpretations_edge[0][e].world[l].set_lower_upper(0, 1)
+						if not interpretations_edge[0][e].world[l].is_static():
+							interpretations_edge[0][e].world[l] = interval.closed(0, 1)
 
-			# List of all the indices that need to be removed if applied to interpretation
-			idx_to_be_removed = numba.typed.List.empty_list(numba.types.int64)
-
-			# Start by applying facts (NOTE: the variable update will only be true if facts apply for the first function call. DO NOT delete facts to be applied)
+			# Start by applying facts
 			# Nodes
+			idx_to_be_removed.clear()
 			for i in range(len(facts_to_be_applied_node)):
 				if facts_to_be_applied_node[i][0]==t:
 					idx_to_be_removed.append(i)
-					comp, l, bnd = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3]
-					# Check for inconsistencies
+					comp, l, bnd, static = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4]
+					# Check for inconsistencies (multiple facts)
 					if check_consistent_node(interpretations_node, 0, comp, (l, bnd)):
 						_na_update_node(interpretations_node, 0, comp, (l, bnd), ipl)
+						interpretations_node[0][comp].world[l].set_static(static)
 					# Resolve inconsistency
 					else:
 						resolve_inconsistency_node(interpretations_node, 0, comp, (l, bnd), ipl, tmax, True)
+
+			# Delete facts that have been applied
+			facts_to_be_applied_node_copy = numba.typed.List(facts_to_be_applied_node)
+			for i in idx_to_be_removed:
+				facts_to_be_applied_node.remove(facts_to_be_applied_node_copy[i])
 			
 			# Edges
 			idx_to_be_removed.clear()
 			for i in range(len(facts_to_be_applied_edge)):
 				if facts_to_be_applied_edge[i][0]==t:
 					idx_to_be_removed.append(i)
-					comp, l, bnd = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3]
+					comp, l, bnd, static = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3], facts_to_be_applied_edge[i][4]
 					# Check for inconsistencies
 					if check_consistent_edge(interpretations_edge, 0, comp, (l, bnd)):
 						_na_update_edge(interpretations_edge, 0, comp, (l, bnd), ipl)
+						interpretations_edge[t][comp].world[l].set_static(static)
 					# Resolve inconsistency
 					else:
 						resolve_inconsistency_edge(interpretations_edge, 0, comp, (l, bnd), ipl, tmax, True)
 
-			# Apply the rules that need to be applied at this timestep
-			# Nodes
-			idx_to_be_removed.clear()
-			for i in range(len(rules_to_be_applied_node)):
-				if rules_to_be_applied_node[i][0]==t:
-					idx_to_be_removed.append(i)
-					comp, l, bnd = rules_to_be_applied_node[i][1], rules_to_be_applied_node[i][2], rules_to_be_applied_node[i][3]
-
-					# Check for inconsistencies
-					if check_consistent_node(interpretations_node, 0, comp, (l, bnd)):
-						_na_update_node(interpretations_node, 0, comp, (l, bnd), ipl)
-					# Resolve inconsistency
-					else:
-						resolve_inconsistency_node(interpretations_node, 0, comp, (l, bnd), ipl, tmax, False)
-
-			# Delete rules that have been applied from list
-			rules_to_be_applied_node_copy = numba.typed.List(rules_to_be_applied_node)
+			# Delete facts that have been applied
+			facts_to_be_applied_edge_copy = numba.typed.List(facts_to_be_applied_edge)
 			for i in idx_to_be_removed:
-				rules_to_be_applied_node.remove(rules_to_be_applied_node_copy[i])
+				facts_to_be_applied_edge.remove(facts_to_be_applied_edge_copy[i])
 
-			# Edges
-			idx_to_be_removed.clear()
-			for i in range(len(rules_to_be_applied_edge)):
-				if rules_to_be_applied_edge[i][0]==t:
-					idx_to_be_removed.append(i)
-					comp, l, bnd = rules_to_be_applied_edge[i][1], rules_to_be_applied_edge[i][2], rules_to_be_applied_edge[i][3]
+			update = True
+			while update:
+				fp_cnt += 1
+				# Has the interpretation changed?
+				update = False
 
-					# Check for inconsistencies
-					if check_consistent_edge(interpretations_edge, 0, comp, (l, bnd)):
-						_na_update_edge(interpretations_edge, 0, comp, (l, bnd), ipl)
-					# Resolve inconsistency
-					else:
-						resolve_inconsistency_edge(interpretations_edge, 0, comp, (l, bnd), ipl, tmax, False)
+				# Apply the rules that need to be applied at this timestep
+				# Nodes
+				idx_to_be_removed.clear()
+				for i in range(len(rules_to_be_applied_node)):
+					if rules_to_be_applied_node[i][0]==t:
+						idx_to_be_removed.append(i)
+						comp, l, bnd = rules_to_be_applied_node[i][1], rules_to_be_applied_node[i][2], rules_to_be_applied_node[i][3]
 
-			# Delete rules that have been applied from list
-			rules_to_be_applied_edge_copy = numba.typed.List(rules_to_be_applied_edge)
-			for i in idx_to_be_removed:
-				rules_to_be_applied_edge.remove(rules_to_be_applied_edge_copy[i])
+						# Check for inconsistencies
+						if check_consistent_node(interpretations_node, 0, comp, (l, bnd)):
+							update = _na_update_node(interpretations_node, 0, comp, (l, bnd), ipl) or update
+						# Resolve inconsistency
+						else:
+							resolve_inconsistency_node(interpretations_node, 0, comp, (l, bnd), ipl, tmax, False)
+							update = True
 
+				# Delete rules that have been applied from list
+				rules_to_be_applied_node_copy = numba.typed.List(rules_to_be_applied_node)
+				for i in idx_to_be_removed:
+					rules_to_be_applied_node.remove(rules_to_be_applied_node_copy[i])
 
-			for rule in rules:
-				# Go through all nodes and check if any rules apply to them
-				# Only go through everything if the rule can be applied within the given timesteps. Otherwise it's an unnecessary loop
-				if t+rule.get_delta()<=tmax:
-					for n in nodes:
-						if are_satisfied_node(interpretations_node, 0, n, rule.get_target_criteria_node()):
-							a = neighbors[n]
-							b = _get_qualified_neigh(interpretations_node, interpretations_edge, neighbors[n], 0, n, rule.get_neigh_nodes(), rule.get_neigh_edges())
-							bnd = influence(inf_name=rule.get_influence(), neigh=a, qualified_neigh=b, thresholds=rule.get_thresholds())
-							rules_to_be_applied_node.append((numba.types.int8(t+rule.get_delta()), n, rule.get_target(), bnd))
-					# Go through all edges and check if any rules apply to them.
-					# Comment out the following lines if there are no labels or rules that deal with edges. It will be an unnecessary loop
-					for e in edges:
-						if are_satisfied_edge(interpretations_edge, 0, e, rule.get_target_criteria_edge()):
-							# If needed make some influence function for the edge target. As of now, edges don't have neighbors!
-							# When making this, refer to the nodes loop section (4 lines above)
-							# Then append the information to rules_to_be_applied_edge
-							pass
+				# Edges
+				idx_to_be_removed.clear()
+				for i in range(len(rules_to_be_applied_edge)):
+					if rules_to_be_applied_edge[i][0]==t:
+						idx_to_be_removed.append(i)
+						comp, l, bnd = rules_to_be_applied_edge[i][1], rules_to_be_applied_edge[i][2], rules_to_be_applied_edge[i][3]
+
+						# Check for inconsistencies
+						if check_consistent_edge(interpretations_edge, 0, comp, (l, bnd)):
+							update = _na_update_edge(interpretations_edge, 0, comp, (l, bnd), ipl) or update
+						# Resolve inconsistency
+						else:
+							resolve_inconsistency_edge(interpretations_edge, 0, comp, (l, bnd), ipl, tmax, False)
+							update = True
+
+				# Delete rules that have been applied from list
+				rules_to_be_applied_edge_copy = numba.typed.List(rules_to_be_applied_edge)
+				for i in idx_to_be_removed:
+					rules_to_be_applied_edge.remove(rules_to_be_applied_edge_copy[i])
+
+				for rule in rules:
+					# Go through all nodes and check if any rules apply to them
+					# Only go through everything if the rule can be applied within the given timesteps. Otherwise it's an unnecessary loop
+					if t+rule.get_delta()<=tmax:
+						for n in nodes:
+							if are_satisfied_node(interpretations_node, 0, n, rule.get_target_criteria_node()):
+								a = neighbors[n]
+								b = _get_qualified_neigh(interpretations_node, interpretations_edge, neighbors[n], 0, n, rule.get_neigh_nodes(), rule.get_neigh_edges())
+								bnd = influence(inf_name=rule.get_influence(), neigh=a, qualified_neigh=b, thresholds=rule.get_thresholds())
+								rules_to_be_applied_node.append((numba.types.int8(t+rule.get_delta()), n, rule.get_target(), bnd))
+								update = True if (rule.get_delta()==0 or update) else False
+						# Go through all edges and check if any rules apply to them.
+						# Comment out the following lines if there are no labels or rules that deal with edges. It will be an unnecessary loop
+						for e in edges:
+							if are_satisfied_edge(interpretations_edge, 0, e, rule.get_target_criteria_edge()):
+								# If needed make some influence function for the edge target. As of now, edges don't have neighbors!
+								# When making this, refer to the nodes loop section (4 lines above)
+								# Then append the information to rules_to_be_applied_edge
+								pass
+			
+			# There are no more updates for this timestep, continue to next
+			t += 1
+			
+		return fp_cnt
 
 
 	def _get_neighbors(self, node):
@@ -400,11 +435,11 @@ def _na_update_node(interpretations, time, comp, na, ipl):
 				if p1==na[0]:
 					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
 					upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
-					world.world[p2].set_lower_upper(lower, upper)
+					world.world[p2] = interval.closed(lower, upper)
 				if p2==na[0]:
 					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
 					upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
-					world.world[p1].set_lower_upper(lower, upper)
+					world.world[p1] = interval.closed(lower, upper)
 		return updated
 
 	except:
@@ -426,11 +461,11 @@ def _na_update_edge(interpretations, time, comp, na, ipl):
 				if p1==na[0]:
 					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
 					upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
-					world.world[p2].set_lower_upper(lower, upper)
+					world.world[p2] = interval.closed(lower, upper)
 				if p2==na[0]:
 					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
 					upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
-					world.world[p1].set_lower_upper(lower, upper)
+					world.world[p1] = interval.closed(lower, upper)
 		return updated
 	except:
 		return False
@@ -549,16 +584,13 @@ def resolve_inconsistency_node(interpretations, time, comp, na, ipl, tmax, histo
 	r = range(time, tmax+1) if history else range(time, time+1)
 	for t in r:
 		world = interpretations[t][comp]
-		world.world[na[0]].set_lower_upper(0, 1)
-		world.world[na[0]].set_static(True)
+		world.world[na[0]] = interval.closed(0, 1, static=True)
 		for p1, p2 in ipl:
 			if p1==na[0]:
-				world.world[p2].set_lower_upper(0, 1)
-				world.world[p2].set_static(True)
+				world.world[p2] = interval.closed(0, 1, static=True)
 
 			if p2==na[0]:
-				world.world[p1].set_lower_upper(0, 1)
-				world.world[p1].set_static(True)
+				world.world[p1] = interval.closed(0, 1, static=True)
 
 
 @numba.njit
@@ -567,16 +599,13 @@ def resolve_inconsistency_edge(interpretations, time, comp, na, ipl, tmax, histo
 	r = range(time, tmax+1) if history else range(time, time+1)
 	for t in r:
 		world = interpretations[t][comp]
-		world.world[na[0]].set_lower_upper(0, 1)
-		world.world[na[0]].set_static(True)
+		world.world[na[0]] = interval.closed(0, 1, static=True)
 		for p1, p2 in ipl:
 			if p1==na[0]:
-				world.world[p2].set_lower_upper(0, 1)
-				world.world[p2].set_static(True)
+				world.world[p2] = interval.closed(0, 1, static=True)
 
 			if p2==na[0]:
-				world.world[p1].set_lower_upper(0, 1)
-				world.world[p1].set_static(True)
+				world.world[p1] = interval.closed(0, 1, static=True)
 
 
 

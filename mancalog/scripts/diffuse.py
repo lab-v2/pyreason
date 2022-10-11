@@ -21,7 +21,7 @@ def main(args):
         sys.stdout = open(f"./output/{args.output_file_name}.txt", "w")
 
     graphml_parser = GraphmlParser()
-    yaml_parser = YAMLParser()
+    yaml_parser = YAMLParser(args.timesteps)
     start = time.time()
     graph_data = graphml_parser.parse_graph(args.graph_path)
     end = time.time()
