@@ -26,6 +26,10 @@ class Interpretation:
 		self.facts_to_be_applied_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, node.node_type, label.label_type, interval.interval_type, numba.types.boolean)))
 		self.facts_to_be_applied_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, edge.edge_type, label.label_type, interval.interval_type, numba.types.boolean)))
 
+		# Keep track of all the rules that have affeceted each node/edge at each timestep/fp operation
+		self.rule_trace_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, numba.types.int8, node.node_type, label.label_type, interval.interval_type)))
+		self.rule_trace_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, numba.types.int8, edge.edge_type, label.label_type, interval.interval_type)))
+
 		# Make sure they are correct type
 		if len(self.available_labels_node)==0:
 			self.available_labels_node = numba.typed.List.empty_list(label.label_type)
@@ -104,21 +108,20 @@ class Interpretation:
 
 		return interpretations
 
-
-	def apply_facts(self, facts):
-		self._apply_fact(facts, self.facts_to_be_applied_node)
+	def start_fp(self, facts, rules):
+		self._init_facts(facts, self.facts_to_be_applied_node)
+		self._start_fp(rules)
 
 
 	@staticmethod
 	@numba.njit
-	def _apply_fact(facts, facts_to_be_applied_node):
+	def _init_facts(facts, facts_to_be_applied_node):
 		for fact in facts:
 			for t in range(fact.get_time_lower(), fact.get_time_upper() + 1):
 				facts_to_be_applied_node.append((numba.types.int8(t), fact.get_component(), fact.get_label(), fact.get_bound(), fact.static))
 
 		
-
-	def apply_rules(self, rules):
+	def _start_fp(self, rules):
 		if self._history:
 			fp_cnt = self._apply_rules(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._graph.get_nodes()), numba.typed.List(self._graph.get_edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self._ipl)
 		else:
@@ -132,13 +135,12 @@ class Interpretation:
 		fp_cnt = 0
 		# List of all the indices that need to be removed if applied to interpretation
 		idx_to_be_removed = numba.typed.List.empty_list(numba.types.int64)
-		while t<=tmax:
+		for t in range(tmax+1):
+			print('Timestep:', t)
 			# Start by applying the facts
 			# Nodes
-			idx_to_be_removed.clear()
 			for i in range(len(facts_to_be_applied_node)):
 				if facts_to_be_applied_node[i][0]==t:
-					idx_to_be_removed.append(i)
 					comp, l, bnd, static = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4]
 					# Check for inconsistencies
 					if check_consistent_node(interpretations_node, t, comp, (l, bnd)):
@@ -147,17 +149,12 @@ class Interpretation:
 					# Resolve inconsistency
 					else:
 						resolve_inconsistency_node(interpretations_node, t, comp, (l, bnd), ipl, tmax, True)
-			
-			# Delete facts that have been applied
-			facts_to_be_applied_node_copy = numba.typed.List(facts_to_be_applied_node)
-			for i in idx_to_be_removed:
-				facts_to_be_applied_node.remove(facts_to_be_applied_node_copy[i])
+
+			# Deleting facts that have been applied is very inefficient
 			
 			# Edges
-			idx_to_be_removed.clear()
 			for i in range(len(facts_to_be_applied_edge)):
 				if facts_to_be_applied_edge[i][0]==t:
-					idx_to_be_removed.append(i)
 					comp, l, bnd, static = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3], facts_to_be_applied_edge[i][4]
 					# Check for inconsistencies
 					if check_consistent_edge(interpretations_edge, t, comp, (l, bnd)):
@@ -167,13 +164,10 @@ class Interpretation:
 					else:
 						resolve_inconsistency_edge(interpretations_edge, t, comp, (l, bnd), ipl, tmax, True)
 
-			# Delete facts that have been applied
-			facts_to_be_applied_edge_copy = numba.typed.List(facts_to_be_applied_edge)
-			for i in idx_to_be_removed:
-				facts_to_be_applied_edge.remove(facts_to_be_applied_edge_copy[i])
+			# Deleting facts that have been applied is very inefficient
 
 			update = True
-			while update:
+			while update:				
 				# Has the interpretation changed?
 				update = False
 				fp_cnt += 1
@@ -193,12 +187,10 @@ class Interpretation:
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_node(interpretations_node, t, comp, (l, bnd), ipl, tmax, True)
-							update = True
 
-				# Delete rules that have been applied from list
-				rules_to_be_applied_node_copy = numba.typed.List(rules_to_be_applied_node)
+				# Delete rules that have been applied from list by changing t to -1
 				for i in idx_to_be_removed:
-					rules_to_be_applied_node.remove(rules_to_be_applied_node_copy[i])
+					rules_to_be_applied_node[i] = (numba.types.int8(-1), rules_to_be_applied_node[i][1], rules_to_be_applied_node[i][2], rules_to_be_applied_node[i][3])
 				
 				# Edges
 				idx_to_be_removed.clear()
@@ -213,12 +205,11 @@ class Interpretation:
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_edge(interpretations_edge, t, comp, (l, bnd), ipl, tmax, True)
-							update = True
 
-				# Delete rules that have been applied from list
-				rules_to_be_applied_edge_copy = numba.typed.List(rules_to_be_applied_edge)
+				# Delete rules that have been applied from list by changing t to -1
 				for i in idx_to_be_removed:
-					rules_to_be_applied_edge.remove(rules_to_be_applied_edge_copy[i])
+					rules_to_be_applied_edge[i] = (numba.types.int8(-1), rules_to_be_applied_edge[i][1], rules_to_be_applied_edge[i][2], rules_to_be_applied_edge[i][3])
+
 
 				# Final step, add more rules to the list if applicable
 				for rule in rules:
@@ -240,20 +231,17 @@ class Interpretation:
 					
 								pass
 
-			# There are no more updates for this timestep, continue to next
-			t += 1
-
 		return fp_cnt
 
 
 	@staticmethod
 	@numba.njit
 	def _apply_rules_no_history(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, facts_to_be_applied_node, facts_to_be_applied_edge, labels_node, labels_edge, specific_labels_node, specific_labels_edge, ipl):
-		t = 0
 		fp_cnt = 0
 		# List of all the indices that need to be removed if applied to interpretation
 		idx_to_be_removed = numba.typed.List.empty_list(numba.types.int64)
-		while t<=tmax:
+		for t in range(tmax+1):
+			print('Timestep:', t)
 			# Reset Interpretation at beginning of timestep
 			if t>0:
 				# Reset nodes (only if not static)
@@ -281,10 +269,8 @@ class Interpretation:
 
 			# Start by applying facts
 			# Nodes
-			idx_to_be_removed.clear()
 			for i in range(len(facts_to_be_applied_node)):
 				if facts_to_be_applied_node[i][0]==t:
-					idx_to_be_removed.append(i)
 					comp, l, bnd, static = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4]
 					# Check for inconsistencies (multiple facts)
 					if check_consistent_node(interpretations_node, 0, comp, (l, bnd)):
@@ -294,16 +280,11 @@ class Interpretation:
 					else:
 						resolve_inconsistency_node(interpretations_node, 0, comp, (l, bnd), ipl, tmax, True)
 
-			# Delete facts that have been applied
-			facts_to_be_applied_node_copy = numba.typed.List(facts_to_be_applied_node)
-			for i in idx_to_be_removed:
-				facts_to_be_applied_node.remove(facts_to_be_applied_node_copy[i])
+			# Deleting facts that have been applied is very inefficient
 			
 			# Edges
-			idx_to_be_removed.clear()
 			for i in range(len(facts_to_be_applied_edge)):
 				if facts_to_be_applied_edge[i][0]==t:
-					idx_to_be_removed.append(i)
 					comp, l, bnd, static = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3], facts_to_be_applied_edge[i][4]
 					# Check for inconsistencies
 					if check_consistent_edge(interpretations_edge, 0, comp, (l, bnd)):
@@ -313,10 +294,7 @@ class Interpretation:
 					else:
 						resolve_inconsistency_edge(interpretations_edge, 0, comp, (l, bnd), ipl, tmax, True)
 
-			# Delete facts that have been applied
-			facts_to_be_applied_edge_copy = numba.typed.List(facts_to_be_applied_edge)
-			for i in idx_to_be_removed:
-				facts_to_be_applied_edge.remove(facts_to_be_applied_edge_copy[i])
+			# Deleting facts that have been applied is very inefficient
 
 			update = True
 			while update:
@@ -340,10 +318,10 @@ class Interpretation:
 							resolve_inconsistency_node(interpretations_node, 0, comp, (l, bnd), ipl, tmax, False)
 							update = True
 
-				# Delete rules that have been applied from list
-				rules_to_be_applied_node_copy = numba.typed.List(rules_to_be_applied_node)
+				# Delete rules that have been applied from list by changing t to -1
 				for i in idx_to_be_removed:
-					rules_to_be_applied_node.remove(rules_to_be_applied_node_copy[i])
+					rules_to_be_applied_node[i] = (numba.types.int8(-1), rules_to_be_applied_node[i][1], rules_to_be_applied_node[i][2], rules_to_be_applied_node[i][3])
+
 
 				# Edges
 				idx_to_be_removed.clear()
@@ -360,10 +338,10 @@ class Interpretation:
 							resolve_inconsistency_edge(interpretations_edge, 0, comp, (l, bnd), ipl, tmax, False)
 							update = True
 
-				# Delete rules that have been applied from list
-				rules_to_be_applied_edge_copy = numba.typed.List(rules_to_be_applied_edge)
+				# Delete rules that have been applied from list by changing t to -1
 				for i in idx_to_be_removed:
-					rules_to_be_applied_edge.remove(rules_to_be_applied_edge_copy[i])
+					rules_to_be_applied_edge[i] = (numba.types.int8(-1), rules_to_be_applied_edge[i][1], rules_to_be_applied_edge[i][2], rules_to_be_applied_edge[i][3])
+
 
 				for rule in rules:
 					# Go through all nodes and check if any rules apply to them
@@ -384,9 +362,6 @@ class Interpretation:
 								# When making this, refer to the nodes loop section (4 lines above)
 								# Then append the information to rules_to_be_applied_edge
 								pass
-			
-			# There are no more updates for this timestep, continue to next
-			t += 1
 			
 		return fp_cnt
 

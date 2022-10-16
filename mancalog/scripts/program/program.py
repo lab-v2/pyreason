@@ -23,7 +23,6 @@ class Program:
 
 		interp = Interpretation(self._graph, self._tmax, history, self._ipl)
 		
-		interp.apply_facts(self._facts)
-		interp.apply_rules(self._rules)
+		interp.start_fp(self._facts, self._rules)
 
 		return interp		

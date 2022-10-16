@@ -97,7 +97,7 @@ def main(args):
     print('Filtering data...')
     filterer = Filter()
     idx = args.timesteps if args.history else 0
-    filtered_df = filterer.filter_by_bound(dataframe=df_nodes[idx], label='success', bound=interval.closed(0.7,1), display_other_labels=False)
+    filtered_df = filterer.filter_by_bound(dataframe=df_nodes[idx], label='failure', bound=interval.closed(0.7,1), display_other_labels=False)
     print(filtered_df)
 
 
@@ -117,7 +117,9 @@ if __name__ == "__main__":
             f.write(s.getvalue())
 
     else:
-        start_mem = mp.memory_usage(max_usage=True)
-        mem_usage = mp.memory_usage((main, [args]), max_usage=True)
-        print(f"\nProgram used {mem_usage-start_mem} MB of memory")
-        # main(args)
+        if args.memory_profile:
+            start_mem = mp.memory_usage(max_usage=True)
+            mem_usage = mp.memory_usage((main, [args]), max_usage=True)
+            print(f"\nProgram used {mem_usage-start_mem} MB of memory")
+        else:
+            main(args)

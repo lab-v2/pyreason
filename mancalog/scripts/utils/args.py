@@ -32,6 +32,10 @@ def argparser():
     parser.add_argument("--no-inconsistency_check", dest='inconsistency_check', action='store_false')
     parser.add_argument("--inconsistency_check", dest='inconsistency_check', action='store_true')
     parser.set_defaults(inconsistency_check=True)
+    # Memory profiling
+    parser.add_argument("--no-memory_profile", dest='memory_profile', action='store_false')
+    parser.add_argument("--memory_profile", dest='memory_profile', action='store_true')
+    parser.set_defaults(memory_profile=True)
 
 
     return parser.parse_args()
