@@ -21,7 +21,7 @@ rule_1:
     neigh_edges:        # List of all neighbour edges (null for None)
         null
 
-    influence: sft_tp   # Influence function name. Available influence functions are: tp, ng_tp, sft_tp
+    ann_fn: sft_tp   # Annotation function name. Available influence functions are: tp, ng_tp, sft_tp
 
 # Start of next rule
 rule_2:
@@ -33,7 +33,7 @@ rule_2:
     neigh_nodes:
         - [failure, [0.5, 1.0], [greater_equal, percent, 50]]
     neigh_edges: null
-    influence: sft_tp
+    ann_fn: sft_tp
 
 
 

@@ -123,15 +123,14 @@ class Interpretation:
 		
 	def _start_fp(self, rules):
 		if self._history:
-			fp_cnt = self._apply_rules(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._graph.get_nodes()), numba.typed.List(self._graph.get_edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self._ipl)
+			fp_cnt = self._apply_rules(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._graph.get_nodes()), numba.typed.List(self._graph.get_edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self._ipl, self.rule_trace_node, self.rule_trace_edge)
 		else:
-			fp_cnt = self._apply_rules_no_history(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._graph.get_nodes()), numba.typed.List(self._graph.get_edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.available_labels_node, self.available_labels_edge, self.specific_node_labels, self.specific_edge_labels, self._ipl)
+			fp_cnt = self._apply_rules_no_history(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._graph.get_nodes()), numba.typed.List(self._graph.get_edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.available_labels_node, self.available_labels_edge, self.specific_node_labels, self.specific_edge_labels, self._ipl, self.rule_trace_node, self.rule_trace_edge)
 		print('Fixed Point iterations:', fp_cnt)
 
 	@staticmethod
 	@numba.njit
-	def _apply_rules(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, facts_to_be_applied_node, facts_to_be_applied_edge, ipl):
-		t = 0
+	def _apply_rules(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, facts_to_be_applied_node, facts_to_be_applied_edge, ipl, rule_trace_node, rule_trace_edge):
 		fp_cnt = 0
 		# List of all the indices that need to be removed if applied to interpretation
 		idx_to_be_removed = numba.typed.List.empty_list(numba.types.int64)
@@ -144,7 +143,7 @@ class Interpretation:
 					comp, l, bnd, static = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4]
 					# Check for inconsistencies
 					if check_consistent_node(interpretations_node, t, comp, (l, bnd)):
-						_na_update_node(interpretations_node, t, comp, (l, bnd), ipl)
+						_na_update_node(interpretations_node, t, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t)
 						interpretations_node[t][comp].world[l].set_static(static)
 					# Resolve inconsistency
 					else:
@@ -158,7 +157,7 @@ class Interpretation:
 					comp, l, bnd, static = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3], facts_to_be_applied_edge[i][4]
 					# Check for inconsistencies
 					if check_consistent_edge(interpretations_edge, t, comp, (l, bnd)):
-						_na_update_edge(interpretations_edge, t, comp, (l, bnd), ipl)
+						_na_update_edge(interpretations_edge, t, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t)
 						interpretations_edge[t][comp].world[l].set_static(static)
 					# Resolve inconsistency
 					else:
@@ -183,7 +182,7 @@ class Interpretation:
 
 						# Check for inconsistencies
 						if check_consistent_node(interpretations_node, t, comp, (l, bnd)):
-							update = _na_update_node(interpretations_node, t, comp, (l, bnd), ipl) or update
+							update = _na_update_node(interpretations_node, t, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t) or update
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_node(interpretations_node, t, comp, (l, bnd), ipl, tmax, True)
@@ -201,7 +200,7 @@ class Interpretation:
 
 						# Check for inconsistencies
 						if check_consistent_edge(interpretations_edge, t, comp, (l, bnd)):
-							update = _na_update_edge(interpretations_edge, t, comp, (l, bnd), ipl) or update
+							update = _na_update_edge(interpretations_edge, t, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t) or update
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_edge(interpretations_edge, t, comp, (l, bnd), ipl, tmax, True)
@@ -236,7 +235,7 @@ class Interpretation:
 
 	@staticmethod
 	@numba.njit
-	def _apply_rules_no_history(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, facts_to_be_applied_node, facts_to_be_applied_edge, labels_node, labels_edge, specific_labels_node, specific_labels_edge, ipl):
+	def _apply_rules_no_history(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, facts_to_be_applied_node, facts_to_be_applied_edge, labels_node, labels_edge, specific_labels_node, specific_labels_edge, ipl, rule_trace_node, rule_trace_edge):
 		fp_cnt = 0
 		# List of all the indices that need to be removed if applied to interpretation
 		idx_to_be_removed = numba.typed.List.empty_list(numba.types.int64)
@@ -274,7 +273,7 @@ class Interpretation:
 					comp, l, bnd, static = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4]
 					# Check for inconsistencies (multiple facts)
 					if check_consistent_node(interpretations_node, 0, comp, (l, bnd)):
-						_na_update_node(interpretations_node, 0, comp, (l, bnd), ipl)
+						_na_update_node(interpretations_node, 0, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t)
 						interpretations_node[0][comp].world[l].set_static(static)
 					# Resolve inconsistency
 					else:
@@ -288,7 +287,7 @@ class Interpretation:
 					comp, l, bnd, static = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3], facts_to_be_applied_edge[i][4]
 					# Check for inconsistencies
 					if check_consistent_edge(interpretations_edge, 0, comp, (l, bnd)):
-						_na_update_edge(interpretations_edge, 0, comp, (l, bnd), ipl)
+						_na_update_edge(interpretations_edge, 0, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t)
 						interpretations_edge[t][comp].world[l].set_static(static)
 					# Resolve inconsistency
 					else:
@@ -312,11 +311,10 @@ class Interpretation:
 
 						# Check for inconsistencies
 						if check_consistent_node(interpretations_node, 0, comp, (l, bnd)):
-							update = _na_update_node(interpretations_node, 0, comp, (l, bnd), ipl) or update
+							update = _na_update_node(interpretations_node, 0, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t) or update
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_node(interpretations_node, 0, comp, (l, bnd), ipl, tmax, False)
-							update = True
 
 				# Delete rules that have been applied from list by changing t to -1
 				for i in idx_to_be_removed:
@@ -332,11 +330,10 @@ class Interpretation:
 
 						# Check for inconsistencies
 						if check_consistent_edge(interpretations_edge, 0, comp, (l, bnd)):
-							update = _na_update_edge(interpretations_edge, 0, comp, (l, bnd), ipl) or update
+							update = _na_update_edge(interpretations_edge, 0, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t) or update
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_edge(interpretations_edge, 0, comp, (l, bnd), ipl, tmax, False)
-							update = True
 
 				# Delete rules that have been applied from list by changing t to -1
 				for i in idx_to_be_removed:
@@ -395,7 +392,7 @@ def _get_qualified_neigh(interpretations_node, interpretations_edge, candidates,
 	return result_node
 
 @numba.njit
-def _na_update_node(interpretations, time, comp, na, ipl):
+def _na_update_node(interpretations, time, comp, na, ipl, rule_trace, fp_cnt, t_cnt):
 	updated = False
 	# This is to prevent a key error in case the label is a specific label
 	try:
@@ -403,6 +400,7 @@ def _na_update_node(interpretations, time, comp, na, ipl):
 		# Check if update is required and if update is possible - static or not
 		if world.world[na[0]] != na[1] and not world.world[na[0]].is_static():
 			world.update(na[0], na[1])
+			rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], na[1]))
 			updated = True
 
 			# Update complement of predicate (if exists) based on new knowledge of predicate
@@ -411,17 +409,19 @@ def _na_update_node(interpretations, time, comp, na, ipl):
 					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
 					upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
 					world.world[p2] = interval.closed(lower, upper)
+					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p2, interval.closed(lower, upper)))
 				if p2==na[0]:
 					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
 					upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
 					world.world[p1] = interval.closed(lower, upper)
+					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(lower, upper)))
 		return updated
 
 	except:
 		return False
 
 @numba.njit
-def _na_update_edge(interpretations, time, comp, na, ipl):
+def _na_update_edge(interpretations, time, comp, na, ipl, rule_trace, fp_cnt, t_cnt):
 	updated = False
 	# This is to prevent a key error in case the label is a specific label
 	try:
@@ -429,6 +429,7 @@ def _na_update_edge(interpretations, time, comp, na, ipl):
 		# Check if update is required
 		if world.world[na[0]] != na[1]:
 			world.update(na[0], na[1])
+			rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], na[1]))
 			updated = True
 
 			# Update complement of predicate (if exists) based on new knowledge of predicate
@@ -437,10 +438,12 @@ def _na_update_edge(interpretations, time, comp, na, ipl):
 					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
 					upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
 					world.world[p2] = interval.closed(lower, upper)
+					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p2, interval.closed(lower, upper)))
 				if p2==na[0]:
 					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
 					upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
 					world.world[p1] = interval.closed(lower, upper)
+					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(lower, upper)))
 		return updated
 	except:
 		return False

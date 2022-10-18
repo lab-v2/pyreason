@@ -61,7 +61,7 @@ class YAMLParser:
                     neigh_edges.append((label.Label(ne[0]), interval.closed(ne[1][0], ne[1][1])))
                     thresholds.append((ne[2][0], ne[2][1], ne[2][2]))
             
-            inf = values['influence']
+            inf = values['ann_fn']
 
             r = rule.Rule(target, target_criteria_node, target_criteria_edge, delta_t, neigh_nodes, neigh_edges, inf, thresholds)
             rules.append(r)

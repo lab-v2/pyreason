@@ -81,11 +81,11 @@ def main(args):
 
     # Write output to a pickle file. The output is a list of panda dataframes. The index of the list corresponds to the timestep
     # Warning: writing for a large graph can be very time consuming
-    print('Writing interpretation')
-    timesteps = args.timesteps if args.history else 0
-    output = Output(timesteps)
-    df_nodes, df_edges = output.write(interpretation)
-    print('Finished writing interpretation')
+    # print('Writing interpretation')
+    # timesteps = args.timesteps if args.history else 0
+    # output = Output(timesteps)
+    # df_nodes, df_edges = output.write(interpretation)
+    # print('Finished writing interpretation')
 
     # Read the pickle file, and print the dataframes for each timestep
     # print('Reading dataframe from pickled files')
@@ -95,10 +95,14 @@ def main(args):
 
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
     print('Filtering data...')
-    filterer = Filter()
-    idx = args.timesteps if args.history else 0
-    filtered_df = filterer.filter_by_bound(dataframe=df_nodes[idx], label='failure', bound=interval.closed(0.7,1), display_other_labels=False)
-    print(filtered_df)
+    filterer = Filter(args.timesteps)
+    filtered_df = filterer.filter_interpretation_by_bound(interpretation, label='failure', bound=interval.closed(0.7, 1))
+
+    # You can index into filtered_df to get a particular timestep
+    # This is for the last timestep
+    print(filtered_df[-1])
+
+
 
 
 if __name__ == "__main__":

@@ -35,7 +35,7 @@ then
     source activate MANCALOG
 else
     echo Creating MANCALOG conda environment
-    conda create -n MANCALOG
+    conda create -n MANCALOG python=3.8
     source activate MANCALOG
     echo Installing necessary packages
     pip install -r requirements.txt
