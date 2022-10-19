@@ -99,8 +99,11 @@ def main(args):
     filtered_df = filterer.filter_interpretation_by_bound(interpretation, label='failure', bound=interval.closed(0.7, 1))
 
     # You can index into filtered_df to get a particular timestep
-    # This is for the last timestep
-    print(filtered_df[-1])
+    # This is for each timestep
+    for t in range(args.timesteps+1):
+        print(f'\n TIMESTEP - {t}')
+        print(filtered_df[t])
+        print()
 
 
 
