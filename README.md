@@ -45,7 +45,9 @@ python3 -m pyreason.scripts.diffuse -h
 ```
 
 ### 2.1 Setup & Run on the ASU Agave Cluster (interactive)
-To create an Anaconda environment and activate it, and then clone the repository, type the following in your Agave terminal:
+To create an Anaconda environment and activate it, and then clone the repository, type the following in your Agave terminal. 
+
+NOTE: This only needs to be done once. Once you've setup your environment you can run the interactive session directly.
 ```bash
 module load anaconda/py3
 conda create -n PYREASON
@@ -58,7 +60,7 @@ Now create an interavtive session with:
 ```bash
 interactive -N 1 -n 45 -p htc -t 0-00:10:00
 ```
-This starts an interactive session using 50 cores on one node for 10 minutes. You can change the time parameter based on your needs.
+This starts an interactive session using 45 cores on one node for 10 minutes. You can change the time parameter based on your needs.
 
 To run PyReason, type the following in your Agave terminal. Make sure you are in the top pyreason directory. Don't forget to replace the placeholders with the correct values.
 ```bash
@@ -71,7 +73,7 @@ Open the run_on_agave.sh in a text editor, and modify the paths for the graph fi
 ```bash
 sbatch run_on_agave.sh
 ```
-This will submit a job to the cluster
+This will submit a job to the cluster. You will be able to find the output of the program in the output folder.
 
 ### 2.3 Setup & Run on your Local System
 Clone the repository and install the necessary packages to make pyreason run
