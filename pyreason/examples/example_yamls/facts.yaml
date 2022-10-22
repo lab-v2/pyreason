@@ -5,7 +5,7 @@
 nodes:
     fact_1:
         node: n2825         # Name of the node
-        label: failure      # Name of the label of the node
+        label: disruption      # Name of the label of the node
         bound: [0.6, 0.8]   # Bound of the label
         static: false       # Whether it applies to all timesteps and cannot change
         t_lower: 0          # Starting time

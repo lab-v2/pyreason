@@ -4,7 +4,7 @@
 # Labels that apply to all nodes
 node_labels:
     - success
-    - failure
+    - disruption
 
 # Labels that apply to all edges
 edge_labels: []

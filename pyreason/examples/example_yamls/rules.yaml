@@ -25,13 +25,13 @@ rule_1:
 
 # Start of next rule
 rule_2:
-    target: failure
+    target: disruption
     target_criteria_node:
-        - [failure, 0.0, 1.0]
+        - [disruption, 0.0, 1.0]
     target_criteria_edge: null
     delta_t: 1
     neigh_nodes:
-        - [failure, [0.5, 1.0], [greater_equal, percent, 50]]
+        - [disruption, [0.5, 1.0], [greater_equal, percent, 50]]
     neigh_edges: null
     ann_fn: sft_tp
 

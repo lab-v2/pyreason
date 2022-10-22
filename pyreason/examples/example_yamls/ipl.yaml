@@ -2,4 +2,4 @@
 # Add any other inconsistencies below if necessary
 ---
 ipl:
-    - [success, failure]
+    - [success, disruption]
