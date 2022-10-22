@@ -1,8 +1,8 @@
-# MANCaLog
-Implementation of MANCaLog: 
-A Logic for Multi-Attribute Network Cascades.
+# PyReason
+<img src="media/pyreason_logo.jpg"/>
 
-Paper: [https://arxiv.org/abs/1301.0302](https://arxiv.org/abs/1301.0302)
+An explainable inference software supporting annotated, real valued, graph based and temporal logic
+
 
 ## Table of Contents
 <details>
@@ -17,11 +17,12 @@ Paper: [https://arxiv.org/abs/1301.0302](https://arxiv.org/abs/1301.0302)
 </details>
 
 ## 1. Usage
-To run mancalog you need 3 files:
+To run pyreason you need 4 files:
 
-1. A YAML file containing the mancalog rules
-2. A YAML file containing the mancalog facts
-3. A YAML file containing the mancalog labels
+1. A YAML file containing the pyreason rules
+2. A YAML file containing the pyreason facts
+3. A YAML file containing the pyreason labels
+4. A YAML file containing the pyreason ipl 
 
 The format of these files is very important. Please refer to the [example YAML files provided](mancalog/examples/example_yamls/) when making your own rules/facts/labels.
 

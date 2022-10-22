@@ -17,33 +17,33 @@
 # Please change the following variables based on your needs
 timesteps=2
 graph_path=~/Documents/honda/JP3854600008_honda.graphml
-rules_yaml_path=mancalog/examples/example_yamls/rules.yaml
-facts_yaml_path=mancalog/examples/example_yamls/facts.yaml
-labels_yaml_path=mancalog/examples/example_yamls/labels.yaml
-ipl_yaml_path=mancalog/examples/example_yamls/ipl.yaml
-output_file_name=mancalog_output
+rules_yaml_path=pyreason/examples/example_yamls/rules.yaml
+facts_yaml_path=pyreason/examples/example_yamls/facts.yaml
+labels_yaml_path=pyreason/examples/example_yamls/labels.yaml
+ipl_yaml_path=pyreason/examples/example_yamls/ipl.yaml
+output_file_name=pyreason_output
 #-------------------------------------------------------------------------
 
 
 #-------------------------------------------------------------------------
 # Initialize conda environment
 module load anaconda/py3
-echo Checking if MANCALOG conda environment exists
-if conda env list | grep ".*MANCALOG.*" >/dev/null 2>&1
+echo Checking if PYREASON conda environment exists
+if conda env list | grep ".*PYREASON.*" >/dev/null 2>&1
 then
-    echo MANCALOG environment exists
-    source activate MANCALOG
+    echo PYREASON environment exists
+    source activate PYREASON
 else
-    echo Creating MANCALOG conda environment
-    conda create -n MANCALOG python=3.8
-    source activate MANCALOG
+    echo Creating PYREASON conda environment
+    conda create -n PYREASON python=3.8
+    source activate PYREASON
     echo Installing necessary packages
     pip install -r requirements.txt
 fi
 
 
-# Run mancalog
-python3 -u -m mancalog.scripts.diffuse --graph_path $graph_path --timesteps $timesteps --rules $rules_yaml_path  --facts $facts_yaml_path --labels $labels_yaml_path --ipl $ipl_yaml_path --output_to_file --output_file $output_file_name
+# Run pyreason
+python3 -u -m pyreason.scripts.diffuse --graph_path $graph_path --timesteps $timesteps --rules $rules_yaml_path  --facts $facts_yaml_path --labels $labels_yaml_path --ipl $ipl_yaml_path --output_to_file --output_file $output_file_name
 #-------------------------------------------------------------------------
 
 
