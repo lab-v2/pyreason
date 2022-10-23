@@ -30,8 +30,8 @@ def typeof_rule(val, c):
 # Construct object from Numba functions
 @type_callable(Rule)
 def type_rule(context):
-    def typer(target, tc_node, tc_edge, delta, neigh_nodes, neigh_edges, inf, thresholds):
-        if isinstance(target, label.LabelType) and isinstance(tc_node, (types.NoneType, types.ListType)) and isinstance(tc_edge, (types.NoneType, types.ListType)) and isinstance(delta, types.Integer) and isinstance(neigh_nodes, (types.NoneType, types.ListType)) and isinstance(neigh_edges, (types.NoneType, types.ListType)) and isinstance(inf, types.UnicodeType) and isinstance(thresholds, types.ListType):
+    def typer(target, tc, delta, neigh_nodes, neigh_edges, inf, thresholds):
+        if isinstance(target, label.LabelType) and isinstance(tc, (types.NoneType, types.ListType)) and isinstance(delta, types.Integer) and isinstance(neigh_nodes, (types.NoneType, types.ListType)) and isinstance(neigh_edges, (types.NoneType, types.ListType)) and isinstance(inf, types.UnicodeType) and isinstance(thresholds, types.ListType):
             return rule_type
     return typer
 
@@ -42,8 +42,7 @@ class RuleModel(models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [
             ('target', label.label_type),
-            ('tc_node', types.ListType(types.Tuple((label.label_type, interval.interval_type)))),
-            ('tc_edge', types.ListType(types.Tuple((label.label_type, interval.interval_type)))),
+            ('target_criteria', types.ListType(types.Tuple((label.label_type, interval.interval_type)))),
             ('delta', types.int8),
             ('neigh_nodes', types.ListType(types.Tuple((label.label_type, interval.interval_type)))),
             ('neigh_edges', types.ListType(types.Tuple((label.label_type, interval.interval_type)))),
@@ -55,8 +54,7 @@ class RuleModel(models.StructModel):
 
 # Expose datamodel attributes
 make_attribute_wrapper(RuleType, 'target', 'target')
-make_attribute_wrapper(RuleType, 'tc_node', 'tc_node')
-make_attribute_wrapper(RuleType, 'tc_edge', 'tc_edge')
+make_attribute_wrapper(RuleType, 'target_criteria', 'target_criteria')
 make_attribute_wrapper(RuleType, 'delta', 'delta')
 make_attribute_wrapper(RuleType, 'neigh_nodes', 'neigh_nodes')
 make_attribute_wrapper(RuleType, 'neigh_edges', 'neigh_edges')
@@ -64,14 +62,15 @@ make_attribute_wrapper(RuleType, 'inf', 'inf')
 make_attribute_wrapper(RuleType, 'thresholds', 'thresholds')
 
 # Implement constructor
-@lower_builtin(Rule, label.label_type, types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.int8, types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.string, types.ListType(types.Tuple((types.string, types.string, types.float64))))
+@lower_builtin(Rule, label.label_type, types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.int8, types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.string, types.ListType(types.Tuple((types.string, types.string, types.float64))))
 def impl_rule(context, builder, sig, args):
     typ = sig.return_type
-    target, tc_node, tc_edge, delta, neigh_nodes, neigh_edges, inf, thresholds = args
+    target, target_criteria, delta, neigh_nodes, neigh_edges, inf, thresholds = args
+    context.nrt.incref(builder, types.ListType(types.Tuple((label.label_type, interval.interval_type))), neigh_nodes)
+    context.nrt.incref(builder, types.ListType(types.Tuple((label.label_type, interval.interval_type))), neigh_edges)
     rule = cgutils.create_struct_proxy(typ)(context, builder)
     rule.target = target
-    rule.tc_node = tc_node
-    rule.tc_edge = tc_edge
+    rule.target_criteria = target_criteria
     rule.delta = delta
     rule.neigh_nodes = neigh_nodes
     rule.neig_edges = neigh_edges
@@ -86,16 +85,10 @@ def get_target(rule):
         return rule.target
     return getter
 
-@overload_method(RuleType, "get_target_criteria_node")
+@overload_method(RuleType, "get_target_criteria")
 def get_target_criteria(rule):
     def getter(rule):
-        return rule.tc_node
-    return getter
-
-@overload_method(RuleType, "get_target_criteria_edge")
-def get_target_criteria(rule):
-    def getter(rule):
-        return rule.tc_edge
+        return rule.target_criteria
     return getter
 
 @overload_method(RuleType, "get_delta")
@@ -135,8 +128,7 @@ def get_thresholds(rule):
 @unbox(RuleType)
 def unbox_rule(typ, obj, c):
     target_obj = c.pyapi.object_getattr_string(obj, "_target")
-    tc_node_obj = c.pyapi.object_getattr_string(obj, "_tc_node")
-    tc_edge_obj = c.pyapi.object_getattr_string(obj, "_tc_edge")
+    tc_obj = c.pyapi.object_getattr_string(obj, "_target_criteria")
     delta_obj = c.pyapi.object_getattr_string(obj, "_delta")
     neigh_nodes_obj = c.pyapi.object_getattr_string(obj, "_neigh_nodes")
     neigh_edges_obj = c.pyapi.object_getattr_string(obj, "_neigh_edges")
@@ -144,16 +136,14 @@ def unbox_rule(typ, obj, c):
     thresholds_obj = c.pyapi.object_getattr_string(obj, "_thresholds")
     rule = cgutils.create_struct_proxy(typ)(c.context, c.builder)
     rule.target = c.unbox(label.label_type, target_obj).value
-    rule.tc_node = c.unbox(types.ListType(types.Tuple((label.label_type, interval.interval_type))), tc_node_obj).value
-    rule.tc_edge = c.unbox(types.ListType(types.Tuple((label.label_type, interval.interval_type))), tc_edge_obj).value
+    rule.target_criteria = c.unbox(types.ListType(types.Tuple((label.label_type, interval.interval_type))), tc_obj).value
     rule.delta = c.unbox(types.int8, delta_obj).value
     rule.neigh_nodes = c.unbox(types.ListType(types.Tuple((label.label_type, interval.interval_type))), neigh_nodes_obj).value
     rule.neigh_edges = c.unbox(types.ListType(types.Tuple((label.label_type, interval.interval_type))), neigh_edges_obj).value
     rule.inf = c.unbox(types.string, inf_obj).value
     rule.thresholds = c.unbox(types.ListType(types.Tuple((types.string, types.string, types.float64))), thresholds_obj).value
     c.pyapi.decref(target_obj)
-    c.pyapi.decref(tc_node_obj)
-    c.pyapi.decref(tc_edge_obj)
+    c.pyapi.decref(tc_obj)
     c.pyapi.decref(delta_obj)
     c.pyapi.decref(neigh_nodes_obj)
     c.pyapi.decref(neigh_edges_obj)
@@ -169,17 +159,15 @@ def box_rule(typ, val, c):
     rule = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
     class_obj = c.pyapi.unserialize(c.pyapi.serialize_object(Rule))
     target_obj = c.box(label.label_type, rule.target)
-    tc_node_obj = c.box(types.ListType(types.Tuple((label.label_type, interval.interval_type))), rule.tc_node)
-    tc_edge_obj = c.box(types.ListType(types.Tuple((label.label_type, interval.interval_type))), rule.tc_edge)
+    tc_obj = c.box(types.ListType(types.Tuple((label.label_type, interval.interval_type))), rule.tc_node)
     delta_obj = c.box(types.int8, rule.delta)
     neigh_nodes_obj = c.box(types.ListType(types.Tuple((label.label_type, interval.interval_type))), rule.neigh_nodes)
     neigh_edges_obj = c.box(types.ListType(types.Tuple((label.label_type, interval.interval_type))), rule.neigh_edges)
     inf_obj = c.box(types.string, rule.inf)
     thresholds_obj = c.box(types.ListType(types.Tuple((types.string, types.string, types.float64))), rule.thresholds)
-    res = c.pyapi.call_function_objargs(class_obj, (target_obj, tc_node_obj, tc_edge_obj, delta_obj, neigh_nodes_obj, neigh_edges_obj, inf_obj, thresholds_obj))
+    res = c.pyapi.call_function_objargs(class_obj, (target_obj, tc_obj, delta_obj, neigh_nodes_obj, neigh_edges_obj, inf_obj, thresholds_obj))
     c.pyapi.decref(target_obj)
-    c.pyapi.decref(tc_node_obj)
-    c.pyapi.decref(tc_edge_obj)
+    c.pyapi.decref(tc_obj)
     c.pyapi.decref(delta_obj)
     c.pyapi.decref(neigh_nodes_obj)
     c.pyapi.decref(neigh_edges_obj)

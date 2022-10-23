@@ -7,7 +7,8 @@ node_labels:
     - disruption
 
 # Labels that apply to all edges
-edge_labels: []
+edge_labels:
+    - strong
 
 # Labels that apply to specific nodes
 node_specific_labels:

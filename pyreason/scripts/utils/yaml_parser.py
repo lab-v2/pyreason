@@ -9,10 +9,6 @@ import pyreason.scripts.numba_wrapper.numba_types.rule_type as rule
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 
-from pyreason.scripts.influence_functions.tipping_function import TippingFunction
-from pyreason.scripts.influence_functions.sft_tipping_function import SftTippingFunction
-from pyreason.scripts.influence_functions.ng_tipping_function import NgTippingFunction
-
 
 class YAMLParser:
     def __init__(self, tmax):
@@ -29,17 +25,11 @@ class YAMLParser:
             # Set rule target
             target = label.Label(values['target'])
             
-            # Set rule target criteria (for node labels)
-            target_criteria_node = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
-            if values['target_criteria_node'] is not None:
-                for tc in values['target_criteria_node']:
-                    target_criteria_node.append((label.Label(tc[0]), interval.closed(tc[1], tc[2])))
-            
-            # Set rule target criteria (for edge labels)
-            target_criteria_edge = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
-            if values['target_criteria_edge'] is not None:
-                for tc in values['target_criteria_edge']:
-                    target_criteria_edge.append((label.Label(tc[0]), interval.closed(tc[1], tc[2])))
+            # Set rule target criteria
+            target_criteria = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
+            if values['target_criteria'] is not None:
+                for tc in values['target_criteria']:
+                    target_criteria.append((label.Label(tc[0]), interval.closed(tc[1], tc[2])))
 
             # Set delta t
             delta_t = numba.types.int8(values['delta_t'])
@@ -63,7 +53,7 @@ class YAMLParser:
             
             inf = values['ann_fn']
 
-            r = rule.Rule(target, target_criteria_node, target_criteria_edge, delta_t, neigh_nodes, neigh_edges, inf, thresholds)
+            r = rule.Rule(target, target_criteria, delta_t, neigh_nodes, neigh_edges, inf, thresholds)
             rules.append(r)
 
         return rules
@@ -96,9 +86,15 @@ class YAMLParser:
                 e = edge.Edge(str(values['source']), str(values['target']))
                 l = label.Label(values['label'])
                 bound = interval.closed(values['bound'][0], values['bound'][1])
-                t_lower = values['t_lower']
-                t_upper = values['t_upper']
-                f = fact_edge.Fact(e, l, bound, t_lower, t_upper)
+                if values['static']:
+                    static = True
+                    t_lower = 0
+                    t_upper = self.tmax
+                else:
+                    static = False
+                    t_lower = values['t_lower']
+                    t_upper = values['t_upper']
+                f = fact_edge.Fact(e, l, bound, t_lower, t_upper, static)
                 facts_edge.append(f)
 
         return facts_node, facts_edge
@@ -145,22 +141,3 @@ class YAMLParser:
                 ipl.append((label.Label(labels[0]), label.Label(labels[1])))
 
         return ipl
-
-
-    def _get_influence_function(self, influence_function, threshold):
-        f = SftTippingFunction()
-        if influence_function == 'tp':
-            f._threshold = 0.5
-            f._bnd_update = interval.closed(1.0, 1.0)
-            return f
-        elif influence_function == 'sft_tp':
-            f._threshold = threshold
-            return f
-        elif influence_function == 'ng_tp':
-            f._threshold = 1.0
-            f._bnd_update = interval.closed(0.0, 0,2)
-            return f
-        else:
-            raise NotImplementedError(f"The influence function: {influence_function} does not exist or has not yet been implemented. Please enter a known influence function")
-    
-     

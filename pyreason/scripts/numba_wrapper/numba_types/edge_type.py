@@ -76,6 +76,8 @@ def impl_edge(context, builder, sig, args):
 def impl_edge(context, builder, sig, args):
     typ = sig.return_type
     source, target, i = args
+    context.nrt.incref(builder, types.string, source)
+    context.nrt.incref(builder, types.string, target)
     context.nrt.incref(builder, types.string, i)
     edge = cgutils.create_struct_proxy(typ)(context, builder)
     edge.source = source

@@ -12,7 +12,6 @@ class Edge:
     def get_labels(self):
         return Edge.available_labels
 
-
     def get_source(self):
         return self._source
 

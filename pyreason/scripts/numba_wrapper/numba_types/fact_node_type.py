@@ -18,7 +18,7 @@ from numba.extending import unbox, NativeValue, box
 # Create new numba type
 class FactType(types.Type):
     def __init__(self):
-        super(FactType, self).__init__(name='Fact')
+        super(FactType, self).__init__(name='FactNode')
 
 fact_type = FactType()
 

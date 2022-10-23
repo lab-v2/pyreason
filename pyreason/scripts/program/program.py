@@ -7,10 +7,11 @@ class Program:
 	specific_node_labels = []
 	specific_edge_labels = []
 
-	def __init__(self, graph, tmax, facts, rules, ipl):
+	def __init__(self, graph, tmax, facts_node, facts_edge, rules, ipl):
 		self._graph = graph
 		self._tmax = tmax
-		self._facts = facts
+		self._facts_node = facts_node
+		self._facts_edge = facts_edge
 		self._rules = rules
 		self._ipl = ipl
 
@@ -23,6 +24,6 @@ class Program:
 
 		interp = Interpretation(self._graph, self._tmax, history, self._ipl)
 		
-		interp.start_fp(self._facts, self._rules)
+		interp.start_fp(self._facts_node, self._facts_edge, self._rules)
 
 		return interp		

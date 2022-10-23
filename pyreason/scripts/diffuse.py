@@ -15,7 +15,7 @@ from pyreason.scripts.utils.output import Output
 from pyreason.scripts.utils.args import argparser
 
 
-# TODO: Make facts for edges supported
+
 def main(args):
     if args.output_to_file:
         sys.stdout = open(f"./output/{args.output_file_name}.txt", "w")
@@ -29,7 +29,7 @@ def main(args):
 
     if args.graph_attribute_parsing:
         start = time.time()
-        non_fluent_facts, specific_node_labels, specific_edge_labels = graphml_parser.parse_graph_attributes(args.timesteps) 
+        non_fluent_facts_node, non_fluent_facts_edge, specific_node_labels, specific_edge_labels = graphml_parser.parse_graph_attributes(args.timesteps) 
         end = time.time()
         print('Time to read graph attributes:', end-start)
 
@@ -58,13 +58,14 @@ def main(args):
 
     # Facts come here
     facts_node, facts_edge = yaml_parser.parse_facts(args.facts_yaml_path)
-    facts_node += non_fluent_facts
+    facts_node += non_fluent_facts_node
+    facts_edge += non_fluent_facts_edge
 
     # Inconsistent predicate list
     ipl = yaml_parser.parse_ipl(args.ipl_yaml_path)
 
     # Program comes here
-    program = Program(graph, tmax, facts_node, rules, ipl)
+    program = Program(graph, tmax, facts_node, facts_edge, rules, ipl)
     program.available_labels_node = node_labels
     program.available_labels_edge = edge_labels
     program.specific_node_labels = specific_node_labels

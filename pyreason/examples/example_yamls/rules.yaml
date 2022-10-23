@@ -8,10 +8,9 @@
 rule_1:
     target: success      # Target label
 
-    target_criteria_node:    # List of all target criteria (for node labels)
+    target_criteria:    # List of all target criteria
         # All criteria come here in the form [label, lower_bound, upper_bound]
         - [success, 0.0, 1.0]
-    target_criteria_edge: null # List of all target criteria (for edge labels)
 
     delta_t: 1          # Delta t, time when this rule is applicable
 
@@ -26,13 +25,13 @@ rule_1:
 # Start of next rule
 rule_2:
     target: disruption
-    target_criteria_node:
+    target_criteria:
         - [disruption, 0.0, 1.0]
-    target_criteria_edge: null
     delta_t: 1
     neigh_nodes:
         - [disruption, [0.5, 1.0], [greater_equal, percent, 50]]
-    neigh_edges: null
+    neigh_edges:
+        - [strong, [0,1], [greater_equal, number, 1]]
     ann_fn: sft_tp
 
 

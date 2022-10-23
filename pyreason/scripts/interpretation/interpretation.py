@@ -108,17 +108,20 @@ class Interpretation:
 
 		return interpretations
 
-	def start_fp(self, facts, rules):
-		self._init_facts(facts, self.facts_to_be_applied_node)
+	def start_fp(self, facts_node, facts_edge, rules):
+		self._init_facts(facts_node, facts_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge)
 		self._start_fp(rules)
 
 
 	@staticmethod
 	@numba.njit
-	def _init_facts(facts, facts_to_be_applied_node):
-		for fact in facts:
+	def _init_facts(facts_node, facts_edge, facts_to_be_applied_node, facts_to_be_applied_edge):
+		for fact in facts_node:
 			for t in range(fact.get_time_lower(), fact.get_time_upper() + 1):
 				facts_to_be_applied_node.append((numba.types.int8(t), fact.get_component(), fact.get_label(), fact.get_bound(), fact.static))
+		for fact in facts_edge:
+			for t in range(fact.get_time_lower(), fact.get_time_upper() + 1):
+				facts_to_be_applied_edge.append((numba.types.int8(t), fact.get_component(), fact.get_label(), fact.get_bound(), fact.static))
 
 		
 	def _start_fp(self, rules):
@@ -214,7 +217,7 @@ class Interpretation:
 				for rule in rules:
 					if t+rule.get_delta()<=tmax:
 						for n in nodes:
-							if are_satisfied_node(interpretations_node, t, n, rule.get_target_criteria_node()):
+							if are_satisfied_node(interpretations_node, t, n, rule.get_target_criteria()):
 								a = neighbors[n]
 								b = _get_qualified_neigh(interpretations_node, interpretations_edge, neighbors[n], t, n, rule.get_neigh_nodes(), rule.get_neigh_edges())
 								bnd = influence(inf_name=rule.get_influence(), neigh=a, qualified_neigh=b, thresholds=rule.get_thresholds())
@@ -223,7 +226,7 @@ class Interpretation:
 						# Go through all edges and check if any rules apply to them.
 						# Comment out the following lines if there are no labels or rules that deal with edges. It will be an unnecessary loop
 						for e in edges:
-							if are_satisfied_edge(interpretations_edge, t, e, rule.get_target_criteria_edge()):
+							if are_satisfied_edge(interpretations_edge, t, e, rule.get_target_criteria()):
 								# If needed make some influence function for the edge target. As of now, edges don't have neighbors!
 								# When making this, refer to the nodes loop section (4 lines above)
 								# Then append the information to rules_to_be_applied_edge
@@ -345,7 +348,7 @@ class Interpretation:
 					# Only go through everything if the rule can be applied within the given timesteps. Otherwise it's an unnecessary loop
 					if t+rule.get_delta()<=tmax:
 						for n in nodes:
-							if are_satisfied_node(interpretations_node, 0, n, rule.get_target_criteria_node()):
+							if are_satisfied_node(interpretations_node, 0, n, rule.get_target_criteria()):
 								a = neighbors[n]
 								b = _get_qualified_neigh(interpretations_node, interpretations_edge, neighbors[n], 0, n, rule.get_neigh_nodes(), rule.get_neigh_edges())
 								bnd = influence(inf_name=rule.get_influence(), neigh=a, qualified_neigh=b, thresholds=rule.get_thresholds())
@@ -354,7 +357,7 @@ class Interpretation:
 						# Go through all edges and check if any rules apply to them.
 						# Comment out the following lines if there are no labels or rules that deal with edges. It will be an unnecessary loop
 						for e in edges:
-							if are_satisfied_edge(interpretations_edge, 0, e, rule.get_target_criteria_edge()):
+							if are_satisfied_edge(interpretations_edge, 0, e, rule.get_target_criteria()):
 								# If needed make some influence function for the edge target. As of now, edges don't have neighbors!
 								# When making this, refer to the nodes loop section (4 lines above)
 								# Then append the information to rules_to_be_applied_edge
