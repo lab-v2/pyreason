@@ -1,7 +1,7 @@
 import networkx as nx
 import numba
 
-import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact
+import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.node_type as node
 import pyreason.scripts.numba_wrapper.numba_types.edge_type as edge
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
@@ -18,7 +18,7 @@ class GraphmlParser:
         return self.graph
 
     def parse_graph_attributes(self, timesteps):
-        facts = numba.typed.List.empty_list(fact.fact_type)
+        facts = numba.typed.List.empty_list(fact_node.fact_type)
         specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(node.node_type))
         specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(edge.edge_type))
         for n in self.graph.nodes:
@@ -27,7 +27,7 @@ class GraphmlParser:
                 if label.Label(l) not in specific_node_labels.keys():
                     specific_node_labels[label.Label(l)] = numba.typed.List.empty_list(node.node_type)
                 specific_node_labels[label.Label(l)].append(node.Node(n))
-                f = fact.Fact(node.Node(n), label.Label(l), interval.closed(1.0,1.0), 0, timesteps, static=True)
+                f = fact_node.Fact(node.Node(n), label.Label(l), interval.closed(1.0,1.0), 0, timesteps, static=True)
                 facts.append(f)
         for e in self.graph.edges:
             for key, value in self.graph.edges[e].items():

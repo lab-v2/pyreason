@@ -1,11 +1,10 @@
-from pyreason.scripts.components.graph_component import GraphComponent
 from networkx import DiGraph
 
 import pyreason.scripts.numba_wrapper.numba_types.node_type as node
 import pyreason.scripts.numba_wrapper.numba_types.edge_type as edge
 
 
-class NetworkGraph(GraphComponent, DiGraph):
+class NetworkGraph(DiGraph):
 
 	def __init__(self, id, nodes = [], edges = []):
 		super().__init__()

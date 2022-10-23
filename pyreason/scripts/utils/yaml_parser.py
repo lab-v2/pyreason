@@ -73,7 +73,7 @@ class YAMLParser:
         with open(path, 'r') as file:
             facts_yaml = yaml.safe_load(file)
 
-        facts_node = numba.typed.List()
+        facts_node = numba.typed.List.empty_list(fact_node.fact_type)
         if facts_yaml['nodes'] is not None:
             for _, values in facts_yaml['nodes'].items():
                 n = node.Node(str(values['node']))
@@ -90,7 +90,7 @@ class YAMLParser:
                 f = fact_node.Fact(n, l, bound, t_lower, t_upper, static)
                 facts_node.append(f)
 
-        facts_edge = numba.typed.List()
+        facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
         if facts_yaml['edges'] is not None:
             for _, values in facts_yaml['edges'].items():
                 e = edge.Edge(str(values['source']), str(values['target']))
