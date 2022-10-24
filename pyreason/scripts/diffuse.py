@@ -12,7 +12,7 @@ from pyreason.scripts.utils.yaml_parser import YAMLParser
 from pyreason.scripts.utils.graphml_parser import GraphmlParser
 from pyreason.scripts.utils.filter import Filter
 from pyreason.scripts.utils.output import Output
-from pyreason.scripts.utils.args import argparser
+from pyreason.scripts.args import argparser
 
 
 
@@ -39,7 +39,8 @@ def main(args):
     # Take a subgraph of the actual data
     # graph_data = nx.subgraph(graph_data, ['n2825', 'n2625', 'n2989'])
     start = time.time()
-    graph = NetworkGraph('graph', list(graph_data.nodes), list(graph_data.edges))
+    reverse = True if args.reverse_digraph else False
+    graph = NetworkGraph(list(graph_data.nodes), list(graph_data.edges), reverse)
     end = time.time()
     print('Time to initialize graph for diffusion:', end-start)
     del graph_data

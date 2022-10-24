@@ -36,6 +36,10 @@ def argparser():
     parser.add_argument("--no-memory_profile", dest='memory_profile', action='store_false')
     parser.add_argument("--memory_profile", dest='memory_profile', action='store_true')
     parser.set_defaults(memory_profile=True)
+    # Reverse Digraph
+    # parser.add_argument("--no-memory_profile", dest='reverse_digraph', action='store_false')
+    parser.add_argument("--reverse_digraph", dest='reverse_digraph', action='store_true')
+    parser.set_defaults(reverse_digraph=False)
 
 
     return parser.parse_args()

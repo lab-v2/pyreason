@@ -6,9 +6,9 @@ import pyreason.scripts.numba_wrapper.numba_types.edge_type as edge
 
 class NetworkGraph(DiGraph):
 
-	def __init__(self, id, nodes = [], edges = []):
+	def __init__(self, nodes, edges, reverse=False):
 		super().__init__()
-		self._id = id
+		self.reverse = reverse
 		for n in nodes:
 			self.add_node(n)
 
@@ -60,7 +60,11 @@ class NetworkGraph(DiGraph):
 		net_diff_node1 = node.Node(e[0])
 		net_diff_node2 = node.Node(e[1])
 		net_diff_edge = edge.Edge(e[0], e[1])
-		super().add_edges_from([(net_diff_node2, net_diff_node1, {"net_diff_edge": net_diff_edge})])
+		if self.reverse:
+			super().add_edges_from([(net_diff_node2, net_diff_node1, {"net_diff_edge": net_diff_edge})])
+		else:
+			super().add_edges_from([(net_diff_node1, net_diff_node2, {"net_diff_edge": net_diff_edge})])
+
 
 	def get_id(self):
 		return self._id
