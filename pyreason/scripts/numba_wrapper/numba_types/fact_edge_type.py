@@ -1,4 +1,4 @@
-import pyreason.scripts.numba_wrapper.numba_types.edge_type as edge
+# import pyreason.scripts.numba_wrapper.numba_types.edge_type as edge
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 from pyreason.scripts.facts.fact_edge import Fact
@@ -33,7 +33,7 @@ def typeof_fact(val, c):
 @type_callable(Fact)
 def type_fact(context):
     def typer(component, l, bnd, t_lower, t_upper, static):
-        if isinstance(component, edge.edge_type) and isinstance(l, label.LabelType) and isinstance(bnd, interval.IntervalType) and isinstance(t_lower, numba.types.Integer) and isinstance(t_upper, numba.types.Integer) and isinstance(static, numba.types.Boolean):
+        if isinstance(component, types.Tuple) and isinstance(l, label.LabelType) and isinstance(bnd, interval.IntervalType) and isinstance(t_lower, numba.types.Integer) and isinstance(t_upper, numba.types.Integer) and isinstance(static, numba.types.Boolean):
             return fact_type
     return typer
 
@@ -43,7 +43,7 @@ def type_fact(context):
 class FactModel(models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [
-            ('component', edge.edge_type),
+            ('component', numba.types.Tuple((numba.types.string, numba.types.string))),
             ('l', label.label_type),
             ('bnd', interval.interval_type),
             ('t_lower', numba.types.int8),
@@ -63,7 +63,7 @@ make_attribute_wrapper(FactType, 'static', 'static')
 
 
 # Implement constructor
-@lower_builtin(Fact, edge.edge_type, label.label_type, interval.interval_type, numba.types.int8, numba.types.int8, numba.types.boolean)
+@lower_builtin(Fact, numba.types.Tuple((numba.types.string, numba.types.string)), label.label_type, interval.interval_type, numba.types.int8, numba.types.int8, numba.types.boolean)
 def impl_fact(context, builder, sig, args):
     typ = sig.return_type
     component, l, bnd, t_lower, t_upper, static = args
@@ -118,7 +118,7 @@ def unbox_fact(typ, obj, c):
     t_upper_obj = c.pyapi.object_getattr_string(obj, "_t_upper")
     static_obj = c.pyapi.object_getattr_string(obj, "_static")
     fact = cgutils.create_struct_proxy(typ)(c.context, c.builder)
-    fact.component = c.unbox(edge.edge_type, component_obj).value
+    fact.component = c.unbox(numba.types.Tuple((numba.types.string, numba.types.string)), component_obj).value
     fact.l = c.unbox(label.label_type, l_obj).value
     fact.bnd = c.unbox(interval.interval_type, bnd_obj).value
     fact.t_lower = c.unbox(numba.types.int8, t_lower_obj).value
@@ -139,7 +139,7 @@ def unbox_fact(typ, obj, c):
 def box_fact(typ, val, c):
     fact = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
     class_obj = c.pyapi.unserialize(c.pyapi.serialize_object(Fact))
-    component_obj = c.box(edge.edge_type, fact.component)
+    component_obj = c.box(numba.types.Tuple((numba.types.string, numba.types.string)), fact.component)
     l_obj = c.box(label.label_type, fact.l)
     bnd_obj = c.box(interval.interval_type, fact.bnd)
     t_lower_obj = c.box(numba.types.int8, fact.t_lower)

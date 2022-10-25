@@ -7,7 +7,6 @@ import memory_profiler as mp
 
 import pyreason.scripts.interval.interval as interval
 from pyreason.scripts.program.program import Program
-from pyreason.scripts.graph.network_graph import NetworkGraph
 from pyreason.scripts.utils.yaml_parser import YAMLParser
 from pyreason.scripts.utils.graphml_parser import GraphmlParser
 from pyreason.scripts.utils.filter import Filter
@@ -20,10 +19,12 @@ def main(args):
     if args.output_to_file:
         sys.stdout = open(f"./output/{args.output_file_name}.txt", "w")
 
+    # Initialize parsers
     graphml_parser = GraphmlParser()
     yaml_parser = YAMLParser(args.timesteps)
+
     start = time.time()
-    graph_data = graphml_parser.parse_graph(args.graph_path)
+    graph = graphml_parser.parse_graph(args.graph_path, args.reverse_digraph)
     end = time.time()
     print('Time to read graph:', end-start)
 
@@ -33,17 +34,7 @@ def main(args):
         end = time.time()
         print('Time to read graph attributes:', end-start)
 
-    # Read graph & retrieve tmax
     tmax = args.timesteps
-
-    # Take a subgraph of the actual data
-    # graph_data = nx.subgraph(graph_data, ['n2825', 'n2625', 'n2989'])
-    start = time.time()
-    reverse = True if args.reverse_digraph else False
-    graph = NetworkGraph(list(graph_data.nodes), list(graph_data.edges), reverse)
-    end = time.time()
-    print('Time to initialize graph for diffusion:', end-start)
-    del graph_data
 
     # Initialize labels
     node_labels, edge_labels, snl, sel = yaml_parser.parse_labels(args.labels_yaml_path)
@@ -57,8 +48,8 @@ def main(args):
     # Rules come here
     rules = yaml_parser.parse_rules(args.rules_yaml_path)
 
-    # Facts come here
-    facts_node, facts_edge = yaml_parser.parse_facts(args.facts_yaml_path)
+    # Facts come here. Add non fluent facts that came from the graph
+    facts_node, facts_edge = yaml_parser.parse_facts(args.facts_yaml_path, args.reverse_digraph)
     facts_node += non_fluent_facts_node
     facts_edge += non_fluent_facts_edge
 
@@ -66,7 +57,7 @@ def main(args):
     ipl = yaml_parser.parse_ipl(args.ipl_yaml_path)
 
     # Program comes here
-    program = Program(graph, tmax, facts_node, facts_edge, rules, ipl)
+    program = Program(graph, tmax, facts_node, facts_edge, rules, ipl, args.reverse_digraph)
     program.available_labels_node = node_labels
     program.available_labels_edge = edge_labels
     program.specific_node_labels = specific_node_labels

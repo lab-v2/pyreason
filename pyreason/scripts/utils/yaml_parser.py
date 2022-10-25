@@ -3,8 +3,6 @@ import numba
 
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
-import pyreason.scripts.numba_wrapper.numba_types.node_type as node
-import pyreason.scripts.numba_wrapper.numba_types.edge_type as edge
 import pyreason.scripts.numba_wrapper.numba_types.rule_type as rule
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
@@ -59,14 +57,14 @@ class YAMLParser:
         return rules
 
 
-    def parse_facts(self, path):
+    def parse_facts(self, path, reverse):
         with open(path, 'r') as file:
             facts_yaml = yaml.safe_load(file)
 
         facts_node = numba.typed.List.empty_list(fact_node.fact_type)
         if facts_yaml['nodes'] is not None:
             for _, values in facts_yaml['nodes'].items():
-                n = node.Node(str(values['node']))
+                n = str(values['node'])
                 l = label.Label(values['label'])
                 bound = interval.closed(values['bound'][0], values['bound'][1])
                 if values['static']:
@@ -83,7 +81,7 @@ class YAMLParser:
         facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
         if facts_yaml['edges'] is not None:
             for _, values in facts_yaml['edges'].items():
-                e = edge.Edge(str(values['source']), str(values['target']))
+                e = (str(values['source']), str(values['target'])) if not reverse else (str(values['target']), str(values['source']))
                 l = label.Label(values['label'])
                 bound = interval.closed(values['bound'][0], values['bound'][1])
                 if values['static']:
@@ -114,19 +112,19 @@ class YAMLParser:
             l = label.Label(label_name)
             edge_labels.append(l)
 
-        specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(node.node_type))
+        specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
         for label_name in labels_yaml['node_specific_labels']:
             l = label.Label(label_name)
-            specific_node_labels[l] = numba.typed.List.empty_list(node.node_type)
+            specific_node_labels[l] = numba.typed.List.empty_list(numba.types.string)
             for n in labels_yaml['node_specific_labels'][label_name]:
-                specific_node_labels[l].append(node.Node(str(n)))
+                specific_node_labels[l].append(str(n))
 
-        specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(edge.edge_type))
+        specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
         for label_name in labels_yaml['edge_specific_labels']:
             l = label.Label(label_name)
-            specific_edge_labels[l] = numba.typed.List.empty_list(edge.edge_type)
+            specific_edge_labels[l] = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.string)))
             for e in labels_yaml['edge_specific_labels'][label_name]:
-                specific_edge_labels[l].append(edge.Edge(str(e[0]), str(e[1])))
+                specific_edge_labels[l].append((str(e[0]), str(e[1])))
 
 
         return node_labels, edge_labels, specific_node_labels, specific_edge_labels

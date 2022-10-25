@@ -104,13 +104,3 @@ def box_label(typ, val, c):
     c.pyapi.decref(class_obj)
     return res
 
-
-# TEST
-# import numba
-
-# @numba.njit
-# def f(n):
-#     a = Label('abc')
-#     return n
-
-# print(f(Label('abc'))._value)

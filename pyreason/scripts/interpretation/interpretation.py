@@ -1,34 +1,36 @@
-from pyreason.scripts.components.edge import Edge
-import pyreason.scripts.numba_wrapper.numba_types.node_type as node
-import pyreason.scripts.numba_wrapper.numba_types.edge_type as edge
 import pyreason.scripts.numba_wrapper.numba_types.world_type as world
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 
 import numba
 
+# Types for the dictionaries
+node_type = numba.types.string
+edge_type = numba.types.UniTuple(numba.types.string, 2)
+
 
 class Interpretation:
 	available_labels_node = []
 	available_labels_edge = []
-	specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(node.node_type))
-	specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(edge.edge_type))
+	specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(node_type))
+	specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(edge_type))
 
-	def __init__(self, graph, tmax, history, ipl):
+	def __init__(self, graph, tmax, history, ipl, reverse_graph):
 		self._tmax = tmax
 		self._graph = graph
 		self._history = history
 		self._ipl = ipl
+		self._reverse_graph = reverse_graph
 
 		# Initialize list of tuples for rules/facts to be applied
-		self.rules_to_be_applied_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, node.node_type, label.label_type, interval.interval_type)))
-		self.rules_to_be_applied_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, edge.edge_type, label.label_type, interval.interval_type)))
-		self.facts_to_be_applied_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, node.node_type, label.label_type, interval.interval_type, numba.types.boolean)))
-		self.facts_to_be_applied_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, edge.edge_type, label.label_type, interval.interval_type, numba.types.boolean)))
+		self.rules_to_be_applied_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, node_type, label.label_type, interval.interval_type)))
+		self.rules_to_be_applied_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, edge_type, label.label_type, interval.interval_type)))
+		self.facts_to_be_applied_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, node_type, label.label_type, interval.interval_type, numba.types.boolean)))
+		self.facts_to_be_applied_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, edge_type, label.label_type, interval.interval_type, numba.types.boolean)))
 
 		# Keep track of all the rules that have affeceted each node/edge at each timestep/fp operation
-		self.rule_trace_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, numba.types.int8, node.node_type, label.label_type, interval.interval_type)))
-		self.rule_trace_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, numba.types.int8, edge.edge_type, label.label_type, interval.interval_type)))
+		self.rule_trace_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, numba.types.int8, node_type, label.label_type, interval.interval_type)))
+		self.rule_trace_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, numba.types.int8, edge_type, label.label_type, interval.interval_type)))
 
 		# Make sure they are correct type
 		if len(self.available_labels_node)==0:
@@ -40,13 +42,13 @@ class Interpretation:
 		else:
 			self.available_labels_edge = numba.typed.List(self.available_labels_edge)
 
-		self.interpretations_node = self._init_interpretations_node(self._tmax, numba.typed.List(self._graph.get_nodes()), self.available_labels_node, self.specific_node_labels, self._history)
-		self.interpretations_edge = self._init_interpretations_edge(self._tmax, numba.typed.List(self._graph.get_edges()), self.available_labels_edge, self.specific_edge_labels, self._history)
+		self.interpretations_node = self._init_interpretations_node(self._tmax, numba.typed.List(self._graph.nodes()), self.available_labels_node, self.specific_node_labels, self._history)
+		self.interpretations_edge = self._init_interpretations_edge(self._tmax, numba.typed.List(self._graph.edges()), self.available_labels_edge, self.specific_edge_labels, self._history)
 		
 		# Setup graph neighbors
-		self.neighbors = numba.typed.Dict.empty(key_type=node.node_type, value_type=numba.types.ListType(node.node_type))
-		for n in self._graph.get_nodes():
-			l = numba.typed.List.empty_list(node.node_type)
+		self.neighbors = numba.typed.Dict.empty(key_type=node_type, value_type=numba.types.ListType(node_type))
+		for n in self._graph.nodes():
+			l = numba.typed.List.empty_list(node_type)
 			[l.append(neigh) for neigh in self._graph.neighbors(n)]
 			self.neighbors[n] = l
 
@@ -57,20 +59,20 @@ class Interpretation:
 		interpretations = numba.typed.List()
 		if history:
 			for t in range(tmax+1):
-				nas = numba.typed.Dict.empty(key_type=node.node_type, value_type=world.world_type)
+				nas = numba.typed.Dict.empty(key_type=node_type, value_type=world.world_type)
 				# General labels
 				for n in nodes:
-					nas[n] = n.get_initial_world(available_labels)
+					nas[n] = world.World(available_labels)
 				# Specific labels
 				for l, ns in specific_labels.items():
 					for n in ns:
 						nas[n].world[l] = interval.closed(0.0, 1.0)
 				interpretations.append(nas)
 		else:
-			nas = numba.typed.Dict.empty(key_type=node.node_type, value_type=world.world_type)
+			nas = numba.typed.Dict.empty(key_type=node_type, value_type=world.world_type)
 			# General labels
 			for n in nodes:
-				nas[n] = n.get_initial_world(available_labels)
+				nas[n] = world.World(available_labels)
 			# Specific labels
 			for l, ns in specific_labels.items():
 				for n in ns:
@@ -86,20 +88,20 @@ class Interpretation:
 		interpretations = numba.typed.List()
 		if history:
 			for t in range(tmax+1):
-				nas = numba.typed.Dict.empty(key_type=edge.edge_type, value_type=world.world_type)
+				nas = numba.typed.Dict.empty(key_type=edge_type, value_type=world.world_type)
 				# General labels
 				for e in edges:
-					nas[e] = e.get_initial_world(available_labels)
+					nas[e] = world.World(available_labels)
 				# Specific labels
 				for l, es in specific_labels.items():
 					for e in es:
 						nas[e].world[l] = interval.closed(0.0, 1.0)
 				interpretations.append(nas)
 		else:
-			nas = numba.typed.Dict.empty(key_type=edge.edge_type, value_type=world.world_type)
+			nas = numba.typed.Dict.empty(key_type=edge_type, value_type=world.world_type)
 			# General labels
 			for e in edges:
-				nas[e] = e.get_initial_world(available_labels)
+				nas[e] = world.World(available_labels)
 			# Specific labels
 			for l, es in specific_labels.items():
 				for e in es:
@@ -126,14 +128,14 @@ class Interpretation:
 		
 	def _start_fp(self, rules):
 		if self._history:
-			fp_cnt = self._apply_rules(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._graph.get_nodes()), numba.typed.List(self._graph.get_edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self._ipl, self.rule_trace_node, self.rule_trace_edge)
+			fp_cnt = self._apply_rules(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._graph.nodes()), numba.typed.List(self._graph.edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self._ipl, self.rule_trace_node, self.rule_trace_edge, self._reverse_graph)
 		else:
-			fp_cnt = self._apply_rules_no_history(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._graph.get_nodes()), numba.typed.List(self._graph.get_edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.available_labels_node, self.available_labels_edge, self.specific_node_labels, self.specific_edge_labels, self._ipl, self.rule_trace_node, self.rule_trace_edge)
+			fp_cnt = self._apply_rules_no_history(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._graph.nodes()), numba.typed.List(self._graph.edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.available_labels_node, self.available_labels_edge, self.specific_node_labels, self.specific_edge_labels, self._ipl, self.rule_trace_node, self.rule_trace_edge, self._reverse_graph)
 		print('Fixed Point iterations:', fp_cnt)
 
 	@staticmethod
 	@numba.njit
-	def _apply_rules(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, facts_to_be_applied_node, facts_to_be_applied_edge, ipl, rule_trace_node, rule_trace_edge):
+	def _apply_rules(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, facts_to_be_applied_node, facts_to_be_applied_edge, ipl, rule_trace_node, rule_trace_edge, reverse_graph):
 		fp_cnt = 0
 		# List of all the indices that need to be removed if applied to interpretation
 		idx_to_be_removed = numba.typed.List.empty_list(numba.types.int64)
@@ -219,7 +221,7 @@ class Interpretation:
 						for n in nodes:
 							if are_satisfied_node(interpretations_node, t, n, rule.get_target_criteria()):
 								a = neighbors[n]
-								b = _get_qualified_neigh(interpretations_node, interpretations_edge, neighbors[n], t, n, rule.get_neigh_nodes(), rule.get_neigh_edges())
+								b = _get_qualified_neigh(interpretations_node, interpretations_edge, neighbors[n], t, n, rule.get_neigh_nodes(), rule.get_neigh_edges(), reverse_graph)
 								bnd = influence(inf_name=rule.get_influence(), neigh=a, qualified_neigh=b, thresholds=rule.get_thresholds())
 								rules_to_be_applied_node.append((numba.types.int8(t+rule.get_delta()), n, rule.get_target(), bnd))
 								update = True if (rule.get_delta()==0 or update) else False
@@ -238,7 +240,7 @@ class Interpretation:
 
 	@staticmethod
 	@numba.njit
-	def _apply_rules_no_history(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, facts_to_be_applied_node, facts_to_be_applied_edge, labels_node, labels_edge, specific_labels_node, specific_labels_edge, ipl, rule_trace_node, rule_trace_edge):
+	def _apply_rules_no_history(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, facts_to_be_applied_node, facts_to_be_applied_edge, labels_node, labels_edge, specific_labels_node, specific_labels_edge, ipl, rule_trace_node, rule_trace_edge, reverse_graph):
 		fp_cnt = 0
 		# List of all the indices that need to be removed if applied to interpretation
 		idx_to_be_removed = numba.typed.List.empty_list(numba.types.int64)
@@ -291,7 +293,7 @@ class Interpretation:
 					# Check for inconsistencies
 					if check_consistent_edge(interpretations_edge, 0, comp, (l, bnd)):
 						_na_update_edge(interpretations_edge, 0, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t)
-						interpretations_edge[t][comp].world[l].set_static(static)
+						interpretations_edge[0][comp].world[l].set_static(static)
 					# Resolve inconsistency
 					else:
 						resolve_inconsistency_edge(interpretations_edge, 0, comp, (l, bnd), ipl, tmax, True)
@@ -350,7 +352,7 @@ class Interpretation:
 						for n in nodes:
 							if are_satisfied_node(interpretations_node, 0, n, rule.get_target_criteria()):
 								a = neighbors[n]
-								b = _get_qualified_neigh(interpretations_node, interpretations_edge, neighbors[n], 0, n, rule.get_neigh_nodes(), rule.get_neigh_edges())
+								b = _get_qualified_neigh(interpretations_node, interpretations_edge, neighbors[n], 0, n, rule.get_neigh_nodes(), rule.get_neigh_edges(), reverse_graph)
 								bnd = influence(inf_name=rule.get_influence(), neigh=a, qualified_neigh=b, thresholds=rule.get_thresholds())
 								rules_to_be_applied_node.append((numba.types.int8(t+rule.get_delta()), n, rule.get_target(), bnd))
 								update = True if (rule.get_delta()==0 or update) else False
@@ -363,22 +365,18 @@ class Interpretation:
 								# Then append the information to rules_to_be_applied_edge
 								pass
 			
-		return fp_cnt
-
-
-	def _get_neighbors(self, node):
-		return list(self._graph.neighbors(node))				
+		return fp_cnt				
 		
 
 
 @numba.njit
-def _get_qualified_neigh(interpretations_node, interpretations_edge, candidates, time, _node, nc_node, nc_edge):
-	result_node = numba.typed.List.empty_list(numba.typed.List.empty_list(node.node_type))
-	result_edge = numba.typed.List.empty_list(numba.typed.List.empty_list(node.node_type))
+def _get_qualified_neigh(interpretations_node, interpretations_edge, candidates, time, _node, nc_node, nc_edge, reverse_graph):
+	result_node = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
+	result_edge = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
 	for _ in range(len(nc_node)):
-		result_node.append(numba.typed.List.empty_list(node.node_type))
+		result_node.append(numba.typed.List.empty_list(node_type))
 	for _ in range(len(nc_edge)):
-		result_edge.append(numba.typed.List.empty_list(node.node_type))
+		result_edge.append(numba.typed.List.empty_list(node_type))
 
 	# Get 2D array of qualified neighbors for neighbor criteria. Each element corresponds to 1 nc
 	if(len(nc_node)>0):
@@ -387,7 +385,7 @@ def _get_qualified_neigh(interpretations_node, interpretations_edge, candidates,
 			
 	if(len(nc_edge)>0):
 		for i, nc in enumerate(nc_edge):
-			[result_edge[i].append(n) for n in candidates if are_satisfied_edge(interpretations_edge, time, edge.Edge(n.get_id(), _node.get_id()), [nc])]
+			[result_edge[i].append(n) for n in candidates if are_satisfied_edge(interpretations_edge, time, (_node, n) if reverse_graph else (n, _node), [nc])]
 
 	# Merge all qualifed neigh into one
 	for i in result_edge:

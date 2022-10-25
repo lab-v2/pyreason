@@ -24,7 +24,7 @@ edges:
         source: n2825       # Source of the edge
         target: n2625       # Target of the edge
         label: strong       # Name of the label of the node
-        bound: [1, 1]   # Bound of the label
+        bound: [1, 1]       # Bound of the label
         static: false
         t_lower: 0          # Starting time
         t_upper: 0          # Ending time. In this case it will be active for the first timestep t=0
