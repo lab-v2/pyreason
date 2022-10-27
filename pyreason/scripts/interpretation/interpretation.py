@@ -3,7 +3,6 @@ import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 
 import numba
-import operator
 
 # Types for the dictionaries
 node_type = numba.types.string
@@ -222,8 +221,8 @@ class Interpretation:
 						for n in nodes:
 							if are_satisfied_node(interpretations_node, t, n, rule.get_target_criteria()):
 								a = neighbors[n]
-								b, c = _get_qualified_neigh(interpretations_node, interpretations_edge, neighbors[n], t, n, rule.get_neigh_nodes(), rule.get_neigh_edges(), reverse_graph)
-								bnd = influence(inf_name=rule.get_influence(), neigh=a, qualified_neigh_node=b, qualified_neigh_edge=c, thresholds_node=rule.get_thresholds_node(), thresholds_edge=rule.get_thresholds_edge())
+								b = _get_qualified_neigh(interpretations_node, interpretations_edge, neighbors[n], t, n, rule.get_neigh_criteria(), reverse_graph)
+								bnd = influence(inf_name=rule.get_influence(), neigh=a, qualified_neigh=b, thresholds=rule.get_thresholds())
 								rules_to_be_applied_node.append((numba.types.int8(t+rule.get_delta()), n, rule.get_target(), bnd))
 								update = True if (rule.get_delta()==0 or update) else False
 						# Go through all edges and check if any rules apply to them.
@@ -353,8 +352,8 @@ class Interpretation:
 						for n in nodes:
 							if are_satisfied_node(interpretations_node, 0, n, rule.get_target_criteria()):
 								a = neighbors[n]
-								b, c = _get_qualified_neigh(interpretations_node, interpretations_edge, neighbors[n], 0, n, rule.get_neigh_nodes(), rule.get_neigh_edges(), reverse_graph)
-								bnd = influence(inf_name=rule.get_influence(), neigh=a, qualified_neigh_node=b, qualified_neigh_edge=c, thresholds_node=rule.get_thresholds_node(), thresholds_edge=rule.get_thresholds_edge())
+								b = _get_qualified_neigh(interpretations_node, interpretations_edge, neighbors[n], 0, n, rule.get_neigh_criteria(), reverse_graph)
+								bnd = influence(inf_name=rule.get_influence(), neigh=a, qualified_neigh=b, thresholds=rule.get_thresholds())
 								rules_to_be_applied_node.append((numba.types.int8(t+rule.get_delta()), n, rule.get_target(), bnd))
 								update = True if (rule.get_delta()==0 or update) else False
 						# Go through all edges and check if any rules apply to them.
@@ -371,58 +370,33 @@ class Interpretation:
 
 
 @numba.njit
-def _get_qualified_neigh(interpretations_node, interpretations_edge, candidates, time, node, nc_node, nc_edge, reverse_graph):
+def _get_qualified_neigh(interpretations_node, interpretations_edge, candidates, time, target_node, neigh_criteria, reverse_graph):
 	# List with dimensions: clause, subclause, qualified_neigh.
-	result_node = numba.typed.List.empty_list(numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)))
-	result_edge = numba.typed.List.empty_list(numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)))
+	result = numba.typed.List.empty_list(numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)))
 	
 	# Initialize 3d array
-	for i in range(len(nc_node)):
-		result_node.append(numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)))
-		for _ in range(len(nc_node[i])):
-			result_node[i].append(numba.typed.List.empty_list(node_type))
-	
-	for i in range(len(nc_edge)):
-		result_edge.append(numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)))
-		for _ in range(len(nc_edge[i])):
-			result_edge[i].append(numba.typed.List.empty_list(node_type))
+	for i in range(len(neigh_criteria)):
+		result.append(numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)))
+		for _ in range(len(neigh_criteria[i])):
+			result[i].append(numba.typed.List.empty_list(node_type))
 
 
 	# Get 3D array of qualified neighbors for neighbor criteria. Each element in result_node/edge corresponds to 1 nc, each element in that corresponds to 1 clause
 	# Filter candidates in loop until last sub clause
-	for i, clause in enumerate(nc_node):
+	for i, clause in enumerate(neigh_criteria):
 		neighbors = numba.typed.List(candidates)
 		filtered_neighbors = numba.typed.List.empty_list(node_type)
 		for j, sub_clause in enumerate(clause):
 			filtered_neighbors.clear()
-			[filtered_neighbors.append(n) for n in neighbors if are_satisfied_node(interpretations_node, time, n, [sub_clause])]
+			if sub_clause[0]=='node':
+				[filtered_neighbors.append(n) for n in neighbors if is_satisfied_node(interpretations_node, time, n, (sub_clause[1], sub_clause[2]))]
+			elif sub_clause[0]=='edge':
+				[filtered_neighbors.append(n) for n in neighbors if is_satisfied_edge(interpretations_edge, time, (target_node, n) if reverse_graph else (n, target_node), (sub_clause[1], sub_clause[2]))]
+
 			neighbors = numba.typed.List(filtered_neighbors)
-			result_node[i][j] = neighbors
+			result[i][j] = neighbors
 
-	for i, clause in enumerate(nc_edge):
-		neighbors = numba.typed.List(candidates)
-		filtered_neighbors = numba.typed.List.empty_list(node_type)
-		for j, sub_clause in enumerate(clause):
-			filtered_neighbors.clear()
-			[filtered_neighbors.append(n) for n in neighbors if are_satisfied_edge(interpretations_edge, time, (node, n) if reverse_graph else (n, node), [sub_clause])]
-			neighbors = numba.typed.List(filtered_neighbors)
-			result_edge[i][j] = neighbors
-
-
-
-
-	# if(len(nc_node)>0):
-	# 	for i, nc in enumerate(nc_node):
-	# 		[result_node[i].append(n) for n in candidates if are_satisfied_node(interpretations_node, time, n, [nc])]
-			
-	# if(len(nc_edge)>0):
-	# 	for i, nc in enumerate(nc_edge):
-	# 		[result_edge[i].append(n) for n in candidates if are_satisfied_edge(interpretations_edge, time, (node, n) if reverse_graph else (n, node), [nc])]
-
-	# Merge all qualifed neigh into one
-	# for i in result_edge:
-	# 	result_node.append(i)
-	return result_node, result_edge
+	return result
 
 
 @numba.njit
@@ -527,14 +501,7 @@ def is_satisfied_edge(interpretations, time, comp, na):
 	return result
 
 @numba.njit
-def influence(inf_name, neigh, qualified_neigh_node, qualified_neigh_edge, thresholds_node, thresholds_edge):
-	# Merge all qualified neighbors etc into one
-	qualified_neigh = qualified_neigh_node
-	thresholds = thresholds_node
-	for i in range(len(qualified_neigh_edge)):
-		qualified_neigh.append(qualified_neigh_edge[i])
-		thresholds.append(thresholds_edge[i])
-
+def influence(inf_name, neigh, qualified_neigh, thresholds):
 	# Start off with true. If anything is false, this becomes false, otherwise stays true
 	prev_result = True
 	for i in range(len(qualified_neigh)):

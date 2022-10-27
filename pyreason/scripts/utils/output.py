@@ -4,6 +4,10 @@ class Output:
     def __init__(self, timesteps):
         self.timesteps = timesteps
 
+    def pickle_output(self, interpretation, filename='pyreason_pickle'):
+        pass
+        
+
     def write(self, interpretation, pickle=False):
         # Save nodes dataframe
         df_nodes = []

@@ -17,7 +17,7 @@ from pyreason.scripts.args import argparser
 
 def main(args):
     if args.output_to_file:
-        sys.stdout = open(f"./output/{args.output_file_name}.txt", "w")
+        sys.stdout = open(f"./output/{time.strftime('%Y%m%d-%H%M%S')}_{args.output_file_name}.txt", "w")
 
     # Initialize parsers
     graphml_parser = GraphmlParser()
@@ -89,7 +89,7 @@ def main(args):
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
     print('Filtering data...')
     filterer = Filter(args.timesteps)
-    filtered_df = filterer.filter_interpretation_by_bound(interpretation, label='disruption', bound=interval.closed(0.7, 1))
+    filtered_df = filterer.filter_by_bound(interpretation, label='disruption', bound=interval.closed(0.7, 1))
 
     # You can index into filtered_df to get a particular timestep
     # This is for each timestep

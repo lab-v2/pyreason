@@ -32,50 +32,30 @@ class YAMLParser:
             # Set delta t
             delta_t = numba.types.int8(values['delta_t'])
 
-            # neigh_nodes = [[c1, c2, c3], [c4]]
+            # neigh_criteria = [[c1, c2, c3], [c4]]
             # thresholds = [[t1, t2, t3], [t4]]
            
             # Array of thresholds to keep track of for each neighbor criterion. Form [(comparison, number/percent, thresh)]
-            thresholds_node = numba.typed.List.empty_list(numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string, numba.types.float64))))
+            thresholds = numba.typed.List.empty_list(numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string, numba.types.float64))))
 
             # Array to store clauses for nodes
             # There will always be an odd number of clauses because they are stuck together with logical statements
-            neigh_nodes = numba.typed.List.empty_list(numba.types.ListType(numba.types.Tuple((label.label_type, interval.interval_type))))
-            if values['neigh_nodes'] is not None:
-                # Initialize neigh_nodes and thresholds with correct number of sub lists. Keep track of where we are in this list while filling up
-                curr_idx = 0
-                for _ in range(len(values['neigh_nodes'])):
-                    neigh_nodes.append(numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type))))
-                    thresholds_node.append(numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.string, numba.types.float64))))
+            neigh_criteria = numba.typed.List.empty_list(numba.types.ListType(numba.types.Tuple((numba.types.string, label.label_type, interval.interval_type))))
+            if values['neigh_criteria'] is not None:
+                # Initialize neigh_criteria and thresholds with correct number of sub lists. Keep track of where we are in this list while filling up
+                for _ in range(len(values['neigh_criteria'])):
+                    neigh_criteria.append(numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, label.label_type, interval.interval_type))))
+                    thresholds.append(numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.string, numba.types.float64))))
 
                 # Loop through clauses
-                for i, clause in enumerate(values['neigh_nodes']):
+                for i, clause in enumerate(values['neigh_criteria']):
                     for sub_clause in clause:
-                        neigh_nodes[i].append((label.Label(sub_clause[0]), interval.closed(sub_clause[1][0], sub_clause[1][1])))
-                        thresholds_node[i].append((sub_clause[2][0], sub_clause[2][1], sub_clause[2][2]))
-
-            
-            # Array of thresholds to keep track of for each neighbor criterion. Form [(comparison, number/percent, thresh)]
-            thresholds_edge = numba.typed.List.empty_list(numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string, numba.types.float64))))
-
-            # Array to store clauses for edges
-            # There will always be an odd number of clauses because they are stuck together with logical statements
-            neigh_edges = numba.typed.List.empty_list(numba.types.ListType(numba.types.Tuple((label.label_type, interval.interval_type))))
-            if values['neigh_edges'] is not None:
-                # Initialize neigh_edges and thresholds with correct number of sub lists. Keep track of where we are in this list while filling up
-                for _ in range(len(values['neigh_edges'])):
-                    neigh_edges.append(numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type))))
-                    thresholds_edge.append(numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.string, numba.types.float64))))
-
-                # Loop through clauses
-                for i, clause in enumerate(values['neigh_edges']):
-                    for sub_clause in clause:
-                        neigh_edges[i].append((label.Label(sub_clause[0]), interval.closed(sub_clause[1][0], sub_clause[1][1])))
-                        thresholds_edge[i].append((sub_clause[2][0], sub_clause[2][1], sub_clause[2][2]))                
+                        neigh_criteria[i].append((sub_clause[0], label.Label(sub_clause[1]), interval.closed(sub_clause[2][0], sub_clause[2][1])))
+                        thresholds[i].append((sub_clause[3][0], sub_clause[3][1], sub_clause[3][2]))             
             
             inf = values['ann_fn']
 
-            r = rule.Rule(target, target_criteria, delta_t, neigh_nodes, neigh_edges, inf, thresholds_node, thresholds_edge)
+            r = rule.Rule(target, target_criteria, delta_t, neigh_criteria, inf, thresholds)
             rules.append(r)
 
         return rules
