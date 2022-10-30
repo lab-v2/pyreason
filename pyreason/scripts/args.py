@@ -28,10 +28,9 @@ def argparser():
     parser.add_argument("--no-history", dest='history', action='store_false', help='This option is recommended and on by default. Keeps track of only the latest interpretation from the last timestep. Optimized for large graphs')
     parser.add_argument("--history", dest='history', action='store_true', help='This option is not recommended and off by default. Keeps track of all interpretations over all timesteps. Not optimized for large graphs. Only switch on if you know what you are doing')
     parser.set_defaults(history=False)
-    # Interpretation inconsistency check
-    parser.add_argument("--no-inconsistency_check", dest='inconsistency_check', action='store_false')
-    parser.add_argument("--inconsistency_check", dest='inconsistency_check', action='store_true')
-    parser.set_defaults(inconsistency_check=True)
+    # Interpretation inconsistency check (not done)
+    parser.add_argument("--abort_on_inconsistency", dest='abort_on_inconsistency', action='store_true', help='Stop the program if there are inconsistencies, do not fix them automatically')
+    parser.set_defaults(abort_on_inconsistency=False)
     # Memory profiling
     parser.add_argument("--no-memory_profile", dest='memory_profile', action='store_false', help='Option to disable memory profiling. Memory profiling is on by default')
     parser.add_argument("--memory_profile", dest='memory_profile', action='store_true',help='Option to enable memory profiling. Memory profiling is on by default')
@@ -39,6 +38,14 @@ def argparser():
     # Reverse Digraph
     parser.add_argument("--reverse_digraph", dest='reverse_digraph', action='store_true', help='Option to reverse the edges of a directed graph')
     parser.set_defaults(reverse_digraph=False)
+    # Rule trace with ground atoms (not done)
+    parser.add_argument("--atom_trace", dest='atom_trace', action='store_true', help='Option to track the ground atoms which lead to a rule firing. This could be very memory heavy. Default is off')
+    parser.set_defaults(atom_trace=False)
+
+    # Pickling options
+
+    # Filtering options
+
 
 
     return parser.parse_args()

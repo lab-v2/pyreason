@@ -7,7 +7,7 @@ class Program:
 	specific_node_labels = []
 	specific_edge_labels = []
 
-	def __init__(self, graph, tmax, facts_node, facts_edge, rules, ipl, reverse_graph):
+	def __init__(self, graph, tmax, facts_node, facts_edge, rules, ipl, reverse_graph, atom_trace):
 		self._graph = graph
 		self._tmax = tmax
 		self._facts_node = facts_node
@@ -15,6 +15,7 @@ class Program:
 		self._rules = rules
 		self._ipl = ipl
 		self._reverse_graph = reverse_graph
+		self._atom_trace = atom_trace
 
 	def diffusion(self, history):
 		# Set up available labels
@@ -23,7 +24,7 @@ class Program:
 		Interpretation.specific_node_labels = self.specific_node_labels
 		Interpretation.specific_edge_labels = self.specific_edge_labels
 
-		interp = Interpretation(self._graph, self._tmax, history, self._ipl, self._reverse_graph)
+		interp = Interpretation(self._graph, self._tmax, history, self._ipl, self._reverse_graph, self._atom_trace)
 		
 		interp.start_fp(self._facts_node, self._facts_edge, self._rules)
 

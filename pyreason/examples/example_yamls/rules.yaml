@@ -17,7 +17,8 @@ rule_1:
     neigh_criteria:     # List of all neighbour criteria in the form [criteria on node/edge, label, [lower_bound, upper_bound], [equal/greater/less/greater_equal/less_equal, number/percent, value]]
         - [[node, success, [0.5, 1.0], [greater_equal, percent, 50]]]
 
-    ann_fn: sft_tp   # Annotation function name. Available influence functions are: tp, ng_tp, sft_tp
+    ann_fn: [0.7, 1]    # Annotation function name or bound. See annotation_functions.py for list of available functions. The name of that function comes here
+                        # Could be func_name or [l, u]
 
 # Start of next rule
 rule_2:
@@ -28,4 +29,4 @@ rule_2:
     neigh_criteria:
         - [[node, disruption, [0.5, 1.0], [greater_equal, percent, 50]], [node, gics-251010, [1,1], [greater_equal, number, 1]]]
         - [[edge, strong, [0,1], [greater_equal, number, 1]]]
-    ann_fn: sft_tp
+    ann_fn: [0.7, 1]

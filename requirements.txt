@@ -3,3 +3,4 @@ pyyaml
 pandas
 numba
 memory_profiler
+numpy

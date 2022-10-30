@@ -1,11 +1,12 @@
 class Rule:
 
-    def __init__(self, target, target_criteria, delta, neigh_criteria, inf, thresholds):
+    def __init__(self, target, target_criteria, delta, neigh_criteria, ann_fn, bnd, thresholds):
         self._target = target
         self._target_criteria = target_criteria
         self._delta = delta
         self._neigh_criteria = neigh_criteria
-        self._inf = inf
+        self._ann_fn = ann_fn
+        self._bnd = bnd
         self._thresholds = thresholds
 
     def get_target(self):
@@ -20,8 +21,11 @@ class Rule:
     def get_neigh_criteria(self):
         return self._neigh_criteria
     
-    def get_influence(self):
-        return self._inf
+    def get_annotation_function(self):
+        return self._ann_fn
+    
+    def get_bnd(self):
+        return self._bnd
 
     def get_thresholds(self):
         return self._thresholds 

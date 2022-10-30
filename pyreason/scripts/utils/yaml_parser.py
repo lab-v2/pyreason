@@ -53,9 +53,15 @@ class YAMLParser:
                         neigh_criteria[i].append((sub_clause[0], label.Label(sub_clause[1]), interval.closed(sub_clause[2][0], sub_clause[2][1])))
                         thresholds[i].append((sub_clause[3][0], sub_clause[3][1], sub_clause[3][2]))             
             
-            inf = values['ann_fn']
+            # If annotation function is a string, it is the name of the function. If it is a bound then set it to an empty string
+            ann_fn = values['ann_fn']
+            if isinstance(ann_fn, str):
+                bnd = interval.closed(0, 1)
+            elif isinstance(ann_fn, list):
+                bnd = interval.closed(ann_fn[0], ann_fn[1])
+                ann_fn = ''
 
-            r = rule.Rule(target, target_criteria, delta_t, neigh_criteria, inf, thresholds)
+            r = rule.Rule(target, target_criteria, delta_t, neigh_criteria, ann_fn, bnd, thresholds)
             rules.append(r)
 
         return rules
@@ -115,6 +121,9 @@ class YAMLParser:
         for label_name in labels_yaml['edge_labels']:
             l = label.Label(label_name)
             edge_labels.append(l)
+
+        # Add an edge label for each edge
+        edge_labels.append(label.Label('edge'))
 
         specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
         for label_name in labels_yaml['node_specific_labels']:

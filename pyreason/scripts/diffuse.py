@@ -16,8 +16,9 @@ from pyreason.scripts.args import argparser
 
 
 def main(args):
+    timestamp = time.strftime('%Y%m%d-%H%M%S')
     if args.output_to_file:
-        sys.stdout = open(f"./output/{time.strftime('%Y%m%d-%H%M%S')}_{args.output_file_name}.txt", "w")
+        sys.stdout = open(f"./output/{timestamp}_{args.output_file_name}.txt", "w")
 
     # Initialize parsers
     graphml_parser = GraphmlParser()
@@ -57,14 +58,14 @@ def main(args):
     ipl = yaml_parser.parse_ipl(args.ipl_yaml_path)
 
     # Program comes here
-    program = Program(graph, tmax, facts_node, facts_edge, rules, ipl, args.reverse_digraph)
+    program = Program(graph, tmax, facts_node, facts_edge, rules, ipl, args.reverse_digraph, args.atom_trace)
     program.available_labels_node = node_labels
     program.available_labels_edge = edge_labels
     program.specific_node_labels = specific_node_labels
     program.specific_edge_labels = specific_edge_labels
 
     # Diffusion process
-    print('Graph loaded successfully, rules, labels and facts parsed successfully')
+    print('Graph loaded successfully, rules, labels, facts and ipl parsed successfully')
     print('Starting diffusion')
     start = time.time()
     interpretation = program.diffusion(args.history)
