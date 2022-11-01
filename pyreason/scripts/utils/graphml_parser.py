@@ -6,7 +6,7 @@ import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 
-import matplotlib.pyplot as plt
+
 class GraphmlParser:
     def __init__(self):
         self.graph = None
@@ -26,11 +26,18 @@ class GraphmlParser:
         specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
         for n in self.graph.nodes:
             for key, value in self.graph.nodes[n].items():
-                l = f'{key}-{value}'
+                # IF attribute is a float or int and it is less than 1, then make it a bound, else make it a label
+                if isinstance(value, (float, int)) and value<=1:
+                    l = str(key)
+                    l_bnd = float(value)
+                else:
+                    l = l = f'{key}-{value}'
+                    l_bnd = 1
+                
                 if label.Label(l) not in specific_node_labels.keys():
                     specific_node_labels[label.Label(l)] = numba.typed.List.empty_list(numba.types.string)
                 specific_node_labels[label.Label(l)].append(n)
-                f = fact_node.Fact(n, label.Label(l), interval.closed(1, 1), 0, timesteps, static=True)
+                f = fact_node.Fact(n, label.Label(l), interval.closed(l_bnd, 1), 0, timesteps, static=True)
                 facts_node.append(f)
         for e in self.graph.edges:
             for key, value in self.graph.edges[e].items():
