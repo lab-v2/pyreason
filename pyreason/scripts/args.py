@@ -45,6 +45,13 @@ def argparser():
     # Pickling options
 
     # Filtering options
+    parser.add_argument("--filter_sort_by", help='Sort output by lower or upper bound', default='lower')
+    parser.add_argument("--filter_label", help='Filter the output by this label;', default='disruption')
+    parser.add_argument("--filter_ascending", dest='descending', action='store_false', help='Sort by ascending order instead of descending')
+    parser.add_argument("--filter_descending", dest='descending', action='store_true', help='Sort by descending order instead of descending')
+    parser.set_defaults(descending=True)
+    
+
 
 
 

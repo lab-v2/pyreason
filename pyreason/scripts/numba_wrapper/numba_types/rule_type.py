@@ -30,8 +30,8 @@ def typeof_rule(val, c):
 # Construct object from Numba functions
 @type_callable(Rule)
 def type_rule(context):
-    def typer(target, tc, delta, neigh_criteria, ann_fn, bnd, thresholds):
-        if isinstance(target, label.LabelType) and isinstance(tc, (types.NoneType, types.ListType)) and isinstance(delta, types.Integer) and isinstance(neigh_criteria, (types.NoneType, types.ListType)) and isinstance(ann_fn, types.UnicodeType) and isinstance(bnd, interval.IntervalType) and isinstance(thresholds, types.ListType):
+    def typer(target, tc, delta, neigh_criteria, ann_fn, bnd, thresholds, subset, l):
+        if isinstance(target, label.LabelType) and isinstance(tc, (types.NoneType, types.ListType)) and isinstance(delta, types.Integer) and isinstance(neigh_criteria, (types.NoneType, types.ListType)) and isinstance(ann_fn, types.UnicodeType) and isinstance(bnd, interval.IntervalType) and isinstance(thresholds, types.ListType) and isinstance(subset, types.Tuple) and isinstance(l, label.LabelType):
             return rule_type
     return typer
 
@@ -44,10 +44,12 @@ class RuleModel(models.StructModel):
             ('target', label.label_type),
             ('target_criteria', types.ListType(types.Tuple((label.label_type, interval.interval_type)))),
             ('delta', types.int8),
-            ('neigh_criteria', types.ListType(types.ListType(types.Tuple((types.string, label.label_type, interval.interval_type))))),
+            ('neigh_criteria', types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), label.label_type, interval.interval_type)))),
             ('ann_fn', types.string),
             ('bnd', interval.interval_type),
-            ('thresholds', types.ListType(types.ListType(types.Tuple((types.string, types.string, types.float64))))),
+            ('thresholds', types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64)))),
+            ('subset', types.UniTuple(types.string, 2)),
+            ('l', label.label_type)
             ]
         models.StructModel.__init__(self, dmm, fe_type, members)
 
@@ -60,14 +62,16 @@ make_attribute_wrapper(RuleType, 'neigh_criteria', 'neigh_criteria')
 make_attribute_wrapper(RuleType, 'ann_fn', 'ann_fn')
 make_attribute_wrapper(RuleType, 'bnd', 'bnd')
 make_attribute_wrapper(RuleType, 'thresholds', 'thresholds')
+make_attribute_wrapper(RuleType, 'subset', 'subset')
+make_attribute_wrapper(RuleType, 'l', 'l')
 
 # Implement constructor
-@lower_builtin(Rule, label.label_type, types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.int8, types.ListType(types.Tuple((types.string, label.label_type, interval.interval_type))), types.string, interval.interval_type, types.ListType(types.ListType(types.Tuple((types.string, types.string, types.float64)))))
+@lower_builtin(Rule, label.label_type, types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.int8, types.ListType(types.Tuple((types.string, label.label_type, interval.interval_type))), types.string, interval.interval_type, types.ListType(types.ListType(types.Tuple((types.string, types.string, types.float64)))), types.UniTuple(types.string, 2), label.label_type)
 def impl_rule(context, builder, sig, args):
     typ = sig.return_type
-    target, target_criteria, delta, neigh_criteria, ann_fn, bnd, thresholds = args
-    context.nrt.incref(builder, types.ListType(types.ListType(types.Tuple((types.string, label.label_type, interval.interval_type)))), neigh_criteria)
-    context.nrt.incref(builder, types.ListType(types.ListType(types.Tuple((types.string, types.string, types.float64)))), thresholds)
+    target, target_criteria, delta, neigh_criteria, ann_fn, bnd, thresholds, subset, l = args
+    context.nrt.incref(builder, types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), label.label_type, interval.interval_type))), neigh_criteria)
+    context.nrt.incref(builder, types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64))), thresholds)
     rule = cgutils.create_struct_proxy(typ)(context, builder)
     rule.target = target
     rule.target_criteria = target_criteria
@@ -76,6 +80,8 @@ def impl_rule(context, builder, sig, args):
     rule.ann_fn = ann_fn
     rule.bnd = bnd
     rule.thresholds = thresholds
+    rule.subset = subset
+    rule.l = l
     return rule._getvalue()
 
 # Expose properties
@@ -121,6 +127,18 @@ def get_thresholds(rule):
         return rule.thresholds
     return impl
 
+@overload_method(RuleType, "get_subset")
+def get_subset(rule):
+    def impl(rule):
+        return rule.subset
+    return impl
+
+@overload_method(RuleType, "get_label")
+def get_label(rule):
+    def impl(rule):
+        return rule.l
+    return impl
+
 
 
 # Tell numba how to make native
@@ -133,14 +151,18 @@ def unbox_rule(typ, obj, c):
     ann_fn_obj = c.pyapi.object_getattr_string(obj, "_ann_fn")
     bnd_obj = c.pyapi.object_getattr_string(obj, "_bnd")
     thresholds_obj = c.pyapi.object_getattr_string(obj, "_thresholds")
+    subset_obj = c.pyapi.object_getattr_string(obj, "_subset")
+    label_obj = c.pyapi.object_getattr_string(obj, "_label")
     rule = cgutils.create_struct_proxy(typ)(c.context, c.builder)
     rule.target = c.unbox(label.label_type, target_obj).value
     rule.target_criteria = c.unbox(types.ListType(types.Tuple((label.label_type, interval.interval_type))), tc_obj).value
     rule.delta = c.unbox(types.int8, delta_obj).value
-    rule.neigh_criteria = c.unbox(types.ListType(types.ListType(types.Tuple((types.string, label.label_type, interval.interval_type)))), neigh_criteria_obj).value
+    rule.neigh_criteria = c.unbox(types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), label.label_type, interval.interval_type))), neigh_criteria_obj).value
     rule.ann_fn = c.unbox(types.string, ann_fn_obj).value
     rule.bnd = c.unbox(interval.interval_type, bnd_obj).value
-    rule.thresholds = c.unbox(types.ListType(types.ListType(types.Tuple((types.string, types.string, types.float64)))), thresholds_obj).value
+    rule.thresholds = c.unbox(types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64))), thresholds_obj).value
+    rule.subset = c.unbox(types.UniTuple(types.string, 2), subset_obj).value
+    rule.l = c.unbox(label.label_type, label_obj).value
     c.pyapi.decref(target_obj)
     c.pyapi.decref(tc_obj)
     c.pyapi.decref(delta_obj)
@@ -148,6 +170,8 @@ def unbox_rule(typ, obj, c):
     c.pyapi.decref(ann_fn_obj)
     c.pyapi.decref(bnd_obj)
     c.pyapi.decref(thresholds_obj)
+    c.pyapi.decref(subset_obj)
+    c.pyapi.decref(label_obj)
     is_error = cgutils.is_not_null(c.builder, c.pyapi.err_occurred())
     return NativeValue(rule._getvalue(), is_error=is_error)
 
@@ -160,11 +184,13 @@ def box_rule(typ, val, c):
     target_obj = c.box(label.label_type, rule.target)
     tc_obj = c.box(types.ListType(types.Tuple((label.label_type, interval.interval_type))), rule.tc_node)
     delta_obj = c.box(types.int8, rule.delta)
-    neigh_criteria_obj = c.box(types.ListType(types.ListType(types.Tuple((types.string, label.label_type, interval.interval_type)))), rule.neigh_criteria)
+    neigh_criteria_obj = c.box(types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), label.label_type, interval.interval_type))), rule.neigh_criteria)
     ann_fn_obj = c.box(types.string, rule.ann_fn)
     bnd_obj = c.box(interval.interval_type, rule.bnd)
-    thresholds_obj = c.box(types.ListType(types.ListType(types.Tuple((types.string, types.string, types.float64)))), rule.thresholds)
-    res = c.pyapi.call_function_objargs(class_obj, (target_obj, tc_obj, delta_obj, neigh_criteria_obj, ann_fn_obj, bnd_obj, thresholds_obj))
+    thresholds_obj = c.box(types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64))), rule.thresholds)
+    subset_obj = c.box(types.UniTuple(types.string, 2), rule.subset)
+    label_obj = c.box(label.label_type, rule.l)
+    res = c.pyapi.call_function_objargs(class_obj, (target_obj, tc_obj, delta_obj, neigh_criteria_obj, ann_fn_obj, bnd_obj, thresholds_obj, subset_obj, label_obj))
     c.pyapi.decref(target_obj)
     c.pyapi.decref(tc_obj)
     c.pyapi.decref(delta_obj)
@@ -172,5 +198,7 @@ def box_rule(typ, val, c):
     c.pyapi.decref(ann_fn_obj)
     c.pyapi.decref(bnd_obj)
     c.pyapi.decref(thresholds_obj)
+    c.pyapi.decref(subset_obj)
+    c.pyapi.decref(label_obj)
     c.pyapi.decref(class_obj)
     return res

@@ -32,36 +32,47 @@ class YAMLParser:
             # Set delta t
             delta_t = numba.types.int8(values['delta_t'])
 
-            # neigh_criteria = [[c1, c2, c3], [c4]]
-            # thresholds = [[t1, t2, t3], [t4]]
+            # neigh_criteria = [c1, c2, c3, c4]
+            # thresholds = [t1, t2, t3, t4]
            
-            # Array of thresholds to keep track of for each neighbor criterion. Form [(comparison, number/percent, thresh)]
-            thresholds = numba.typed.List.empty_list(numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string, numba.types.float64))))
+            # Array of thresholds to keep track of for each neighbor criterion. Form [(comparison, (number/percent, total/available), thresh)]
+            thresholds = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), numba.types.float64)))
 
-            # Array to store clauses for nodes
-            # There will always be an odd number of clauses because they are stuck together with logical statements
-            neigh_criteria = numba.typed.List.empty_list(numba.types.ListType(numba.types.Tuple((numba.types.string, label.label_type, interval.interval_type))))
+            # Array to store clauses for nodes: node/edge, [subset]/[subset1, subset2], label, interval
+            neigh_criteria = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), label.label_type, interval.interval_type)))
             if values['neigh_criteria'] is not None:
-                # Initialize neigh_criteria and thresholds with correct number of sub lists. Keep track of where we are in this list while filling up
-                for _ in range(len(values['neigh_criteria'])):
-                    neigh_criteria.append(numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, label.label_type, interval.interval_type))))
-                    thresholds.append(numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.string, numba.types.float64))))
-
                 # Loop through clauses
-                for i, clause in enumerate(values['neigh_criteria']):
-                    for sub_clause in clause:
-                        neigh_criteria[i].append((sub_clause[0], label.Label(sub_clause[1]), interval.closed(sub_clause[2][0], sub_clause[2][1])))
-                        thresholds[i].append((sub_clause[3][0], sub_clause[3][1], sub_clause[3][2]))             
+                for clause in values['neigh_criteria']:
+
+                    # Append clause
+                    clause_type = clause[0]
+                    subset = (clause[1][0], clause[1][0]) if clause_type=='node' else (clause[1][0], clause[1][1])
+                    l = label.Label(clause[2])
+                    bnd = interval.closed(clause[3][0], clause[3][1])
+                    neigh_criteria.append((clause_type, subset, l, bnd))
+
+                    # Append threshold corresponding to clause
+                    quantifier = clause[4][0]
+                    if clause[4][1]=='number':
+                        quantifier_type = ('number', 'total')
+                    else:
+                        quantifier_type = ('percent', clause[4][1][1])
+                    thresh = clause[4][2]
+                    thresholds.append((quantifier, quantifier_type, thresh))
             
             # If annotation function is a string, it is the name of the function. If it is a bound then set it to an empty string
             ann_fn = values['ann_fn']
             if isinstance(ann_fn, str):
                 bnd = interval.closed(0, 1)
+                subset = (values['subset_label'][0][0], values['subset_label'][0][0]) if len(values['subset_label'][0])==1 else (values['subset_label'][0][0], values['subset_label'][0][1])
+                l = label.Label(values['subset_label'][1])
             elif isinstance(ann_fn, list):
                 bnd = interval.closed(ann_fn[0], ann_fn[1])
                 ann_fn = ''
+                subset = ('', '')
+                l = label.Label('')
 
-            r = rule.Rule(target, target_criteria, delta_t, neigh_criteria, ann_fn, bnd, thresholds)
+            r = rule.Rule(target, target_criteria, delta_t, neigh_criteria, ann_fn, bnd, thresholds, subset, l)
             rules.append(r)
 
         return rules

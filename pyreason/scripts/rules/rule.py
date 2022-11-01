@@ -1,6 +1,6 @@
 class Rule:
 
-    def __init__(self, target, target_criteria, delta, neigh_criteria, ann_fn, bnd, thresholds):
+    def __init__(self, target, target_criteria, delta, neigh_criteria, ann_fn, bnd, thresholds, subset, label):
         self._target = target
         self._target_criteria = target_criteria
         self._delta = delta
@@ -8,6 +8,8 @@ class Rule:
         self._ann_fn = ann_fn
         self._bnd = bnd
         self._thresholds = thresholds
+        self._subset = subset
+        self._label = label
 
     def get_target(self):
         return self._target
@@ -29,3 +31,9 @@ class Rule:
 
     def get_thresholds(self):
         return self._thresholds 
+    
+    def get_subset(self):
+        return self._subset
+
+    def get_label(self):
+        return self._label 

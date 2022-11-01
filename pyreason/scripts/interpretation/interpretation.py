@@ -1,6 +1,7 @@
 import pyreason.scripts.numba_wrapper.numba_types.world_type as world
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
+import pyreason.scripts.annotation_functions.annotation_functions as ann_fn
 
 import numba
 import numpy as np
@@ -8,6 +9,10 @@ import numpy as np
 # Types for the dictionaries
 node_type = numba.types.string
 edge_type = numba.types.UniTuple(numba.types.string, 2)
+
+# Type for storing list of qualified nodes as well as the threshold that goes with it
+subsets_value_type = numba.types.Tuple((numba.types.ListType(node_type), numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), numba.types.float64))))
+qualified_edges_value_type = numba.types.Tuple((numba.types.ListType(edge_type), numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), numba.types.float64))))
 
 
 
@@ -224,9 +229,9 @@ class Interpretation:
 							if are_satisfied_node(interpretations_node, t, n, rule.get_target_criteria()) and is_satisfied_node(interpretations_node, t, n, (rule.get_target(), interval.closed(0,1))):
 								a = neighbors[n]
 								# Find out if rule is applicable. returns list of list of qualified nodes and qualified edges. one for each clause
-								result, qualified_nodes, qualified_edges = _is_rule_applicable(interpretations_node, interpretations_edge, a, 0, n, rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, atom_trace)
+								result, annotations, qualified_nodes, qualified_edges = _is_rule_applicable(interpretations_node, interpretations_edge, a, t, n, rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, rule.get_subset(), rule.get_label())
 								if result:
-									bnd = influence(rule, qualified_nodes)
+									bnd = influence(rule, annotations)
 									qualified_nodes = qualified_nodes if atom_trace else numba.typed.List.empty_list(node_type)
 									qualified_edges = qualified_edges if atom_trace else numba.typed.List.empty_list(edge_type)
 									rules_to_be_applied_node.append((numba.types.int8(t+rule.get_delta()), n, rule.get_target(), bnd, qualified_nodes, qualified_edges))
@@ -239,9 +244,9 @@ class Interpretation:
 								# Node candidates are only source and target
 								a = numba.typed.List([e[0], e[1]])
 								# Find out if rule is applicable. returns list of list of qualified nodes and qualified edges. one for each clause
-								result, qualified_nodes, _ = _is_rule_applicable(interpretations_node, interpretations_edge, a, 0, e[0], rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, atom_trace)
+								result, annotations, qualified_nodes, _ = _is_rule_applicable(interpretations_node, interpretations_edge, a, t, e[0], rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, rule.get_subset(), rule.get_label())
 								if result:
-									bnd = influence(rule, qualified_nodes)
+									bnd = influence(rule, annotations)
 									qualified_nodes = qualified_nodes if atom_trace else numba.typed.List.empty_list(node_type)
 									rules_to_be_applied_edge.append((numba.types.int8(t+rule.get_delta()), e, rule.get_target(), bnd, qualified_nodes))
 									update = True if (rule.get_delta()==0 or update) else False
@@ -316,7 +321,6 @@ class Interpretation:
 
 			update = True
 			while update:
-				fp_cnt += 1
 				# Has the interpretation changed?
 				update = False
 
@@ -366,9 +370,9 @@ class Interpretation:
 						for n in nodes:
 							if are_satisfied_node(interpretations_node, 0, n, rule.get_target_criteria()) and is_satisfied_node(interpretations_node, 0, n, (rule.get_target(), interval.closed(0,1))):
 								a = neighbors[n]
-								result, qualified_nodes, qualified_edges = _is_rule_applicable(interpretations_node, interpretations_edge, a, 0, n, rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, atom_trace)
+								result, annotations, qualified_nodes, qualified_edges = _is_rule_applicable(interpretations_node, interpretations_edge, a, 0, n, rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, rule.get_subset(), rule.get_label())
 								if result:
-									bnd = influence(rule, qualified_nodes)
+									bnd = influence(rule, annotations)
 									qualified_nodes = qualified_nodes if atom_trace else numba.typed.List.empty_list(node_type)
 									qualified_edges = qualified_edges if atom_trace else numba.typed.List.empty_list(edge_type)
 									rules_to_be_applied_node.append((numba.types.int8(t+rule.get_delta()), n, rule.get_target(), bnd, qualified_nodes, qualified_edges))
@@ -380,123 +384,156 @@ class Interpretation:
 								# Node candidates are only source and target
 								a = numba.typed.List([e[0], e[1]])
 								# Find out if rule is applicable. returns list of list of qualified nodes and qualified edges. one for each clause
-								result, qualified_nodes, _ = _is_rule_applicable(interpretations_node, interpretations_edge, a, 0, e[0], rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, atom_trace)
+								result, annotations, qualified_nodes, _ = _is_rule_applicable(interpretations_node, interpretations_edge, a, 0, e[0], rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, rule.get_subset(), rule.get_label())
 								if result:
-									bnd = influence(rule, qualified_nodes)
+									bnd = influence(rule, annotations)
 									qualified_nodes = qualified_nodes if atom_trace else numba.typed.List.empty_list(node_type)
 									rules_to_be_applied_edge.append((numba.types.int8(t+rule.get_delta()), e, rule.get_target(), bnd, qualified_nodes))
 									update = True if (rule.get_delta()==0 or update) else False
 			
+				if update:
+					fp_cnt += 1
+
 		return fp_cnt				
 		
 
 
 @numba.njit
-def _is_rule_applicable(interpretations_node, interpretations_edge, candidates, time, target_node, neigh_criteria, thresholds, reverse_graph, atom_trace):
-	# Find qualified neighbors for each clause, before going to next check if qualified neighbors satisfy the clause. If not, rule is not applicable.
-	# Store qualified neighbors for each clause in a list
-	qualified_nodes = numba.typed.List.empty_list(node_type)
-	qualified_edges = numba.typed.List.empty_list(edge_type)
+def _is_rule_applicable(interpretations_node, interpretations_edge, candidates, time, target_node, neigh_criteria, thresholds, reverse_graph, ann_fn_subset, ann_fn_label):
+	# Initialize dictionary where keys are strings (x1, x2 etc.) and values are lists of qualified neighbors
+	# Keep track of all the edges that are qualified
+	# If its a node clause update (x1 or x2 etc.) qualified neighbors, if its an edge clause update the qualified neighbors for the source and target (x1, x2)
+	# First gather all the qualified nodes for each clause
+	subsets = numba.typed.Dict.empty(key_type=numba.types.string, value_type=subsets_value_type)
+	qualified_edges = numba.typed.Dict.empty(key_type=edge_type, value_type=qualified_edges_value_type)
+	for i, clause in enumerate(neigh_criteria):
+		if clause[0]=='node':
+			subset = candidates if clause[1][0] not in subsets else subsets[clause[1][0]][0]
+			subsets[clause[1][0]] = (get_qualified_components_node_clause(interpretations_node, subset, time, clause), thresholds[i])
+		elif clause[0]=='edge':
+			subset_source = candidates if clause[1][0] not in subsets else subsets[clause[1][0]][0]
+			subset_target = candidates if clause[1][1] not in subsets else subsets[clause[1][1]][0]
+			# If target is used, then use the target node
+			if clause[1][0]=='target':
+				subset_source = numba.typed.List([target_node])
+			elif clause[1][1]=='target':
+				subset_target = numba.typed.List([target_node])
+				 
+			qe = get_qualified_components_edge_clause(interpretations_edge, subset_source, subset_target, time, clause, reverse_graph)
+			subsets[clause[1][0]] = (qe[0], thresholds[i])
+			subsets[clause[1][1]] = (qe[1], thresholds[i])
+			qualified_edges[clause[1]] = (numba.typed.List(zip(subsets[clause[1][0]][0], subsets[clause[1][1]][0])), thresholds[i])
+
+	# Now check if the thresholds are satisfied for each clause
 	result = True
 	for i, clause in enumerate(neigh_criteria):
-		r, qn, qe = _get_qualified_components(interpretations_node, interpretations_edge, candidates, time, target_node, clause, thresholds[i], reverse_graph)
-		result = r and result
+		if clause[0]=='node':
+			if thresholds[i][1][1]=='total':
+				neigh_len = len(candidates)
+			elif thresholds[i][1][1]=='available':
+				neigh_len = len(subsets[clause[1][0]][0])
+		
+		# Same as above, keep for now in case changes are needed
+		elif clause[0]=='edge':
+			if thresholds[i][1][1]=='total':
+				neigh_len = len(candidates)
+			elif thresholds[i][1][1]=='available':
+				neigh_len = len(subsets[clause[1][0]][0])
+
+		qualified_neigh_len = len(subsets[clause[1][0]][0])
+		result = _satisfies_threshold(neigh_len, qualified_neigh_len, thresholds[i]) and result
+
+
 		if result==False:
 			break
-		qualified_nodes.extend(qn)
-		qualified_edges.extend(qe)
 
-	# Remove duplicates from qualified neigh. Because the same node might be responsible for activating different clauses
-	if result and atom_trace:
-		qualified_nodes = _remove_duplicates_qualified_nodes(qualified_nodes)
-		qualified_edges = _remove_duplicates_qualified_edges(qualified_edges)
+	# Now select the correct subset that is given in the rule and prepare it for final processing according to the threshold
+	annotations = numba.typed.List.empty_list(interval.interval_type)
+	final_subset_node = numba.typed.List.empty_list(node_type)
+	final_subset_edge = numba.typed.List.empty_list(edge_type)
+	if result and ann_fn_subset[0]!='':
+		if ann_fn_subset[0]==ann_fn_subset[1]:
+			# Then this is a node subset
+			final_subset_node = _get_final_qualified_nodes(subsets[ann_fn_subset[0]][0], subsets[ann_fn_subset[0]][1], len(candidates))
+			# Now get the final annotations to pass into the annotation function
+			for node in final_subset_node:
+				annotations.append(interpretations_node[time][node].world[ann_fn_label])
+		else:
+			# This is an edge subset
+			final_subset_edge = _get_final_qualified_edges(qualified_edges[ann_fn_subset][0], qualified_edges[ann_fn_subset][1], len(candidates))
+			# Now get the final annotations to pass into the annotation function
+			for edge in final_subset_edge:
+				annotations.append(interpretations_edge[time][edge].world[ann_fn_label])
 
-	return (result, qualified_nodes, qualified_edges)
+	return (result, annotations, final_subset_node, final_subset_edge)
 
-
-@numba.njit
-def _get_qualified_components(interpretations_node, interpretations_edge, candidates, time, target_node, clause, thresholds, reverse_graph):
-	# Get qualified nodes and edges for a particular clause in a rule. 
-	# Stop collecting qualified nodes/edges if clause threshold is satisfied. Only for last statement in the clause! For previous statements we have to gather all qualified nodes/edges
-
-	# This is the number of nodes/edges which need to be satisfied for the LAST subclause to be true
-	qualified_components_target = _get_qualified_components_target(len(candidates), thresholds[-1])
-	# Each element in result is a set of qual neigh for a subclause
-	nodes = numba.typed.List(candidates)
-	edge_nodes = numba.typed.List(candidates)
-	filtered_nodes = numba.typed.List.empty_list(node_type)
-	filtered_edges = numba.typed.List.empty_list(edge_type)
-	result = True
-	last_clause_cnt = 0
-	for i, sub_clause in enumerate(clause):
-		filtered_nodes.clear()
-		filtered_edges.clear()
-
-		if sub_clause[0]=='node':
-			for n in nodes:
-				if is_satisfied_node(interpretations_node, time, n, (sub_clause[1], sub_clause[2])):
-					filtered_nodes.append(n)
-					# If it is the last subclause check if it satisfies the threshold values each time a new qualified neighbor is added
-					if i==len(sub_clause)-1:
-						last_clause_cnt += 1
-						if last_clause_cnt==qualified_components_target:
-							# Threshold conditions have been satisfied, so break out of loop
-							break
-
-		elif sub_clause[0]=='edge':
-			for n in edge_nodes:
-				if is_satisfied_edge(interpretations_edge, time, (target_node, n) if reverse_graph else (n, target_node) , (sub_clause[1], sub_clause[2])):
-					filtered_edges.append((n, target_node))
-					# If it is the last subclause check if it satisfies the threshold values each time a new qualified neighbor is added
-					if i==len(sub_clause)-1:
-						last_clause_cnt += 1
-						if last_clause_cnt==qualified_components_target:
-							# Threshold conditions have been satisfied, so break out of loop
-							break
-
-		elif sub_clause[0]=='reverse_edge':
-			for n in edge_nodes:
-				if is_satisfied_edge(interpretations_edge, time, (n, target_node) if reverse_graph else (target_node, n) , (sub_clause[1], sub_clause[2])):
-					filtered_edges.append((target_node, n))
-					# If it is the last subclause check if it satisfies the threshold values each time a new qualified neighbor is added
-					if i==len(sub_clause)-1:
-						last_clause_cnt += 1
-						if last_clause_cnt==qualified_components_target:
-							# Threshold conditions have been satisfied, so break out of loop
-							break
-
-		# Double check if it satisfies threshold. This is necessary for less or less_equal
-		if sub_clause[0]=='node':
-			result = _satisfies_threshold(len(candidates), len(filtered_nodes), thresholds[i]) and result
-		elif sub_clause[0]=='edge' or sub_clause[0]=='reverse_edge':
-			result = _satisfies_threshold(len(candidates), len(filtered_edges), thresholds[i]) and result
-
-		nodes = numba.typed.List(filtered_nodes)
-		edge_nodes.clear()
-		for e in filtered_edges:
-			edge_nodes.append(e[0]) if sub_clause[0]=='edge' else edge_nodes.append(e[1])
-
-	return (result, filtered_nodes, filtered_edges)
 
 
 @numba.njit
-def _remove_duplicates_qualified_nodes(qualified_nodes):
-	new_qualified_nodes = numba.typed.List.empty_list(node_type)
-	[new_qualified_nodes.append(n) for n in qualified_nodes if n not in new_qualified_nodes]
-	return new_qualified_nodes
+def get_qualified_components_node_clause(interpretations_node, candidates, time, clause):
+	# Get all the qualified neighbors for a particular clause
+	qualified_nodes = numba.typed.List.empty_list(node_type)
+	for n in candidates:
+		if is_satisfied_node(interpretations_node, time, n, (clause[2], clause[3])):
+			qualified_nodes.append(n)
+
+	return qualified_nodes
 
 
 @numba.njit
-def _remove_duplicates_qualified_edges(qualified_edges):
-	new_qualified_edges = numba.typed.List.empty_list(edge_type)
-	[new_qualified_edges.append(e) for e in qualified_edges if e not in new_qualified_edges]
-	return new_qualified_edges
+def get_qualified_components_edge_clause(interpretations_edge, candidates_source, candidates_target, time, clause, reverse_graph):
+	# Get all the qualified sources and targets for a particular clause
+	qualified_nodes_source = numba.typed.List.empty_list(node_type)
+	qualified_nodes_target = numba.typed.List.empty_list(node_type)
+	for source in candidates_source:
+		for target in candidates_target:
+			edge = (source, target) if not reverse_graph else (target, source)
+			if is_satisfied_edge(interpretations_edge, time, edge, (clause[2], clause[3])):
+				qualified_nodes_source.append(source)
+				qualified_nodes_target.append(target)
+
+	return (qualified_nodes_source, qualified_nodes_target)
+
+
+@numba.njit
+def _get_final_qualified_nodes(subset, threshold, total_num_neigh):
+	# Here subset is a list of nodes
+	if threshold[1][1]=='available':
+		num_neigh = len(subset)
+	elif threshold[1][1]=='total':
+		num_neigh =  total_num_neigh
+	target = _get_qualified_components_target(num_neigh, threshold)
+
+	final_subset = numba.typed.List.empty_list(node_type)
+	for i in range(target):
+		if i<len(subset):
+			final_subset.append(subset[i])
+
+	return final_subset
+
+
+@numba.njit
+def _get_final_qualified_edges(subset, threshold, total_num_neigh):
+	# Here subset is a list of edges
+	if threshold[1][1]=='available':
+		num_neigh = len(subset)
+	elif threshold[1][1]=='total':
+		num_neigh =  total_num_neigh
+	target = _get_qualified_components_target(num_neigh, threshold)
+
+	final_subset = numba.typed.List.empty_list(edge_type)
+	for i in range(target):
+		if i<len(subset):
+			final_subset.append(subset[i])
+
+	return final_subset
+	
 
 
 @numba.njit
 def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
 	# Checks if qualified neighbors satisfy threshold. This is for one subclause
-	if threshold[1]=='number':
+	if threshold[1][0]=='number':
 		if threshold[0]=='greater_equal':
 			result = True if num_qualified_component >= threshold[2] else False
 		elif threshold[0]=='greater':
@@ -508,7 +545,7 @@ def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
 		elif threshold[0]=='equal':
 			result = True if num_qualified_component == threshold[2] else False
 
-	elif threshold[1]=='percent':
+	elif threshold[1][0]=='percent':
 		if num_neigh==0:
 			result = False
 		elif threshold[0]=='greater_equal':
@@ -650,11 +687,16 @@ def is_satisfied_edge(interpretations, time, comp, na):
 	return result
 
 @numba.njit
-def influence(rule, qualified_neigh):
-	if rule.get_annotation_function()=='':
+def influence(rule, annotations):
+	func_name = rule.get_annotation_function()
+	if func_name=='':
 		return interval.closed(rule.get_bnd().lower, rule.get_bnd().upper)
-	else:
-		return interval.closed(0,1)
+	elif func_name=='average':
+		return ann_fn.average(annotations)
+	elif func_name=='minimum':
+		return ann_fn.minimum(annotations)
+	elif func_name=='maximum':
+		return ann_fn.maximum(annotations)
 
 
 @numba.njit

@@ -15,10 +15,13 @@ rule_1:
     delta_t: 1          # Delta t, time when this rule is applicable
 
     neigh_criteria:     # List of all neighbour criteria in the form [criteria on node/edge, label, [lower_bound, upper_bound], [equal/greater/less/greater_equal/less_equal, number/percent, value]]
-        - [[node, success, [0.5, 1.0], [greater_equal, percent, 50]]]
+        - [node, [x1], success, [0.5, 1.0], [greater_equal, number, 1]]
+        - [node, [x2], disruption, [0.5, 1.0], [greater_equal, number, 1]]
+        - [edge, [x1, x2], strong, [0,1], [greater_equal, number, 1]]
 
-    ann_fn: [0.7, 1]    # Annotation function name or bound. See annotation_functions.py for list of available functions. The name of that function comes here
+    ann_fn: average    # Annotation function name or bound. See annotation_functions.py for list of available functions. The name of that function comes here
                         # Could be func_name or [l, u]
+    subset_label: [[x1], disruption]
 
 # Start of next rule
 rule_2:
@@ -27,6 +30,7 @@ rule_2:
         - [disruption, 0.0, 1.0]
     delta_t: 1
     neigh_criteria:
-        - [[node, disruption, [0.5, 1.0], [greater_equal, percent, 50]], [node, gics-251010, [1,1], [greater_equal, number, 1]]]
-        - [[edge, strong, [0,1], [greater_equal, number, 1]]]
+        - [node, [x1], disruption, [0.5, 1.0], [greater_equal, [percent, total], 50]]
+        - [node, [x1], gics-251010, [1,1], [greater_equal, number, 1]]
+        - [edge, [target, x2], strong, [0,1], [greater_equal, number, 1]]
     ann_fn: [0.7, 1]

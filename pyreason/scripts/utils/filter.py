@@ -20,7 +20,6 @@ class Filter:
 
         # change contains the timestep, fp operation, component, label and interval
         for change in interpretation.rule_trace_node:
-            print(change)
             t, fp, comp, l, bnd, qn, qe = change
             df[t][(comp, l)] = bnd
 
@@ -49,8 +48,8 @@ class Filter:
         list_to_be_sorted = []
         # change contains the timestep, fp operation, component, label and interval
         # for change in interpretation.rule_trace_node:
-        for change in interpretation:
-            t, fp, comp, l, bnd = change
+        for change in interpretation.rule_trace_node:
+            t, fp, comp, l, bnd, qn, qe = change
             list_to_be_sorted.append((bnd, t, comp, l))
 
         # Sort the list
@@ -75,26 +74,3 @@ class Filter:
         for t in range(self.tmax+1):
             dataframes.append(pd.DataFrame.from_dict(nodes[t]))
         return dataframes
-
-
-        
-# import random
-
-# interpretation = []
-# for i in range(10):
-#     a=random.randint(0, 10)
-#     b=random.randint(0, 10)
-#     if a<b:
-#         lower=a
-#         upper=b
-#     else:
-#         lower=b
-#         upper=a
-#     interpretation.append((random.randint(0, 10), random.randint(0, 10), chr(97), chr(65), interval.closed(lower, upper)))
-
-# print(interpretation)
-
-# f = Filter(10)
-# d=f.filter_and_sort(interpretation, 'A', interval.closed(0, 10), sort_by=lower, descending=True)
-# print(d)
-

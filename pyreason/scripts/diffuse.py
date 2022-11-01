@@ -90,7 +90,8 @@ def main(args):
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
     print('Filtering data...')
     filterer = Filter(args.timesteps)
-    filtered_df = filterer.filter_by_bound(interpretation, label='disruption', bound=interval.closed(0.7, 1))
+    filtered_df = filterer.filter_and_sort(interpretation, label=args.filter_label, bound=interval.closed(0, 1), sort_by=args.filter_sort_by, descending=args.descending)
+    # filtered_df = filterer.filter_by_bound(interpretation, label='disruption', bound=interval.closed(0.7, 1))
 
     # You can index into filtered_df to get a particular timestep
     # This is for each timestep
