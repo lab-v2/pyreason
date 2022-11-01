@@ -21,7 +21,7 @@ rule_1:
 
     ann_fn: average    # Annotation function name or bound. See annotation_functions.py for list of available functions. The name of that function comes here
                         # Could be func_name or [l, u]
-    subset_label: [[x1], disruption]
+    subset_label: [[x1], disruption] # If you want subset to be edge, write [[xi, xj], label]
 
 # Start of next rule
 rule_2:
