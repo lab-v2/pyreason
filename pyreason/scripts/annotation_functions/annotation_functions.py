@@ -15,7 +15,12 @@ def average(annotations):
         avg_lower += i.lower
         avg_upper += i.upper
 
-    avg_lower /= len(annotations)
+    if len(annotations)!=0:
+        avg_lower /= len(annotations)
+        avg_upper /= len(annotations)
+    else:
+        avg_lower = 0
+        avg_upper = 1
 
     return interval.closed(avg_lower, avg_upper)
 
