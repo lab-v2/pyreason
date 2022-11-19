@@ -593,22 +593,28 @@ def _na_update_node(interpretations, time, comp, na, ipl, rule_trace, fp_cnt, t_
 		world = interpretations[time][comp]
 		# Check if update is required and if update is possible - static or not
 		if world.world[na[0]] != na[1] and not world.world[na[0]].is_static():
+			prev_bnd = world.world[na[0]]
 			world.update(na[0], na[1])
-			rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], na[1], qn, qe))
-			updated = True
+			if world.world[na[0]]==prev_bnd:
+				updated = False
+			else:
+				updated = True
+				rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], na[1], qn, qe))
+
 
 			# Update complement of predicate (if exists) based on new knowledge of predicate
-			for p1, p2 in ipl:
-				if p1==na[0]:
-					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
-					upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
-					world.world[p2] = interval.closed(lower, upper)
-					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p2, interval.closed(lower, upper), numba.typed.List([comp]), numba.typed.List.empty_list(edge_type)))
-				if p2==na[0]:
-					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
-					upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
-					world.world[p1] = interval.closed(lower, upper)
-					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(lower, upper), numba.typed.List([comp]), numba.typed.List.empty_list(edge_type)))
+			if updated:
+				for p1, p2 in ipl:
+					if p1==na[0]:
+						lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
+						upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
+						world.world[p2] = interval.closed(lower, upper)
+						rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p2, interval.closed(lower, upper), numba.typed.List([comp]), numba.typed.List.empty_list(edge_type)))
+					if p2==na[0]:
+						lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
+						upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
+						world.world[p1] = interval.closed(lower, upper)
+						rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(lower, upper), numba.typed.List([comp]), numba.typed.List.empty_list(edge_type)))
 		return updated
 
 	except:
@@ -622,22 +628,27 @@ def _na_update_edge(interpretations, time, comp, na, ipl, rule_trace, fp_cnt, t_
 		world = interpretations[time][comp]
 		# Check if update is required
 		if world.world[na[0]] != na[1]:
+			prev_bnd = world.world[na[0]]
 			world.update(na[0], na[1])
-			rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], na[1], qn))
-			updated = True
+			if world.world[na[0]]==prev_bnd:
+				updated = False
+			else:
+				updated = True
+				rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], na[1], qn))
 
 			# Update complement of predicate (if exists) based on new knowledge of predicate
-			for p1, p2 in ipl:
-				if p1==na[0]:
-					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
-					upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
-					world.world[p2] = interval.closed(lower, upper)
-					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p2, interval.closed(lower, upper), numba.typed.List(['('+comp[0]+','+comp[1]+')'])))
-				if p2==na[0]:
-					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
-					upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
-					world.world[p1] = interval.closed(lower, upper)
-					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(lower, upper), numba.typed.List(['('+comp[0]+','+comp[1]+')'])))
+			if updated:
+				for p1, p2 in ipl:
+					if p1==na[0]:
+						lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
+						upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
+						world.world[p2] = interval.closed(lower, upper)
+						rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p2, interval.closed(lower, upper), numba.typed.List(['('+comp[0]+','+comp[1]+')'])))
+					if p2==na[0]:
+						lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
+						upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
+						world.world[p1] = interval.closed(lower, upper)
+						rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(lower, upper), numba.typed.List(['('+comp[0]+','+comp[1]+')'])))
 		return updated
 	except:
 		return False
