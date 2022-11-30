@@ -179,7 +179,7 @@ class Interpretation:
 			# Deleting facts that have been applied is very inefficient
 
 			update = True
-			while update:				
+			while update:
 				# Has the interpretation changed?
 				update = False
 
@@ -451,15 +451,18 @@ def _is_rule_applicable(interpretations_node, interpretations_edge, candidates, 
 	annotations = numba.typed.List.empty_list(interval.interval_type)
 	final_subset_node = numba.typed.List.empty_list(node_type)
 	final_subset_edge = numba.typed.List.empty_list(edge_type)
+	# If all thresholds have been satisfied (result) AND the annotation function is a function (not just a fixed bound)
 	if result and ann_fn_subset[0]!='':
 		if ann_fn_subset[0]==ann_fn_subset[1]:
 			# Then this is a node subset
+			# Get just enough nodes to satisfy the criteria as the final subset. Don't take ALL qualified nodes
 			final_subset_node = _get_final_qualified_nodes(subsets[ann_fn_subset[0]][0], subsets[ann_fn_subset[0]][1], len(candidates))
 			# Now get the final annotations to pass into the annotation function
 			for node in final_subset_node:
 				annotations.append(interpretations_node[time][node].world[ann_fn_label])
 		else:
 			# This is an edge subset
+			# Get just enough edges to satisfy the criteria as the final subset. Don't take ALL qualified edges
 			final_subset_edge = _get_final_qualified_edges(qualified_edges[ann_fn_subset][0], qualified_edges[ann_fn_subset][1], len(candidates))
 			# Now get the final annotations to pass into the annotation function
 			for edge in final_subset_edge:
@@ -532,7 +535,7 @@ def _get_final_qualified_edges(subset, threshold, total_num_neigh):
 
 @numba.njit
 def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
-	# Checks if qualified neighbors satisfy threshold. This is for one subclause
+	# Checks if qualified neighbors satisfy threshold. This is for one clause
 	if threshold[1][0]=='number':
 		if threshold[0]=='greater_equal':
 			result = True if num_qualified_component >= threshold[2] else False
@@ -563,7 +566,7 @@ def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
 
 @numba.njit
 def _get_qualified_components_target(num_neigh, threshold):
-	if threshold[1]=='number':
+	if threshold[1][0]=='number':
 		if threshold[0]=='greater_equal' or threshold[0]=='equal':
 			qualified_component_target = threshold[2]
 		elif threshold[0]=='greater':
@@ -572,7 +575,7 @@ def _get_qualified_components_target(num_neigh, threshold):
 			qualified_component_target = num_neigh
 
 
-	elif threshold[1]=='percent':
+	elif threshold[1][0]=='percent':
 		if threshold[0]=='greater_equal':
 			qualified_component_target = np.ceil(threshold[2]*0.01*num_neigh)
 		elif threshold[0]=='greater':
