@@ -19,7 +19,7 @@ And
 
 All of this is represented in [GraphMl format](../pyreason/examples/example_graph/friends.graphml).  
 
-Let's assume that a person's popularity (for illustration 😀) is determined by wheter they have AT LEAST ONE friend who is popular AND who has the same pet that they do. If this is true, then they are considered popular.
+Let's assume that a person's popularity (for illustration 😀) is determined by whether they have AT LEAST ONE friend who is popular AND who has the same pet that they do. If this is true, then they are considered popular.
 
 PyReason needs 4 files to run:
 1. labels.yaml
