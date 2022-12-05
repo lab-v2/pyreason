@@ -219,6 +219,6 @@ The output after running this is:
 
 ```
 
-For timestep 0 we set `Mary -> popular: [1,1]` in the facts
-For timestep 1, Justin is the only node who has one popular friend (Mary) and who has the same pet as Mary (cat). Therefore `Justin -> popular: [1,1]`
-For timestep 2, since Justin has just become popular, John now has one popular friend (Justin) and the same pet as Justin (dog). Therefore `Justin -> popular: [1,1]`
+1. For timestep 0 we set `Mary -> popular: [1,1]` in the facts
+2. For timestep 1, Justin is the only node who has one popular friend (Mary) and who has the same pet as Mary (cat). Therefore `Justin -> popular: [1,1]`
+3. For timestep 2, since Justin has just become popular, John now has one popular friend (Justin) and the same pet as Justin (dog). Therefore `Justin -> popular: [1,1]`
