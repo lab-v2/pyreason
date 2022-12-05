@@ -3,7 +3,7 @@
 
 An explainable inference software supporting annotated, real valued, graph based and temporal logic. 
 
-Check out [PyReason Hello World](docs/hello-world.md) program if you're new, or want get get a feel for the software.
+Check out the [PyReason Hello World](docs/hello-world.md) program if you're new, or want get get a feel for the software.
 
 
 ## Table of Contents
