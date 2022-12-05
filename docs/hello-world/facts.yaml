@@ -1,0 +1,75 @@
+---
+# List all facts below
+nodes:
+    fact_1:
+        node: Mary          # Name of the node
+        label: popular      # Name of the label of the node
+        bound: [1, 1]       # Bound of the label
+        static: false       # Whether it applies to all timesteps and cannot change
+        t_lower: 0          # Starting time
+        t_upper: 2          # Ending time. In this case it will be active for the first timestep t=0
+
+edges:
+    fact_1:
+        source: Cat        # Source of the edge
+        target: Mary       # Target of the edge
+        label: owns        # Name of the label of the node
+        bound: [1, 1]      # Bound of the label
+        static: true
+        t_lower: 0         # Starting time
+        t_upper: 0         # Ending time. In this case it will be active for the first timestep t=0
+
+    fact_2:
+        source: Cat        # Source of the edge
+        target: Justin     # Target of the edge
+        label: owns        # Name of the label of the node
+        bound: [1, 1]      # Bound of the label
+        static: true
+        t_lower: 0         # Starting time
+        t_upper: 0         # Ending time. In this case it will be active for the first timestep t=0
+
+    fact_3:
+        source: Dog        # Source of the edge
+        target: Justin     # Target of the edge
+        label: owns        # Name of the label of the node
+        bound: [1, 1]      # Bound of the label
+        static: true
+        t_lower: 0         # Starting time
+        t_upper: 0         # Ending time. In this case it will be active for the first timestep t=0
+
+    fact_4:
+        source: Dog        # Source of the edge
+        target: John       # Target of the edge
+        label: owns        # Name of the label of the node
+        bound: [1, 1]      # Bound of the label
+        static: true
+        t_lower: 0         # Starting time
+        t_upper: 0         # Ending time. In this case it will be active for the first timestep t=0
+
+    fact_5:
+        source: Mary       # Source of the edge
+        target: Justin     # Target of the edge
+        label: friends     # Name of the label of the node
+        bound: [1, 1]      # Bound of the label
+        static: true
+        t_lower: 0         # Starting time
+        t_upper: 0         # Ending time. In this case it will be active for the first timestep t=0
+
+    fact_6:
+        source: Justin     # Source of the edge
+        target: John       # Target of the edge
+        label: friends     # Name of the label of the node
+        bound: [1, 1]      # Bound of the label
+        static: true
+        t_lower: 0         # Starting time
+        t_upper: 0         # Ending time. In this case it will be active for the first timestep t=0
+
+    fact_7:
+        source: Mary       # Source of the edge
+        target: John       # Target of the edge
+        label: friends     # Name of the label of the node
+        bound: [1, 1]      # Bound of the label
+        static: true
+        t_lower: 0         # Starting time
+        t_upper: 0         # Ending time. In this case it will be active for the first timestep t=0
+    

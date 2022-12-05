@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+<key id="age" for="node" attr.name="age" attr.type="int"/>
+<key id="gender" for="node" attr.name="gender" attr.type="boolean"/>
+<key id="type" for="node" attr.name="type" attr.type="string"/>
+<key id="name" for="node" attr.name="name" attr.type="string"/>
+
+<graph id="G" edgedefault="directed">
+<node id="Mary"><data key="age">31</data><data key="gender">0</data><data key="type">person</data></node>
+<node id="Justin"><data key="age">28</data><data key="gender">1</data><data key="type">person</data></node>
+<node id="John"><data key="age">54</data><data key="gender">1</data><data key="type">person</data></node>
+
+<node id="Cat"><data key="name">cat</data><data key="type">pet</data></node>
+<node id="Dog"><data key="name">dog</data><data key="type">pet</data></node>
+
+<edge id="e0" source="Cat" target="Mary"></edge>
+<edge id="e1" source="Cat" target="Justin"></edge>
+<edge id="e2" source="Dog" target="Justin"></edge>
+<edge id="e3" source="Dog" target="John"></edge>
+<edge id="e4" source="Mary" target="Justin"></edge>
+<edge id="e5" source="Justin" target="John"></edge>
+<edge id="e6" source="Mary" target="John"></edge>
+</graph>
+</graphml>

@@ -1,0 +1,19 @@
+---
+# All Rules come under here
+rule_1:
+    target: popular     # Target label
+
+    target_criteria:       # List of all target criteria
+        # All criteria come here in the form [label, lower_bound, upper_bound]
+        - [popular, 0, 1]
+
+    delta_t: 1             # Delta t, time when this rule is applicable
+
+    neigh_criteria:        # List of all neighbour criteria in the form [criteria on node/edge, variable, label, [lower_bound, upper_bound], [equal/greater/less/greater_equal/less_equal, number/[percent, total/available], value]]
+        - [node, [x1], popular, [1,1], [greater_equal, number, 1]]
+        - [edge, [x1, target], friends, [1,1], [greater_equal, number, 1]]
+        - [edge, [x2, x1], owns, [1,1], [greater_equal, number, 1]]
+        - [edge, [x2, target], owns, [1,1], [greater_equal, number, 1]]
+
+    ann_fn: [1,1]          # Annotation function name or bound. See annotation_functions.py for list of available functions. The name of that function comes here
+                           # Could be func_name or [l, u]
