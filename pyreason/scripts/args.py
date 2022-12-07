@@ -36,8 +36,8 @@ def argparser():
     parser.add_argument("--memory_profile", dest='memory_profile', action='store_true',help='Option to enable memory profiling. Memory profiling is on by default')
     parser.set_defaults(memory_profile=True)
     # Reverse Digraph
-    parser.add_argument("--reverse_digraph", dest='reverse_digraph', action='store_true', help='Option to reverse the edges of a directed graph')
-    parser.set_defaults(reverse_digraph=False)
+    parser.add_argument("--reverse_digraph", dest='reverse_digraph', action='store_false', help='Option to reverse the edges of a directed graph')
+    parser.set_defaults(reverse_digraph=True)
     # Rule trace with ground atoms (not done)
     parser.add_argument("--atom_trace", dest='atom_trace', action='store_true', help='Option to track the ground atoms which lead to a rule firing. This could be very memory heavy. Default is off')
     parser.set_defaults(atom_trace=False)
