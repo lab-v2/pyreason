@@ -9,8 +9,6 @@ class Filter:
 
     def filter_by_bound(self, interpretation, label, bound):
         # Make use of rule trace in interpretation object to efficiently filter through data.
-        # NOTE: if bound is [0,1] then we won't be able to display all nodes/edge labels that have not been changed
-
         # Initialize nested dict
         df = {}
         nodes = []
@@ -42,10 +40,7 @@ class Filter:
         nodes = []
         for t in range(self.tmax+1):
             df[t] = {}
-            # d = {'component':[]}
             d = {}
-            # for l in labels:
-            #     d[l] = []
             nodes.append(d)
 
         # Create a list that needs to be sorted.
@@ -78,10 +73,8 @@ class Filter:
 
         dataframes = []
         for t in range(self.tmax+1):
-            print(nodes[t])
             dataframe = pd.DataFrame.from_dict(nodes[t]).transpose()
             dataframe = dataframe.reset_index()
-            print(dataframe)
             if not dataframe.empty:
                 dataframe.columns = ['component', *labels]
             else:
