@@ -73,24 +73,14 @@ def main(args):
     print('Time to complete diffusion:', end-start)
     print('Finished diffusion')
 
-    # Write output to a pickle file. The output is a list of panda dataframes. The index of the list corresponds to the timestep
-    # Warning: writing for a large graph can be very time consuming
-    # print('Writing interpretation')
-    # timesteps = args.timesteps if args.history else 0
-    # output = Output(timesteps)
-    # df_nodes, df_edges = output.write(interpretation)
-    # print('Finished writing interpretation')
-
-    # Read the pickle file, and print the dataframes for each timestep
-    # print('Reading dataframe from pickled files')
-    # nodes = output.read('nodes')
-    # edges = output.read('edges')
-    # print('Finished reading dataframe')
+    # Save the rule trace to a file
+    # output = Output(timestamp)
+    # output.pickle_rule_trace(interpretation)
 
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
     print('Filtering data...')
     filterer = Filter(args.timesteps)
-    filtered_df = filterer.filter_and_sort(interpretation, label=args.filter_label, bound=interval.closed(0, 1), sort_by=args.filter_sort_by, descending=args.descending)
+    filtered_df = filterer.filter_and_sort(interpretation, labels=args.filter_labels, bound=interval.closed(0, 1), sort_by=args.filter_sort_by, descending=args.descending)
     # filtered_df = filterer.filter_by_bound(interpretation, label='disruption', bound=interval.closed(0.7, 1))
 
     # You can index into filtered_df to get a particular timestep

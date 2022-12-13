@@ -156,7 +156,7 @@ class Interpretation:
 					comp, l, bnd, static = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4]
 					# Check for inconsistencies
 					if check_consistent_node(interpretations_node, t, comp, (l, bnd)):
-						_na_update_node(interpretations_node, t, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(edge_type))
+						_na_update_node(interpretations_node, t, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(edge_type))
 						interpretations_node[t][comp].world[l].set_static(static)
 					# Resolve inconsistency
 					else:
@@ -170,7 +170,7 @@ class Interpretation:
 					comp, l, bnd, static = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3], facts_to_be_applied_edge[i][4]
 					# Check for inconsistencies
 					if check_consistent_edge(interpretations_edge, t, comp, (l, bnd)):
-						_na_update_edge(interpretations_edge, t, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, numba.typed.List.empty_list(node_type))
+						_na_update_edge(interpretations_edge, t, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, numba.typed.List.empty_list(node_type))
 						interpretations_edge[t][comp].world[l].set_static(static)
 					# Resolve inconsistency
 					else:
@@ -194,7 +194,7 @@ class Interpretation:
 
 						# Check for inconsistencies
 						if check_consistent_node(interpretations_node, t, comp, (l, bnd)):
-							update = _na_update_node(interpretations_node, t, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, qn, qe) or update
+							update = _na_update_node(interpretations_node, t, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, qn, qe) or update
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_node(interpretations_node, t, comp, (l, bnd), ipl, tmax, True)
@@ -212,7 +212,7 @@ class Interpretation:
 
 						# Check for inconsistencies
 						if check_consistent_edge(interpretations_edge, t, comp, (l, bnd)):
-							update = _na_update_edge(interpretations_edge, t, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, qn) or update
+							update = _na_update_edge(interpretations_edge, t, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, qn) or update
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_edge(interpretations_edge, t, comp, (l, bnd), ipl, tmax, True)
@@ -295,13 +295,22 @@ class Interpretation:
 			for i in range(len(facts_to_be_applied_node)):
 				if facts_to_be_applied_node[i][0]==t:
 					comp, l, bnd, static = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4]
-					# Check for inconsistencies (multiple facts)
-					if check_consistent_node(interpretations_node, 0, comp, (l, bnd)):
-						_na_update_node(interpretations_node, 0, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(edge_type))
-						interpretations_node[0][comp].world[l].set_static(static)
-					# Resolve inconsistency
+					# Check if bnd is static. Then no need to update, just add to rule trace, and add ipl complement to rule trace as well
+					if interpretations_node[0][comp].world[l].is_static():
+						rule_trace_node.append((numba.types.int8(t), numba.types.int8(fp_cnt), comp, l, interpretations_node[0][comp].world[l], numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(edge_type)))
+						for p1, p2 in ipl:
+							if p1==l:
+								rule_trace_node.append((numba.types.int8(t), numba.types.int8(fp_cnt), comp, p2, interpretations_node[0][comp].world[p2], numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(edge_type)))
+							elif p2==l:
+								rule_trace_node.append((numba.types.int8(t), numba.types.int8(fp_cnt), comp, p1, interpretations_node[0][comp].world[p1], numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(edge_type)))
 					else:
-						resolve_inconsistency_node(interpretations_node, 0, comp, (l, bnd), ipl, tmax, True)
+						# Check for inconsistencies (multiple facts)
+						if check_consistent_node(interpretations_node, 0, comp, (l, bnd)):
+							_na_update_node(interpretations_node, 0, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(edge_type))
+							interpretations_node[0][comp].world[l].set_static(static)
+						# Resolve inconsistency
+						else:
+							resolve_inconsistency_node(interpretations_node, 0, comp, (l, bnd), ipl, tmax, True)
 
 			# Deleting facts that have been applied is very inefficient
 			
@@ -311,7 +320,7 @@ class Interpretation:
 					comp, l, bnd, static = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3], facts_to_be_applied_edge[i][4]
 					# Check for inconsistencies
 					if check_consistent_edge(interpretations_edge, 0, comp, (l, bnd)):
-						_na_update_edge(interpretations_edge, 0, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, numba.typed.List.empty_list(node_type))
+						_na_update_edge(interpretations_edge, 0, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, numba.typed.List.empty_list(node_type))
 						interpretations_edge[0][comp].world[l].set_static(static)
 					# Resolve inconsistency
 					else:
@@ -334,7 +343,7 @@ class Interpretation:
 
 						# Check for inconsistencies
 						if check_consistent_node(interpretations_node, 0, comp, (l, bnd)):
-							update = _na_update_node(interpretations_node, 0, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, qn, qe) or update
+							update = _na_update_node(interpretations_node, 0, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, qn, qe) or update
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_node(interpretations_node, 0, comp, (l, bnd), ipl, tmax, False)
@@ -353,7 +362,7 @@ class Interpretation:
 
 						# Check for inconsistencies
 						if check_consistent_edge(interpretations_edge, 0, comp, (l, bnd)):
-							update = _na_update_edge(interpretations_edge, 0, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, qn) or update
+							update = _na_update_edge(interpretations_edge, 0, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, qn) or update
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_edge(interpretations_edge, 0, comp, (l, bnd), ipl, tmax, False)
@@ -589,21 +598,19 @@ def _get_qualified_components_target(num_neigh, threshold):
 
 
 @numba.njit
-def _na_update_node(interpretations, time, comp, na, ipl, rule_trace, fp_cnt, t_cnt, qn, qe):
+def _na_update_node(interpretations, time, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, qn, qe):
 	updated = False
 	# This is to prevent a key error in case the label is a specific label
 	try:
 		world = interpretations[time][comp]
 
-		# If static add to rule trace but updated=False
-		if world.world[na[0]].is_static():
-			rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], world.world[na[0]], qn, qe))
-		else:
-			prev_bnd = world.world[na[0]]
-			world.update(na[0], na[1])
-			if world.world[na[0]]!=prev_bnd:
-				updated = True
-				rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], na[1], qn, qe))
+		# Check if update is necessary with previous bnd
+		prev_bnd = world.world[na[0]]
+		world.update(na[0], na[1])
+		if world.world[na[0]]!=prev_bnd:
+			updated = True
+			rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], na[1], qn, qe))
+			world.world[na[0]].set_static(static)
 
 
 		# Update complement of predicate (if exists) based on new knowledge of predicate
@@ -613,11 +620,13 @@ def _na_update_node(interpretations, time, comp, na, ipl, rule_trace, fp_cnt, t_
 					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
 					upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
 					world.world[p2] = interval.closed(lower, upper)
+					world.world[p2].set_static(static)
 					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p2, interval.closed(lower, upper), numba.typed.List([comp]), numba.typed.List.empty_list(edge_type)))
 				if p2==na[0]:
 					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
 					upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
 					world.world[p1] = interval.closed(lower, upper)
+					world.world[p1].set_static(static)
 					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(lower, upper), numba.typed.List([comp]), numba.typed.List.empty_list(edge_type)))
 		return updated
 
@@ -625,21 +634,19 @@ def _na_update_node(interpretations, time, comp, na, ipl, rule_trace, fp_cnt, t_
 		return False
 
 @numba.njit
-def _na_update_edge(interpretations, time, comp, na, ipl, rule_trace, fp_cnt, t_cnt, qn):
+def _na_update_edge(interpretations, time, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, qn):
 	updated = False
 	# This is to prevent a key error in case the label is a specific label
 	try:
 		world = interpretations[time][comp]
 
-		# If static add to rule trace but updated=False
-		if world.world[na[0]].is_static():
-			rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], world.world[na[0]], qn))
-		else:
-			prev_bnd = world.world[na[0]]
-			world.update(na[0], na[1])
-			if world.world[na[0]]!=prev_bnd:
-				updated = True
-				rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], na[1], qn))
+		# Check if update is necessary with previous bnd
+		prev_bnd = world.world[na[0]]
+		world.update(na[0], na[1])
+		if world.world[na[0]]!=prev_bnd:
+			updated = True
+			rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], na[1], qn))
+			world.world[na[0]].set_static(static)
 
 		# Update complement of predicate (if exists) based on new knowledge of predicate
 		if updated:
@@ -648,11 +655,13 @@ def _na_update_edge(interpretations, time, comp, na, ipl, rule_trace, fp_cnt, t_
 					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
 					upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
 					world.world[p2] = interval.closed(lower, upper)
+					world.world[p2].set_static(static)
 					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p2, interval.closed(lower, upper), numba.typed.List(['('+comp[0]+','+comp[1]+')'])))
 				if p2==na[0]:
 					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
 					upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
 					world.world[p1] = interval.closed(lower, upper)
+					world.world[p1].set_static(static)
 					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(lower, upper), numba.typed.List(['('+comp[0]+','+comp[1]+')'])))
 		return updated
 	except:

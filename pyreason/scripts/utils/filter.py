@@ -34,7 +34,7 @@ class Filter:
             dataframes.append(pd.DataFrame.from_dict(nodes[t]))
         return dataframes
 
-    def filter_and_sort(self, interpretation, label, bound, sort_by='lower', descending=True):
+    def filter_and_sort(self, interpretation, labels, bound, sort_by='lower', descending=True):
         # Make use of rule trace in interpretation object to efficiently filter through data.
         
         # Initialize nested dict
@@ -42,7 +42,11 @@ class Filter:
         nodes = []
         for t in range(self.tmax+1):
             df[t] = {}
-            nodes.append({'component':[], label:[]})
+            # d = {'component':[]}
+            d = {}
+            # for l in labels:
+            #     d[l] = []
+            nodes.append(d)
 
         # Create a list that needs to be sorted.
         list_to_be_sorted = []
@@ -66,11 +70,21 @@ class Filter:
 
         for t, d in df.items():
             for (comp, l), bnd in d.items():
-                if l.get_value()==label and bnd in bound:
-                    nodes[t]['component'].append(comp)
-                    nodes[t][label].append(bnd)
+                if l.get_value() in labels and bnd in bound:
+                    if comp not in nodes[t]:
+                        nodes[t][comp] = {lab:interval.closed(0,1) for lab in labels}
+                    nodes[t][comp][l.get_value()] = bnd
+
 
         dataframes = []
         for t in range(self.tmax+1):
-            dataframes.append(pd.DataFrame.from_dict(nodes[t]))
+            print(nodes[t])
+            dataframe = pd.DataFrame.from_dict(nodes[t]).transpose()
+            dataframe = dataframe.reset_index()
+            print(dataframe)
+            if not dataframe.empty:
+                dataframe.columns = ['component', *labels]
+            else:
+                dataframe = pd.DataFrame(columns=['component', *labels])
+            dataframes.append(dataframe)
         return dataframes
