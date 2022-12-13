@@ -427,7 +427,7 @@ def _is_rule_applicable(interpretations_node, interpretations_edge, candidates, 
 				subset_source = numba.typed.List([target_node])
 			elif clause[1][1]=='target':
 				subset_target = numba.typed.List([target_node])
-				 
+			print(target_node)	 
 			qe = get_qualified_components_edge_clause(interpretations_edge, subset_source, subset_target, time, clause, reverse_graph)
 			subsets[clause[1][0]] = (qe[0], thresholds[i])
 			subsets[clause[1][1]] = (qe[1], thresholds[i])
@@ -464,17 +464,13 @@ def _is_rule_applicable(interpretations_node, interpretations_edge, candidates, 
 	if result and ann_fn_subset[0]!='':
 		if ann_fn_subset[0]==ann_fn_subset[1]:
 			# Then this is a node subset
-			# Get just enough nodes to satisfy the criteria as the final subset. Don't take ALL qualified nodes
-			final_subset_node = _get_final_qualified_nodes(subsets[ann_fn_subset[0]][0], subsets[ann_fn_subset[0]][1], len(candidates))
 			# Now get the final annotations to pass into the annotation function
-			for node in final_subset_node:
+			for node in subsets[ann_fn_subset[0]][0]:
 				annotations.append(interpretations_node[time][node].world[ann_fn_label])
 		else:
 			# This is an edge subset
-			# Get just enough edges to satisfy the criteria as the final subset. Don't take ALL qualified edges
-			final_subset_edge = _get_final_qualified_edges(qualified_edges[ann_fn_subset][0], qualified_edges[ann_fn_subset][1], len(candidates))
 			# Now get the final annotations to pass into the annotation function
-			for edge in final_subset_edge:
+			for edge in qualified_edges[ann_fn_subset][0]:
 				annotations.append(interpretations_edge[time][edge].world[ann_fn_label])
 
 	return (result, annotations, final_subset_node, final_subset_edge)
@@ -499,46 +495,12 @@ def get_qualified_components_edge_clause(interpretations_edge, candidates_source
 	qualified_nodes_target = numba.typed.List.empty_list(node_type)
 	for source in candidates_source:
 		for target in candidates_target:
-			edge = (source, target) if not reverse_graph else (target, source)
+			edge = (source, target)
 			if is_satisfied_edge(interpretations_edge, time, edge, (clause[2], clause[3])):
 				qualified_nodes_source.append(source)
 				qualified_nodes_target.append(target)
 
 	return (qualified_nodes_source, qualified_nodes_target)
-
-
-@numba.njit
-def _get_final_qualified_nodes(subset, threshold, total_num_neigh):
-	# Here subset is a list of nodes
-	if threshold[1][1]=='available':
-		num_neigh = len(subset)
-	elif threshold[1][1]=='total':
-		num_neigh =  total_num_neigh
-	target = _get_qualified_components_target(num_neigh, threshold)
-
-	final_subset = numba.typed.List.empty_list(node_type)
-	for i in range(target):
-		if i<len(subset):
-			final_subset.append(subset[i])
-
-	return final_subset
-
-
-@numba.njit
-def _get_final_qualified_edges(subset, threshold, total_num_neigh):
-	# Here subset is a list of edges
-	if threshold[1][1]=='available':
-		num_neigh = len(subset)
-	elif threshold[1][1]=='total':
-		num_neigh =  total_num_neigh
-	target = _get_qualified_components_target(num_neigh, threshold)
-
-	final_subset = numba.typed.List.empty_list(edge_type)
-	for i in range(target):
-		if i<len(subset):
-			final_subset.append(subset[i])
-
-	return final_subset
 	
 
 
@@ -572,29 +534,6 @@ def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
 			result = True if num_qualified_component/num_neigh == threshold[2]*0.01 else False
 
 	return result
-
-@numba.njit
-def _get_qualified_components_target(num_neigh, threshold):
-	if threshold[1][0]=='number':
-		if threshold[0]=='greater_equal' or threshold[0]=='equal':
-			qualified_component_target = threshold[2]
-		elif threshold[0]=='greater':
-			qualified_component_target = threshold[2]+1
-		elif threshold[0]=='less_equal' or threshold[0]=='less':
-			qualified_component_target = num_neigh
-
-
-	elif threshold[1][0]=='percent':
-		if threshold[0]=='greater_equal':
-			qualified_component_target = np.ceil(threshold[2]*0.01*num_neigh)
-		elif threshold[0]=='greater':
-			qualified_component_target = np.ceil(threshold[2]*0.01*num_neigh + 1) 	# Give the target +1 before ceil because it could be an int
-		elif threshold[0]=='less_equal' or threshold[0]=='less':
-			qualified_component_target = num_neigh
-		elif threshold[0]=='equal':
-			qualified_component_target = np.ceil(threshold[2]*0.01*num_neigh)
-
-	return qualified_component_target
 
 
 @numba.njit
