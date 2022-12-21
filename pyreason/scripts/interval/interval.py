@@ -1,90 +1,45 @@
-class Interval:
-    """
-    No support for open, closedopen, openclosed
-    """
-    def __init__(self, left, lower, upper, right, static=[False]):
-        self._lower = round(lower, 7)
-        self._upper = round(upper, 7)
-        self._left = left
-        self._right = right
-        self._static = static
+from numba.experimental import structref
+from numba import njit
+
+class Interval(structref.StructRefProxy):
+    def __new__(cls, l, u, s=False):
+        lower = l
+        upper = u
+        return structref.StructRefProxy.__new__(cls, lower, upper, s)
 
     @property
+    @njit
     def lower(self):
-        return self._lower
+        return self.l
 
     @property
+    @njit
     def upper(self):
-        return self._upper
+        return self.u
+    
+    @property
+    @njit
+    def static(self):
+        return self.s
 
-    def to_str(self):
-        interval = f'{self._left}{self._lower},{self._upper}{self._right}'
-        return interval
+    @njit
+    def set_lower_upper(self, l, u):
+        self.l = l
+        self.u = u
 
-    def intersection(self, interval):
-        lower = max(self._lower, interval.lower)
-        upper = min(self._upper, interval.upper)
-        if lower > upper:
-            lower = 0
-            upper = 1
-        return Interval('[', lower, upper, ']')    
-
-    def __hash__(self):
-        return hash(self.to_str())
-
-    def __contains__(self, item):
-        if self._lower <= item.lower and self._upper >= item.upper:
-            return True
-        else:
-            return False
-
-    def __eq__(self, interval):
-        if self.lower == interval.lower and self.upper == interval.upper:
-            return True
-        else:
-            return False
+    @njit
+    def set_static(self, static):
+        self.s = static
+    
+    @njit
+    def is_static(self):
+        return self.s
 
     def __repr__(self):
-        return self.to_str()
+        return f'[{self.lower},{self.upper}]'
 
-    def __lt__(self, other):
-        if self.upper < other.lower:
+    def __contains__(self, item):
+        if self.lower <= item.lower and self.upper >= item.upper:
             return True
         else:
             return False
-
-    def __le__(self, other):
-        if self.upper <= other.upper:
-            return True
-        else:
-            return False
-
-    def __gt__(self, other):
-        if self.lower > other.upper:
-            return True
-        else:
-            return False
-
-    def __ge__(self, other):
-        if self.lower >= other.lower:
-            return True
-        else:
-            return False
-
-
-
-
-def closed(lower, upper):
-	return Interval('[', lower, upper, ']')
-
-
-# def open(lower, upper):
-# 	return Interval('(', lower, upper, ')')
-
-
-# def closedopen(lower, upper):
-# 	return Interval('[', lower, upper, ')')
-
-
-# def openclosed(lower, upper):
-# 	return Interval('(', lower, upper, ']')

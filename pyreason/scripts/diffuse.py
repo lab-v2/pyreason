@@ -5,7 +5,7 @@ import pstats
 import sys
 import memory_profiler as mp
 
-import pyreason.scripts.interval.interval as interval
+import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 from pyreason.scripts.program.program import Program
 from pyreason.scripts.utils.yaml_parser import YAMLParser
 from pyreason.scripts.utils.graphml_parser import GraphmlParser
@@ -34,6 +34,9 @@ def main(args):
         non_fluent_facts_node, non_fluent_facts_edge, specific_node_labels, specific_edge_labels = graphml_parser.parse_graph_attributes(args.timesteps) 
         end = time.time()
         print('Time to read graph attributes:', end-start)
+    else:
+        non_fluent_facts_node = []
+        non_fluent_facts_edge = []
 
     tmax = args.timesteps
 

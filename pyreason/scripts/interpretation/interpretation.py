@@ -272,23 +272,23 @@ class Interpretation:
 				for n in nodes:
 					for l in labels_node:
 						if not interpretations_node[0][n].world[l].is_static():
-							interpretations_node[0][n].world[l] = interval.closed(0, 1)
+							interpretations_node[0][n].world[l].set_lower_upper(0, 1)
 				# Specific labels
 				for l, ns in specific_labels_node.items():
 					for n in ns:
 						if not interpretations_node[0][n].world[l].is_static():
-							interpretations_node[0][n].world[l] = interval.closed(0, 1)
+							interpretations_node[0][n].world[l].set_lower_upper(0,1)
 				# Reset edges
 				# General labels
 				for e in edges:
 					for l in labels_edge:
 						if not interpretations_edge[0][e].world[l].is_static():
-							interpretations_edge[0][e].world[l] = interval.closed(0, 1)
+							interpretations_edge[0][e].world[l].set_lower_upper(0, 1)
 				# Specific labels
 				for l, es in specific_labels_edge.items():
 					for e in es:
 						if not interpretations_edge[0][e].world[l].is_static():
-							interpretations_edge[0][e].world[l] = interval.closed(0, 1)
+							interpretations_edge[0][e].world[l].set_lower_upper(0, 1)
 
 			# Start by applying facts
 			# Nodes
@@ -310,7 +310,7 @@ class Interpretation:
 							interpretations_node[0][comp].world[l].set_static(static)
 						# Resolve inconsistency
 						else:
-							resolve_inconsistency_node(interpretations_node, 0, comp, (l, bnd), ipl, tmax, True)
+							resolve_inconsistency_node(interpretations_node, 0, comp, (l, bnd), ipl, tmax, False)
 
 			# Deleting facts that have been applied is very inefficient
 			
@@ -324,7 +324,7 @@ class Interpretation:
 						interpretations_edge[0][comp].world[l].set_static(static)
 					# Resolve inconsistency
 					else:
-						resolve_inconsistency_edge(interpretations_edge, 0, comp, (l, bnd), ipl, tmax, True)
+						resolve_inconsistency_edge(interpretations_edge, 0, comp, (l, bnd), ipl, tmax, False)
 
 			# Deleting facts that have been applied is very inefficient
 
@@ -427,7 +427,7 @@ def _is_rule_applicable(interpretations_node, interpretations_edge, candidates, 
 				subset_source = numba.typed.List([target_node])
 			elif clause[1][1]=='target':
 				subset_target = numba.typed.List([target_node])
-			print(target_node)	 
+
 			qe = get_qualified_components_edge_clause(interpretations_edge, subset_source, subset_target, time, clause, reverse_graph)
 			subsets[clause[1][0]] = (qe[0], thresholds[i])
 			subsets[clause[1][1]] = (qe[1], thresholds[i])
@@ -558,13 +558,13 @@ def _na_update_node(interpretations, time, comp, na, ipl, rule_trace, fp_cnt, t_
 				if p1==na[0]:
 					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
 					upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
-					world.world[p2] = interval.closed(lower, upper)
+					world.world[p2].set_lower_upper(lower, upper)
 					world.world[p2].set_static(static)
 					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p2, interval.closed(lower, upper), numba.typed.List([comp]), numba.typed.List.empty_list(edge_type)))
 				if p2==na[0]:
 					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
 					upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
-					world.world[p1] = interval.closed(lower, upper)
+					world.world[p1].set_lower_upper(lower, upper)
 					world.world[p1].set_static(static)
 					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(lower, upper), numba.typed.List([comp]), numba.typed.List.empty_list(edge_type)))
 		return updated
@@ -593,13 +593,13 @@ def _na_update_edge(interpretations, time, comp, na, ipl, rule_trace, fp_cnt, t_
 				if p1==na[0]:
 					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
 					upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
-					world.world[p2] = interval.closed(lower, upper)
+					world.world[p2].set_lower_upper(lower, upper)
 					world.world[p2].set_static(static)
 					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p2, interval.closed(lower, upper), numba.typed.List(['('+comp[0]+','+comp[1]+')'])))
 				if p2==na[0]:
 					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
 					upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
-					world.world[p1] = interval.closed(lower, upper)
+					world.world[p1].set_lower_upper(lower, upper)
 					world.world[p1].set_static(static)
 					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(lower, upper), numba.typed.List(['('+comp[0]+','+comp[1]+')'])))
 		return updated
@@ -689,13 +689,16 @@ def resolve_inconsistency_node(interpretations, time, comp, na, ipl, tmax, histo
 	r = range(time, tmax+1) if history else range(time, time+1)
 	for t in r:
 		world = interpretations[t][comp]
-		world.world[na[0]] = interval.closed(0, 1, static=True)
+		world.world[na[0]].set_lower_upper(0, 1)
+		world.world[na[0]].set_static(True)
 		for p1, p2 in ipl:
 			if p1==na[0]:
-				world.world[p2] = interval.closed(0, 1, static=True)
+				world.world[p2].set_lower_upper(0, 1)
+				world.world[p2].set_static(True)
 
 			if p2==na[0]:
-				world.world[p1] = interval.closed(0, 1, static=True)
+				world.world[p1].set_lower_upper(0, 1)
+				world.world[p1].set_static(True)
 	# Add inconsistent predicates to a list 
 
 
@@ -705,13 +708,13 @@ def resolve_inconsistency_edge(interpretations, time, comp, na, ipl, tmax, histo
 	r = range(time, tmax+1) if history else range(time, time+1)
 	for t in r:
 		world = interpretations[t][comp]
-		world.world[na[0]] = interval.closed(0, 1, static=True)
+		world.world[na[0]].set_lower_upper(0, 1)
+		world.world[na[0]].set_static(True)
 		for p1, p2 in ipl:
 			if p1==na[0]:
-				world.world[p2] = interval.closed(0, 1, static=True)
+				world.world[p2].set_lower_upper(0, 1)
+				world.world[p2].set_static(True)
 
 			if p2==na[0]:
-				world.world[p1] = interval.closed(0, 1, static=True)
-
-
-
+				world.world[p1].set_lower_upper(0, 1)
+				world.world[p1].set_static(True)

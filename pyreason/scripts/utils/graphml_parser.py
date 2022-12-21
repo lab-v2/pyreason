@@ -27,7 +27,7 @@ class GraphmlParser:
         for n in self.graph.nodes:
             for key, value in self.graph.nodes[n].items():
                 # IF attribute is a float or int and it is less than 1, then make it a bound, else make it a label
-                if isinstance(value, (float, int)) and value<=1:
+                if isinstance(value, (float, int)) and value<=1 and value>=0:
                     l = str(key)
                     l_bnd = float(value)
                 else:
