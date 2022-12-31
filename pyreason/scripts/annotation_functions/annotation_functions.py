@@ -24,6 +24,23 @@ def average(annotations):
 
     return interval.closed(avg_lower, avg_upper)
 
+@numba.njit
+def average_lower(annotations):
+    """
+    Take average of lower bounds to make new lower bound, take max of upper bounds to make new upper bound
+    """
+    avg_lower = 0
+    max_upper = 0
+    for i in annotations:
+        avg_lower += i.lower
+        max_upper = i.upper if i.upper > max_upper else max_upper
+
+    if len(annotations)!=0:
+        avg_lower /= len(annotations)
+    else:
+        avg_lower = 0
+
+    return interval.closed(avg_lower, max_upper)
 
 @numba.njit
 def maximum(annotations):

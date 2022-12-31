@@ -642,6 +642,8 @@ def influence(rule, annotations):
 		return interval.closed(rule.get_bnd().lower, rule.get_bnd().upper)
 	elif func_name=='average':
 		return ann_fn.average(annotations)
+	elif func_name=='average_lower':
+		return ann_fn.average_lower(annotations)
 	elif func_name=='minimum':
 		return ann_fn.minimum(annotations)
 	elif func_name=='maximum':
