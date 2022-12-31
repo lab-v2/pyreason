@@ -37,7 +37,7 @@ class GraphmlParser:
                 if label.Label(l) not in specific_node_labels.keys():
                     specific_node_labels[label.Label(l)] = numba.typed.List.empty_list(numba.types.string)
                 specific_node_labels[label.Label(l)].append(n)
-                f = fact_node.Fact(n, label.Label(l), interval.closed(l_bnd, 1), 0, timesteps, static=True)
+                f = fact_node.Fact(n, label.Label(l), interval.closed(l_bnd, 1), 0, 0, static=True)
                 facts_node.append(f)
         for e in self.graph.edges:
             for key, value in self.graph.edges[e].items():
@@ -45,7 +45,7 @@ class GraphmlParser:
                 if label.Label(l) not in specific_edge_labels.keys():
                     specific_edge_labels[label.Label(l)] = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.string)))
                 specific_edge_labels[label.Label(l)].append((e[0], e[1]))
-                f = fact_edge.Fact((e[0], e[1]), label.Label(l), interval.closed(1, 1), 0, timesteps, static=True)
+                f = fact_edge.Fact((e[0], e[1]), label.Label(l), interval.closed(1, 1), 0, 0, static=True)
                 facts_edge.append(f)
 
         return facts_node, facts_edge, specific_node_labels, specific_edge_labels                

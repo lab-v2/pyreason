@@ -71,7 +71,7 @@ def main(args):
     print('Graph loaded successfully, rules, labels, facts and ipl parsed successfully')
     print('Starting diffusion')
     start = time.time()
-    interpretation = program.diffusion(args.history)
+    interpretation = program.diffusion(args.convergence_threshold, args.convergence_bound_threshold)
     end = time.time()
     print('Time to complete diffusion:', end-start)
     print('Finished diffusion')
@@ -82,13 +82,12 @@ def main(args):
 
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
     print('Filtering data...')
-    filterer = Filter(args.timesteps)
+    filterer = Filter(interpretation.time)
     filtered_df = filterer.filter_and_sort(interpretation, labels=args.filter_labels, bound=interval.closed(0, 1), sort_by=args.filter_sort_by, descending=args.descending)
-    # filtered_df = filterer.filter_by_bound(interpretation, label='disruption', bound=interval.closed(0.7, 1))
 
     # You can index into filtered_df to get a particular timestep
     # This is for each timestep
-    for t in range(args.timesteps+1):
+    for t in range(interpretation.time+1):
         print(f'\n TIMESTEP - {t}')
         print(filtered_df[t])
         print()

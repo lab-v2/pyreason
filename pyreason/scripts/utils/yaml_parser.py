@@ -1,5 +1,6 @@
 import yaml
 import numba
+import numpy as np
 
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
@@ -72,6 +73,11 @@ class YAMLParser:
                 subset = ('', '')
                 l = label.Label('')
 
+            # If there are weights provided, store them
+            weights = np.array([])
+            if 'weights' in values:
+                weights = np.array(values['weights'])                
+
             r = rule.Rule(target, target_criteria, delta_t, neigh_criteria, ann_fn, bnd, thresholds, subset, l)
             rules.append(r)
 
@@ -91,7 +97,7 @@ class YAMLParser:
                 if values['static']:
                     static = True
                     t_lower = 0
-                    t_upper = self.tmax
+                    t_upper = 0
                 else:
                     static = False
                     t_lower = values['t_lower']
@@ -108,7 +114,7 @@ class YAMLParser:
                 if values['static']:
                     static = True
                     t_lower = 0
-                    t_upper = self.tmax
+                    t_upper = 0
                 else:
                     static = False
                     t_lower = values['t_lower']

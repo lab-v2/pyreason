@@ -4,12 +4,13 @@ def argparser():
     parser = argparse.ArgumentParser()
     # General
     parser.add_argument("--graph_path", type=str, required=True, help='[REQUIRED] The path pointing to the graphml file')
-    parser.add_argument("--timesteps", type=int, required=True, help='[REQUIRED] The number of timesteps to run the diffusion')
     # YAML
     parser.add_argument("--labels_yaml_path", type=str, required=True, help='[REQUIRED] The path pointing to the labels YAML file')
     parser.add_argument("--rules_yaml_path", type=str, required=True, help='[REQUIRED] The path pointing to the rules YAML file')
     parser.add_argument("--facts_yaml_path", type=str, required=True, help='[REQUIRED] The path pointing to the facts YAML file')
     parser.add_argument("--ipl_yaml_path", type=str, required=True, help='[REQUIRED] The path pointing to the IPL YAML file')
+    # TMAX
+    parser.add_argument("--timesteps", type=int, default=-1, help='The max number of timesteps to run the diffusion')
     # Profile
     parser.add_argument("--no-profile", dest='profile', action='store_false', help='Do not profile the code using cProfile. Profiling is off by Default')
     parser.add_argument("--profile", dest='profile', action='store_true', help='Profile the code using cProfile. Profiling is off by Default')
@@ -24,10 +25,6 @@ def argparser():
     parser.add_argument("--no-graph_attribute_parsing", dest='graph_attribute_parsing', action='store_false', help='Option to not make non fluent facts based on the attributes of the graph.')
     parser.add_argument("--graph_attribute_parsing", dest='graph_attribute_parsing', action='store_true', help='Option to make non fluent facts based on the attributes of the graph. On by default')
     parser.set_defaults(graph_attribute_parsing=True)
-    # History of interpretations
-    parser.add_argument("--no-history", dest='history', action='store_false', help='This option is recommended and on by default. Keeps track of only the latest interpretation from the last timestep. Optimized for large graphs')
-    parser.add_argument("--history", dest='history', action='store_true', help='This option is not recommended and off by default. Keeps track of all interpretations over all timesteps. Not optimized for large graphs. Only switch on if you know what you are doing')
-    parser.set_defaults(history=False)
     # Interpretation inconsistency check (not done)
     parser.add_argument("--abort_on_inconsistency", dest='abort_on_inconsistency', action='store_true', help='Stop the program if there are inconsistencies, do not fix them automatically')
     parser.set_defaults(abort_on_inconsistency=False)
@@ -41,6 +38,9 @@ def argparser():
     # Rule trace with ground atoms (not done)
     parser.add_argument("--atom_trace", dest='atom_trace', action='store_true', help='Option to track the ground atoms which lead to a rule firing. This could be very memory heavy. Default is off')
     parser.set_defaults(atom_trace=False)
+    # Convergence options
+    parser.add_argument("--convergence_threshold", type=int, default=-1, help='Number of interpretations that have changed between timesteps or fixed point operations until considered convergent. Program will end at convergence. -1 => Perfect convergence. This option is default')
+    parser.add_argument("--convergence_bound_threshold", type=float, default=-1, help='Max change in any interpretation between timesteps or fixed point operations until considered convergent. Program will end at convergence. --convergence_threshold is default')
 
     # Pickling options
 

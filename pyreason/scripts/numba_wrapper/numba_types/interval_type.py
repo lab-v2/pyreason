@@ -18,11 +18,13 @@ class IntervalType(numba.types.StructRef):
 interval_fields = [
     ('l', types.float64),
     ('u', types.float64),
-    ('s', types.boolean)
+    ('s', types.boolean),
+    ('prev_l', types.float64),
+    ('prev_u', types.float64)
 ]
 
 interval_type = IntervalType(interval_fields)
-structref.define_proxy(Interval, IntervalType, ["l", "u", 's'])
+structref.define_proxy(Interval, IntervalType, ["l", "u", 's', 'prev_l', 'prev_u'])
 
 
 @overload_attribute(IntervalType, "lower")
@@ -37,6 +39,18 @@ def get_upper(interval):
         return interval.u
     return getter
 
+@overload_attribute(IntervalType, "prev_lower")
+def prev_lower(interval):
+    def getter(interval):
+        return interval.prev_l
+    return getter
+
+@overload_attribute(IntervalType, "prev_upper")
+def prev_upper(interval):
+    def getter(interval):
+        return interval.prev_u
+    return getter
+
 
 @overload_method(IntervalType, "intersection")
 def intersection(self, interval):
@@ -46,7 +60,7 @@ def intersection(self, interval):
         if lower > upper:
             lower = np.float32(0)
             upper = np.float32(1)
-        return Interval(lower, upper, False)
+        return Interval(lower, upper, False, self.prev_lower, self.prev_upper)
 
     return impl
 
@@ -55,6 +69,17 @@ def set_lower_upper(interval, l, u):
     def impl(interval, l, u):
         interval.l = np.float64(l)
         interval.u = np.float64(u)
+    return impl
+
+@overload_method(IntervalType, 'reset')
+def reset(interval):
+    def impl(interval):
+        # Set previous bounds
+        interval.prev_l = interval.l
+        interval.prev_u = interval.u
+        # Then set new bounds
+        interval.l = np.float64(0)
+        interval.u = np.float64(1)
     return impl
 
 @overload_method(IntervalType, 'set_static')
@@ -67,6 +92,15 @@ def set_static(interval, s):
 def is_static(interval):
     def impl(interval):
         return interval.s
+    return impl
+
+@overload_method(IntervalType, 'has_changed')
+def has_changed(interval):
+    def impl(interval):
+        if interval.lower==interval.prev_lower and interval.upper==interval.prev_upper:
+            return False
+        else:
+            return True
     return impl
 
 
@@ -90,12 +124,6 @@ def interval_ne(interval_1, interval_2):
                 return False 
         return impl
 
-# @overload(hash)
-# def interval_hash(interval):
-#     def impl(interval):
-#         return hash((interval.lower, interval.upper))
-#     return impl
-
 @overload(operator.contains)
 def interval_contains(interval_1, interval_2):
     def impl(interval_1, interval_2):
@@ -106,8 +134,6 @@ def interval_contains(interval_1, interval_2):
     return impl
 
 
-
-
 @njit
 def closed(lower, upper, static=False):
-    return Interval(np.float64(lower), np.float64(upper), static)
+    return Interval(np.float64(lower), np.float64(upper), static, np.float64(lower), np.float64(upper))
