@@ -34,5 +34,5 @@ rule_2:
     neigh_criteria:
         - [node, [x1], disruption, [0.5, 1.0], [greater_equal, [percent, total], 50]]
         - [node, [x1], gics-251010, [1,1], [greater_equal, number, 1]]
-        - [edge, [target, x2], strong, [0,1], [greater_equal, number, 1]]
+        - [edge, [x2, target], strong, [0,1], [greater_equal, number, 1]]
     ann_fn: [0.7, 1]

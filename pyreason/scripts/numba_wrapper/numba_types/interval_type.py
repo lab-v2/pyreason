@@ -103,6 +103,12 @@ def has_changed(interval):
             return True
     return impl
 
+@overload_method(IntervalType, 'copy')
+def copy(interval):
+    def impl(interval):
+        return Interval(interval.lower, interval.upper, interval.s, interval.prev_l, interval.prev_u)
+    return impl
+
 
 @overload(operator.eq)
 def interval_eq(interval_1, interval_2):

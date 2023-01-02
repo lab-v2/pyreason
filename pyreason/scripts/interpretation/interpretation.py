@@ -194,7 +194,6 @@ class Interpretation:
 								_update_rule_trace_node(rule_trace_node_atoms, numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(edge_type))
 
 							update = u or update
-							interpretations_node[comp].world[l].set_static(static)
 							# Update convergence params
 							if convergence_mode=='delta_interpretation':
 								changes_cnt += changes
@@ -234,7 +233,6 @@ class Interpretation:
 								_update_rule_trace_edge(rule_trace_edge_atoms, numba.typed.List.empty_list(node_type))
 
 							update = u or update
-							interpretations_edge[comp].world[l].set_static(static)
 							# Update convergence params
 							if convergence_mode=='delta_interpretation':
 								changes_cnt += changes
@@ -261,7 +259,7 @@ class Interpretation:
 
 						# Check for inconsistencies
 						if check_consistent_node(interpretations_node, comp, (l, bnd)):
-							u, changes = _update_node(interpretations_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode)
+							u, changes = _update_node(interpretations_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, False, convergence_mode)
 							if atom_trace:
 								qn, qe = rules_to_be_applied_node_trace[idx]
 								_update_rule_trace_node(rule_trace_node_atoms, qn, qe)
@@ -287,7 +285,7 @@ class Interpretation:
 
 						# Check for inconsistencies
 						if check_consistent_edge(interpretations_edge, comp, (l, bnd)):
-							u, changes = _update_edge(interpretations_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode)
+							u, changes = _update_edge(interpretations_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, False, convergence_mode)
 							if atom_trace:
 								qn, = rules_to_be_applied_edge_trace[idx]
 								_update_rule_trace_edge(rule_trace_edge_atoms, qn)
@@ -451,7 +449,7 @@ def get_qualified_components_edge_clause(interpretations_edge, candidates_source
 	qualified_nodes_target = numba.typed.List.empty_list(node_type)
 	for source in candidates_source:
 		for target in candidates_target:
-			edge = (source, target)
+			edge = (source, target) if not reverse_graph else (target, source)
 			if is_satisfied_edge(interpretations_edge, edge, (clause[2], clause[3])):
 				qualified_nodes_source.append(source)
 				qualified_nodes_target.append(target)
@@ -501,37 +499,35 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		l, bnd = na
 		updated_bnds = numba.typed.List.empty_list(interval.interval_type)
 
-		# Check if update is possible, if static or not
-		if not world.world[l].is_static():
-			# Check if update is necessary with previous bnd
-			prev_bnd = world.world[l]
-			world.update(l, bnd)
-			if world.world[l]!=prev_bnd:
-				updated = True
-				rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, bnd))
-				world.world[l].set_static(static)
-				updated_bnds.append(world.world[l])
+		# Check if update is necessary with previous bnd
+		prev_bnd = world.world[l]
+		world.update(l, bnd)
+		world.world[l].set_static(static)
+		if world.world[l]!=prev_bnd:
+			updated = True
+			updated_bnds.append(world.world[l])
+		rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, world.world[l].copy()))
 
-			# Update complement of predicate (if exists) based on new knowledge of predicate
-			if updated:
-				ip_update_cnt = 0
-				for p1, p2 in ipl:
-					if p1==l:
-						lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
-						upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
-						world.world[p2].set_lower_upper(lower, upper)
-						world.world[p2].set_static(static)
-						ip_update_cnt += 1
-						updated_bnds.append(world.world[p2])
-						rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p2, interval.closed(lower, upper)))
-					if p2==l:
-						lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
-						upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
-						world.world[p1].set_lower_upper(lower, upper)
-						world.world[p1].set_static(static)
-						ip_update_cnt += 1
-						updated_bnds.append(world.world[p1])
-						rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(lower, upper)))
+		# Update complement of predicate (if exists) based on new knowledge of predicate
+		if updated:
+			ip_update_cnt = 0
+			for p1, p2 in ipl:
+				if p1==l:
+					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
+					upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
+					world.world[p2].set_lower_upper(lower, upper)
+					world.world[p2].set_static(static)
+					ip_update_cnt += 1
+					updated_bnds.append(world.world[p2])
+					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p2, interval.closed(lower, upper)))
+				if p2==l:
+					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
+					upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
+					world.world[p1].set_lower_upper(lower, upper)
+					world.world[p1].set_static(static)
+					ip_update_cnt += 1
+					updated_bnds.append(world.world[p1])
+					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(lower, upper)))
 		
 		# Gather convergence data
 		change = 0
@@ -568,38 +564,36 @@ def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		l, bnd = na
 		updated_bnds = numba.typed.List.empty_list(interval.interval_type)
 
-		# Check if update is possible, if static or not
-		if not world.world[l].is_static():
-			# Check if update is necessary with previous bnd
-			prev_bnd = world.world[l]
-			world.update(l, bnd)
-			if world.world[l]!=prev_bnd:
-				updated = True
-				rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, bnd))
-				world.world[l].set_static(static)
-				updated_bnds.append(world.world[l])
+		# Check if update is necessary with previous bnd
+		prev_bnd = world.world[l]
+		world.update(l, bnd)
+		world.world[l].set_static(static)
+		if world.world[l]!=prev_bnd:
+			updated = True
+			updated_bnds.append(world.world[l])
+		rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, world.world[l].copy()))
 
-			# Update complement of predicate (if exists) based on new knowledge of predicate
-			if updated:
-				ip_update_cnt = 0
-				for p1, p2 in ipl:
-					if p1==l:
-						lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
-						upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
-						world.world[p2].set_lower_upper(lower, upper)
-						world.world[p2].set_static(static)
-						ip_update_cnt += 1
-						updated_bnds.append(world.world[p2])
-						rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p2, interval.closed(lower, upper)))
-					if p2==l:
-						lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
-						upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
-						world.world[p1].set_lower_upper(lower, upper)
-						world.world[p1].set_static(static)
-						ip_update_cnt += 1
-						updated_bnds.append(world.world[p2])
-						rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(lower, upper)))
-		
+		# Update complement of predicate (if exists) based on new knowledge of predicate
+		if updated:
+			ip_update_cnt = 0
+			for p1, p2 in ipl:
+				if p1==l:
+					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
+					upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
+					world.world[p2].set_lower_upper(lower, upper)
+					world.world[p2].set_static(static)
+					ip_update_cnt += 1
+					updated_bnds.append(world.world[p2])
+					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p2, interval.closed(lower, upper)))
+				if p2==l:
+					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
+					upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
+					world.world[p1].set_lower_upper(lower, upper)
+					world.world[p1].set_static(static)
+					ip_update_cnt += 1
+					updated_bnds.append(world.world[p2])
+					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(lower, upper)))
+	
 		# Gather convergence data
 		change = 0
 		if updated:
