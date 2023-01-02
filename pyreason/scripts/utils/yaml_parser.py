@@ -17,8 +17,7 @@ class YAMLParser:
         with open(path, 'r') as file:
             rules_yaml = yaml.safe_load(file)
 
-        rules = numba.typed.List()
-        # rules = []
+        rules = numba.typed.List.empty_list(rule.rule_type)
         for _, values in rules_yaml.items():
 
             # Set rule target
@@ -74,11 +73,13 @@ class YAMLParser:
                 l = label.Label('')
 
             # If there are weights provided, store them
-            weights = np.array([])
-            if 'weights' in values:
-                weights = np.array(values['weights'])                
+            # weights = np.array([1,2,3], dtype=np.float64, ndim=1)
+            weights = np.ones(len(values['neigh_criteria']), dtype=np.float64)
+            weights = np.append(weights, 0)
+            if 'weights' in values and not values['weights']:
+                weights = np.array(values['weights'], dtype=np.float64)   
 
-            r = rule.Rule(target, target_criteria, delta_t, neigh_criteria, ann_fn, bnd, thresholds, subset, l)
+            r = rule.Rule(target, target_criteria, delta_t, neigh_criteria, ann_fn, bnd, thresholds, subset, l, weights)
             rules.append(r)
 
         return rules

@@ -18,7 +18,7 @@ class Filter:
 
         # change contains the timestep, fp operation, component, label and interval
         for change in interpretation.rule_trace_node:
-            t, fp, comp, l, bnd, qn, qe = change
+            t, fp, comp, l, bnd = change
             df[t][(comp, l)] = bnd
 
         for t, d in df.items():
@@ -48,7 +48,7 @@ class Filter:
         # change contains the timestep, fp operation, component, label and interval
         # for change in interpretation.rule_trace_node:
         for change in interpretation.rule_trace_node:
-            t, fp, comp, l, bnd, qn, qe = change
+            t, fp, comp, l, bnd = change
             list_to_be_sorted.append((bnd, t, comp, l))
 
         # Sort the list

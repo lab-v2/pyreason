@@ -23,6 +23,8 @@ rule_1:
                         # Could be func_name or [l, u]
     subset_label: [[x1], disruption] # If you want subset to be edge, write [[xi, xj], label]
 
+    weights: [1, 1, 1, 0] # Weights for annotation function. Default is this. [w1=1, w2=1, w3=1, bias=0,] size of vector: [#clauses+1]
+
 # Start of next rule
 rule_2:
     target: disruption
