@@ -357,7 +357,7 @@ class Interpretation:
 					if changes_cnt==0:
 						print(f'\nConverged at time: {t}')
 					else:
-						print(f'\nMax timestep reached at {t}. {changes_cnt} changes to interpretaion pending')	
+						print(f'\nMax timestep reached at {t}. {int(changes_cnt)} changes to interpretaion pending')	
 					
 					break
 
@@ -504,13 +504,13 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		updated_bnds = numba.typed.List.empty_list(interval.interval_type)
 
 		# Check if update is necessary with previous bnd
-		prev_bnd = world.world[l]
+		prev_bnd = world.world[l].copy()
 		world.update(l, bnd)
 		world.world[l].set_static(static)
 		if world.world[l]!=prev_bnd:
 			updated = True
 			updated_bnds.append(world.world[l])
-		rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, world.world[l].copy()))
+			rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, world.world[l].copy()))
 
 		# Update complement of predicate (if exists) based on new knowledge of predicate
 		if updated:
@@ -569,13 +569,13 @@ def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		updated_bnds = numba.typed.List.empty_list(interval.interval_type)
 
 		# Check if update is necessary with previous bnd
-		prev_bnd = world.world[l]
+		prev_bnd = world.world[l].copy()
 		world.update(l, bnd)
 		world.world[l].set_static(static)
 		if world.world[l]!=prev_bnd:
 			updated = True
 			updated_bnds.append(world.world[l])
-		rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, world.world[l].copy()))
+			rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, world.world[l].copy()))
 
 		# Update complement of predicate (if exists) based on new knowledge of predicate
 		if updated:

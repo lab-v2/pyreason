@@ -38,18 +38,23 @@ class Filter:
         # Initialize nested dict
         df = {}
         nodes = []
+        latest_changes = {}
         for t in range(self.tmax+1):
             df[t] = {}
-            d = {}
-            nodes.append(d)
+            nodes.append({})
+            latest_changes[t] = {}
 
-        # Create a list that needs to be sorted.
-        list_to_be_sorted = []
         # change contains the timestep, fp operation, component, label and interval
-        # for change in interpretation.rule_trace_node:
+        # Keep only the latest/most recent changes. Since list is sequencial, whatever was earlier will be overwritten
         for change in interpretation.rule_trace_node:
             t, fp, comp, l, bnd = change
-            list_to_be_sorted.append((bnd, t, comp, l))
+            latest_changes[t][(comp, l)] = bnd
+        
+        # Create a list that needs to be sorted. This contains only the latest changes
+        list_to_be_sorted = []
+        for t, d in latest_changes.items():
+            for (comp, l), bnd in d.items():
+                list_to_be_sorted.append((bnd, t, comp, l))
 
         # Sort the list
         reverse = True if descending else False
