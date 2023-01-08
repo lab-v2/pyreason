@@ -195,10 +195,10 @@ class Interpretation:
 
 							update = u or update
 							# Update convergence params
-							if convergence_mode=='delta_interpretation':
-								changes_cnt += changes
-							elif convergence_mode=='delta_bound':
+							if convergence_mode=='delta_bound':
 								bound_delta = max(bound_delta, changes)
+							else:
+								changes_cnt += changes
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_node(interpretations_node, comp, (l, bnd), ipl)
@@ -234,10 +234,10 @@ class Interpretation:
 
 							update = u or update
 							# Update convergence params
-							if convergence_mode=='delta_interpretation':
-								changes_cnt += changes
-							elif convergence_mode=='delta_bound':
+							if convergence_mode=='delta_bound':
 								bound_delta = max(bound_delta, changes)
+							else:
+								changes_cnt += changes
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_edge(interpretations_edge, comp, (l, bnd), ipl)
@@ -266,10 +266,10 @@ class Interpretation:
 
 							update = u or update
 							# Update convergence params
-							if convergence_mode=='delta_interpretation':
-								changes_cnt += changes
-							elif convergence_mode=='delta_bound':
+							if convergence_mode=='delta_bound':
 								bound_delta = max(bound_delta, changes)
+							else:
+								changes_cnt += changes
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_node(interpretations_node, comp, (l, bnd), ipl)
@@ -292,10 +292,10 @@ class Interpretation:
 							
 							update = u or update
 							# Update convergence params
-							if convergence_mode=='delta_interpretation':
-								changes_cnt += changes
-							elif convergence_mode=='delta_bound':
+							if convergence_mode=='delta_bound':
 								bound_delta = max(bound_delta, changes)
+							else:
+								changes_cnt += changes
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_edge(interpretations_edge, comp, (l, bnd), ipl)
@@ -353,8 +353,12 @@ class Interpretation:
 			# Make sure there are no rules to be applied, and no facts that will be applied in the future. We do this by checking the max time any rule/fact is applicable
 			# If no more rules/facts to be applied
 			elif convergence_mode=='perfect_convergence':
-				if t>=max_facts_time and t>=max_rules_time:
-					print(f'\nConverged at time: {t}')
+				if (t>=max_facts_time and t>=max_rules_time) or (t>=max_facts_time and changes_cnt==0):
+					if changes_cnt==0:
+						print(f'\nConverged at time: {t}')
+					else:
+						print(f'\nMax timestep reached at {t}. {changes_cnt} changes to interpretaion pending')	
+					
 					break
 
 		return fp_cnt, t	
@@ -536,14 +540,14 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 			current_bnd = world.world[l]
 			prev_t_bnd = interval.closed(world.world[l].prev_lower, world.world[l].prev_upper)
 			if current_bnd != prev_t_bnd:
-				if convergence_mode=='delta_interpretation':
-					change = 1 + ip_update_cnt
-				elif convergence_mode=='delta_bound':
+				if convergence_mode=='delta_bound':
 					for i in updated_bnds:
 						lower_delta = abs(i.lower-prev_t_bnd.lower)
 						upper_delta = abs(i.upper-prev_t_bnd.upper)
 						max_delta = max(lower_delta, upper_delta)
 						change = max(change, max_delta)
+				else:
+					change = 1 + ip_update_cnt
 
 		return (updated, change)
 
@@ -601,14 +605,14 @@ def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 			current_bnd = world.world[l]
 			prev_t_bnd = interval.closed(world.world[l].prev_lower, world.world[l].prev_upper)
 			if current_bnd != prev_t_bnd:
-				if convergence_mode=='delta_interpretation':
-					change = 1 + ip_update_cnt
-				elif convergence_mode=='delta_bound':
+				if convergence_mode=='delta_bound':
 					for i in updated_bnds:
 						lower_delta = abs(i.lower-prev_t_bnd.lower)
 						upper_delta = abs(i.upper-prev_t_bnd.upper)
 						max_delta = max(lower_delta, upper_delta)
 						change = max(change, max_delta)
+				else:
+					change = 1 + ip_update_cnt
 		
 		return (updated, change)
 	except:
