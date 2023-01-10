@@ -15,7 +15,7 @@ And
 2. Justin owns a cat and a dog
 3. John owns a dog
 
-All of this is represented in [GraphMl format](../pyreason/examples/example_graph/friends.graphml).  
+All of this is represented in [GraphML format](../pyreason/examples/example_graph/friends.graphml).  
 
 Let's assume that a person's popularity (for illustration 😀) is determined by whether they have AT LEAST ONE friend who is popular AND who has the same pet that they do. If this is true, then they are considered popular.
 
