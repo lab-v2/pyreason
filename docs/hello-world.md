@@ -6,7 +6,7 @@ The following graph represents a network of people and the pets that they own.
 
 __*(KAUSTUV REPLACE IMAGE BELOW BY THE GOOD VISUALS YOU MADE)*__
 
-<img src="../media/to_be_deleted.jpg"/>
+<img src="../media/friends_graph.png"/>
 
 1. Mary is friends with Justin
 2. Mary is friends with John
