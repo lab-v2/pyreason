@@ -4,7 +4,7 @@ Welcome to PyReason! In this document we outline a simple program that demonstra
 
 The following graph represents a network of people and the pets that they own. 
 
-<img src="../media/friends_graph.png"/>
+<img src="../media/hello_world_graph.png"/>
 
 1. Mary is friends with Justin
 2. Mary is friends with John
