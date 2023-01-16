@@ -4,9 +4,7 @@ Welcome to PyReason! In this document we outline a simple program that demonstra
 
 The following graph represents a network of people and the pets that they own. 
 
-__*(KAUSTUV REPLACE IMAGE BELOW BY THE GOOD VISUALS YOU MADE)*__
-
-<img src="../media/to_be_deleted.jpg"/>
+<img src="../media/hello_world_graph.png"/>
 
 1. Mary is friends with Justin
 2. Mary is friends with John
@@ -17,7 +15,7 @@ And
 2. Justin owns a cat and a dog
 3. John owns a dog
 
-All of this is represented in [GraphMl format](../pyreason/examples/example_graph/friends.graphml).  
+All of this is represented in [GraphML format](../pyreason/examples/example_graph/friends.graphml).  
 
 Let's assume that a person's popularity (for illustration 😀) is determined by whether they have AT LEAST ONE friend who is popular AND who has the same pet that they do. If this is true, then they are considered popular.
 

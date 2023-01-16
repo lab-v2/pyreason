@@ -200,10 +200,10 @@ class Interpretation:
 
 							update = u or update
 							# Update convergence params
-							if convergence_mode=='delta_interpretation':
-								changes_cnt += changes
-							elif convergence_mode=='delta_bound':
+							if convergence_mode=='delta_bound':
 								bound_delta = max(bound_delta, changes)
+							else:
+								changes_cnt += changes
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_node(interpretations_node, comp, (l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_node, rule_trace_node_atoms)
@@ -239,10 +239,10 @@ class Interpretation:
 
 							update = u or update
 							# Update convergence params
-							if convergence_mode=='delta_interpretation':
-								changes_cnt += changes
-							elif convergence_mode=='delta_bound':
+							if convergence_mode=='delta_bound':
 								bound_delta = max(bound_delta, changes)
+							else:
+								changes_cnt += changes
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_edge(interpretations_edge, comp, (l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_edge, rule_trace_edge_atoms)
@@ -271,10 +271,10 @@ class Interpretation:
 
 							update = u or update
 							# Update convergence params
-							if convergence_mode=='delta_interpretation':
-								changes_cnt += changes
-							elif convergence_mode=='delta_bound':
+							if convergence_mode=='delta_bound':
 								bound_delta = max(bound_delta, changes)
+							else:
+								changes_cnt += changes
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_node(interpretations_node, comp, (l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_node, rule_trace_node_atoms)
@@ -297,10 +297,10 @@ class Interpretation:
 							
 							update = u or update
 							# Update convergence params
-							if convergence_mode=='delta_interpretation':
-								changes_cnt += changes
-							elif convergence_mode=='delta_bound':
+							if convergence_mode=='delta_bound':
 								bound_delta = max(bound_delta, changes)
+							else:
+								changes_cnt += changes
 						# Resolve inconsistency
 						else:
 							resolve_inconsistency_edge(interpretations_edge, comp, (l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_edge, rule_trace_edge_atoms)
@@ -358,8 +358,12 @@ class Interpretation:
 			# Make sure there are no rules to be applied, and no facts that will be applied in the future. We do this by checking the max time any rule/fact is applicable
 			# If no more rules/facts to be applied
 			elif convergence_mode=='perfect_convergence':
-				if t>=max_facts_time and t>=max_rules_time:
-					print(f'\nConverged at time: {t}')
+				if (t>=max_facts_time and t>=max_rules_time) or (t>=max_facts_time and changes_cnt==0):
+					if changes_cnt==0:
+						print(f'\nConverged at time: {t}')
+					else:
+						print(f'\nMax timestep reached at {t}. {int(changes_cnt)} changes to interpretaion pending')	
+					
 					break
 
 		return fp_cnt, t	
@@ -510,13 +514,13 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		updated_bnds = numba.typed.List.empty_list(interval.interval_type)
 
 		# Check if update is necessary with previous bnd
-		prev_bnd = world.world[l]
+		prev_bnd = world.world[l].copy()
 		world.update(l, bnd)
 		world.world[l].set_static(static)
 		if world.world[l]!=prev_bnd:
 			updated = True
 			updated_bnds.append(world.world[l])
-		rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, world.world[l].copy()))
+			rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, world.world[l].copy()))
 
 		# Update complement of predicate (if exists) based on new knowledge of predicate
 		if updated:
@@ -550,14 +554,14 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 			current_bnd = world.world[l]
 			prev_t_bnd = interval.closed(world.world[l].prev_lower, world.world[l].prev_upper)
 			if current_bnd != prev_t_bnd:
-				if convergence_mode=='delta_interpretation':
-					change = 1 + ip_update_cnt
-				elif convergence_mode=='delta_bound':
+				if convergence_mode=='delta_bound':
 					for i in updated_bnds:
 						lower_delta = abs(i.lower-prev_t_bnd.lower)
 						upper_delta = abs(i.upper-prev_t_bnd.upper)
 						max_delta = max(lower_delta, upper_delta)
 						change = max(change, max_delta)
+				else:
+					change = 1 + ip_update_cnt
 
 		return (updated, change)
 
@@ -575,13 +579,13 @@ def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		updated_bnds = numba.typed.List.empty_list(interval.interval_type)
 
 		# Check if update is necessary with previous bnd
-		prev_bnd = world.world[l]
+		prev_bnd = world.world[l].copy()
 		world.update(l, bnd)
 		world.world[l].set_static(static)
 		if world.world[l]!=prev_bnd:
 			updated = True
 			updated_bnds.append(world.world[l])
-		rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, world.world[l].copy()))
+			rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, world.world[l].copy()))
 
 		# Update complement of predicate (if exists) based on new knowledge of predicate
 		if updated:
@@ -615,14 +619,14 @@ def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 			current_bnd = world.world[l]
 			prev_t_bnd = interval.closed(world.world[l].prev_lower, world.world[l].prev_upper)
 			if current_bnd != prev_t_bnd:
-				if convergence_mode=='delta_interpretation':
-					change = 1 + ip_update_cnt
-				elif convergence_mode=='delta_bound':
+				if convergence_mode=='delta_bound':
 					for i in updated_bnds:
 						lower_delta = abs(i.lower-prev_t_bnd.lower)
 						upper_delta = abs(i.upper-prev_t_bnd.upper)
 						max_delta = max(lower_delta, upper_delta)
 						change = max(change, max_delta)
+				else:
+					change = 1 + ip_update_cnt
 		
 		return (updated, change)
 	except:
