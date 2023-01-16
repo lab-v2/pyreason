@@ -18,7 +18,7 @@ from pyreason.scripts.args import argparser
 def main(args):
     timestamp = time.strftime('%Y%m%d-%H%M%S')
     if args.output_to_file:
-        sys.stdout = open(f"./output/{timestamp}_{args.output_file_name}.txt", "w")
+        sys.stdout = open(f"./output/{args.output_file_name}_{timestamp}.txt", "w")
 
     # Initialize parsers
     graphml_parser = GraphmlParser()
@@ -77,8 +77,8 @@ def main(args):
     print('Finished diffusion')
 
     # Save the rule trace to a file
-    # output = Output(timestamp)
-    # output.pickle_rule_trace(interpretation)
+    output = Output(timestamp)
+    output.save_rule_trace(interpretation)
 
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
     print('Filtering data...')

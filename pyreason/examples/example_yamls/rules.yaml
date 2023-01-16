@@ -2,7 +2,7 @@
 # DO NOT MODIFY! THIS IS FOR EXAMPLE PURPOSES ONLY
 
 ---
-# All Rules come under here
+# All Rules come under here. Make sure each rule name is different otherwise it'll get overridden
 # rule_1 says:
 # Nodes that have the success label with bounds between 0 and 1, will be influenced next timestep if half its neighbors have success between 0.5 and 1
 rule_1:
@@ -19,9 +19,9 @@ rule_1:
         - [node, [x2], disruption, [0.5, 1.0], [greater_equal, number, 1]]
         - [edge, [x1, x2], strong, [0,1], [greater_equal, number, 1]]
 
-    ann_fn: average    # Annotation function name or bound. See annotation_functions.py for list of available functions. The name of that function comes here
-                        # Could be func_name or [l, u]
-    subset_label: [[x1], disruption] # If you want subset to be edge, write [[xi, xj], label]
+    ann_fn: [average, disruption]    # Annotation function name with the label to use to get the annotations for the ann_fn.
+                                     # See annotation_functions.py for list of available functions. The name of that function comes here
+                                     # Could be [func_name, label] or [l, u]
 
     weights: [1, 1, 1, 0] # Weights for annotation function. Default is this. [w1=1, w2=1, w3=1, bias=0,] size of vector: [#clauses+1]
 

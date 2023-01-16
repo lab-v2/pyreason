@@ -67,6 +67,9 @@ class Interval(structref.StructRefProxy):
             upper = np.float32(1)
         return Interval(lower, upper, False, self.lower, self.upper)
 
+    def to_str(self):
+        return self.__repr__()
+
     def __repr__(self):
         return f'[{self.lower},{self.upper}]'
 
