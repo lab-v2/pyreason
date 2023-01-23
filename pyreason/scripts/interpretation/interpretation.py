@@ -771,6 +771,18 @@ def resolve_inconsistency_edge(interpretations, comp, na, ipl, t_cnt, fp_cnt, at
 			world.world[p1].set_static(True)
 			rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(0,1)))
 
+
+@numba.njit
+def _add_node(n, nodes, neighbors):
+	nodes.append(n)
+	neighbors[n] = numba.typed.List.empty_list(node_type)
+
+@numba.njit
+def _add_edge(source, target, edges, neighbors):
+	edges.append((source, target))
+	neighbors[source].append(target)
+
+
 @numba.njit
 def float_to_str(value):
 	number = int(value)
