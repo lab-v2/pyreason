@@ -35,10 +35,10 @@ def main():
     y5 = [56.46, 56.27, 57.78, 60.34] 
     y15 = [56.76, 56.90, 58.87, 64.88] 
     
-    if smooth:
-        y_jit = pd.Series(y_jit).rolling(15, min_periods=1).mean()
-        y_old = pd.Series(y_old).rolling(15, min_periods=1).mean()
-        y_oldest = pd.Series(y_oldest).rolling(15, min_periods=1).mean()
+    # if smooth:
+    #     y_jit = pd.Series(y_jit).rolling(15, min_periods=1).mean()
+    #     y_old = pd.Series(y_old).rolling(15, min_periods=1).mean()
+    #     y_oldest = pd.Series(y_oldest).rolling(15, min_periods=1).mean()
 
     # sns.relplot(data=df, x =x_axis_title, y=y_axis_title, kind = 'line', hue = 'type', palette = ['red', 'blue'])
     # ax = sns.relplot(data=df,  kind = 'line', ci=0)
