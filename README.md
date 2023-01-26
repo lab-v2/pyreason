@@ -1,6 +1,8 @@
 # PyReason
 <img src="media/pyreason_logo.jpg"/>
 
+[![Python Build](https://github.com/lab-v2/pyreason/actions/workflows/python-publish.yml/badge.svg)](https://github.com/lab-v2/pyreason/actions/workflows/python-publish.yml)
+
 An explainable inference software supporting annotated, real valued, graph based and temporal logic. 
 
 Check out the [PyReason Hello World](docs/hello-world.md) program if you're new, or want get get a feel for the software.
