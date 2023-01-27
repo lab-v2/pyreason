@@ -30,8 +30,8 @@ def typeof_rule(val, c):
 # Construct object from Numba functions (Doesn't work. We don't need this currently)
 @type_callable(Rule)
 def type_rule(context):
-    def typer(name, target, tc, delta, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights):
-        if isinstance(name, types.UnicodeType) and isinstance(target, label.LabelType) and isinstance(tc, (types.NoneType, types.ListType)) and isinstance(delta, types.Integer) and isinstance(neigh_criteria, (types.NoneType, types.ListType)) and isinstance(bnd, interval.IntervalType) and isinstance(thresholds, types.ListType) and isinstance(ann_fn, types.UnicodeType) and isinstance(ann_label, label.LabelType) and isinstance(weights, types.Array):
+    def typer(name, target, tc, delta, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges):
+        if isinstance(name, types.UnicodeType) and isinstance(target, label.LabelType) and isinstance(tc, (types.NoneType, types.ListType)) and isinstance(delta, types.Integer) and isinstance(neigh_criteria, (types.NoneType, types.ListType)) and isinstance(bnd, interval.IntervalType) and isinstance(thresholds, types.ListType) and isinstance(ann_fn, types.UnicodeType) and isinstance(ann_label, label.LabelType) and isinstance(weights, types.Array) and isinstance(edges, types.UniTuple):
             return rule_type
     return typer
 
@@ -50,7 +50,8 @@ class RuleModel(models.StructModel):
             ('thresholds', types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64)))),
             ('ann_fn', types.string),
             ('ann_label', label.label_type),
-            ('weights', types.float64[::1])
+            ('weights', types.float64[::1]),
+            ('edges', types.UniTuple(types.string, 3))
             ]
         models.StructModel.__init__(self, dmm, fe_type, members)
 
@@ -66,12 +67,13 @@ make_attribute_wrapper(RuleType, 'thresholds', 'thresholds')
 make_attribute_wrapper(RuleType, 'ann_fn', 'ann_fn')
 make_attribute_wrapper(RuleType, 'ann_label', 'ann_label')
 make_attribute_wrapper(RuleType, 'weights', 'weights')
+make_attribute_wrapper(RuleType, 'edges', 'edges')
 
 # Implement constructor
-@lower_builtin(Rule, types.string, label.label_type, types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.int8, types.ListType(types.Tuple((types.string, label.label_type, interval.interval_type))), interval.interval_type, types.ListType(types.ListType(types.Tuple((types.string, types.string, types.float64)))), types.string, label.label_type, types.float64[::1])
+@lower_builtin(Rule, types.string, label.label_type, types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.int8, types.ListType(types.Tuple((types.string, label.label_type, interval.interval_type))), interval.interval_type, types.ListType(types.ListType(types.Tuple((types.string, types.string, types.float64)))), types.string, label.label_type, types.float64[::1], types.UniTuple(types.string, 3))
 def impl_rule(context, builder, sig, args):
     typ = sig.return_type
-    name, target, target_criteria, delta, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights = args
+    name, target, target_criteria, delta, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges = args
     context.nrt.incref(builder, types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), label.label_type, interval.interval_type))), neigh_criteria)
     context.nrt.incref(builder, types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64))), thresholds)
     rule = cgutils.create_struct_proxy(typ)(context, builder)
@@ -85,6 +87,7 @@ def impl_rule(context, builder, sig, args):
     rule.ann_fn = ann_fn
     rule.ann_label = ann_label
     rule.weights = weights
+    rule.edges = edges
     return rule._getvalue()
 
 # Expose properties
@@ -148,6 +151,12 @@ def get_weights(rule):
         return rule.weights
     return impl
 
+@overload_method(RuleType, "get_edges")
+def get_edges(rule):
+    def impl(rule):
+        return rule.edges
+    return impl
+
 
 
 # Tell numba how to make native
@@ -163,6 +172,7 @@ def unbox_rule(typ, obj, c):
     ann_fn_obj = c.pyapi.object_getattr_string(obj, "_ann_fn")
     ann_label_obj = c.pyapi.object_getattr_string(obj, "_ann_label")
     weights_obj = c.pyapi.object_getattr_string(obj, "_weights")
+    edges_obj = c.pyapi.object_getattr_string(obj, "_edges")
     rule = cgutils.create_struct_proxy(typ)(c.context, c.builder)
     rule.name = c.unbox(types.string, name_obj).value
     rule.target = c.unbox(label.label_type, target_obj).value
@@ -174,6 +184,7 @@ def unbox_rule(typ, obj, c):
     rule.ann_fn = c.unbox(types.string, ann_fn_obj).value
     rule.ann_label = c.unbox(label.label_type, ann_label_obj).value
     rule.weights = c.unbox(types.float64[::1], weights_obj).value
+    rule.edges = c.unbox(types.UniTuple(types.string, 3), edges_obj).value
     c.pyapi.decref(name_obj)
     c.pyapi.decref(target_obj)
     c.pyapi.decref(tc_obj)
@@ -184,6 +195,7 @@ def unbox_rule(typ, obj, c):
     c.pyapi.decref(ann_fn_obj)
     c.pyapi.decref(ann_label_obj)
     c.pyapi.decref(weights_obj)
+    c.pyapi.decref(edges_obj)
     is_error = cgutils.is_not_null(c.builder, c.pyapi.err_occurred())
     return NativeValue(rule._getvalue(), is_error=is_error)
 
@@ -203,7 +215,8 @@ def box_rule(typ, val, c):
     ann_fn_obj = c.box(types.string, rule.ann_fn)
     ann_label_obj = c.box(label.label_type, rule.ann_label)
     weights_obj = c.box(types.float64[::1], rule.weights)
-    res = c.pyapi.call_function_objargs(class_obj, (name_obj, target_obj, tc_obj, delta_obj, neigh_criteria_obj, bnd_obj, thresholds_obj, ann_fn_obj, ann_label_obj, weights_obj))
+    edges_obj = c.box(types.UniTuple(types.string, 3), rule.edges)
+    res = c.pyapi.call_function_objargs(class_obj, (name_obj, target_obj, tc_obj, delta_obj, neigh_criteria_obj, bnd_obj, thresholds_obj, ann_fn_obj, ann_label_obj, weights_obj, edges_obj))
     c.pyapi.decref(name_obj)
     c.pyapi.decref(target_obj)
     c.pyapi.decref(tc_obj)
@@ -214,5 +227,6 @@ def box_rule(typ, val, c):
     c.pyapi.decref(thresholds_obj)
     c.pyapi.decref(ann_label_obj)
     c.pyapi.decref(weights_obj)
+    c.pyapi.decref(edges_obj)
     c.pyapi.decref(class_obj)
     return res

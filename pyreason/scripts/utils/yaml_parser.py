@@ -80,7 +80,7 @@ class YAMLParser:
             weights = np.append(weights, 0)
             if 'weights' in values and not values['weights']:
                 weights = np.array(values['weights'], dtype=np.float64)   
-            r = rule.Rule(rule_name, target, target_criteria, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights)
+            r = rule.Rule(rule_name, target, target_criteria, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges)
             rules.append(r)
 
         return rules
