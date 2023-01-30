@@ -62,7 +62,12 @@ class YAMLParser:
             # Edges that need to be added if rule fires
             edges = ('', '', '')
             if 'edges' in values and not values['edges']:
-                edges = tuple(values['edges'])
+                if len(values['edges'])==2:
+                    e = values['edges'] + ['']
+                    edges = tuple(e)
+                elif len(values['edges'])==3:
+                    edges = tuple(values['edges'])
+                    
 
             
             # If annotation function is a string, it is the name of the function. If it is a bound then set it to an empty string
