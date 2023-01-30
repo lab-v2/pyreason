@@ -21,11 +21,11 @@ class Interpretation:
 	specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(edge_type))
 
 	def __init__(self, graph, tmax, ipl, reverse_graph, atom_trace, convergence_threshold, convergence_bound_threshold):
-		self._tmax = tmax
-		self._graph = graph
-		self._ipl = ipl
-		self._reverse_graph = reverse_graph
-		self._atom_trace = atom_trace
+		self.tmax = tmax
+		self.graph = graph
+		self.ipl = ipl
+		self.reverse_graph = reverse_graph
+		self.atom_trace = atom_trace
 		self.time = 0
 
 		# Set up convergence criteria
@@ -48,6 +48,7 @@ class Interpretation:
 		self.rules_to_be_applied_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, edge_type, label.label_type, interval.interval_type)))
 		self.facts_to_be_applied_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, node_type, label.label_type, interval.interval_type, numba.types.boolean)))
 		self.facts_to_be_applied_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, edge_type, label.label_type, interval.interval_type, numba.types.boolean)))
+		self.edges_to_be_added = numba.typed.List.empty_list(numba.types.UniTuple(numba.types.ListType(node_type), 3))
 
 		# Keep track of all the rules that have affeceted each node/edge at each timestep/fp operation, and all ground atoms that have affected the rules as well. Keep track of previous bounds and name of the rule/fact here
 		self.rule_trace_node_atoms = numba.typed.List.empty_list(numba.types.Tuple((numba.types.ListType(numba.types.ListType(node_type)), numba.types.ListType(numba.types.ListType(edge_type)), interval.interval_type, numba.types.string)))
@@ -65,14 +66,14 @@ class Interpretation:
 		else:
 			self.available_labels_edge = numba.typed.List(self.available_labels_edge)
 
-		self.interpretations_node = self._init_interpretations_node(numba.typed.List(self._graph.nodes()), self.available_labels_node, self.specific_node_labels)
-		self.interpretations_edge = self._init_interpretations_edge(numba.typed.List(self._graph.edges()), self.available_labels_edge, self.specific_edge_labels)
+		self.interpretations_node = self._init_interpretations_node(numba.typed.List(self.graph.nodes()), self.available_labels_node, self.specific_node_labels)
+		self.interpretations_edge = self._init_interpretations_edge(numba.typed.List(self.graph.edges()), self.available_labels_edge, self.specific_edge_labels)
 		
 		# Setup graph neighbors
 		self.neighbors = numba.typed.Dict.empty(key_type=node_type, value_type=numba.types.ListType(node_type))
-		for n in self._graph.nodes():
+		for n in self.graph.nodes():
 			l = numba.typed.List.empty_list(node_type)
-			[l.append(neigh) for neigh in self._graph.neighbors(n)]
+			[l.append(neigh) for neigh in self.graph.neighbors(n)]
 			self.neighbors[n] = l
 
 
@@ -106,7 +107,7 @@ class Interpretation:
 		return interpretations
 
 	def start_fp(self, facts_node, facts_edge, rules):
-		max_facts_time = self._init_facts(facts_node, facts_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self._atom_trace)
+		max_facts_time = self._init_facts(facts_node, facts_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.atom_trace)
 		self._start_fp(rules, max_facts_time)
 
 
@@ -130,13 +131,13 @@ class Interpretation:
 
 		
 	def _start_fp(self, rules, max_facts_time):
-		fp_cnt, t = self._apply_rules(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._graph.nodes()), numba.typed.List(self._graph.edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.available_labels_node, self.available_labels_edge, self.specific_node_labels, self.specific_edge_labels, self._ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self._reverse_graph, self._atom_trace, max_facts_time, self._convergence_mode, self._convergence_delta)
+		fp_cnt, t = self._apply_rules(self.interpretations_node, self.interpretations_edge, self.tmax, rules, numba.typed.List(self.graph.nodes()), numba.typed.List(self.graph.edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.available_labels_node, self.available_labels_edge, self.specific_node_labels, self.specific_edge_labels, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, max_facts_time, self._convergence_mode, self._convergence_delta)
 		self.time = t
 		print('Fixed Point iterations:', fp_cnt)
 
 	@staticmethod
 	@numba.njit
-	def _apply_rules(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, labels_node, labels_edge, specific_labels_node, specific_labels_edge, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, max_facts_time, convergence_mode, convergence_delta):
+	def _apply_rules(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, labels_node, labels_edge, specific_labels_node, specific_labels_edge, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, max_facts_time, convergence_mode, convergence_delta):
 		fp_cnt = 0
 		for t in range(tmax+1):
 			print('Timestep:', t)
@@ -319,10 +320,11 @@ class Interpretation:
 							for n in nodes:
 								if are_satisfied_node(interpretations_node, n, rule.get_target_criteria()) and is_satisfied_node(interpretations_node, n, (rule.get_target(), interval.closed(0,1))):
 									a = neighbors[n]
-									result, annotations, qualified_nodes, qualified_edges = _is_rule_applicable(interpretations_node, interpretations_edge, a, n, rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, rule.get_annotation_function(), rule.get_annotation_label(), atom_trace)
+									result, annotations, qualified_nodes, qualified_edges, edges = _is_rule_applicable(interpretations_node, interpretations_edge, a, n, rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, rule.get_annotation_function(), rule.get_annotation_label(), rule.get_edges(), atom_trace)
 									if result and not interpretations_node[n].world[rule.get_target()].is_static():
 										bnd = influence(rule, annotations, rule.get_weights())
 										max_rules_time = max(max_rules_time, t+rule.get_delta())
+										edges_to_be_added.append(edges)
 										rules_to_be_applied_node.append((numba.types.int8(t+rule.get_delta()), n, rule.get_target(), bnd))
 										if atom_trace:
 											rules_to_be_applied_node_trace.append((qualified_nodes, qualified_edges, rule.get_name()))
@@ -334,10 +336,11 @@ class Interpretation:
 									# Node candidates are only source and target
 									a = numba.typed.List([e[0], e[1]])
 									# Find out if rule is applicable. returns list of list of qualified nodes and qualified edges. one for each clause
-									result, annotations, qualified_nodes, _ = _is_rule_applicable(interpretations_node, interpretations_edge, a, e[0], rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, rule.get_annotation_function(), rule.get_annotation_label(), atom_trace)
+									result, annotations, qualified_nodes, _, edges = _is_rule_applicable(interpretations_node, interpretations_edge, a, e[0], rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, rule.get_annotation_function(), rule.get_annotation_label(), rule.get_edges(), atom_trace)
 									if result and not interpretations_edge[e].world[rule.get_target()].is_static():
 										bnd = influence(rule, annotations, rule.get_weights())
 										max_rules_time = max(max_rules_time, t+rule.get_delta())
+										edges_to_be_added.append(edges)
 										rules_to_be_applied_edge.append((numba.types.int8(t+rule.get_delta()), e, rule.get_target(), bnd))
 										if atom_trace:
 											rules_to_be_applied_edge_trace.append((qualified_nodes, rule.get_name()))
@@ -371,7 +374,7 @@ class Interpretation:
 
 
 @numba.njit
-def _is_rule_applicable(interpretations_node, interpretations_edge, candidates, target_node, neigh_criteria, thresholds, reverse_graph, ann_fn, ann_fn_label, atom_trace):
+def _is_rule_applicable(interpretations_node, interpretations_edge, candidates, target_node, neigh_criteria, thresholds, reverse_graph, ann_fn, ann_fn_label, edges, atom_trace):
 	# Initialize dictionary where keys are strings (x1, x2 etc.) and values are lists of qualified neighbors
 	# Keep track of all the edges that are qualified
 	# If its a node clause update (x1 or x2 etc.) qualified neighbors, if its an edge clause update the qualified neighbors for the source and target (x1, x2)
@@ -380,11 +383,13 @@ def _is_rule_applicable(interpretations_node, interpretations_edge, candidates, 
 	qualified_nodes = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
 	qualified_edges = numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type))
 	annotations = numba.typed.List.empty_list(numba.typed.List.empty_list(interval.interval_type))
+	edges_to_be_added = (numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(node_type), edges[-1])
 
 	# Steps
 	# 1. Gather all qualified nodes/edges, and check if they satisfy the thresholds. If not, break
 	# 2. Gather all annotations associated with the qualified nodes/edges
 	# 3. Assemble all constants for atom trace (this happens inside step 1 for efficiency)
+	# 4. Collect edges and nodes to be added to the graph when rule fires
 
 	# 1.
 	satisfaction = True
@@ -439,9 +444,27 @@ def _is_rule_applicable(interpretations_node, interpretations_edge, candidates, 
 					for qe in numba.typed.List(zip(subsets[clause[1][0]], subsets[clause[1][1]])):
 						a.append(interpretations_edge[qe].world[ann_fn_label])
 
-				annotations.append(a)		
+				annotations.append(a)
 
-	return (satisfaction, annotations, qualified_nodes, qualified_edges)
+	# 4.
+	# Collect edges to be added
+	if satisfaction:
+		source, target, _ = edges
+
+		# Edges to be added
+		if source!='':
+			if source in subsets:
+				edges_to_be_added[0].extend(subsets[source])
+			else:
+				edges_to_be_added[0].append(source)
+		if target!='':
+			if target in subsets:
+				edges_to_be_added[1].extend(subsets[target])
+			else:
+				edges_to_be_added[1].append(target)
+
+
+	return (satisfaction, annotations, qualified_nodes, qualified_edges, edges_to_be_added)
 
 
 
@@ -773,14 +796,50 @@ def resolve_inconsistency_edge(interpretations, comp, na, ipl, t_cnt, fp_cnt, at
 
 
 @numba.njit
-def _add_node(n, nodes, neighbors):
-	nodes.append(n)
-	neighbors[n] = numba.typed.List.empty_list(node_type)
+def _add_node(node, neighbors, nodes, l, interpretations_node):
+	nodes.append(node)
+	neighbors[node] = numba.typed.List.empty_list(node_type)
+
+	# Make sure, if node exists, that we don't override the l label if it exists
+	if l!='':
+		interpretations_node[node] = world.World([l])
 
 @numba.njit
-def _add_edge(source, target, edges, neighbors):
-	edges.append((source, target))
-	neighbors[source].append(target)
+def _add_edge(source, target, neighbors, nodes, edges, l, interpretations_node, interpretations_edge):
+	# If not a node, add to list of nodes and initialize neighbors
+	# Make sure, if node exists, that we don't override the l label if it exists
+	if source not in nodes:
+		_add_node(source, neighbors, nodes, l, interpretations_node, interpretations_edge)
+	else:
+		if l not in interpretations_node[source].world and l!='':
+			interpretations_node[source].world[l] = interval.closed(0,1)
+
+	if target not in nodes:
+		_add_node(target, neighbors, nodes, l, interpretations_node, interpretations_edge)
+	else:
+		if l not in interpretations_node[target].world and l!='':
+			interpretations_node[target].world[l] = interval.closed(0,1)
+
+	# Make sure edge doesnt already exist
+	# Make sure, if l=='', not to add the label
+	# Make sure, if edge exists, that we don't override the l label if it exists
+	edge = (source, target)
+	if edge not in edges:
+		edges.append(edge)
+		neighbors[source].append(target)
+		if l!='':
+			interpretations_edge[edge] = world.World([l])
+	else:
+		if l not in interpretations_edge[edge].world and l!='':
+			interpretations_edge[edge].world[l] = interval.closed(0,1)
+		
+
+
+@numba.njitd
+def _add_edges(sources, targets, neighbors, nodes, edges, l, interpretations_node, interpretations_edge):
+	for source in sources:
+		for target in targets:
+			_add_edge(source, target, neighbors, nodes, edges, l, interpretations_node, interpretations_edge)
 
 
 @numba.njit
