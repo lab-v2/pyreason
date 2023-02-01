@@ -19,6 +19,9 @@ rule_1:
         - [node, [x2], disruption, [0.5, 1.0], [greater_equal, number, 1]]
         - [edge, [x1, x2], strong, [0,1], [greater_equal, number, 1]]
 
+    edges: [x1, x2, new_edge]       # Create edges between x1 and x2 that have a new attribute with annotation given by the ann_fn
+                                    #  x1 or x2 can be individual nodes as well instead of subsets
+    
     ann_fn: [average, disruption]    # Annotation function name with the label to use to get the annotations for the ann_fn.
                                      # See annotation_functions.py for list of available functions. The name of that function comes here
                                      # Could be [func_name, label] or [l, u]

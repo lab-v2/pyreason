@@ -18,7 +18,6 @@ class YAMLParser:
             rules_yaml = yaml.safe_load(file)
 
         rules = numba.typed.List.empty_list(rule.rule_type)
-        rule_names = []
         for rule_name, values in rules_yaml.items():
             # Set rule target
             target = label.Label(values['target'])
@@ -59,6 +58,17 @@ class YAMLParser:
                         quantifier_type = ('percent', clause[4][1][1])
                     thresh = clause[4][2]
                     thresholds.append((quantifier, quantifier_type, thresh))
+
+            # Edges that need to be added if rule fires
+            edges = ('', '', label.Label(''))
+            if 'edges' in values and values['edges']:
+                if len(values['edges'])==2:
+                    e = values['edges'] + [label.Label('')]
+                    edges = tuple(e)
+                elif len(values['edges'])==3:
+                    values['edges'][2] = label.Label(values['edges'][2])
+                    edges = tuple(values['edges'])
+
             
             # If annotation function is a string, it is the name of the function. If it is a bound then set it to an empty string
             ann_fn, ann_label = values['ann_fn']
@@ -73,9 +83,9 @@ class YAMLParser:
             # If there are weights provided, store them. Default is [1,1,1...1,0]
             weights = np.ones(len(values['neigh_criteria']), dtype=np.float64)
             weights = np.append(weights, 0)
-            if 'weights' in values and not values['weights']:
+            if 'weights' in values and values['weights']:
                 weights = np.array(values['weights'], dtype=np.float64)   
-            r = rule.Rule(rule_name, target, target_criteria, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights)
+            r = rule.Rule(rule_name, target, target_criteria, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges)
             rules.append(r)
 
         return rules
