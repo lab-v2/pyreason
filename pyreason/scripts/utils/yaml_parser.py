@@ -60,12 +60,13 @@ class YAMLParser:
                     thresholds.append((quantifier, quantifier_type, thresh))
 
             # Edges that need to be added if rule fires
-            edges = ('', '', '')
+            edges = ('', '', label.Label(''))
             if 'edges' in values and not values['edges']:
                 if len(values['edges'])==2:
-                    e = values['edges'] + ['']
+                    e = values['edges'] + [label.Label('')]
                     edges = tuple(e)
                 elif len(values['edges'])==3:
+                    values['edges'][2] = label.Label(values['edges'][2])
                     edges = tuple(values['edges'])
                     
 

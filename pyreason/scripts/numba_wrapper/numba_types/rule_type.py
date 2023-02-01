@@ -31,7 +31,7 @@ def typeof_rule(val, c):
 @type_callable(Rule)
 def type_rule(context):
     def typer(name, target, tc, delta, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges):
-        if isinstance(name, types.UnicodeType) and isinstance(target, label.LabelType) and isinstance(tc, (types.NoneType, types.ListType)) and isinstance(delta, types.Integer) and isinstance(neigh_criteria, (types.NoneType, types.ListType)) and isinstance(bnd, interval.IntervalType) and isinstance(thresholds, types.ListType) and isinstance(ann_fn, types.UnicodeType) and isinstance(ann_label, label.LabelType) and isinstance(weights, types.Array) and isinstance(edges, types.UniTuple):
+        if isinstance(name, types.UnicodeType) and isinstance(target, label.LabelType) and isinstance(tc, (types.NoneType, types.ListType)) and isinstance(delta, types.Integer) and isinstance(neigh_criteria, (types.NoneType, types.ListType)) and isinstance(bnd, interval.IntervalType) and isinstance(thresholds, types.ListType) and isinstance(ann_fn, types.UnicodeType) and isinstance(ann_label, label.LabelType) and isinstance(weights, types.Array) and isinstance(edges, types.Tuple):
             return rule_type
     return typer
 
@@ -51,7 +51,7 @@ class RuleModel(models.StructModel):
             ('ann_fn', types.string),
             ('ann_label', label.label_type),
             ('weights', types.float64[::1]),
-            ('edges', types.UniTuple(types.string, 3))
+            ('edges', types.Tuple((types.string, types.string, label.label_type)))
             ]
         models.StructModel.__init__(self, dmm, fe_type, members)
 
@@ -70,7 +70,7 @@ make_attribute_wrapper(RuleType, 'weights', 'weights')
 make_attribute_wrapper(RuleType, 'edges', 'edges')
 
 # Implement constructor
-@lower_builtin(Rule, types.string, label.label_type, types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.int8, types.ListType(types.Tuple((types.string, label.label_type, interval.interval_type))), interval.interval_type, types.ListType(types.ListType(types.Tuple((types.string, types.string, types.float64)))), types.string, label.label_type, types.float64[::1], types.UniTuple(types.string, 3))
+@lower_builtin(Rule, types.string, label.label_type, types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.int8, types.ListType(types.Tuple((types.string, label.label_type, interval.interval_type))), interval.interval_type, types.ListType(types.ListType(types.Tuple((types.string, types.string, types.float64)))), types.string, label.label_type, types.float64[::1], types.Tuple((types.string, types.string, label.label_type)))
 def impl_rule(context, builder, sig, args):
     typ = sig.return_type
     name, target, target_criteria, delta, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges = args
@@ -184,7 +184,7 @@ def unbox_rule(typ, obj, c):
     rule.ann_fn = c.unbox(types.string, ann_fn_obj).value
     rule.ann_label = c.unbox(label.label_type, ann_label_obj).value
     rule.weights = c.unbox(types.float64[::1], weights_obj).value
-    rule.edges = c.unbox(types.UniTuple(types.string, 3), edges_obj).value
+    rule.edges = c.unbox(types.Tuple((types.string, types.string, label.label_type)), edges_obj).value
     c.pyapi.decref(name_obj)
     c.pyapi.decref(target_obj)
     c.pyapi.decref(tc_obj)
@@ -215,7 +215,7 @@ def box_rule(typ, val, c):
     ann_fn_obj = c.box(types.string, rule.ann_fn)
     ann_label_obj = c.box(label.label_type, rule.ann_label)
     weights_obj = c.box(types.float64[::1], rule.weights)
-    edges_obj = c.box(types.UniTuple(types.string, 3), rule.edges)
+    edges_obj = c.box(types.Tuple((types.string, types.string, label.label_type)), rule.edges)
     res = c.pyapi.call_function_objargs(class_obj, (name_obj, target_obj, tc_obj, delta_obj, neigh_criteria_obj, bnd_obj, thresholds_obj, ann_fn_obj, ann_label_obj, weights_obj, edges_obj))
     c.pyapi.decref(name_obj)
     c.pyapi.decref(target_obj)
