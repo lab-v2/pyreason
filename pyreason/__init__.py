@@ -1,1 +1,1 @@
-import pyreason.pyreason
+from pyreason.pyreason import *
