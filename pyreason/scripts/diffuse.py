@@ -7,7 +7,7 @@ import memory_profiler as mp
 
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 from pyreason.scripts.program.program import Program
-from pyreason.scripts.utils.yaml_parser import YAMLParser
+import pyreason.scripts.utils.yaml_parser as yaml_parser
 from pyreason.scripts.utils.graphml_parser import GraphmlParser
 from pyreason.scripts.utils.filter import Filter
 from pyreason.scripts.utils.output import Output
@@ -22,7 +22,6 @@ def main(args):
 
     # Initialize parsers
     graphml_parser = GraphmlParser()
-    yaml_parser = YAMLParser(args.timesteps)
 
     start = time.time()
     graph = graphml_parser.parse_graph(args.graph_path, args.reverse_digraph)
