@@ -260,7 +260,8 @@ class Interpretation:
 					if i[0]==t:
 						comp, l, bnd = i[1], i[2], i[3]
 						sources, targets, edge_l = edges_to_be_added_node_rule[idx]
-						edges_added = _add_edges(sources, targets, neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge)
+						edges_added, changes = _add_edges(sources, targets, neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge)
+						changes_cnt += changes
 
 						# Update bound for newly added edges. Use bnd to update all edges if label is specified, else use bnd to update normally
 						if edge_l.value!='':
@@ -302,7 +303,8 @@ class Interpretation:
 					if i[0]==t:
 						comp, l, bnd = i[1], i[2], i[3]
 						sources, targets, edge_l = edges_to_be_added_edge_rule[idx]
-						edges_added = _add_edges(sources, targets, neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge)
+						edges_added, changes = _add_edges(sources, targets, neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge)
+						changes_cnt += changes
 
 						# Update bound for newly added edges. Use bnd to update all edges if label is specified, else use bnd to update normally
 						if edge_l.value!='':
@@ -879,27 +881,32 @@ def _add_edge(source, target, neighbors, nodes, edges, l, interpretations_node, 
 	# Make sure, if l=='', not to add the label
 	# Make sure, if edge exists, that we don't override the l label if it exists
 	edge = (source, target)
+	new_edge = False
 	if edge not in edges:
+		new_edge = True
 		edges.append(edge)
 		neighbors[source].append(target)
 		if l.value!='':
 			interpretations_edge[edge] = world.World(numba.typed.List([l]))
 	else:
 		if l not in interpretations_edge[edge].world and l.value!='':
+			new_edge = True
 			interpretations_edge[edge].world[l] = interval.closed(0,1)
 
-	return edge
+	return (edge, new_edge)
 		
 
 
 @numba.njit
 def _add_edges(sources, targets, neighbors, nodes, edges, l, interpretations_node, interpretations_edge):
+	changes = 0
 	edges = numba.typed.List.empty_list(edge_type)
 	for source in sources:
 		for target in targets:
-			edge = _add_edge(source, target, neighbors, nodes, edges, l, interpretations_node, interpretations_edge)
+			edge, new_edge = _add_edge(source, target, neighbors, nodes, edges, l, interpretations_node, interpretations_edge)
 			edges.append(edge)
-	return edges
+			changes = changes+1 if new_edge else changes 
+	return (edges, changes)
 
 
 @numba.njit
