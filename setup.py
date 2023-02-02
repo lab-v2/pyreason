@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name = 'pyreason',
-    version = '0.0.3',
+    version = '0.0.4',
     author = 'Dyuman Aditya',
     author_email = 'dyuman.aditya@gmail.com',
     description = 'An explainable inference software supporting annotated, real valued, graph based and temporal logic',
