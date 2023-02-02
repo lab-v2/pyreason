@@ -4,6 +4,9 @@ import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 import pyreason.scripts.annotation_functions.annotation_functions as ann_fn
 
 import numba
+import time
+from numba import objmode, config
+
 
 # Types for the dictionaries
 node_type = numba.types.string
@@ -77,7 +80,7 @@ class Interpretation:
 
 
 	@staticmethod
-	@numba.njit
+	@numba.njit(cache=True)
 	def _init_interpretations_node(nodes, available_labels, specific_labels):
 		interpretations = numba.typed.Dict.empty(key_type=node_type, value_type=world.world_type)
 		# General labels
@@ -92,7 +95,7 @@ class Interpretation:
 
 	
 	@staticmethod
-	@numba.njit
+	@numba.njit(cache=True)
 	def _init_interpretations_edge(edges, available_labels, specific_labels):
 		interpretations = numba.typed.Dict.empty(key_type=edge_type, value_type=world.world_type)
 		# General labels
@@ -105,13 +108,13 @@ class Interpretation:
 
 		return interpretations
 
-	def start_fp(self, facts_node, facts_edge, rules):
+	def start_fp(self, facts_node, facts_edge, rules, verbose):
 		max_facts_time = self._init_facts(facts_node, facts_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self._atom_trace)
-		self._start_fp(rules, max_facts_time)
+		self._start_fp(rules, max_facts_time, verbose)
 
 
 	@staticmethod
-	@numba.njit
+	@numba.njit(cache=True)
 	def _init_facts(facts_node, facts_edge, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, atom_trace):
 		max_time = 0
 		for fact in facts_node:
@@ -129,17 +132,21 @@ class Interpretation:
 		return max_time
 
 		
-	def _start_fp(self, rules, max_facts_time):
-		fp_cnt, t = self._apply_rules(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._graph.nodes()), numba.typed.List(self._graph.edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.available_labels_node, self.available_labels_edge, self.specific_node_labels, self.specific_edge_labels, self._ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self._reverse_graph, self._atom_trace, max_facts_time, self._convergence_mode, self._convergence_delta)
+	def _start_fp(self, rules, max_facts_time, verbose):
+		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self._tmax, rules, numba.typed.List(self._graph.nodes()), numba.typed.List(self._graph.edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.available_labels_node, self.available_labels_edge, self.specific_node_labels, self.specific_edge_labels, self._ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self._reverse_graph, self._atom_trace, max_facts_time, self._convergence_mode, self._convergence_delta, verbose)
 		self.time = t
-		print('Fixed Point iterations:', fp_cnt)
+		if verbose:
+			print('Fixed Point iterations:', fp_cnt)
+
 
 	@staticmethod
-	@numba.njit
-	def _apply_rules(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, labels_node, labels_edge, specific_labels_node, specific_labels_edge, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, max_facts_time, convergence_mode, convergence_delta):
+	@numba.njit(cache=True)
+	def reason(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, labels_node, labels_edge, specific_labels_node, specific_labels_edge, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, max_facts_time, convergence_mode, convergence_delta, verbose):
 		fp_cnt = 0
 		for t in range(tmax+1):
-			print('Timestep:', t)
+			if verbose:
+				with objmode():
+					print('Timestep:', t, flush=True)
 			# Reset Interpretation at beginning of timestep
 			if t>0:
 				# Reset nodes (only if not static)
@@ -348,11 +355,13 @@ class Interpretation:
 			# User specified convergence
 			if convergence_mode=='delta_interpretation':
 				if changes_cnt <= convergence_delta:
-					print(f'\nConverged at time: {t} with {int(changes_cnt)} changes from the previous interpretation')
+					if verbose:
+						print(f'\nConverged at time: {t} with {int(changes_cnt)} changes from the previous interpretation')
 					break
 			elif convergence_mode=='delta_bound':
 				if bound_delta <= convergence_delta:
-					print(f'\nConverged at time: {t} with {float_to_str(bound_delta)} as the maximum bound change from the previous interpretation')
+					if verbose:
+						print(f'\nConverged at time: {t} with {float_to_str(bound_delta)} as the maximum bound change from the previous interpretation')
 					break
 			# Perfect convergence
 			# Make sure there are no rules to be applied, and no facts that will be applied in the future. We do this by checking the max time any rule/fact is applicable
@@ -360,9 +369,11 @@ class Interpretation:
 			elif convergence_mode=='perfect_convergence':
 				if (t>=max_facts_time and t>=max_rules_time) or (t>=max_facts_time and changes_cnt==0):
 					if changes_cnt==0:
-						print(f'\nConverged at time: {t}')
+						if verbose:
+							print(f'\nConverged at time: {t}')
 					else:
-						print(f'\nMax timestep reached at {t}. {int(changes_cnt)} changes to interpretaion pending')	
+						if verbose:
+							print(f'\nMax timestep reached at {t}. {int(changes_cnt)} changes to interpretaion pending')	
 					
 					break
 
@@ -370,7 +381,7 @@ class Interpretation:
 		
 
 
-@numba.njit
+@numba.njit(cache=True)
 def _is_rule_applicable(interpretations_node, interpretations_edge, candidates, target_node, neigh_criteria, thresholds, reverse_graph, ann_fn, ann_fn_label, atom_trace):
 	# Initialize dictionary where keys are strings (x1, x2 etc.) and values are lists of qualified neighbors
 	# Keep track of all the edges that are qualified
@@ -445,7 +456,7 @@ def _is_rule_applicable(interpretations_node, interpretations_edge, candidates, 
 
 
 
-@numba.njit
+@numba.njit(cache=True)
 def get_qualified_components_node_clause(interpretations_node, candidates, clause):
 	# Get all the qualified neighbors for a particular clause
 	qualified_nodes = numba.typed.List.empty_list(node_type)
@@ -456,7 +467,7 @@ def get_qualified_components_node_clause(interpretations_node, candidates, claus
 	return qualified_nodes
 
 
-@numba.njit
+@numba.njit(cache=True)
 def get_qualified_components_edge_clause(interpretations_edge, candidates_source, candidates_target, clause, reverse_graph):
 	# Get all the qualified sources and targets for a particular clause
 	qualified_nodes_source = numba.typed.List.empty_list(node_type)
@@ -472,7 +483,7 @@ def get_qualified_components_edge_clause(interpretations_edge, candidates_source
 	
 
 
-@numba.njit
+@numba.njit(cache=True)
 def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
 	# Checks if qualified neighbors satisfy threshold. This is for one clause
 	if threshold[1][0]=='number':
@@ -504,7 +515,7 @@ def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
 	return result
 
 
-@numba.njit
+@numba.njit(cache=True)
 def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, rule_trace_atoms):
 	updated = False
 	# This is to prevent a key error in case the label is a specific label
@@ -569,7 +580,7 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		return (False, 0)
 	
 
-@numba.njit
+@numba.njit(cache=True)
 def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, rule_trace_atoms):
 	updated = False
 	# This is to prevent a key error in case the label is a specific label
@@ -633,16 +644,16 @@ def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		return (False, 0)
 
 
-@numba.njit
+@numba.njit(cache=True)
 def _update_rule_trace_node(rule_trace, qn, qe, prev_bnd, name):
 	rule_trace.append((qn, qe, prev_bnd.copy(), name))
 
-@numba.njit
+@numba.njit(cache=True)
 def _update_rule_trace_edge(rule_trace, qn, prev_bnd, name):
 	rule_trace.append((qn, prev_bnd.copy(), name))
 	
 
-@numba.njit
+@numba.njit(cache=True)
 def are_satisfied_node(interpretations, comp, nas):
 	result = True
 	if len(nas)>0:
@@ -650,7 +661,7 @@ def are_satisfied_node(interpretations, comp, nas):
 			result = result and is_satisfied_node(interpretations, comp, (label, interval))
 	return result
 
-@numba.njit
+@numba.njit(cache=True)
 def is_satisfied_node(interpretations, comp, na):
 	result = False
 	if (not (na[0] is None or na[1] is None)):
@@ -664,7 +675,7 @@ def is_satisfied_node(interpretations, comp, na):
 		result = True
 	return result
 
-@numba.njit
+@numba.njit(cache=True)
 def are_satisfied_edge(interpretations, comp, nas):
 	result = True
 	if len(nas)>0:
@@ -672,7 +683,7 @@ def are_satisfied_edge(interpretations, comp, nas):
 			result = result and is_satisfied_edge(interpretations, comp, (label, interval))
 	return result
 
-@numba.njit
+@numba.njit(cache=True)
 def is_satisfied_edge(interpretations, comp, na):
 	result = False
 	if (not (na[0] is None or na[1] is None)):
@@ -686,7 +697,7 @@ def is_satisfied_edge(interpretations, comp, na):
 		result = True
 	return result
 
-@numba.njit
+@numba.njit(cache=True)
 def influence(rule, annotations, weights):
 	func_name = rule.get_annotation_function()
 	if func_name=='':
@@ -701,7 +712,7 @@ def influence(rule, annotations, weights):
 		return ann_fn.maximum(annotations, weights)
 
 
-@numba.njit
+@numba.njit(cache=True)
 def check_consistent_node(interpretations, comp, na):
 	world = interpretations[comp]
 	bnd = world.world[na[0]]
@@ -711,7 +722,7 @@ def check_consistent_node(interpretations, comp, na):
 		return True
 
 
-@numba.njit
+@numba.njit(cache=True)
 def check_consistent_edge(interpretations, comp, na):
 	world = interpretations[comp]
 	bnd = world.world[na[0]]
@@ -721,7 +732,7 @@ def check_consistent_edge(interpretations, comp, na):
 		return True
 
 
-@numba.njit
+@numba.njit(cache=True)
 def resolve_inconsistency_node(interpretations, comp, na, ipl, t_cnt, fp_cnt, atom_trace, rule_trace, rule_trace_atoms):
 	world = interpretations[comp]
 	rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], world.world[na[0]].copy()))
@@ -747,7 +758,7 @@ def resolve_inconsistency_node(interpretations, comp, na, ipl, t_cnt, fp_cnt, at
 	# Add inconsistent predicates to a list 
 
 
-@numba.njit
+@numba.njit(cache=True)
 def resolve_inconsistency_edge(interpretations, comp, na, ipl, t_cnt, fp_cnt, atom_trace, rule_trace, rule_trace_atoms):
 	world = interpretations[comp]
 	rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], world.world[na[0]].copy()))
@@ -772,18 +783,18 @@ def resolve_inconsistency_edge(interpretations, comp, na, ipl, t_cnt, fp_cnt, at
 			rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(0,1)))
 
 
-@numba.njit
+@numba.njit(cache=True)
 def _add_node(n, nodes, neighbors):
 	nodes.append(n)
 	neighbors[n] = numba.typed.List.empty_list(node_type)
 
-@numba.njit
+@numba.njit(cache=True)
 def _add_edge(source, target, edges, neighbors):
 	edges.append((source, target))
 	neighbors[source].append(target)
 
 
-@numba.njit
+@numba.njit(cache=True)
 def float_to_str(value):
 	number = int(value)
 	decimal = int(value % 1 * 1000)

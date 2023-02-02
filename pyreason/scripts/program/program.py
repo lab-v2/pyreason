@@ -17,7 +17,7 @@ class Program:
 		self._reverse_graph = reverse_graph
 		self._atom_trace = atom_trace
 
-	def diffusion(self, convergence_threshold, convergence_bound_threshold):
+	def reason(self, convergence_threshold, convergence_bound_threshold, verbose=True):
 		# Set up available labels
 		Interpretation.available_labels_node = self.available_labels_node
 		Interpretation.available_labels_edge = self.available_labels_edge
@@ -25,7 +25,6 @@ class Program:
 		Interpretation.specific_edge_labels = self.specific_edge_labels
 
 		interp = Interpretation(self._graph, self._tmax, self._ipl, self._reverse_graph, self._atom_trace, convergence_threshold, convergence_bound_threshold)
-		
-		interp.start_fp(self._facts_node, self._facts_edge, self._rules)
+		interp.start_fp(self._facts_node, self._facts_edge, self._rules, verbose)
 
 		return interp		

@@ -66,11 +66,11 @@ def main(args):
     program.specific_node_labels = specific_node_labels
     program.specific_edge_labels = specific_edge_labels
 
-    # Diffusion process
+    # Reasoning process
     print('Graph loaded successfully, rules, labels, facts and ipl parsed successfully')
     print('Starting diffusion')
     start = time.time()
-    interpretation = program.diffusion(args.convergence_threshold, args.convergence_bound_threshold)
+    interpretation = program.reason(args.convergence_threshold, args.convergence_bound_threshold)
     end = time.time()
     print('Time to complete diffusion:', end-start)
     print('Finished diffusion')
