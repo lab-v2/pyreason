@@ -1,4 +1,9 @@
-from setuptools import setup
+from setuptools import setup, find_packages
+
+# Read the contents of README file
+from pathlib import Path
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 setup(
     name = 'pyreason',
@@ -6,7 +11,7 @@ setup(
     author = 'Dyuman Aditya',
     author_email = 'dyuman.aditya@gmail.com',
     description = 'An explainable inference software supporting annotated, real valued, graph based and temporal logic',
-    long_description = ('README.md').read_text(),
+    long_description = long_description,
     long_description_content_type = 'text/markdown',
     url = 'https://github.com/lab-v2/pyreason',
     license = 'BSD 3-clause',
@@ -27,6 +32,6 @@ setup(
         'numba',
         'numpy',
         'memory_profiler'
-    ]
-
+    ],
+    packages = find_packages()
 )
