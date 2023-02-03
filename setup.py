@@ -1,5 +1,7 @@
 from setuptools import setup, find_packages
 from setuptools.command.install import install
+import sys
+import os
 
 # Read the contents of README file
 from pathlib import Path
@@ -8,7 +10,9 @@ long_description = (this_directory / "README.md").read_text()
 
 class Initialize(install):
     def run(self):
-        from .pyreason import *
+        install.run(self)
+        sys.path.append('./')
+        import pyreason as pr
         print('Initializing PyReason caches')
         graph_path = os.path.join('docs', 'hello-world', 'friends.graphml')
         labels_path = os.path.join('docs', 'hello-world', 'labels.yaml')
