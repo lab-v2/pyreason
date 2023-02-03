@@ -2,6 +2,8 @@
 import pyreason as pr
 import os
 
+print('Initializing PyReason caches')
+
 graph_path = os.path.join('docs', 'hello-world', 'friends.graphml')
 labels_path = os.path.join('docs', 'hello-world', 'labels.yaml')
 facts_path = os.path.join('docs', 'hello-world', 'facts.yaml')
