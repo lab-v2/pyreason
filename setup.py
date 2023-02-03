@@ -27,7 +27,7 @@ class Initialize(install):
 
 setup(
     name = 'pyreason',
-    version = '0.0.5',
+    version = '0.0.6',
     author = 'Dyuman Aditya',
     author_email = 'dyuman.aditya@gmail.com',
     description = 'An explainable inference software supporting annotated, real valued, graph based and temporal logic',
