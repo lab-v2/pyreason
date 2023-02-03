@@ -8,7 +8,7 @@ long_description = (this_directory / "README.md").read_text()
 
 class Initialize(install):
     def run(self):
-        import .pyreason as pr
+        from .pyreason import *
         print('Initializing PyReason caches')
         graph_path = os.path.join('docs', 'hello-world', 'friends.graphml')
         labels_path = os.path.join('docs', 'hello-world', 'labels.yaml')
