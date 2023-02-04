@@ -1,5 +1,5 @@
 # PyReason
-<img src="media/pyreason_logo.jpg"/>
+<img src="https://raw.githubusercontent.com/lab-v2/pyreason/main/media/pyreason_logo.jpg"/>
 
 [![Python Build](https://github.com/lab-v2/pyreason/actions/workflows/python-publish.yml/badge.svg)](https://github.com/lab-v2/pyreason/actions/workflows/python-publish.yml)
 [![Python version compatibility](https://github.com/lab-v2/pyreason/actions/workflows/python-package-version-test.yml/badge.svg)](https://github.com/lab-v2/pyreason/actions/workflows/python-package-version-test.yml)
