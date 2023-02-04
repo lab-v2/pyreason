@@ -1,1 +1,1 @@
-include docs/hello-world/*
+include pyreason/examples/hello-world/*
