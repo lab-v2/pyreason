@@ -11,7 +11,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name = 'pyreason',
-    version = '0.0.13',
+    version = '0.0.14',
     author = 'Dyuman Aditya',
     author_email = 'dyuman.aditya@gmail.com',
     description = 'An explainable inference software supporting annotated, real valued, graph based and temporal logic',
@@ -38,4 +38,5 @@ setup(
         'memory_profiler'
     ],
     packages = find_packages(),
+    include_package_data=True
 )
