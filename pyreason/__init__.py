@@ -2,7 +2,7 @@ from pyreason.pyreason import *
 import os
 
 # Set numba environment variable
-os.environ[NUMBA_CACHE_DIR] =  './cache/'
+os.environ['NUMBA_CACHE_DIR'] =  './cache/'
 
 package_path = os.path.abspath(os.path.dirname(pyreason.__file__))
 cache_path = os.path.join(package_path, 'cache')
