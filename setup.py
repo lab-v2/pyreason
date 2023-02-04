@@ -8,14 +8,10 @@ from pathlib import Path
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
-class Initialize(install):
-    def run(self):
-        install.run(self)
-        os.system('python initialize.py')
 
 setup(
     name = 'pyreason',
-    version = '0.0.7',
+    version = '0.0.8',
     author = 'Dyuman Aditya',
     author_email = 'dyuman.aditya@gmail.com',
     description = 'An explainable inference software supporting annotated, real valued, graph based and temporal logic',
@@ -42,7 +38,4 @@ setup(
         'memory_profiler'
     ],
     packages = find_packages(),
-    cmdclass = {
-        'install': Initialize
-    }
 )
