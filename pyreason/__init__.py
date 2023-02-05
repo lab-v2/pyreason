@@ -1,10 +1,10 @@
 # Set numba environment variable
+import os
 package_path = os.path.abspath(os.path.dirname(__file__))
 cache_path = os.path.join(package_path, 'cache')
 os.environ['NUMBA_CACHE_DIR'] =  cache_path
 
 from pyreason.pyreason import *
-import os
 
 print(cache_path)
 print(package_path)
