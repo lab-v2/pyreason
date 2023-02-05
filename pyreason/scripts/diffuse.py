@@ -77,7 +77,7 @@ def main(args):
 
     # Save the rule trace to a file
     output = Output(timestamp)
-    output.save_rule_trace(interpretation)
+    output.save_rule_trace(interpretation, folder='./output')
 
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
     print('Filtering data...')

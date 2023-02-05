@@ -345,16 +345,17 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     return interpretation
 
 
-def save_rule_trace(interpretation):
+def save_rule_trace(interpretation, folder: str='./'):
     """Saves the trace of the program. This includes every change that has occured to the interpretation. If `atom_trace` was set to true
     this gives us full explainability of why interpretations changed
 
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
+    :param folder: the folder in which to save the result, defaults to './'
     """
     global __timestamp
 
     output = Output(__timestamp)
-    output.save_rule_trace(interpretation)
+    output.save_rule_trace(interpretation, folder)
 
 
 def filter_and_sort(interpretation, labels: List[str], bound: interval.Interval=interval.closed(0,1), sort_by: str='lower', descending: bool=True):
