@@ -38,7 +38,7 @@ class Output:
 
             for i, r in enumerate(interpretation.rule_trace_node):
                 row = [r[0], r[1], r[2], r[3]._value, '-', r[4].to_str(), '-']
-                if interpretation._atom_trace:
+                if interpretation.atom_trace:
                     qn, qe, old_bnd, name = interpretation.rule_trace_node_atoms[i]
                     row[4] = old_bnd.to_str()
                     # Go through all the changes in the rule trace
@@ -58,7 +58,7 @@ class Output:
                 data.append(row)
 
             # Add Clause-num to header
-            if interpretation._atom_trace:
+            if interpretation.atom_trace:
                 for i in range(1, max_j+2):
                     header.append(f'Clause-{i}')
 

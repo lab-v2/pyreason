@@ -1,6 +1,6 @@
 class Rule:
 
-    def __init__(self, name, target, target_criteria, delta, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights):
+    def __init__(self, name, target, target_criteria, delta, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges):
         self._name = name
         self._target = target
         self._target_criteria = target_criteria
@@ -11,6 +11,7 @@ class Rule:
         self._ann_fn = ann_fn
         self._ann_label = ann_label
         self._weights = weights
+        self._edges = edges
 
     def get_name(self):
         return self._name
@@ -38,3 +39,6 @@ class Rule:
 
     def get_ann_label(self):
         return self._ann_label
+    
+    def get_edges(self):
+        return self._edges

@@ -48,31 +48,42 @@ def parse_rules(path):
                 bnd = interval.closed(clause[3][0], clause[3][1])
                 neigh_criteria.append((clause_type, subset, l, bnd))
 
-                # Append threshold corresponding to clause
-                quantifier = clause[4][0]
-                if clause[4][1]=='number':
-                    quantifier_type = ('number', 'total')
-                else:
-                    quantifier_type = ('percent', clause[4][1][1])
-                thresh = clause[4][2]
-                thresholds.append((quantifier, quantifier_type, thresh))
-        
-        # If annotation function is a string, it is the name of the function. If it is a bound then set it to an empty string
-        ann_fn, ann_label = values['ann_fn']
-        if isinstance(ann_fn, str):
-            bnd = interval.closed(0, 1)
-            ann_label = label.Label(ann_label)
-        elif isinstance(ann_fn, (float, int)):
-            bnd = interval.closed(values['ann_fn'][0], values['ann_fn'][1])
-            ann_fn = ''
-            ann_label = label.Label('')
+                    # Append threshold corresponding to clause
+                    quantifier = clause[4][0]
+                    if clause[4][1]=='number':
+                        quantifier_type = ('number', 'total')
+                    else:
+                        quantifier_type = ('percent', clause[4][1][1])
+                    thresh = clause[4][2]
+                    thresholds.append((quantifier, quantifier_type, thresh))
+
+            # Edges that need to be added if rule fires
+            edges = ('', '', label.Label(''))
+            if 'edges' in values and values['edges']:
+                if len(values['edges'])==2:
+                    e = values['edges'] + [label.Label('')]
+                    edges = tuple(e)
+                elif len(values['edges'])==3:
+                    values['edges'][2] = label.Label(values['edges'][2])
+                    edges = tuple(values['edges'])
+
+            
+            # If annotation function is a string, it is the name of the function. If it is a bound then set it to an empty string
+            ann_fn, ann_label = values['ann_fn']
+            if isinstance(ann_fn, str):
+                bnd = interval.closed(0, 1)
+                ann_label = label.Label(ann_label)
+            elif isinstance(ann_fn, (float, int)):
+                bnd = interval.closed(values['ann_fn'][0], values['ann_fn'][1])
+                ann_fn = ''
+                ann_label = label.Label('')
 
         # If there are weights provided, store them. Default is [1,1,1...1,0]
         weights = np.ones(len(values['neigh_criteria']), dtype=np.float64)
         weights = np.append(weights, 0)
-        if 'weights' in values and not values['weights']:
+        if 'weights' in values and values['weights']:
             weights = np.array(values['weights'], dtype=np.float64)   
-        r = rule.Rule(rule_name, target, target_criteria, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights)
+        r = rule.Rule(rule_name, target, target_criteria, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges)
         rules.append(r)
 
     return rules
