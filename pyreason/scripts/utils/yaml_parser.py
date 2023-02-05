@@ -48,14 +48,14 @@ def parse_rules(path):
                 bnd = interval.closed(clause[3][0], clause[3][1])
                 neigh_criteria.append((clause_type, subset, l, bnd))
 
-                    # Append threshold corresponding to clause
-                    quantifier = clause[4][0]
-                    if clause[4][1]=='number':
-                        quantifier_type = ('number', 'total')
-                    else:
-                        quantifier_type = ('percent', clause[4][1][1])
-                    thresh = clause[4][2]
-                    thresholds.append((quantifier, quantifier_type, thresh))
+                # Append threshold corresponding to clause
+                quantifier = clause[4][0]
+                if clause[4][1]=='number':
+                    quantifier_type = ('number', 'total')
+                else:
+                    quantifier_type = ('percent', clause[4][1][1])
+                thresh = clause[4][2]
+                thresholds.append((quantifier, quantifier_type, thresh))
 
             # Edges that need to be added if rule fires
             edges = ('', '', label.Label(''))
