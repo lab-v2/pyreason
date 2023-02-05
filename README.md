@@ -6,7 +6,7 @@
 
 An explainable inference software supporting annotated, real valued, graph based and temporal logic. 
 
-Check out the [PyReason Hello World](docs/hello-world.md) program if you're new, or want get get a feel for the software.
+Check out the [PyReason Hello World](https://github.com/lab-v2/pyreason/blob/main/docs/hello-world.md) program if you're new, or want get get a feel for the software.
 
 
 ## Table of Contents
@@ -30,7 +30,7 @@ PyReason makes use of 4 files:
 4. A YAML file containing the pyreason labels (optional but recommended)
 5. A YAML file containing the pyreason ipl (inconsistent predicate list) (optional)
 
-The format of these files is very important. Please refer to the [example YAML files provided](pyreason/examples/example_yamls/) when making your own rules/facts/labels/ipl. TODO: make doc for each format.
+The format of these files is very important. Please refer to the [example YAML files provided](https://github.com/lab-v2/pyreason/blob/main/pyreason/examples/example_yamls) when making your own rules/facts/labels/ipl. TODO: make doc for each format.
 
 ## 2. Install
 PyReason can be installed as a python library (recommended) or as a command line tool
@@ -52,8 +52,8 @@ python initialize.py
 
 ## 3. Usage
 Please refer to the documentation that is relevant to you
-1. [Usage as Python Library](docs/pyreason_library.md)
-2. [Usage as a Command Line Tool](docs/pyreason_cmd_line.md)
+1. [Usage as Python Library](https://github.com/lab-v2/pyreason/blob/main/docs/pyreason_library.md)
+2. [Usage as a Command Line Tool](https://github.com/lab-v2/pyreason/blob/main/docs/pyreason_cmd_line.md)
 
 ## 4. Bibtex
 If you used this software in your work please consider citing our paper (coming soon)
@@ -63,7 +63,7 @@ Bibtex:
 ```
 
 ## 5. License
-This repository is licensed under [BSD-3-Clause](LICENSE.md)
+This repository is licensed under [BSD-3-Clause](https://github.com/lab-v2/pyreason/blob/main/LICENSE.md)
 
 ## 6. Contact
 Dyuman Aditya - dyuman.aditya@gmail.com
