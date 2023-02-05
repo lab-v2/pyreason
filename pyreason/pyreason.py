@@ -4,13 +4,17 @@ import time
 import sys
 import warnings
 import memory_profiler as mp
+from typing import List
 
+from pyreason.scripts.utils.output import Output
+from pyreason.scripts.utils.filter import Filter
 from pyreason.scripts.program.program import Program
 from pyreason.scripts.utils.graphml_parser import GraphmlParser
 import pyreason.scripts.utils.yaml_parser as yaml_parser
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
+import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 
 
 
@@ -202,6 +206,8 @@ __edge_labels = None
 __specific_node_labels = None
 __specific_edge_labels = None
 
+__timestamp = ''
+
 __graphml_parser = GraphmlParser()
 settings = _Settings()
 
@@ -249,7 +255,7 @@ def load_inconsistent_predicate_list(path: str) -> None:
     __ipl = yaml_parser.parse_ipl(path)
 
 
-def reason(timesteps=-1, convergence_threshold=-1, convergence_bound_threshold=-1):
+def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_threshold: float=-1):
     """Function to start the main reasoning process. Graph and rules must already be loaded.
 
     :param timesteps: Max number of timesteps to run. -1 specifies run till convergence, defaults to -1
@@ -257,35 +263,35 @@ def reason(timesteps=-1, convergence_threshold=-1, convergence_bound_threshold=-
     :param convergence_bound_threshold: Maximum change in any interpretation (bounds) between timesteps or fixed point operations until considered convergent, defaults to -1
     :return: The final interpretation after reasoning.
     """
-    global settings
+    global settings, __timestamp
 
     # Timestamp for saving files
-    timestamp = time.strftime('%Y%m%d-%H%M%S')
+    __timestamp = time.strftime('%Y%m%d-%H%M%S')
 
     if settings.output_to_file:
-        sys.stdout = open(f"./{settings.output_file_name}_{timestamp}.txt", "a")
+        sys.stdout = open(f"./{settings.output_file_name}_{__timestamp}.txt", "a")
 
     if settings.memory_profile:
         start_mem = mp.memory_usage(max_usage=True)
-        mem_usage = mp.memory_usage((_reason, [timestamp, timesteps, convergence_threshold, convergence_bound_threshold]), max_usage=True)
+        mem_usage = mp.memory_usage((_reason, [timesteps, convergence_threshold, convergence_bound_threshold]), max_usage=True)
         print(type(mem_usage))
         print(f"\nProgram used {mem_usage-start_mem} MB of memory")
     else:
-        interpretation = _reason(timestamp, timesteps, convergence_threshold, convergence_bound_threshold)
+        interpretation = _reason(timesteps, convergence_threshold, convergence_bound_threshold)
 
     return interpretation
 
 
 
-def _reason(timestamp, timesteps, convergence_threshold, convergence_bound_threshold):
+def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     # Globals
     global __graph, __rules, __node_facts, __edge_facts, __ipl, __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels, __graphml_parser
-    global settings
+    global settings, __timestamp
 
     # Assert variables are of correct type
 
     if settings.output_to_file:
-        sys.stdout = open(f"./{settings.output_file_name}_{timestamp}.txt", "a")
+        sys.stdout = open(f"./{settings.output_file_name}_{__timestamp}.txt", "a")
 
     # Check variables that HAVE to be set. Exceptions
     if __graph is None:
@@ -337,3 +343,30 @@ def _reason(timestamp, timesteps, convergence_threshold, convergence_bound_thres
     interpretation = program.reason(convergence_threshold, convergence_bound_threshold, settings.verbose)
 
     return interpretation
+
+
+def save_rule_trace(interpretation):
+    """Saves the trace of the program. This includes every change that has occured to the interpretation. If `atom_trace` was set to true
+    this gives us full explainability of why interpretations changed
+
+    :param interpretation: the output of `pyreason.reason()`, the final interpretation
+    """
+    global __timestamp
+
+    output = Output(__timestamp)
+    output.save_rule_trace(interpretation)
+
+
+def filter_and_sort(interpretation, labels: List[str], bound: interval.Interval=interval.closed(0,1), sort_by: str='lower', descending: bool=True):
+    """Filters and sorts the interpretation and returns as a list of Pandas dataframes that are easy to access
+
+    :param interpretation: the output of `pyreason.reason()`, the final interpretation
+    :param labels: A list of strings, labels that are in the interpretation that are to be filtered
+    :param bound: The bound that will filter any interpretation that is not in it. the default does not filter anything, defaults to interval.closed(0,1)
+    :param sort_by: String that is either 'lower' or 'upper', sorts by the lower/upper bound, defaults to 'lower'
+    :param descending: A bool that sorts by descending/ascending order, defaults to True
+    :return: A list of Pandas dataframes that contain the filtered and sorted interpretations that are easy to access
+    """
+    filterer = Filter(interpretation.time)
+    filtered_df = filterer.filter_and_sort(interpretation, labels, bound, sort_by, descending)
+    return filtered_df
