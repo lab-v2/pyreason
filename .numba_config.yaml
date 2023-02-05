@@ -1,0 +1,2 @@
+disable_jit: 0
+cache_dir: ./pyreason/cache/

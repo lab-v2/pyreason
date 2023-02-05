@@ -1,5 +1,6 @@
 import pickle
 import csv
+import os
 
 class Output:
     def __init__(self, timestamp):
@@ -25,12 +26,13 @@ class Output:
         with open(f'./output/{self.timestamp}_interpreations_edge.pkl', 'wb') as file:
             pickle.dump(interpretation.interpretations_edge, file)
 
-    def save_rule_trace(self, interpretation):
+    def save_rule_trace(self, interpretation, folder='./'):
         # Saves the rule trace in a csv, human readable format
         header = ['Time', 'Fixed-Point-Operation', 'Node', 'Label', 'Old Bound', 'New Bound', 'Occurred Due To']
 
         # Nodes rule trace
-        with open(f'./output/rule_trace_nodes_{self.timestamp}.csv', 'w') as f:
+        path = os.path.join(folder, f'rule_trace_nodes_{self.timestamp}.csv')
+        with open(path, 'w') as f:
             data = []
             max_j = 0
 

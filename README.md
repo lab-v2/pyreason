@@ -1,5 +1,5 @@
 # PyReason
-<img src="media/pyreason_logo.jpg"/>
+<img src="https://raw.githubusercontent.com/lab-v2/pyreason/main/media/pyreason_logo.jpg"/>
 
 [![Python Build](https://github.com/lab-v2/pyreason/actions/workflows/python-publish.yml/badge.svg)](https://github.com/lab-v2/pyreason/actions/workflows/python-publish.yml)
 [![Python version compatibility](https://github.com/lab-v2/pyreason/actions/workflows/python-package-version-test.yml/badge.svg)](https://github.com/lab-v2/pyreason/actions/workflows/python-package-version-test.yml)
@@ -11,84 +11,61 @@ Check out the [PyReason Hello World](docs/hello-world.md) program if you're new,
 
 ## Table of Contents
   
-1. [Usage](#1-usage)
-2. [Setup & Run](#2-setup--run)
-    * [Setup & Run on the ASU Agave Cluster (interactive)](#21-setup--run-on-the-asu-agave-cluster-interactive)
-    * [Setup & Run on the ASU Agave Cluster (sbatch)](#22-setup--run-on-the-asu-agave-cluster-sbatch)
-    * [Setup & Run on your Local System](#23-setup--run-on-your-local-system)
+1. [Introduction](#1-introduction)
+2. [Install](#2-install)
+    * [Install as a Python Library](#21-install-as-a-python-library)
+    * [Install as a command line tool](#22-install-as-a-command-line-tool)
+3. [Usage](#3-usage)
+4. [Bibtex](#4-bibtex)
+5. [License](#5-license)
+6. [Contact](#6-contact)
 
 
-## 1. Usage
-To run pyreason you need 4 files:
+## 1. Introduction
+PyReason makes use of 4 files:
 
-1. A YAML file containing the pyreason rules
-2. A YAML file containing the pyreason facts
-3. A YAML file containing the pyreason labels
-4. A YAML file containing the pyreason ipl (inconsistent predicate list)
+1. A GraphMl file containing the graph (required)
+2. A YAML file containing the pyreason rules (required)
+3. A YAML file containing the pyreason facts (optional but recommended)
+4. A YAML file containing the pyreason labels (optional but recommended)
+5. A YAML file containing the pyreason ipl (inconsistent predicate list) (optional)
 
-The format of these files is very important. Please refer to the [example YAML files provided](pyreason/examples/example_yamls/) when making your own rules/facts/labels/ipl.
+The format of these files is very important. Please refer to the [example YAML files provided](pyreason/examples/example_yamls/) when making your own rules/facts/labels/ipl. TODO: make doc for each format.
 
+## 2. Install
+PyReason can be installed as a python library (recommended) or as a command line tool
 
-## 2. Setup & Run
-There are three ways of running PyReason:
-1. interactive session (on the Agave cluster)
-2. sbatch (on the Agave cluster)
-3. locally
-
-To Run pyreason, the required command line arguments are:
-
-1. The path to a graphml file
-2. The number of timesteps you want to run the diffusion
-3. The path to the YAML rules file
-4. The path to the YAML facts file
-5. The path to the YAML labels file
-6. The path to the YAML ipl file
-
-For more optional command line arguments refer to (make doc) or type 
-```python
-python3 -m pyreason.scripts.diffuse -h
-```
-
-### 2.1 Setup & Run on the ASU Agave Cluster (interactive)
-To create an Anaconda environment and activate it, and then clone the repository, type the following in your Agave terminal. 
-
-NOTE: This only needs to be done once. Once you've setup your environment you can run the interactive session directly.
+## 2.1 Install as a Python Library
+This might take a minute or two
 ```bash
-module load anaconda/py3
-conda create -n PYREASON
-source activate PYREASON
-git clone https://github.com/lab-v2/pyreason
-cd pyreason
-pip3 install -r requirements.txt
-```
-Now create an interavtive session with:
-```bash
-interactive -N 1 -n 45 -p htc -t 0-00:10:00
-```
-This starts an interactive session using 45 cores on one node for 10 minutes. You can change the time parameter based on your needs.
-
-To run PyReason, type the following in your Agave terminal. Make sure you are in the top pyreason directory. Don't forget to replace the placeholders with the correct values.
-```bash
-python3 -m pyreason.scripts.diffuse --graph_path <path/to/graphml/file> --timesteps <number of timesteps to run> --rules_yaml_path <path/to/rules.yaml> --facts_yaml_path <path/to/facts.yaml> --labels_yaml_path <path/to/labels.yaml> --ipl <path/to/ipl.yaml>
+pip install pyreason
 ```
 
-
-### 2.2 Setup & Run on the ASU Agave Cluster (sbatch)
-Open the run_on_agave.sh in a text editor, and modify the paths for the graph file, the rules file, the facts file, the labels file and the ipl file. Specify the number of timesteps to run for. Then in your Agave terminal, type:
-```bash
-sbatch run_on_agave.sh
-```
-This will submit a job to the cluster. You will be able to find the output of the program in the output folder.
-
-### 2.3 Setup & Run on your Local System
-Clone the repository and install the necessary packages to make pyreason run
+## 2.2 Install as a Command Line Tool
 
 ```bash
 git clone https://github.com/lab-v2/pyreason
 cd pyreason
-pip3 install -r requirements.txt
+pip install -r requirements.txt
+python initialize.py
 ```
-To run PyReason, type the following in your Agave terminal. Make sure you are in the top pyreason directory. Don't forget to replace the placeholders with the correct values.
-```bash
-python3 -m pyreason.scripts.diffuse --graph_path <path/to/graphml/file> --timesteps <number of timesteps to run> --rules_yaml_path <path/to/rules.yaml> --facts_yaml_path <path/to/facts.yaml> --labels_yaml_path <path/to/labels.yaml> --ipl <path/to/ipl.yaml>
+
+## 3. Usage
+Please refer to the documentation that is relevant to you
+1. [Usage as Python Library](docs/pyreason_library.md)
+2. [Usage as a Command Line Tool](docs/pyreason_cmd_line.md)
+
+## 4. Bibtex
+If you used this software in your work please consider citing our paper (coming soon)
+
+Bibtex:
 ```
+```
+
+## 5. License
+This repository is licensed under [BSD-3-Clause](LICENSE.md)
+
+## 6. Contact
+Dyuman Aditya - dyuman.aditya@gmail.com
+Kaustuv Mukherji - kmukher2@asu.edu
+Paulo Shakarian - pshak02@asu.edu

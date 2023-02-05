@@ -7,7 +7,7 @@ import memory_profiler as mp
 
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 from pyreason.scripts.program.program import Program
-from pyreason.scripts.utils.yaml_parser import YAMLParser
+import pyreason.scripts.utils.yaml_parser as yaml_parser
 from pyreason.scripts.utils.graphml_parser import GraphmlParser
 from pyreason.scripts.utils.filter import Filter
 from pyreason.scripts.utils.output import Output
@@ -22,7 +22,6 @@ def main(args):
 
     # Initialize parsers
     graphml_parser = GraphmlParser()
-    yaml_parser = YAMLParser(args.timesteps)
 
     start = time.time()
     graph = graphml_parser.parse_graph(args.graph_path, args.reverse_digraph)
@@ -67,18 +66,18 @@ def main(args):
     program.specific_node_labels = specific_node_labels
     program.specific_edge_labels = specific_edge_labels
 
-    # Diffusion process
+    # Reasoning process
     print('Graph loaded successfully, rules, labels, facts and ipl parsed successfully')
     print('Starting diffusion')
     start = time.time()
-    interpretation = program.diffusion(args.convergence_threshold, args.convergence_bound_threshold)
+    interpretation = program.reason(args.convergence_threshold, args.convergence_bound_threshold)
     end = time.time()
     print('Time to complete diffusion:', end-start)
     print('Finished diffusion')
 
     # Save the rule trace to a file
     output = Output(timestamp)
-    output.save_rule_trace(interpretation)
+    output.save_rule_trace(interpretation, folder='./output')
 
     # This is how you filter the dataframe to show only nodes that have success in a certain interval
     print('Filtering data...')
