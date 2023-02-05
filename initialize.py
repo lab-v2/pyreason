@@ -4,11 +4,11 @@ import os
 
 print('Initializing PyReason caches')
 
-graph_path = os.path.join('docs', 'hello-world', 'friends.graphml')
-labels_path = os.path.join('docs', 'hello-world', 'labels.yaml')
-facts_path = os.path.join('docs', 'hello-world', 'facts.yaml')
-rules_path = os.path.join('docs', 'hello-world', 'rules.yaml')
-ipl_path = os.path.join('docs', 'hello-world', 'ipl.yaml')
+graph_path = os.path.join('pyreason', 'examples', 'hello-world', 'friends.graphml')
+labels_path = os.path.join('pyreason', 'examples', 'hello-world', 'labels.yaml')
+facts_path = os.path.join('pyreason', 'examples', 'hello-world', 'facts.yaml')
+rules_path = os.path.join('pyreason', 'examples', 'hello-world', 'rules.yaml')
+ipl_path = os.path.join('pyreason', 'examples', 'hello-world', 'ipl.yaml')
 
 pr.settings.verbose = False
 pr.load_graph(graph_path)

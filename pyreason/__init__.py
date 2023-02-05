@@ -8,8 +8,7 @@ os.environ['NUMBA_CACHE_DIR'] =  cache_path
 from pyreason.pyreason import *
 import yaml
 
-print(cache_path)
-print(package_path)
+
 with open(cache_status_path) as file:
     cache_status = yaml.safe_load(file)
 
