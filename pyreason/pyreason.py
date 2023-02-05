@@ -12,11 +12,7 @@ import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 
-# import os
-# package_path = os.path.abspath(os.path.dirname(__file__))
-# cache_path = os.path.join(package_path, 'cache')
-# print('cache from pyreason', cache_path)
-# os.environ['NUMBA_CACHE_DIR'] =  cache_path
+
 
 # USER VARIABLES
 class _Settings:
