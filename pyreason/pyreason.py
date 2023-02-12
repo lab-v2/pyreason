@@ -52,7 +52,7 @@ class _Settings:
 
         :return: str
         """
-        return self.__output_to_file
+        return self.__output_file_name
 
     @property
     def graph_attribute_parsing(self) -> bool:
