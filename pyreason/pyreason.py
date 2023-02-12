@@ -273,7 +273,7 @@ def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_t
 
     if settings.memory_profile:
         start_mem = mp.memory_usage(max_usage=True)
-        mem_usage = mp.memory_usage((_reason, [timesteps, convergence_threshold, convergence_bound_threshold]), max_usage=True)
+        mem_usage, interpretation = mp.memory_usage((_reason, [timesteps, convergence_threshold, convergence_bound_threshold]), max_usage=True, retval=True)
         print(type(mem_usage))
         print(f"\nProgram used {mem_usage-start_mem} MB of memory")
     else:
