@@ -403,13 +403,8 @@ class Interpretation:
 			# If no more rules/facts to be applied
 			elif convergence_mode=='perfect_convergence':
 				if (t>=max_facts_time and t>=max_rules_time) or (t>=max_facts_time and changes_cnt==0):
-					if changes_cnt==0:
-						if verbose:
-							print(f'\nConverged at time: {t}')
-					else:
-						if verbose:
-							print(f'\nMax timestep reached at {t}. {int(changes_cnt)} changes to interpretaion pending')	
-					
+					if verbose:
+						print(f'\nConverged at time: {t}')					
 					break
 
 		return fp_cnt, t	
