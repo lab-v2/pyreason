@@ -30,7 +30,7 @@ def main(args):
 
     if args.graph_attribute_parsing:
         start = time.time()
-        non_fluent_facts_node, non_fluent_facts_edge, specific_node_labels, specific_edge_labels = graphml_parser.parse_graph_attributes(args.timesteps) 
+        non_fluent_facts_node, non_fluent_facts_edge, specific_node_labels, specific_edge_labels = graphml_parser.parse_graph_attributes() 
         end = time.time()
         print('Time to read graph attributes:', end-start)
     else:

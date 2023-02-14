@@ -19,7 +19,7 @@ class GraphmlParser:
 
         return self.graph
 
-    def parse_graph_attributes(self, timesteps):
+    def parse_graph_attributes(self):
         facts_node = numba.typed.List.empty_list(fact_node.fact_type)
         facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
         specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))

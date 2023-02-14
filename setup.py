@@ -1,7 +1,4 @@
 from setuptools import setup, find_packages
-from setuptools.command.install import install
-import sys
-import os
 
 # Read the contents of README file
 from pathlib import Path
@@ -11,7 +8,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name = 'pyreason',
-    version = '1.0.1',
+    version = '1.1.1',
     author = 'Dyuman Aditya',
     author_email = 'dyuman.aditya@gmail.com',
     description = 'An explainable inference software supporting annotated, real valued, graph based and temporal logic',

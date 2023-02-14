@@ -206,6 +206,11 @@ __edge_labels = None
 __specific_node_labels = None
 __specific_edge_labels = None
 
+__non_fluent_graph_facts_node = None
+__non_fluent_graph_facts_edge = None
+__specific_graph_node_labels = None
+__specific_graph_edge_labels = None
+
 __timestamp = ''
 
 __graphml_parser = GraphmlParser()
@@ -218,8 +223,19 @@ def load_graph(path: str) -> None:
 
     :param path: Path for the GraphMl file
     """
-    global __graph, __graphml_parser, settings
+    global __graph, __graphml_parser, __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels, settings
+    
+    # Parse graph
     __graph = __graphml_parser.parse_graph(path, settings.reverse_digraph)
+
+    # Graph attribute parsing
+    if settings.graph_attribute_parsing:
+        __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels = __graphml_parser.parse_graph_attributes()
+    else:
+        __non_fluent_graph_facts_node = numba.typed.List.empty_list(fact_node.fact_type)
+        __non_fluent_graph_facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
+        __specific_graph_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
+        __specific_graph_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
     
 
 def load_labels(path: str) -> None:
@@ -316,20 +332,11 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
         __ipl = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, label.label_type)))
 
     
-    # Graph attribute parsing
-    if settings.graph_attribute_parsing:
-        non_fluent_graph_facts_node, non_fluent_graph_facts_edge, specific_graph_node_labels, specific_graph_edge_labels = __graphml_parser.parse_graph_attributes(timesteps)
-    else:
-        non_fluent_graph_facts_node = numba.typed.List.empty_list(fact_node.fact_type)
-        non_fluent_graph_facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
-        specific_graph_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
-        specific_graph_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
-
     # If graph attribute parsing, add results to existing specific labels and facts
-    __specific_node_labels.update(specific_graph_node_labels)
-    __specific_edge_labels.update(specific_graph_edge_labels)
-    __node_facts.extend(non_fluent_graph_facts_node)
-    __edge_facts.extend(non_fluent_graph_facts_edge)   
+    __specific_node_labels.update(__specific_graph_node_labels)
+    __specific_edge_labels.update(__specific_graph_edge_labels)
+    __node_facts.extend(__non_fluent_graph_facts_node)
+    __edge_facts.extend(__non_fluent_graph_facts_edge)   
 
     # Setup logical program
     program = Program(__graph, timesteps, __node_facts, __edge_facts, __rules, __ipl, settings.reverse_digraph, settings.atom_trace)
