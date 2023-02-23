@@ -75,10 +75,10 @@ class Output:
             # Add Clause-num to header
             if interpretation.atom_trace and max_j!=-1:
                 for i in range(1, max_j+2):
-                    header.append(f'Clause-{i}')
+                    header_edge.append(f'Clause-{i}')
 
             writer = csv.writer(f)
-            writer.writerow(header)
+            writer.writerow(header_edge)
             writer.writerows(data)
             
 
