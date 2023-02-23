@@ -4,7 +4,7 @@ Welcome to PyReason! In this document we outline a simple program that demonstra
 
 The following graph represents a network of people and the pets that they own. 
 
-<img src="../media/hello_world_graph.png"/>
+<img src="../media/hello_world_friends_graph.png"/>
 
 1. Mary is friends with Justin
 2. Mary is friends with John
@@ -189,10 +189,10 @@ ipl: null
 
 Run PyReason as a python package:
 ```bash
-python3 -m pyreason.scripts.diffuse --graph_path pyreason/examples/hello-world/friends.graphml --timesteps 2 --rules_yaml_path pyreason/examples/hello-world/rules.yaml --facts_yaml_path pyreason/examples/hello-world/facts.yaml --labels_yaml_path pyreason/examples/hello-world/labels.yaml --ipl pyreason/examples/hello-world/ipl.yaml --filter_label popular
+python -m pyreason.scripts.diffuse --graph_path pyreason/examples/hello-world/friends.graphml --timesteps 2 --rules_yaml_path pyreason/examples/hello-world/rules.yaml --facts_yaml_path pyreason/examples/hello-world/facts.yaml --labels_yaml_path pyreason/examples/hello-world/labels.yaml --ipl pyreason/examples/hello-world/ipl.yaml --filter_label popular
 ```
 
-Typing `python3 -m pyreason.scripts.diffuse -h` will display more command line options
+Typing `python -m pyreason.scripts.diffuse -h` will display more command line options
 
 ## Expected Output
 The output after running this is:

@@ -11,8 +11,8 @@ def main():
     # data_path_oldest = f'/home/dyuman/Documents/Mancalog/profiling/profile_oldest.csv'
     # data = f'/home/dyuman/Downloads/memory.csv'
 
-    x_axis_title = 'Number of Nodes (density=0.000384)'
-    y_axis_title = 'Runtime'
+    x_axis_title = 'Number of Nodes (density=4.10e-4)'
+    y_axis_title = 'Runtime (s)'
     title = 'Number of Nodes vs Runtime'
 
     # headers = ['Timesteps', 'Memory', 'Memory Old']
@@ -31,9 +31,9 @@ def main():
     # y2 = df['Memory Old']
 
     x = [1000, 2000, 5000, 10000]
-    y2 = [56.40, 56.50, 57.24, 59.44] 
-    y5 = [56.46, 56.27, 57.78, 60.34] 
-    y15 = [56.76, 56.90, 58.87, 64.88] 
+    y2 = [0.35, 0.40, 1.35, 4.25] 
+    y5 = [0.43, 0.49, 1.76, 6.11] 
+    y15 = [0.40, 0.73, 3.09, 11.20] 
     
     # if smooth:
     #     y_jit = pd.Series(y_jit).rolling(15, min_periods=1).mean()

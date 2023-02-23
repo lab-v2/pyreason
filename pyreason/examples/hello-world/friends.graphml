@@ -13,12 +13,12 @@
 <node id="Cat"><data key="name">cat</data><data key="type">pet</data></node>
 <node id="Dog"><data key="name">dog</data><data key="type">pet</data></node>
 
-<edge id="e0" source="Cat" target="Mary"></edge>
-<edge id="e1" source="Cat" target="Justin"></edge>
-<edge id="e2" source="Dog" target="Justin"></edge>
-<edge id="e3" source="Dog" target="John"></edge>
-<edge id="e4" source="Mary" target="Justin"></edge>
-<edge id="e5" source="Justin" target="John"></edge>
-<edge id="e6" source="Mary" target="John"></edge>
+<edge id="e0" source="Mary" target="Cat"></edge>
+<edge id="e1" source="Justin" target="Cat"></edge>
+<edge id="e2" source="Justin" target="Dog"></edge>
+<edge id="e3" source="John" target="Dog"></edge>
+<edge id="e4" source="Justin" target="Mary"></edge>
+<edge id="e5" source="John" target="Justin"></edge>
+<edge id="e6" source="John" target="Mary"></edge>
 </graph>
 </graphml>

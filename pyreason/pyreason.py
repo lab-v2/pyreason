@@ -27,7 +27,7 @@ class _Settings:
         self.__graph_attribute_parsing = True
         self.__abort_on_inconsistency = False
         self.__memory_profile = False
-        self.__reverse_digraph = True
+        self.__reverse_digraph = False
         self.__atom_trace = False
 
     @property
@@ -174,7 +174,7 @@ class _Settings:
         """Whether to reverse the digraph. if the graphml contains an edge: a->b
         setting reverse as true will make the edge b->a. Default is False
 
-        :param file_name: Whether to reverse graphml edgesor not
+        :param file_name: Whether to reverse graphml edges or not
         :raises TypeError: If not bool raise error
         """
         if not isinstance(value, bool):

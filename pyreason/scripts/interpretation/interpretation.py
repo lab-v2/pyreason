@@ -456,7 +456,7 @@ def _is_rule_applicable(interpretations_node, interpretations_edge, candidates, 
 			if atom_trace:
 				qualified_nodes.append(numba.typed.List.empty_list(node_type))
 				qualified_edges.append(numba.typed.List(zip(subsets[clause[1][0]], subsets[clause[1][1]])))
-		
+
 		# Check if clause satisfies threshold
 		if thresholds[i][1][1]=='total':
 			neigh_len = len(candidates)
