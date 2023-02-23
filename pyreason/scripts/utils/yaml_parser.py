@@ -44,7 +44,6 @@ def parse_rules(path):
                 # Append clause
                 clause_type = clause[0]
                 subset = (clause[1][0], clause[1][0]) if clause_type=='node' else (clause[1][0], clause[1][1])
-                print(subset)
                 l = label.Label(clause[2])
                 bnd = interval.closed(clause[3][0], clause[3][1])
                 neigh_criteria.append((clause_type, subset, l, bnd))
