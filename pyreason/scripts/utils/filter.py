@@ -72,8 +72,8 @@ class Filter:
             for (comp, l), bnd in d.items():
                 if l.get_value() in labels and bnd in bound:
                     if comp not in nodes[t]:
-                        nodes[t][comp] = {lab:interval.closed(0,1) for lab in labels}
-                    nodes[t][comp][l.get_value()] = bnd
+                        nodes[t][comp] = {lab:[0,1] for lab in labels}
+                    nodes[t][comp][l.get_value()] = [bnd.lower, bnd.upper]
 
 
         dataframes = []
