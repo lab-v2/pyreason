@@ -56,10 +56,15 @@ Please refer to the documentation that is relevant to you
 2. [Usage as a Command Line Tool](https://github.com/lab-v2/pyreason/blob/main/docs/pyreason_cmd_line.md)
 
 ## 4. Bibtex
-If you used this software in your work please consider citing our paper (coming soon)
+If you used this software in your work please cite our paper
 
 Bibtex:
 ```
+@inproceedings{aditya_pyreason_2023,
+title = {{PyReason}: Software for Open World Temporal Logic},
+booktitle = {{AAAI} Spring Symposium},
+author = {Aditya, Dyuman and Mukherji, Kaustuv and Balasubramanian, Srikar and Chaudhary, Abhiraj and Shakarian, Paulo},
+year = {2023}}
 ```
 
 ## 5. License
