@@ -72,5 +72,7 @@ This repository is licensed under [BSD-3-Clause](https://github.com/lab-v2/pyrea
 
 ## 6. Contact
 Dyuman Aditya - dyuman.aditya@gmail.com
+
 Kaustuv Mukherji - kmukher2@asu.edu
+
 Paulo Shakarian - pshak02@asu.edu
