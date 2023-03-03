@@ -210,7 +210,8 @@ class Interpretation:
 					else:
 						# Check for inconsistencies (multiple facts)
 						if check_consistent_node(interpretations_node, comp, (l, bnd)):
-							u, changes = _update_node(interpretations_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, mode='fact')
+							mode = 'graph-attribute-fact' if graph_attribute else 'fact'
+							u, changes = _update_node(interpretations_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, mode=mode)
 
 							update = u or update
 							# Update convergence params
@@ -249,7 +250,8 @@ class Interpretation:
 					else:
 						# Check for inconsistencies
 						if check_consistent_edge(interpretations_edge, comp, (l, bnd)):
-							u, changes = _update_edge(interpretations_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, mode='fact')
+							mode = 'graph-attribute-fact' if graph_attribute else 'fact'
+							u, changes = _update_edge(interpretations_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, mode=mode)
 
 							update = u or update
 							# Update convergence params
@@ -575,7 +577,7 @@ def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
 
 
 @numba.njit(cache=True)
-def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, rules_to_be_applied_trace, idx, facts_to_be_applied_trace, rule_trace_atoms, mode):
+def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_trace, idx, facts_to_be_applied_trace, rule_trace_atoms, mode):
 	updated = False
 	# This is to prevent a key error in case the label is a specific label
 	try:
@@ -592,17 +594,18 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 			updated_bnds.append(world.world[l])
 
 			# Add to rule trace if update happened and add to atom trace if necessary
-			rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, world.world[l].copy()))
-			if atom_trace:
-				# Mode can be fact or rule, updation of trace will happen accordingly
-				if mode=='fact':
-					qn = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
-					qe = numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type))
-					name = facts_to_be_applied_trace[idx]
-					_update_rule_trace_node(rule_trace_atoms, qn, qe, prev_bnd, name)
-				elif mode=='rule':
-					qn, qe, name = rules_to_be_applied_trace[idx]
-					_update_rule_trace_node(rule_trace_atoms, qn, qe, prev_bnd, name)
+			if save_graph_attributes_to_rule_trace or not mode=='graph-attribute-fact':
+				rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, world.world[l].copy()))
+				if atom_trace:
+					# Mode can be fact or rule, updation of trace will happen accordingly
+					if mode=='fact' or mode=='graph-attribute-fact':
+						qn = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
+						qe = numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type))
+						name = facts_to_be_applied_trace[idx]
+						_update_rule_trace_node(rule_trace_atoms, qn, qe, prev_bnd, name)
+					elif mode=='rule':
+						qn, qe, name = rules_to_be_applied_trace[idx]
+						_update_rule_trace_node(rule_trace_atoms, qn, qe, prev_bnd, name)
 			
 
 		# Update complement of predicate (if exists) based on new knowledge of predicate
@@ -653,7 +656,7 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 	
 
 @numba.njit(cache=True)
-def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, rules_to_be_applied_trace, idx, facts_to_be_applied_trace, rule_trace_atoms, mode):
+def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_trace, idx, facts_to_be_applied_trace, rule_trace_atoms, mode):
 	updated = False
 	# This is to prevent a key error in case the label is a specific label
 	try:
@@ -670,16 +673,17 @@ def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 			updated_bnds.append(world.world[l])
 
 			# Add to rule trace if update happened and add to atom trace if necessary
-			rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, world.world[l].copy()))
-			if atom_trace:
-				# Mode can be fact or rule, updation of trace will happen accordingly
-				if mode=='fact':
-					qn = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
-					name = facts_to_be_applied_trace[idx]
-					_update_rule_trace_edge(rule_trace_atoms, qn, prev_bnd, name)
-				elif mode=='rule':
-					qn, name = rules_to_be_applied_trace[idx]
-					_update_rule_trace_edge(rule_trace_atoms, qn, prev_bnd, name)
+			if save_graph_attributes_to_rule_trace or not mode=='graph-attribute-fact':
+				rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, world.world[l].copy()))
+				if atom_trace:
+					# Mode can be fact or rule, updation of trace will happen accordingly
+					if mode=='fact' or mode=='graph-attribute-fact':
+						qn = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
+						name = facts_to_be_applied_trace[idx]
+						_update_rule_trace_edge(rule_trace_atoms, qn, prev_bnd, name)
+					elif mode=='rule':
+						qn, name = rules_to_be_applied_trace[idx]
+						_update_rule_trace_edge(rule_trace_atoms, qn, prev_bnd, name)
 			
 
 		# Update complement of predicate (if exists) based on new knowledge of predicate
