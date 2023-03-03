@@ -38,6 +38,8 @@ def argparser():
     # Rule trace with ground atoms (not done)
     parser.add_argument("--atom_trace", dest='atom_trace', action='store_true', help='Option to track the ground atoms which lead to a rule firing. This could be very memory heavy. Default is off')
     parser.set_defaults(atom_trace=False)
+    parser.add_argument("--save_graph_attributes_to_trace", dest='save_graph_attributes_to_trace', action='store_true', help='Option to save graph attributes to trace. Graphs are big and turning this on can be very memory heavy. Graph attributes are represented as facts. Default is off')
+    parser.set_defaults(save_graph_attributes_to_trace=False)
     # Convergence options
     parser.add_argument("--convergence_threshold", type=int, default=-1, help='Number of interpretations that have changed between timesteps or fixed point operations until considered convergent. Program will end at convergence. -1 => Perfect convergence. This option is default')
     parser.add_argument("--convergence_bound_threshold", type=float, default=-1, help='Max change in any interpretation between timesteps or fixed point operations until considered convergent. Program will end at convergence. --convergence_threshold is default')

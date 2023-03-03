@@ -29,6 +29,7 @@ class _Settings:
         self.__memory_profile = False
         self.__reverse_digraph = False
         self.__atom_trace = False
+        self.__save_graph_attributes_to_trace = False
 
     @property
     def verbose(self) -> bool:
@@ -94,7 +95,16 @@ class _Settings:
 
         :return: bool
         """
-        return self.__atom_trace        
+        return self.__atom_trace   
+
+    @property
+    def save_graph_attributes_to_trace(self) -> bool:
+        """Returns whether to save the graph attribute facts to the rule trace. Graphs are large and turning this on can result in more memory usage.
+        NOTE: Turning this on may increase memory usage
+
+        :return: bool
+        """
+        return self.__save_graph_attributes_to_trace        
 
     @verbose.setter
     def verbose(self, value: bool) -> None:
@@ -137,7 +147,7 @@ class _Settings:
     def graph_attribute_parsing(self, value: bool) -> None:
         """Whether to parse graphml file for attributes. Default is True
 
-        :param file_name: Whether to parse graphml or not
+        :param value: Whether to parse graphml or not
         :raises TypeError: If not bool raise error
         """
         if not isinstance(value, bool):
@@ -149,7 +159,7 @@ class _Settings:
     def abort_on_inconsistency(self, value: bool) -> None:
         """Whether to abort program if inconsistency is found. Default is False
 
-        :param file_name: Whether to abort on inconsistency or not
+        :param value: Whether to abort on inconsistency or not
         :raises TypeError: If not bool raise error
         """
         if not isinstance(value, bool):
@@ -161,7 +171,7 @@ class _Settings:
     def memory_profile(self, value: bool) -> None:
         """Whether to profile the program's memory usage. Default is False
 
-        :param file_name: Whether to profile program's memory usage or not
+        :param value: Whether to profile program's memory usage or not
         :raises TypeError: If not bool raise error
         """
         if not isinstance(value, bool):
@@ -174,7 +184,7 @@ class _Settings:
         """Whether to reverse the digraph. if the graphml contains an edge: a->b
         setting reverse as true will make the edge b->a. Default is False
 
-        :param file_name: Whether to reverse graphml edges or not
+        :param value: Whether to reverse graphml edges or not
         :raises TypeError: If not bool raise error
         """
         if not isinstance(value, bool):
@@ -187,13 +197,26 @@ class _Settings:
         """Whether to save all atoms that were responsible for the firing of a rule.
         NOTE: this can be very memory heavy. Default is False
 
-        :param file_name: Whether to save all atoms or not
+        :param value: Whether to save all atoms or not
         :raises TypeError: If not bool raise error
         """
         if not isinstance(value, bool):
             raise TypeError('value has to be a bool')
         else:
             self.__atom_trace = value
+    
+    @save_graph_attributes_to_trace.setter
+    def save_graph_attributes_to_trace(self, value: bool) -> None:
+        """Whether to save all graph attribute facts. Graphs are large so turning this on can be memory heavy
+        NOTE: this can be very memory heavy. Default is False
+
+        :param value: Whether to save all graph attribute facts in the trace or not
+        :raises TypeError: If not bool raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('value has to be a bool')
+        else:
+            self.__save_graph_attributes_to_trace = value
 
 # VARIABLES
 __graph = None
@@ -339,7 +362,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     __edge_facts.extend(__non_fluent_graph_facts_edge)   
 
     # Setup logical program
-    program = Program(__graph, timesteps, __node_facts, __edge_facts, __rules, __ipl, settings.reverse_digraph, settings.atom_trace)
+    program = Program(__graph, timesteps, __node_facts, __edge_facts, __rules, __ipl, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace)
     program.available_labels_node = __node_labels
     program.available_labels_edge = __edge_labels
     program.specific_node_labels = __specific_node_labels
