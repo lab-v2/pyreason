@@ -5,6 +5,8 @@ import sys
 import warnings
 import memory_profiler as mp
 from typing import List
+import networkx as nx
+import matplotlib.pyplot as plt
 
 from pyreason.scripts.utils.output import Output
 from pyreason.scripts.utils.filter import Filter
@@ -15,7 +17,6 @@ import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
-
 
 
 # USER VARIABLES
@@ -38,7 +39,7 @@ class _Settings:
         :return: bool
         """
         return self.__verbose
-    
+
     @property
     def output_to_file(self) -> bool:
         """Returns whether output is going to be printed to file or not
@@ -95,7 +96,7 @@ class _Settings:
 
         :return: bool
         """
-        return self.__atom_trace   
+        return self.__atom_trace
 
     @property
     def save_graph_attributes_to_trace(self) -> bool:
@@ -104,7 +105,7 @@ class _Settings:
 
         :return: bool
         """
-        return self.__save_graph_attributes_to_trace        
+        return self.__save_graph_attributes_to_trace
 
     @verbose.setter
     def verbose(self, value: bool) -> None:
@@ -117,7 +118,7 @@ class _Settings:
             raise TypeError('value has to be a bool')
         else:
             self.__verbose = value
-    
+
     @output_to_file.setter
     def output_to_file(self, value: bool) -> None:
         """Set whether to put all output into a file. Default file name is `pyreason_output` and can be changed
@@ -204,7 +205,7 @@ class _Settings:
             raise TypeError('value has to be a bool')
         else:
             self.__atom_trace = value
-    
+
     @save_graph_attributes_to_trace.setter
     def save_graph_attributes_to_trace(self, value: bool) -> None:
         """Whether to save all graph attribute facts. Graphs are large so turning this on can be memory heavy
@@ -217,6 +218,7 @@ class _Settings:
             raise TypeError('value has to be a bool')
         else:
             self.__save_graph_attributes_to_trace = value
+
 
 # VARIABLES
 __graph = None
@@ -246,20 +248,22 @@ def load_graph(path: str) -> None:
 
     :param path: Path for the GraphMl file
     """
-    global __graph, __graphml_parser, __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels, settings
-    
+    global __graph, __graphml_parser, __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, \
+        __specific_graph_node_labels, __specific_graph_edge_labels, settings
+
     # Parse graph
     __graph = __graphml_parser.parse_graph(path, settings.reverse_digraph)
 
     # Graph attribute parsing
-    if settings.graph_attribute_parsing:
-        __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels = __graphml_parser.parse_graph_attributes()
-    else:
-        __non_fluent_graph_facts_node = numba.typed.List.empty_list(fact_node.fact_type)
-        __non_fluent_graph_facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
-        __specific_graph_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
-        __specific_graph_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
-    
+    __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, \
+        __specific_graph_node_labels, __specific_graph_edge_labels = \
+        __graphml_parser.parse_graph_attributes(graph_attribute_parsing=settings.graph_attribute_parsing)
+
+
+def plot_graph():
+    nx.draw(__graph)
+    plt.show()
+
 
 def load_labels(path: str) -> None:
     """Load labels from YAML file path into program
@@ -269,6 +273,7 @@ def load_labels(path: str) -> None:
     global __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels
     __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels = yaml_parser.parse_labels(path)
 
+
 def load_facts(path: str) -> None:
     """Load facts from YAML file path into program
 
@@ -277,6 +282,7 @@ def load_facts(path: str) -> None:
     global __node_facts, __edge_facts, settings
     __node_facts, __edge_facts = yaml_parser.parse_facts(path, settings.reverse_digraph)
 
+
 def load_rules(path: str) -> None:
     """Load rules from YAML file path into program
 
@@ -284,6 +290,7 @@ def load_rules(path: str) -> None:
     """
     global __rules
     __rules = yaml_parser.parse_rules(path)
+
 
 def load_inconsistent_predicate_list(path: str) -> None:
     """Load IPL from YAML file path into program
@@ -294,7 +301,9 @@ def load_inconsistent_predicate_list(path: str) -> None:
     __ipl = yaml_parser.parse_ipl(path)
 
 
-def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_threshold: float=-1):
+def reason(timesteps: int = -1,
+           convergence_threshold: int = -1,
+           convergence_bound_threshold: float = -1):
     """Function to start the main reasoning process. Graph and rules must already be loaded.
 
     :param timesteps: Max number of timesteps to run. -1 specifies run till convergence, defaults to -1
@@ -312,16 +321,18 @@ def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_t
 
     if settings.memory_profile:
         start_mem = mp.memory_usage(max_usage=True)
-        mem_usage, interpretation = mp.memory_usage((_reason, [timesteps, convergence_threshold, convergence_bound_threshold]), max_usage=True, retval=True)
-        print(f"\nProgram used {mem_usage-start_mem} MB of memory")
+        mem_usage, interpretation = mp.memory_usage(
+            (_reason, [timesteps, convergence_threshold, convergence_bound_threshold]), max_usage=True, retval=True)
+        print(f"\nProgram used {mem_usage - start_mem} MB of memory")
     else:
         interpretation = _reason(timesteps, convergence_threshold, convergence_bound_threshold)
 
     return interpretation
 
 
-
-def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
+def _reason(timesteps,
+            convergence_threshold,
+            convergence_bound_threshold):
     # Globals
     global __graph, __rules, __node_facts, __edge_facts, __ipl, __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels, __graphml_parser
     global settings, __timestamp
@@ -339,30 +350,35 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
 
     # Check variables that are highly recommended. Warnings
     if __node_labels is None and __edge_labels is None:
-        warnings.warn('Labels yaml file has not been loaded. Use `load_labels`. Only graph attributes will be used as labels\n')
+        warnings.warn(
+            'Labels yaml file has not been loaded. Use `load_labels`. Only graph attributes will be used as labels\n')
         __node_labels = numba.typed.List.empty_list(label.label_type)
         __edge_labels = numba.typed.List.empty_list(label.label_type)
-        __specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
-        __specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
+        __specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type,
+                                                        value_type=numba.types.ListType(numba.types.string))
+        __specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(
+            numba.types.Tuple((numba.types.string, numba.types.string))))
 
     if __node_facts is None and __edge_facts is None:
-        warnings.warn('Facts yaml file has not been loaded. Use `load_facts`. Only graph attributes will be used as facts\n')
+        warnings.warn(
+            'Facts yaml file has not been loaded. Use `load_facts`. Only graph attributes will be used as facts\n')
         __node_facts = numba.typed.List.empty_list(fact_node.fact_type)
         __edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
 
     if __ipl is None:
-        warnings.warn('Inconsistent Predicate List yaml file has not been loaded. Use `load_ipl`. Loading IPL is optional\n')
+        warnings.warn(
+            'Inconsistent Predicate List yaml file has not been loaded. Use `load_ipl`. Loading IPL is optional\n')
         __ipl = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, label.label_type)))
 
-    
     # If graph attribute parsing, add results to existing specific labels and facts
     __specific_node_labels.update(__specific_graph_node_labels)
     __specific_edge_labels.update(__specific_graph_edge_labels)
     __node_facts.extend(__non_fluent_graph_facts_node)
-    __edge_facts.extend(__non_fluent_graph_facts_edge)   
+    __edge_facts.extend(__non_fluent_graph_facts_edge)
 
     # Setup logical program
-    program = Program(__graph, timesteps, __node_facts, __edge_facts, __rules, __ipl, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace)
+    program = Program(__graph, timesteps, __node_facts, __edge_facts, __rules, __ipl, settings.reverse_digraph,
+                      settings.atom_trace, settings.save_graph_attributes_to_trace)
     program.available_labels_node = __node_labels
     program.available_labels_edge = __edge_labels
     program.specific_node_labels = __specific_node_labels
@@ -374,7 +390,8 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     return interpretation
 
 
-def save_rule_trace(interpretation, folder: str='./'):
+def save_rule_trace(interpretation,
+                    folder: str = './'):
     """Saves the trace of the program. This includes every change that has occured to the interpretation. If `atom_trace` was set to true
     this gives us full explainability of why interpretations changed
 
@@ -387,7 +404,11 @@ def save_rule_trace(interpretation, folder: str='./'):
     output.save_rule_trace(interpretation, folder)
 
 
-def filter_and_sort(interpretation, labels: List[str], bound: interval.Interval=interval.closed(0,1), sort_by: str='lower', descending: bool=True):
+def filter_and_sort(interpretation,
+                    labels: List[str],
+                    bound: interval.Interval = interval.closed(0, 1),
+                    sort_by: str = 'lower',
+                    descending: bool = True):
     """Filters and sorts the interpretation and returns as a list of Pandas dataframes that are easy to access
 
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
