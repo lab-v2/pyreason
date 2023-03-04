@@ -17,6 +17,7 @@ class LabelType(types.Type):
     def __init__(self):
         super(LabelType, self).__init__(name='Label')
 
+
 label_type = LabelType()
 
 
@@ -32,6 +33,7 @@ def type_label(context):
     def typer(value):
         if isinstance(value, types.UnicodeType):
             return label_type
+
     return typer
 
 
@@ -41,12 +43,13 @@ class LabelModel(models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [
             ('value', types.string)
-            ]
+        ]
         models.StructModel.__init__(self, dmm, fe_type, members)
 
 
 # Expose datamodel attributes
 make_attribute_wrapper(LabelType, 'value', 'value')
+
 
 # Implement constructor
 @lower_builtin(Label, types.string)
@@ -57,12 +60,15 @@ def impl_label(context, builder, sig, args):
     label.value = value
     return label._getvalue()
 
+
 # Expose properties
 @overload_method(LabelType, "get_value")
 def get_id(label):
     def getter(label):
         return label.value
+
     return getter
+
 
 @overload(operator.eq)
 def label_eq(label_1, label_2):
@@ -71,15 +77,17 @@ def label_eq(label_1, label_2):
             if label_1.value == label_2.value:
                 return True
             else:
-                return False 
+                return False
+
         return impl
+
 
 @overload(hash)
 def label_hash(label):
     def impl(label):
         return hash(label.value)
-    return impl
 
+    return impl
 
 
 # Tell numba how to make native
@@ -93,7 +101,6 @@ def unbox_label(typ, obj, c):
     return NativeValue(label._getvalue(), is_error=is_error)
 
 
-
 @box(LabelType)
 def box_label(typ, val, c):
     label = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
@@ -103,4 +110,3 @@ def box_label(typ, val, c):
     c.pyapi.decref(value_obj)
     c.pyapi.decref(class_obj)
     return res
-

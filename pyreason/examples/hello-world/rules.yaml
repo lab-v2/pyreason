@@ -9,7 +9,9 @@ rule_1:
 
     delta_t: 1             # Delta t, time when this rule is applicable
 
-    neigh_criteria:        # List of all neighbour criteria in the form [criteria on node/edge, variable, label, [lower_bound, upper_bound], [equal/greater/less/greater_equal/less_equal, number/[percent, total/available], value]]
+    # List of all neighbour criteria in the form [criteria on node/edge, variable, label, [lower_bound, upper_bound],
+    # [equal/greater/less/greater_equal/less_equal, number/[percent, total/available], value]]
+    neigh_criteria:
         - [node, [x1], popular, [1,1], [greater_equal, number, 1]]
         - [edge, [target, x1], friends, [1,1], [greater_equal, number, 1]]
         - [edge, [x1, x2], owns, [1,1], [greater_equal, number, 1]]

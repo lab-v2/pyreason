@@ -1,6 +1,7 @@
 class Label:
     
-    def __init__(self, value):
+    def __init__(self,
+                 value):
         self._value = value
 
     def get_value(self):

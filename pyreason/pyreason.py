@@ -17,6 +17,7 @@ import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
+from pyreason.scripts.interpretation.interpretation import Interpretation
 
 
 # USER VARIABLES
@@ -243,16 +244,19 @@ settings = _Settings()
 
 
 # FUNCTIONS
-def load_graph(path: str) -> None:
-    """Loads graph from GraphMl file path into program
+def load_graph(path: str):
+    """
+    Loads graph from GraphMl file path into program
 
     :param path: Path for the GraphMl file
     """
+
     global __graph, __graphml_parser, __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, \
         __specific_graph_node_labels, __specific_graph_edge_labels, settings
 
     # Parse graph
-    __graph = __graphml_parser.parse_graph(path, settings.reverse_digraph)
+    __graph = __graphml_parser.parse_graph(graph_path=path,
+                                           reverse=settings.reverse_digraph)
 
     # Graph attribute parsing
     __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, \
@@ -261,38 +265,45 @@ def load_graph(path: str) -> None:
 
 
 def plot_graph():
-    nx.draw(__graph)
+    nx.draw_circular(G=__graph,
+                     with_labels=True,
+                     node_size=2000)
     plt.show()
 
 
-def load_labels(path: str) -> None:
+def load_labels(path: str):
     """Load labels from YAML file path into program
 
     :param path: Path for the YAML labels file
     """
     global __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels
-    __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels = yaml_parser.parse_labels(path)
+
+    __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels = yaml_parser.parse_labels(path=path)
 
 
-def load_facts(path: str) -> None:
+def load_facts(path: str):
     """Load facts from YAML file path into program
 
     :param path: Path for the YAML facts file
     """
-    global __node_facts, __edge_facts, settings
-    __node_facts, __edge_facts = yaml_parser.parse_facts(path, settings.reverse_digraph)
+    global __node_facts, __edge_facts
+
+    __node_facts, __edge_facts = yaml_parser.parse_facts(path=path,
+                                                         reverse=settings.reverse_digraph)
 
 
-def load_rules(path: str) -> None:
+def load_rules(path: str):
     """Load rules from YAML file path into program
 
     :param path: Path for the YAML rules file
     """
+
     global __rules
+
     __rules = yaml_parser.parse_rules(path)
 
 
-def load_inconsistent_predicate_list(path: str) -> None:
+def load_inconsistent_predicate_list(path: str):
     """Load IPL from YAML file path into program
 
     :param path: Path for the YAML IPL file
@@ -307,10 +318,14 @@ def reason(timesteps: int = -1,
     """Function to start the main reasoning process. Graph and rules must already be loaded.
 
     :param timesteps: Max number of timesteps to run. -1 specifies run till convergence, defaults to -1
-    :param convergence_threshold: Maximim number of interpretations that have changed between timesteps or fixed point operations until considered convergent. Program will end at convergence. -1 => no changes, perfect convergence, defaults to -1
-    :param convergence_bound_threshold: Maximum change in any interpretation (bounds) between timesteps or fixed point operations until considered convergent, defaults to -1
+    :param convergence_threshold: Maximim number of interpretations that have changed between timesteps
+           or fixed point operations until considered convergent. Program will end at convergence.
+           -1 => no changes, perfect convergence, defaults to -1
+    :param convergence_bound_threshold: Maximum change in any interpretation (bounds) between timesteps
+           or fixed point operations until considered convergent, defaults to -1
     :return: The final interpretation after reasoning.
     """
+
     global settings, __timestamp
 
     # Timestamp for saving files
@@ -330,12 +345,12 @@ def reason(timesteps: int = -1,
     return interpretation
 
 
-def _reason(timesteps,
-            convergence_threshold,
-            convergence_bound_threshold):
+def _reason(timesteps: int,
+            convergence_threshold: int,
+            convergence_bound_threshold: float) -> Interpretation:
     # Globals
-    global __graph, __rules, __node_facts, __edge_facts, __ipl, __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels, __graphml_parser
-    global settings, __timestamp
+    global __graph, __rules, __node_facts, __edge_facts, __ipl, __node_labels, __edge_labels, __specific_node_labels, \
+        __specific_edge_labels, __graphml_parser, settings, __timestamp
 
     # Assert variables are of correct type
 
@@ -377,34 +392,44 @@ def _reason(timesteps,
     __edge_facts.extend(__non_fluent_graph_facts_edge)
 
     # Setup logical program
-    program = Program(__graph, timesteps, __node_facts, __edge_facts, __rules, __ipl, settings.reverse_digraph,
-                      settings.atom_trace, settings.save_graph_attributes_to_trace)
+    program = Program(__graph,
+                      timesteps,
+                      __node_facts,
+                      __edge_facts,
+                      __rules,
+                      __ipl,
+                      settings.reverse_digraph,
+                      settings.atom_trace,
+                      settings.save_graph_attributes_to_trace)
     program.available_labels_node = __node_labels
     program.available_labels_edge = __edge_labels
     program.specific_node_labels = __specific_node_labels
     program.specific_edge_labels = __specific_edge_labels
 
     # Run Program and get final interpretation
-    interpretation = program.reason(convergence_threshold, convergence_bound_threshold, settings.verbose)
+    interpretation = program.reason(convergence_threshold,
+                                    convergence_bound_threshold,
+                                    settings.verbose)
 
     return interpretation
 
 
-def save_rule_trace(interpretation,
+def save_rule_trace(interpretation: Interpretation,
                     folder: str = './'):
-    """Saves the trace of the program. This includes every change that has occured to the interpretation. If `atom_trace` was set to true
-    this gives us full explainability of why interpretations changed
+    """Saves the trace of the program. This includes every change that has occurred to the interpretation.
+    If `atom_trace` was set to true this gives us full explainability of why interpretations changed
 
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
     :param folder: the folder in which to save the result, defaults to './'
     """
+
     global __timestamp
 
     output = Output(__timestamp)
     output.save_rule_trace(interpretation, folder)
 
 
-def filter_and_sort(interpretation,
+def filter_and_sort(interpretation: Interpretation,
                     labels: List[str],
                     bound: interval.Interval = interval.closed(0, 1),
                     sort_by: str = 'lower',

@@ -161,6 +161,7 @@ def unbox_fact(typ, obj, c):
     c.pyapi.decref(t_upper_obj)
     c.pyapi.decref(static_obj)
     is_error = cgutils.is_not_null(c.builder, c.pyapi.err_occurred())
+
     return NativeValue(fact._getvalue(), is_error=is_error)
 
 
@@ -185,4 +186,5 @@ def box_fact(typ, val, c):
     c.pyapi.decref(t_upper_obj)
     c.pyapi.decref(static_obj)
     c.pyapi.decref(class_obj)
+
     return res
