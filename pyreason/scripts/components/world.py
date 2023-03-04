@@ -4,7 +4,6 @@ import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 
 
 class World:
-    
     def __init__(self, labels):
         self._labels = labels
         self._world = numba.typed.Dict.empty(key_type=label.label_type, value_type=interval.interval_type)
@@ -18,7 +17,7 @@ class World:
 
     def is_satisfied(self, label, interval):
         result = False
-        
+
         bnd = self._world[label]
         result = bnd in interval
 
@@ -26,8 +25,8 @@ class World:
 
     def update(self, label, interval):
         lwanted = None
-        bwanted = None 
-        
+        bwanted = None
+
         current_bnd = self._world[label]
         new_bnd = current_bnd.intersection(interval)
         self._world[label] = new_bnd
@@ -35,12 +34,11 @@ class World:
     def get_bound(self, label):
         result = None
 
-        result = self._world[label] 
+        result = self._world[label]
         return result
 
     def get_world(self):
         return self._world
-
 
     def __str__(self):
         result = ''

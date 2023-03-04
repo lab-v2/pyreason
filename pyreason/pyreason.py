@@ -39,6 +39,7 @@ class _Settings:
 
         :return: bool
         """
+
         return self.__verbose
 
     @property
@@ -47,6 +48,7 @@ class _Settings:
 
         :return: bool
         """
+
         return self.__output_to_file
 
     @property
@@ -55,6 +57,7 @@ class _Settings:
 
         :return: str
         """
+
         return self.__output_file_name
 
     @property
@@ -63,6 +66,7 @@ class _Settings:
 
         :return: bool
         """
+
         return self.__graph_attribute_parsing
 
     @property
@@ -71,6 +75,7 @@ class _Settings:
 
         :return: bool
         """
+
         return self.__abort_on_inconsistency
 
     @property
@@ -79,6 +84,7 @@ class _Settings:
 
         :return: bool
         """
+
         return self.__memory_profile
 
     @property
@@ -88,6 +94,7 @@ class _Settings:
 
         :return: bool
         """
+
         return self.__reverse_digraph
 
     @property
@@ -97,15 +104,18 @@ class _Settings:
 
         :return: bool
         """
+
         return self.__atom_trace
 
     @property
     def save_graph_attributes_to_trace(self) -> bool:
-        """Returns whether to save the graph attribute facts to the rule trace. Graphs are large and turning this on can result in more memory usage.
+        """Returns whether to save the graph attribute facts to the rule trace. Graphs are large and turning this on
+        can result in more memory usage.
         NOTE: Turning this on may increase memory usage
 
         :return: bool
         """
+
         return self.__save_graph_attributes_to_trace
 
     @verbose.setter
@@ -349,8 +359,8 @@ def _reason(timesteps: int,
             convergence_threshold: int,
             convergence_bound_threshold: float) -> Interpretation:
     # Globals
-    global __graph, __rules, __node_facts, __edge_facts, __ipl, __node_labels, __edge_labels, __specific_node_labels, \
-        __specific_edge_labels, __graphml_parser, settings, __timestamp
+    global __graph, __rules, __node_facts, __edge_facts, __ipl, __node_labels, __edge_labels, \
+        __specific_node_labels, __specific_edge_labels, __graphml_parser, settings, __timestamp
 
     # Assert variables are of correct type
 
@@ -392,24 +402,25 @@ def _reason(timesteps: int,
     __edge_facts.extend(__non_fluent_graph_facts_edge)
 
     # Setup logical program
-    program = Program(__graph,
-                      timesteps,
-                      __node_facts,
-                      __edge_facts,
-                      __rules,
-                      __ipl,
-                      settings.reverse_digraph,
-                      settings.atom_trace,
-                      settings.save_graph_attributes_to_trace)
+    program = Program(graph=__graph,
+                      tmax=timesteps,
+                      facts_node=__node_facts,
+                      facts_edge=__edge_facts,
+                      rules=__rules,
+                      ipl=__ipl,
+                      reverse_graph=settings.reverse_digraph,
+                      atom_trace=settings.atom_trace,
+                      save_graph_attributes_to_rule_trace=settings.save_graph_attributes_to_trace)
+
     program.available_labels_node = __node_labels
     program.available_labels_edge = __edge_labels
     program.specific_node_labels = __specific_node_labels
     program.specific_edge_labels = __specific_edge_labels
 
     # Run Program and get final interpretation
-    interpretation = program.reason(convergence_threshold,
-                                    convergence_bound_threshold,
-                                    settings.verbose)
+    interpretation = program.reason(convergence_threshold=convergence_threshold,
+                                    convergence_bound_threshold=convergence_bound_threshold,
+                                    verbose=settings.verbose)
 
     return interpretation
 

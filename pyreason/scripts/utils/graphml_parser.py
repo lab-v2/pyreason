@@ -1,7 +1,5 @@
 import networkx as nx
 import numba
-from numba.typed import List as NumbaList
-from numba.typed import Dict as NumbaDict
 
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
@@ -13,7 +11,7 @@ class GraphmlParser:
     def __init__(self):
         self.graph = None
         self.non_fluent_facts = None
-        
+
     def parse_graph(self,
                     graph_path: str,
                     reverse: bool):
@@ -24,7 +22,8 @@ class GraphmlParser:
         return self.graph
 
     def parse_graph_attributes(self,
-                               graph_attribute_parsing: bool) -> (NumbaList, NumbaList, NumbaDict, NumbaDict):
+                               graph_attribute_parsing: bool) -> (numba.typed.List, numba.typed.List,
+                                                                  numba.typed.Dict, numba.typed.Dict):
         facts_node = numba.typed.List.empty_list(fact_node.fact_type)
         facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
         specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type,
@@ -80,4 +79,4 @@ class GraphmlParser:
                                        static=True)
                     facts_edge.append(f)
 
-        return facts_node, facts_edge, specific_node_labels, specific_edge_labels                
+        return facts_node, facts_edge, specific_node_labels, specific_edge_labels

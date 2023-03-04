@@ -188,7 +188,7 @@ def parse_labels(path: str) -> (numba.typed.List, numba.typed.List, numba.typed.
     return node_labels, edge_labels, specific_node_labels, specific_edge_labels
 
 
-def parse_ipl(path: str):
+def parse_ipl(path: str) -> numba.typed.List:
     with open(path, 'r') as file:
         ipl_yaml = yaml.safe_load(file)
 

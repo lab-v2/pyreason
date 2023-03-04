@@ -1,9 +1,11 @@
 # List of annotation functions will come here. All functions to be numba decorated and compatible
-# Each function has access to the interpretations at a particular timestep, and the qualified nodes and qualified edges that made the rule fire
+# Each function has access to the interpretations at a particular timestep, and the qualified nodes and qualified edges
+# that made the rule fire
 import numba
 import numpy as np
 
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
+
 
 @numba.njit
 def _get_weighted_sum(annotations, weights, mode='lower'):
@@ -17,22 +19,23 @@ def _get_weighted_sum(annotations, weights, mode='lower'):
         s = 0
         for annotation in clause:
             annotation_cnt += 1
-            if mode=='lower':
+            if mode == 'lower':
                 s += annotation.lower * weights[i]
-            elif mode=='upper':
+            elif mode == 'upper':
                 s += annotation.upper * weights[i]
         weighted_sum = np.append(weighted_sum, s)
 
     return weighted_sum, annotation_cnt
 
+
 @numba.njit
 def _check_bound(lower, upper):
     if lower > upper:
-        return (0, 1)
+        return 0, 1
     else:
         l = min(lower, 1)
         u = min(upper, 1)
-        return (l, u)
+        return l, u
 
 
 @numba.njit
@@ -51,6 +54,7 @@ def average(annotations, weights):
 
     return interval.closed(lower, upper)
 
+
 @numba.njit
 def average_lower(annotations, weights):
     """
@@ -68,6 +72,7 @@ def average_lower(annotations, weights):
     lower, upper = _check_bound(avg_lower, max_upper)
 
     return interval.closed(lower, upper)
+
 
 @numba.njit
 def maximum(annotations, weights):
@@ -99,5 +104,3 @@ def minimum(annotations, weights):
     lower, upper = _check_bound(min_lower, min_upper)
 
     return interval.closed(lower, upper)
-
-
