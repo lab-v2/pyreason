@@ -1,13 +1,13 @@
 # Set numba environment variable
 import os
+
 package_path = os.path.abspath(os.path.dirname(__file__))
 cache_path = os.path.join(package_path, 'cache')
 cache_status_path = os.path.join(package_path, '.cache_status.yaml')
-os.environ['NUMBA_CACHE_DIR'] =  cache_path
+os.environ['NUMBA_CACHE_DIR'] = cache_path
 
 from pyreason.pyreason import *
 import yaml
-
 
 with open(cache_status_path) as file:
     cache_status = yaml.safe_load(file)

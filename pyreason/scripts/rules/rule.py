@@ -1,6 +1,17 @@
 class Rule:
 
-    def __init__(self, name, target, target_criteria, delta, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges):
+    def __init__(self,
+                 name,
+                 target,
+                 target_criteria,
+                 delta,
+                 neigh_criteria,
+                 bnd,
+                 thresholds,
+                 ann_fn,
+                 ann_label,
+                 weights,
+                 edges):
         self._name = name
         self._target = target
         self._target_criteria = target_criteria

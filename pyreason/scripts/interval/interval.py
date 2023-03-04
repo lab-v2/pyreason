@@ -2,6 +2,7 @@ from numba.experimental import structref
 from numba import njit
 import numpy as np
 
+
 class Interval(structref.StructRefProxy):
     def __new__(cls, l, u, s=False):
         return structref.StructRefProxy.__new__(cls, l, u, s, l, u)
@@ -15,17 +16,17 @@ class Interval(structref.StructRefProxy):
     @njit
     def upper(self):
         return self.u
-    
+
     @property
     @njit
     def static(self):
         return self.s
-    
+
     @property
     @njit
     def prev_lower(self):
         return self.prev_l
-    
+
     @property
     @njit
     def prev_upper(self):
@@ -35,7 +36,7 @@ class Interval(structref.StructRefProxy):
     def set_lower_upper(self, l, u):
         self.l = l
         self.u = u
-    
+
     @njit
     def reset(self):
         self.prev_l = self.l
@@ -46,18 +47,18 @@ class Interval(structref.StructRefProxy):
     @njit
     def set_static(self, static):
         self.s = static
-    
+
     @njit
     def is_static(self):
         return self.s
 
     @njit
     def has_changed(self):
-        if self.lower==self.prev_lower and self.upper==self.prev_upper:
+        if self.lower == self.prev_lower and self.upper == self.prev_upper:
             return False
         else:
             return True
-    
+
     @njit
     def intersection(self, interval):
         lower = max(self.lower, interval.lower)
