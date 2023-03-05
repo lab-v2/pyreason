@@ -140,7 +140,7 @@ This tells us who is friends with who and who owns what.
 
 ## Rules
 
-Now lets define the rules.yaml file which will tell the program how bounds should changed if certain criteria are satisfied. In our case we want a person's `popular` label to be set to `[0,1]` if they have AT LEAST ONE friend who is `popular: [1,1]` AND who has the same pet as they do. We represent this in the following PyReason rule format
+Now lets define the rules.yaml file which will tell the program how bounds should changed if certain criteria are satisfied. In our case we want a person's `popular` label to be set to `[1,1]` if they have AT LEAST ONE friend who is `popular: [1,1]` AND who has the same pet as they do. We represent this in the following PyReason rule format
 
 ```yaml
 ---

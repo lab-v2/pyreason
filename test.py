@@ -18,4 +18,4 @@ pr.load_rules(path=rules_path)
 pr.load_inconsistent_predicate_list(path=ipl_path)
 
 pr.settings.verbose = True
-interpretation = pr.reason(timesteps=2)
+interpretation = pr.reason(timesteps=30)
