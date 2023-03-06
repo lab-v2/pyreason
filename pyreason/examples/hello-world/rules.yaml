@@ -5,7 +5,7 @@ rule_1:
 
     target_criteria:       # List of all target criteria
         # All criteria come here in the form [label, lower_bound, upper_bound]
-        - [popular, 1, 1]
+        - [popular, 0, 1]
 
     delta_t: 1             # Delta t, time when this rule is applicable
 
