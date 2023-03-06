@@ -4,8 +4,7 @@ import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 import pyreason.scripts.annotation_functions.annotation_functions as ann_fn
 
 import numba
-import time
-from numba import objmode, config
+from numba import objmode
 
 
 # Types for the dictionaries
@@ -150,7 +149,11 @@ class Interpretation:
 	@numba.njit(cache=True)
 	def reason(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, labels_node, labels_edge, specific_labels_node, specific_labels_edge, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, max_facts_time, convergence_mode, convergence_delta, verbose):
 		fp_cnt = 0
-		for t in range(tmax+1):
+		timestep_loop = True
+		t = 0
+		while timestep_loop:
+			if t==tmax:
+				timestep_loop=False
 			if verbose:
 				with objmode():
 					print('Timestep:', t, flush=True)
@@ -366,7 +369,7 @@ class Interpretation:
 					for rule in rules:
 						# Go through all nodes and check if any rules apply to them
 						# Only go through everything if the rule can be applied within the given timesteps. Otherwise it's an unnecessary loop
-						if t+rule.get_delta()<=tmax:
+						if t+rule.get_delta()<=tmax or tmax==-1:
 							for n in nodes:
 								if are_satisfied_node(interpretations_node, n, rule.get_target_criteria()) and is_satisfied_node(interpretations_node, n, (rule.get_target(), interval.closed(0,1))):
 									a = neighbors[n]
@@ -417,6 +420,9 @@ class Interpretation:
 					if verbose:
 						print(f'\nConverged at time: {t}')					
 					break
+
+			# Increment t
+			t += 1
 
 		return fp_cnt, t	
 		
