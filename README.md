@@ -78,7 +78,7 @@ year = {2023}}
 This repository is licensed under [BSD-3-Clause](https://github.com/lab-v2/pyreason/blob/main/LICENSE.md)
 
 ## 6. Contact
-Dyuman Aditya - dyuman.aditya@gmail.com
+Dyuman Aditya - dyuman.aditya@asu.edu
 
 Kaustuv Mukherji - kmukher2@asu.edu
 
