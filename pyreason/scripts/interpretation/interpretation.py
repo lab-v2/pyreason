@@ -509,12 +509,17 @@ def _is_rule_applicable(interpretations_node, interpretations_edge, candidates, 
 
 		# Edges to be added
 		if source!='' and target!='':
-			if source in subsets:
+			# Check if edge nodes are target
+			if source=='target':
+				edges_to_be_added[0].append(target_node)
+			elif source in subsets:
 				edges_to_be_added[0].extend(subsets[source])
 			else:
 				edges_to_be_added[0].append(source)
-			
-			if target in subsets:
+
+			if target=='target':
+				edges_to_be_added[1].append(target_node)			
+			elif target in subsets:
 				edges_to_be_added[1].extend(subsets[target])
 			else:
 				edges_to_be_added[1].append(target)
