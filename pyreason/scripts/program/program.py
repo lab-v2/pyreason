@@ -7,7 +7,7 @@ class Program:
 	specific_node_labels = []
 	specific_edge_labels = []
 
-	def __init__(self, graph, tmax, facts_node, facts_edge, rules, ipl, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace):
+	def __init__(self, graph, tmax, facts_node, facts_edge, rules, ipl, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical):
 		self._graph = graph
 		self._tmax = tmax
 		self._facts_node = facts_node
@@ -17,6 +17,7 @@ class Program:
 		self._reverse_graph = reverse_graph
 		self._atom_trace = atom_trace
 		self._save_graph_attributes_to_rule_trace = save_graph_attributes_to_rule_trace
+		self._canonical = canonical
 
 	def reason(self, convergence_threshold, convergence_bound_threshold, verbose=True):
 		# Set up available labels
@@ -25,7 +26,7 @@ class Program:
 		Interpretation.specific_node_labels = self.specific_node_labels
 		Interpretation.specific_edge_labels = self.specific_edge_labels
 
-		interp = Interpretation(self._graph, self._tmax, self._ipl, self._reverse_graph, self._atom_trace, self._save_graph_attributes_to_rule_trace, convergence_threshold, convergence_bound_threshold)
+		interp = Interpretation(self._graph, self._tmax, self._ipl, self._reverse_graph, self._atom_trace, self._save_graph_attributes_to_rule_trace, self._canonical, convergence_threshold, convergence_bound_threshold)
 		interp.start_fp(self._facts_node, self._facts_edge, self._rules, verbose)
 
 		return interp		

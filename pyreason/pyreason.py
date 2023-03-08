@@ -30,6 +30,7 @@ class _Settings:
         self.__reverse_digraph = False
         self.__atom_trace = False
         self.__save_graph_attributes_to_trace = False
+        self.__canonical = False
 
     @property
     def verbose(self) -> bool:
@@ -105,6 +106,14 @@ class _Settings:
         :return: bool
         """
         return self.__save_graph_attributes_to_trace        
+    
+    @property
+    def canonical(self) -> bool:
+        """Returns whether the interpretation is canonical or non-canonical
+
+        :return: bool
+        """
+        return self.__canonical
 
     @verbose.setter
     def verbose(self, value: bool) -> None:
@@ -217,6 +226,18 @@ class _Settings:
             raise TypeError('value has to be a bool')
         else:
             self.__save_graph_attributes_to_trace = value
+    
+    @canonical.setter
+    def canonical(self, value: bool) -> None:
+        """Whether the interpretation should be canonical where bounds are reset at each timestep or not
+
+        :param value: Whether to reset all bounds at each timestep (non-canonical) or not (canonical)
+        :raises TypeError: If not bool raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('value has to be a bool')
+        else:
+            self.__canonical = value
 
 # VARIABLES
 __graph = None

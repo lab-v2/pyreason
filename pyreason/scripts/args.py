@@ -43,7 +43,11 @@ def argparser():
     # Convergence options
     parser.add_argument("--convergence_threshold", type=int, default=-1, help='Number of interpretations that have changed between timesteps or fixed point operations until considered convergent. Program will end at convergence. -1 => Perfect convergence. This option is default')
     parser.add_argument("--convergence_bound_threshold", type=float, default=-1, help='Max change in any interpretation between timesteps or fixed point operations until considered convergent. Program will end at convergence. --convergence_threshold is default')
-
+    # Canonical vs non-canonical
+    parser.add_argument("--non-canonical", dest='canonical', action='store_false', help='Option to reset bounds of interpretation at each timestep. Default is non-canonical')
+    parser.add_argument("--canonical", dest='canonical', action='store_true',help='Option to NOT reset bounds of interpretation at each timestep. Default is non-canonical')
+    parser.set_defaults(canonical=False)
+    
     # Pickling options
 
     # Filtering options
