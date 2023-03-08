@@ -15,10 +15,11 @@ def parse_rules(path):
         rules_yaml = yaml.safe_load(file)
 
     rules = numba.typed.List.empty_list(rule.rule_type)
-    rule_names = []
     for rule_name, values in rules_yaml.items():
         # Set rule target
-        target = label.Label(values['target'])
+        target = label.Label('')
+        if values['target'] is not None:
+            target = label.Label(values['target'])
         
         # Set rule target criteria
         target_criteria = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
