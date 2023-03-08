@@ -879,28 +879,19 @@ def resolve_inconsistency_edge(interpretations, comp, na, ipl, t_cnt, fp_cnt, at
 
 
 @numba.njit(cache=True)
-def _add_node(node, neighbors, nodes, l, interpretations_node):
+def _add_node(node, neighbors, nodes, interpretations_node):
 	nodes.append(node)
 	neighbors[node] = numba.typed.List.empty_list(node_type)
-	# Make sure, if node exists, that we don't override the l label if it exists
-	if l.value!='':
-		interpretations_node[node] = world.World(numba.typed.List([l]))
+	interpretations_node[node] = world.World(numba.typed.List.empty_list(label.label_type))
 
 @numba.njit(cache=True)
 def _add_edge(source, target, neighbors, nodes, edges, l, interpretations_node, interpretations_edge):
 	# If not a node, add to list of nodes and initialize neighbors
-	# Make sure, if node exists, that we don't override the l label if it exists
 	if source not in nodes:
-		_add_node(source, neighbors, nodes, l, interpretations_node)
-	else:
-		if l not in interpretations_node[source].world and l.value!='':
-			interpretations_node[source].world[l] = interval.closed(0,1)
+		_add_node(source, neighbors, nodes, interpretations_node)
 
 	if target not in nodes:
-		_add_node(target, neighbors, nodes, l, interpretations_node)
-	else:
-		if l not in interpretations_node[target].world and l.value!='':
-			interpretations_node[target].world[l] = interval.closed(0,1)
+		_add_node(target, neighbors, nodes, interpretations_node)
 
 	# Make sure edge doesnt already exist
 	# Make sure, if l=='', not to add the label
@@ -913,6 +904,8 @@ def _add_edge(source, target, neighbors, nodes, edges, l, interpretations_node, 
 		neighbors[source].append(target)
 		if l.value!='':
 			interpretations_edge[edge] = world.World(numba.typed.List([l]))
+		else:
+			interpretations_edge[edge] = world.World(numba.typed.List.empty_list(label.label_type))
 	else:
 		if l not in interpretations_edge[edge].world and l.value!='':
 			new_edge = True
