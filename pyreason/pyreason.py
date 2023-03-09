@@ -32,6 +32,7 @@ class _Settings:
         self.__save_graph_attributes_to_trace = False
         self.__canonical = False
         self.__inconsistency_check = True
+        self.__static_graph_facts = True
 
     @property
     def verbose(self) -> bool:
@@ -123,6 +124,14 @@ class _Settings:
         :return: bool
         """
         return self.__inconsistency_check
+    
+    @property
+    def static_graph_facts(self) -> bool:
+        """Returns whether to make graph facts static or not
+
+        :return: bool
+        """
+        return self.__static_graph_facts
 
     @verbose.setter
     def verbose(self, value: bool) -> None:
@@ -259,6 +268,18 @@ class _Settings:
             raise TypeError('value has to be a bool')
         else:
             self.__inconsistency_check = value
+    
+    @static_graph_facts.setter
+    def static_graph_facts(self, value: bool) -> None:
+        """Whether to make graphml attribute facts static or not
+
+        :param value: Whether to make graphml facts static or not
+        :raises TypeError: If not bool raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('value has to be a bool')
+        else:
+            self.__static_graph_facts = value
 
 # VARIABLES
 __graph = None
@@ -295,7 +316,7 @@ def load_graph(path: str) -> None:
 
     # Graph attribute parsing
     if settings.graph_attribute_parsing:
-        __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels = __graphml_parser.parse_graph_attributes()
+        __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels = __graphml_parser.parse_graph_attributes(settings.static_graph_facts)
     else:
         __non_fluent_graph_facts_node = numba.typed.List.empty_list(fact_node.fact_type)
         __non_fluent_graph_facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)

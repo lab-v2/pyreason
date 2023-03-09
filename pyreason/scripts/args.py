@@ -52,6 +52,10 @@ def argparser():
     parser.add_argument("--non-canonical", dest='canonical', action='store_false', help='Option to reset bounds of interpretation at each timestep. Default is non-canonical')
     parser.add_argument("--canonical", dest='canonical', action='store_true',help='Option to NOT reset bounds of interpretation at each timestep. Default is non-canonical')
     parser.set_defaults(canonical=False)
+    # Whether to make graphml facts static or not
+    parser.add_argument("--non-static_graph_facts", dest='static_graph_facts', action='store_false', help='Option to keep facts from graphml non-static, for t=0 only. Default is static')
+    parser.add_argument("--static_graph_facts", dest='static_graph_facts', action='store_true',help='Option to to keep facts from graphml static, for entire program. Default is static')
+    parser.set_defaults(static_graph_facts=True)
     
     # Pickling options
 

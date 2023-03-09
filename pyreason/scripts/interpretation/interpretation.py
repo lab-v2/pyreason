@@ -448,7 +448,9 @@ class Interpretation:
 										rules_to_be_applied_node.append((numba.types.int8(t+rule.get_delta()), n, rule.get_target(), bnd))
 										if atom_trace:
 											rules_to_be_applied_node_trace.append((qualified_nodes, qualified_edges, rule.get_name()))
-										in_loop = True if rule.get_delta()==0 else False
+										if rule.get_delta()==0:
+											in_loop = True
+											update = False
 							# Go through all edges and check if any rules apply to them.
 							# Comment out the following lines if there are no labels or rules that deal with edges. It will be an unnecessary loop
 							for e in edges:
@@ -462,7 +464,9 @@ class Interpretation:
 										rules_to_be_applied_edge.append((numba.types.int8(t+rule.get_delta()), e, rule.get_target(), bnd))
 										if atom_trace:
 											rules_to_be_applied_edge_trace.append((qualified_nodes, qualified_edges, rule.get_name()))
-										in_loop = True if rule.get_delta()==0 else False
+										if rule.get_delta()==0:
+											in_loop = True
+											update = False
 				
 			# Check for convergence after each timestep (perfect convergence or convergence specified by user)
 			# Check number of changed interpretations or max bound change
