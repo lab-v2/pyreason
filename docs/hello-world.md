@@ -43,11 +43,9 @@ edge_labels:
 
 # Labels that apply to specific nodes. In this case nothing
 node_specific_labels:
-    special_node_label: []
 
 # Labels that apply to specific edges. In this case nothing
 edge_specific_labels:
-    special_edge_label: []
 ```
 
 Each node will receive a `popular` label, and each edge will get a `owns` and `friends` label. The bounds for each of these are set to `[0, 1]` initially.

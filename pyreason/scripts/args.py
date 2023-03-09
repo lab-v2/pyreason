@@ -25,6 +25,11 @@ def argparser():
     parser.add_argument("--no-graph_attribute_parsing", dest='graph_attribute_parsing', action='store_false', help='Option to not make non fluent facts based on the attributes of the graph.')
     parser.add_argument("--graph_attribute_parsing", dest='graph_attribute_parsing', action='store_true', help='Option to make non fluent facts based on the attributes of the graph. On by default')
     parser.set_defaults(graph_attribute_parsing=True)
+    # Check for inconsistencies
+    parser.add_argument("--no-inconsistency_check", dest='inconsistency_check', action='store_false', help='Option to not check for any inconsistencies in the interpretation.')
+    parser.add_argument("--inconsistency_check", dest='inconsistency_check', action='store_true', help='Option to check for inconsistencies in the interpretation. On by default')
+    parser.set_defaults(inconsistency_check=True)
+
     # Interpretation inconsistency check (not done)
     parser.add_argument("--abort_on_inconsistency", dest='abort_on_inconsistency', action='store_true', help='Stop the program if there are inconsistencies, do not fix them automatically')
     parser.set_defaults(abort_on_inconsistency=False)

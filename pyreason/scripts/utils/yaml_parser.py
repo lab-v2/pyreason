@@ -160,20 +160,17 @@ def parse_labels(path):
 
     specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
     if labels_yaml['node_specific_labels'] is not None:
-        for label_name in labels_yaml['node_specific_labels']:
-            l = label.Label(label_name)
-            specific_node_labels[l] = numba.typed.List.empty_list(numba.types.string)
-            for n in labels_yaml['node_specific_labels'][label_name]:
-                specific_node_labels[l].append(str(n))
+        for entry in labels_yaml['node_specific_labels']:
+            for label_name, nodes in entry.items():
+                l = label.Label(str(label_name))
+                specific_node_labels[l] = numba.typed.List([str(n) for n in nodes])
 
     specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
     if labels_yaml['edge_specific_labels'] is not None:
-        for label_name in labels_yaml['edge_specific_labels']:
-            l = label.Label(label_name)
-            specific_edge_labels[l] = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.string)))
-            for e in labels_yaml['edge_specific_labels'][label_name]:
-                specific_edge_labels[l].append((str(e[0]), str(e[1])))
-
+        for entry in labels_yaml['edge_specific_labels']:
+            for label_name, edges in entry.items():
+                l = label.Label(str(label_name))
+                specific_edge_labels[l] = numba.typed.List([(str(e[0]), str(e[1])) for e in edges])
 
     return node_labels, edge_labels, specific_node_labels, specific_edge_labels
 

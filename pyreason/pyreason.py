@@ -31,6 +31,7 @@ class _Settings:
         self.__atom_trace = False
         self.__save_graph_attributes_to_trace = False
         self.__canonical = False
+        self.__inconsistency_check = True
 
     @property
     def verbose(self) -> bool:
@@ -114,6 +115,14 @@ class _Settings:
         :return: bool
         """
         return self.__canonical
+   
+    @property
+    def inconsistency_check(self) -> bool:
+        """Returns whether to check for inconsistencies in the interpretation or not
+
+        :return: bool
+        """
+        return self.__inconsistency_check
 
     @verbose.setter
     def verbose(self, value: bool) -> None:
@@ -238,6 +247,18 @@ class _Settings:
             raise TypeError('value has to be a bool')
         else:
             self.__canonical = value
+   
+    @inconsistency_check.setter
+    def inconsistency_check(self, value: bool) -> None:
+        """Whether to check for inconsistencies in the interpretation or not
+
+        :param value: Whether to check for inconsistencies or not
+        :raises TypeError: If not bool raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('value has to be a bool')
+        else:
+            self.__inconsistency_check = value
 
 # VARIABLES
 __graph = None
@@ -377,13 +398,22 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
 
     
     # If graph attribute parsing, add results to existing specific labels and facts
-    __specific_node_labels.update(__specific_graph_node_labels)
-    __specific_edge_labels.update(__specific_graph_edge_labels)
+    for label_name, nodes in __specific_graph_node_labels.items():
+        if label_name in __specific_node_labels:
+            __specific_node_labels[label_name].extend(nodes)
+        else:
+            __specific_node_labels[label_name] = nodes
+
+    for label_name, edges in __specific_graph_edge_labels.items():
+        if label_name in __specific_edge_labels:
+            __specific_edge_labels[label_name].extend(edges)
+        else:
+            __specific_edge_labels[label_name] = edges
     __node_facts.extend(__non_fluent_graph_facts_node)
     __edge_facts.extend(__non_fluent_graph_facts_edge)   
 
     # Setup logical program
-    program = Program(__graph, timesteps, __node_facts, __edge_facts, __rules, __ipl, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical)
+    program = Program(__graph, timesteps, __node_facts, __edge_facts, __rules, __ipl, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check)
     program.available_labels_node = __node_labels
     program.available_labels_edge = __edge_labels
     program.specific_node_labels = __specific_node_labels

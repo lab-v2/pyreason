@@ -22,7 +22,7 @@ class Interpretation:
 	specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(node_type))
 	specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(edge_type))
 
-	def __init__(self, graph, tmax, ipl, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, convergence_threshold, convergence_bound_threshold):
+	def __init__(self, graph, tmax, ipl, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, convergence_threshold, convergence_bound_threshold):
 		self.tmax = tmax
 		self.graph = graph
 		self.ipl = ipl
@@ -30,6 +30,7 @@ class Interpretation:
 		self.atom_trace = atom_trace
 		self.save_graph_attributes_to_rule_trace = save_graph_attributes_to_rule_trace
 		self.canonical = canonical
+		self.inconsistency_check = inconsistency_check
 		self.time = 0
 
 		# Set up convergence criteria
@@ -140,7 +141,7 @@ class Interpretation:
 
 		
 	def _start_fp(self, rules, max_facts_time, verbose):
-		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.tmax, rules, numba.typed.List(self.graph.nodes()), numba.typed.List(self.graph.edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.available_labels_node, self.available_labels_edge, self.specific_node_labels, self.specific_edge_labels, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.canonical, max_facts_time, self._convergence_mode, self._convergence_delta, verbose)
+		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.tmax, rules, numba.typed.List(self.graph.nodes()), numba.typed.List(self.graph.edges()), self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.available_labels_node, self.available_labels_edge, self.specific_node_labels, self.specific_edge_labels, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.canonical, self.inconsistency_check, max_facts_time, self._convergence_mode, self._convergence_delta, verbose)
 		self.time = t
 		if verbose:
 			print('Fixed Point iterations:', fp_cnt)
@@ -148,7 +149,7 @@ class Interpretation:
 
 	@staticmethod
 	@numba.njit(cache=True)
-	def reason(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, labels_node, labels_edge, specific_labels_node, specific_labels_edge, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, max_facts_time, convergence_mode, convergence_delta, verbose):
+	def reason(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, labels_node, labels_edge, specific_labels_node, specific_labels_edge, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, max_facts_time, convergence_mode, convergence_delta, verbose):
 		fp_cnt = 0
 		timestep_loop = True
 		t = 0
@@ -223,9 +224,21 @@ class Interpretation:
 								bound_delta = max(bound_delta, changes)
 							else:
 								changes_cnt += changes
-						# Resolve inconsistency
+						# Resolve inconsistency if necessary otherwise override bounds
 						else:
-							resolve_inconsistency_node(interpretations_node, comp, (l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_node, rule_trace_node_atoms)
+							if inconsistency_check:
+								resolve_inconsistency_node(interpretations_node, comp, (l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_node, rule_trace_node_atoms)
+							else:
+								mode = 'graph-attribute-fact' if graph_attribute else 'fact'
+								u, changes = _override_update_node(interpretations_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, mode=mode)
+
+								update = u or update
+								# Update convergence params
+								if convergence_mode=='delta_bound':
+									bound_delta = max(bound_delta, changes)
+								else:
+									changes_cnt += changes
+
 					if static:
 						facts_to_be_applied_node[i] = (numba.types.int8(facts_to_be_applied_node[i][0]+1), comp, l, bnd, static, graph_attribute)
 
@@ -265,7 +278,19 @@ class Interpretation:
 								changes_cnt += changes
 						# Resolve inconsistency
 						else:
-							resolve_inconsistency_edge(interpretations_edge, comp, (l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_edge, rule_trace_edge_atoms)
+							if inconsistency_check:
+								resolve_inconsistency_edge(interpretations_edge, comp, (l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_edge, rule_trace_edge_atoms)
+							else:
+								mode = 'graph-attribute-fact' if graph_attribute else 'fact'
+								u, changes = _override_update_edge(interpretations_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, mode=mode)
+
+								update = u or update
+								# Update convergence params
+								if convergence_mode=='delta_bound':
+									bound_delta = max(bound_delta, changes)
+								else:
+									changes_cnt += changes
+
 					if static:
 						facts_to_be_applied_edge[i] = (numba.types.int8(facts_to_be_applied_edge[i][0]+1), comp, l, bnd, static, graph_attribute)
 
@@ -300,7 +325,18 @@ class Interpretation:
 										changes_cnt += changes
 								# Resolve inconsistency
 								else:
-									resolve_inconsistency_edge(interpretations_edge, e, (edge_l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_edge, rule_trace_edge_atoms)
+									if inconsistency_check:
+										resolve_inconsistency_edge(interpretations_edge, e, (edge_l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_edge, rule_trace_edge_atoms)
+									else:
+										u, changes = _override_update_edge(interpretations_edge, e, (edge_l, bnd), ipl, rule_trace_edge, fp_cnt, t, False, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, mode='rule')
+
+										update = u or update
+
+										# Update convergence params
+										if convergence_mode=='delta_bound':
+											bound_delta = max(bound_delta, changes)
+										else:
+											changes_cnt += changes
 						else:
 							# Check for inconsistencies
 							if check_consistent_node(interpretations_node, comp, (l, bnd)):
@@ -314,7 +350,17 @@ class Interpretation:
 									changes_cnt += changes
 							# Resolve inconsistency
 							else:
-								resolve_inconsistency_node(interpretations_node, comp, (l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_node, rule_trace_node_atoms)
+								if inconsistency_check:
+									resolve_inconsistency_node(interpretations_node, comp, (l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_node, rule_trace_node_atoms)
+								else:
+									u, changes = _override_update_node(interpretations_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, False, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, idx, facts_to_be_applied_node_trace, rule_trace_node_atoms, mode='rule')
+
+									update = u or update
+									# Update convergence params
+									if convergence_mode=='delta_bound':
+										bound_delta = max(bound_delta, changes)
+									else:
+										changes_cnt += changes
 
 						# Delete rules that have been applied from list by changing t to -1
 						rules_to_be_applied_node[idx] = (numba.types.int8(-1), comp, l, bnd)
@@ -343,7 +389,18 @@ class Interpretation:
 										changes_cnt += changes
 								# Resolve inconsistency
 								else:
-									resolve_inconsistency_edge(interpretations_edge, e, (edge_l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_edge, rule_trace_edge_atoms)
+									if inconsistency_check:
+										resolve_inconsistency_edge(interpretations_edge, e, (edge_l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_edge, rule_trace_edge_atoms)
+									else:
+										u, changes = _override_update_edge(interpretations_edge, e, (edge_l, bnd), ipl, rule_trace_edge, fp_cnt, t, False, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, mode='rule')
+
+										update = u or update
+
+										# Update convergence params
+										if convergence_mode=='delta_bound':
+											bound_delta = max(bound_delta, changes)
+										else:
+											changes_cnt += changes
 
 						else:
 							# Check for inconsistencies
@@ -358,7 +415,17 @@ class Interpretation:
 									changes_cnt += changes
 							# Resolve inconsistency
 							else:
-								resolve_inconsistency_edge(interpretations_edge, comp, (l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_edge, rule_trace_edge_atoms)
+								if inconsistency_check:
+									resolve_inconsistency_edge(interpretations_edge, comp, (l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_edge, rule_trace_edge_atoms)
+								else:
+									u, changes = _override_update_edge(interpretations_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, False, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, mode='rule')
+								
+									update = u or update
+									# Update convergence params
+									if convergence_mode=='delta_bound':
+										bound_delta = max(bound_delta, changes)
+									else:
+										changes_cnt += changes
 
 						# Delete rules that have been applied from list by changing t to -1
 						rules_to_be_applied_edge[idx] = (numba.types.int8(-1), comp, l, bnd)
@@ -801,6 +868,84 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 
 	except:
 		return (False, 0)
+
+@numba.njit(cache=True)
+def _override_update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_trace, idx, facts_to_be_applied_trace, rule_trace_atoms, mode):
+	updated = False
+	# This is to prevent a key error in case the label is a specific label
+	try:
+		world = interpretations[comp]
+		l, bnd = na
+		updated_bnds = numba.typed.List.empty_list(interval.interval_type)
+
+		# Check if update is necessary with previous bnd
+		prev_bnd = world.world[l].copy()
+		world.world[l].set_lower_upper(bnd.lower, bnd.upper)
+		world.world[l].set_static(static)
+		if world.world[l]!=prev_bnd:
+			updated = True
+			updated_bnds.append(world.world[l])
+
+			# Add to rule trace if update happened and add to atom trace if necessary
+			if save_graph_attributes_to_rule_trace or not mode=='graph-attribute-fact':
+				rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, world.world[l].copy()))
+				if atom_trace:
+					# Mode can be fact or rule, updation of trace will happen accordingly
+					if mode=='fact' or mode=='graph-attribute-fact':
+						qn = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
+						qe = numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type))
+						name = facts_to_be_applied_trace[idx]
+						_update_rule_trace(rule_trace_atoms, qn, qe, prev_bnd, name)
+					elif mode=='rule':
+						qn, qe, name = rules_to_be_applied_trace[idx]
+						_update_rule_trace(rule_trace_atoms, qn, qe, prev_bnd, name)
+			
+
+		# Update complement of predicate (if exists) based on new knowledge of predicate
+		if updated:
+			ip_update_cnt = 0
+			for p1, p2 in ipl:
+				if p1==l:
+					if atom_trace:
+						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p2], f'IPL: {l.get_value()}')
+					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
+					upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
+					world.world[p2].set_lower_upper(lower, upper)
+					world.world[p2].set_static(static)
+					ip_update_cnt += 1
+					updated_bnds.append(world.world[p2])
+					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p2, interval.closed(lower, upper)))
+				if p2==l:
+					if atom_trace:
+						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p1], f'IPL: {l.get_value()}')
+					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
+					upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
+					world.world[p1].set_lower_upper(lower, upper)
+					world.world[p1].set_static(static)
+					ip_update_cnt += 1
+					updated_bnds.append(world.world[p1])
+					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(lower, upper)))
+		
+		# Gather convergence data
+		change = 0
+		if updated:
+			# Find out if it has changed from previous interp
+			current_bnd = world.world[l]
+			prev_t_bnd = interval.closed(world.world[l].prev_lower, world.world[l].prev_upper)
+			if current_bnd != prev_t_bnd:
+				if convergence_mode=='delta_bound':
+					for i in updated_bnds:
+						lower_delta = abs(i.lower-prev_t_bnd.lower)
+						upper_delta = abs(i.upper-prev_t_bnd.upper)
+						max_delta = max(lower_delta, upper_delta)
+						change = max(change, max_delta)
+				else:
+					change = 1 + ip_update_cnt
+
+		return (updated, change)
+
+	except:
+		return (False, 0)
 	
 
 @numba.njit(cache=True)
@@ -815,6 +960,83 @@ def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		# Check if update is necessary with previous bnd
 		prev_bnd = world.world[l].copy()
 		world.update(l, bnd)
+		world.world[l].set_static(static)
+		if world.world[l]!=prev_bnd:
+			updated = True
+			updated_bnds.append(world.world[l])
+
+			# Add to rule trace if update happened and add to atom trace if necessary
+			if save_graph_attributes_to_rule_trace or not mode=='graph-attribute-fact':
+				rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, l, world.world[l].copy()))
+				if atom_trace:
+					# Mode can be fact or rule, updation of trace will happen accordingly
+					if mode=='fact' or mode=='graph-attribute-fact':
+						qn = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
+						qe = numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type))
+						name = facts_to_be_applied_trace[idx]
+						_update_rule_trace(rule_trace_atoms, qn, qe, prev_bnd, name)
+					elif mode=='rule':
+						qn, qe, name = rules_to_be_applied_trace[idx]
+						_update_rule_trace(rule_trace_atoms, qn, qe, prev_bnd, name)
+			
+
+		# Update complement of predicate (if exists) based on new knowledge of predicate
+		if updated:
+			ip_update_cnt = 0
+			for p1, p2 in ipl:
+				if p1==l:
+					if atom_trace:
+						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p2], f'IPL: {l.get_value()}')
+					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
+					upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
+					world.world[p2].set_lower_upper(lower, upper)
+					world.world[p2].set_static(static)
+					ip_update_cnt += 1
+					updated_bnds.append(world.world[p2])
+					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p2, interval.closed(lower, upper)))
+				if p2==l:
+					if atom_trace:
+						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p1], f'IPL: {l.get_value()}')
+					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
+					upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
+					world.world[p1].set_lower_upper(lower, upper)
+					world.world[p1].set_static(static)
+					ip_update_cnt += 1
+					updated_bnds.append(world.world[p2])
+					rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, p1, interval.closed(lower, upper)))
+	
+		# Gather convergence data
+		change = 0
+		if updated:
+			# Find out if it has changed from previous interp
+			current_bnd = world.world[l]
+			prev_t_bnd = interval.closed(world.world[l].prev_lower, world.world[l].prev_upper)
+			if current_bnd != prev_t_bnd:
+				if convergence_mode=='delta_bound':
+					for i in updated_bnds:
+						lower_delta = abs(i.lower-prev_t_bnd.lower)
+						upper_delta = abs(i.upper-prev_t_bnd.upper)
+						max_delta = max(lower_delta, upper_delta)
+						change = max(change, max_delta)
+				else:
+					change = 1 + ip_update_cnt
+		
+		return (updated, change)
+	except:
+		return (False, 0)
+
+@numba.njit(cache=True)
+def _override_update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_trace, idx, facts_to_be_applied_trace, rule_trace_atoms, mode):
+	updated = False
+	# This is to prevent a key error in case the label is a specific label
+	try:
+		world = interpretations[comp]
+		l, bnd = na
+		updated_bnds = numba.typed.List.empty_list(interval.interval_type)
+
+		# Check if update is necessary with previous bnd
+		prev_bnd = world.world[l].copy()
+		world.world[l].set_lower_upper(bnd.lower, bnd.upper)
 		world.world[l].set_static(static)
 		if world.world[l]!=prev_bnd:
 			updated = True
@@ -966,7 +1188,7 @@ def check_consistent_edge(interpretations, comp, na):
 @numba.njit(cache=True)
 def resolve_inconsistency_node(interpretations, comp, na, ipl, t_cnt, fp_cnt, atom_trace, rule_trace, rule_trace_atoms):
 	world = interpretations[comp]
-	rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], world.world[na[0]].copy()))
+	rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], interval.closed(0,1)))
 	if atom_trace:
 		_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[na[0]], 'Inconsistency')
 	# Resolve inconsistency and set static
@@ -992,7 +1214,7 @@ def resolve_inconsistency_node(interpretations, comp, na, ipl, t_cnt, fp_cnt, at
 @numba.njit(cache=True)
 def resolve_inconsistency_edge(interpretations, comp, na, ipl, t_cnt, fp_cnt, atom_trace, rule_trace, rule_trace_atoms):
 	world = interpretations[comp]
-	rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], world.world[na[0]].copy()))
+	rule_trace.append((numba.types.int8(t_cnt), numba.types.int8(fp_cnt), comp, na[0], interval.closed(0,1)))
 	if atom_trace:
 		_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[na[0]], 'Inconsistency')
 	# Resolve inconsistency and set static

@@ -44,6 +44,17 @@ def main(args):
     if args.graph_attribute_parsing:
         specific_node_labels.update(snl)
         specific_edge_labels.update(sel)
+        for label_name, nodes in specific_node_labels.items():
+            if label_name in snl:
+                snl[label_name].extend(nodes)
+            else:
+                snl[label_name] = nodes
+
+        for label_name, edges in specific_edge_labels.items():
+            if label_name in sel:
+                sel[label_name].extend(edges)
+            else:
+                sel[label_name] = edges
     else:
         specific_node_labels = snl
         specific_edge_labels = sel
@@ -60,7 +71,7 @@ def main(args):
     ipl = yaml_parser.parse_ipl(args.ipl_yaml_path)
 
     # Program comes here
-    program = Program(graph, tmax, facts_node, facts_edge, rules, ipl, args.reverse_digraph, args.atom_trace, args.save_graph_attributes_to_trace, args.canonical)
+    program = Program(graph, tmax, facts_node, facts_edge, rules, ipl, args.reverse_digraph, args.atom_trace, args.save_graph_attributes_to_trace, args.canonical, args.inconsistency_check)
     program.available_labels_node = node_labels
     program.available_labels_edge = edge_labels
     program.specific_node_labels = specific_node_labels
