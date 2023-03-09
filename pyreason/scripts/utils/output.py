@@ -57,7 +57,7 @@ class Output:
             for i, r in enumerate(interpretation.rule_trace_edge):
                 row = [r[0], r[1], r[2], r[3]._value, '-', r[4].to_str(), '-']
                 if interpretation.atom_trace:
-                    qn, old_bnd, name = interpretation.rule_trace_edge_atoms[i]
+                    qn, qe, old_bnd, name = interpretation.rule_trace_edge_atoms[i]
                     row[4] = old_bnd.to_str()
                     # Go through all the changes in the rule trace
                     # len(qn) = num of clauses in rule that was used

@@ -383,7 +383,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     __edge_facts.extend(__non_fluent_graph_facts_edge)   
 
     # Setup logical program
-    program = Program(__graph, timesteps, __node_facts, __edge_facts, __rules, __ipl, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace)
+    program = Program(__graph, timesteps, __node_facts, __edge_facts, __rules, __ipl, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical)
     program.available_labels_node = __node_labels
     program.available_labels_edge = __edge_labels
     program.specific_node_labels = __specific_node_labels

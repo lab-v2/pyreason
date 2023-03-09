@@ -49,13 +49,18 @@ def parse_rules(path):
                 bnd = interval.closed(clause[3][0], clause[3][1])
                 neigh_criteria.append((clause_type, subset, l, bnd))
 
-                # Append threshold corresponding to clause
-                quantifier = clause[4][0]
-                if clause[4][1]=='number':
-                    quantifier_type = ('number', 'total')
+                # Append threshold corresponding to clause if specified in rule, else use default of greater equal to 1
+                if len(clause)>4:
+                    quantifier = clause[4][0]
+                    if clause[4][1]=='number':
+                        quantifier_type = ('number', 'total')
+                    else:
+                        quantifier_type = ('percent', clause[4][1][1])
+                    thresh = clause[4][2]
                 else:
-                    quantifier_type = ('percent', clause[4][1][1])
-                thresh = clause[4][2]
+                    quantifier = 'greater_equal'
+                    quantifier_type = ('number', 'total')
+                    thresh = 1
                 thresholds.append((quantifier, quantifier_type, thresh))
 
             # Edges that need to be added if rule fires
@@ -67,6 +72,9 @@ def parse_rules(path):
                 elif len(values['edges'])==3:
                     values['edges'][2] = label.Label(values['edges'][2])
                     edges = tuple(values['edges'])
+
+            # Both target and edge label (if edges are being added) cannot be '' at the same time. One has to have a value
+            assert edges[2].get_value()!='' or target.get_value()!='', 'Both target and edge label cannot empty at the same time, one has to take a value. Modify the rules YAML file'
 
             
             # If annotation function is a string, it is the name of the function. If it is a bound then set it to an empty string
