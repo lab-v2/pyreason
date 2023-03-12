@@ -314,7 +314,7 @@ class Interpretation:
 						if edge_l.value!='':
 							for e in edges_added:
 								if check_consistent_edge(interpretations_edge, e, (edge_l, bnd)):
-									u, changes = _update_edge(interpretations_edge, e, (edge_l, bnd), ipl, rule_trace_edge, fp_cnt, t, False, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, mode='rule')
+									u, changes = _update_edge(interpretations_edge, e, (edge_l, bnd), ipl, rule_trace_edge, fp_cnt, t, False, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, mode='rule')
 
 									update = u or update
 
@@ -328,7 +328,7 @@ class Interpretation:
 									if inconsistency_check:
 										resolve_inconsistency_edge(interpretations_edge, e, (edge_l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_edge, rule_trace_edge_atoms)
 									else:
-										u, changes = _override_update_edge(interpretations_edge, e, (edge_l, bnd), ipl, rule_trace_edge, fp_cnt, t, False, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, mode='rule')
+										u, changes = _override_update_edge(interpretations_edge, e, (edge_l, bnd), ipl, rule_trace_edge, fp_cnt, t, False, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, mode='rule')
 
 										update = u or update
 
@@ -439,7 +439,8 @@ class Interpretation:
 						# Only go through everything if the rule can be applied within the given timesteps. Otherwise it's an unnecessary loop
 						if t+rule.get_delta()<=tmax or tmax==-1:
 							for n in nodes:
-								if are_satisfied_node(interpretations_node, n, rule.get_target_criteria()) and is_satisfied_node(interpretations_node, n, (rule.get_target(), interval.closed(0,1))) or rule.get_target().value=='':
+								target_criteria_satisfaction = are_satisfied_node(interpretations_node, n, rule.get_target_criteria())
+								if (target_criteria_satisfaction and is_satisfied_node(interpretations_node, n, (rule.get_target(), interval.closed(0,1)))) or (target_criteria_satisfaction and rule.get_target().value==''):
 									result, annotations, qualified_nodes, qualified_edges, edges_to_add = _is_rule_applicable(interpretations_node, interpretations_edge, neighbors, n, rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, rule.get_annotation_function(), rule.get_annotation_label(), rule.get_edges(), atom_trace)
 									if (result and rule.get_target().value=='') or (result and not interpretations_node[n].world[rule.get_target()].is_static()):
 										bnd = influence(rule, annotations, rule.get_weights())
@@ -454,7 +455,8 @@ class Interpretation:
 							# Go through all edges and check if any rules apply to them.
 							# Comment out the following lines if there are no labels or rules that deal with edges. It will be an unnecessary loop
 							for e in edges:
-								if are_satisfied_edge(interpretations_edge, e, rule.get_target_criteria()) and is_satisfied_node(interpretations_edge, e, (rule.get_target(), interval.closed(0,1))) or rule.get_target().value=='':
+								target_criteria_satisfaction = are_satisfied_edge(interpretations_edge, e, rule.get_target_criteria())
+								if (target_criteria_satisfaction and is_satisfied_node(interpretations_edge, e, (rule.get_target(), interval.closed(0,1)))) or (target_criteria_satisfaction and rule.get_target().value==''):
 									# Find out if rule is applicable. returns list of list of qualified nodes and qualified edges. one for each clause
 									result, annotations, qualified_nodes, qualified_edges, edges_to_add = _is_rule_applicable_edge(interpretations_node, interpretations_edge, neighbors, e, rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, rule.get_annotation_function(), rule.get_annotation_label(), rule.get_edges(), atom_trace)
 									if (result and rule.get_target().value=='') or (result and not interpretations_edge[e].world[rule.get_target()].is_static()):
@@ -1280,13 +1282,13 @@ def _add_edge(source, target, neighbors, nodes, edges, l, interpretations_node, 
 @numba.njit(cache=True)
 def _add_edges(sources, targets, neighbors, nodes, edges, l, interpretations_node, interpretations_edge):
 	changes = 0
-	edges = numba.typed.List.empty_list(edge_type)
+	edges_added = numba.typed.List.empty_list(edge_type)
 	for source in sources:
 		for target in targets:
 			edge, new_edge = _add_edge(source, target, neighbors, nodes, edges, l, interpretations_node, interpretations_edge)
-			edges.append(edge)
-			changes = changes+1 if new_edge else changes 
-	return (edges, changes)
+			edges_added.append(edge)
+			changes = changes+1 if new_edge else changes
+	return (edges_added, changes)
 
 
 @numba.njit(cache=True)
