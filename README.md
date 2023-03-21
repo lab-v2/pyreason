@@ -11,7 +11,7 @@ Paper: https://arxiv.org/abs/2302.13482
 
 Video: https://www.youtube.com/watch?v=E1PSl3KQCmo
 
-Website: https://neurosymoblic.asu.edu/pyreason/
+Website: https://neurosymbolic.asu.edu/pyreason/
 
 Check out the [PyReason Hello World](https://github.com/lab-v2/pyreason/blob/main/docs/hello-world.md) program if you're new, or want get get a feel for the software.
 
