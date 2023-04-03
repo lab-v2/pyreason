@@ -43,9 +43,11 @@ The format of these files is very important. Please refer to the [example YAML f
 PyReason can be installed as a python library (recommended) or as a command line tool
 
 ## 2.1 Install as a Python Library
-This might take a minute or two
+If you are importing pyreason for the first time, it might take a minute or two to initialize
 ```bash
 pip install pyreason
+python
+import pyreason
 ```
 
 ## 2.2 Install as a Command Line Tool
