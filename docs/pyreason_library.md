@@ -4,7 +4,10 @@ pypi project: https://pypi.org/project/pyreason/
 ## Install
 ```bash
 pip install pyreason
+python
+import pyreason
 ```
+We import pyreason to initialize it for the first time, this may take a few minutes
 
 ## Usage
 Example:
