@@ -65,72 +65,71 @@ nodes:
         bound: [1, 1]       # Bound of the label
         static: false       # Whether it applies to all timesteps and cannot change
         t_lower: 0          # Starting time
-        t_upper: 2          # Ending time. In this case it will be active for the first timestep t=0
+        t_upper: 2          # Ending time. 
 
 edges:
     fact_1:
-        source: Cat        # Source of the edge
-        target: Mary       # Target of the edge
+        source: Mary       # Source of the edge
+        target: Cat        # Target of the edge
         label: owns        # Name of the label of the node
         bound: [1, 1]      # Bound of the label
         static: true
         t_lower: 0         # Starting time
-        t_upper: 0         # Ending time. In this case it will be active for the first timestep t=0
+        t_upper: 0         # Ending time. 
 
     fact_2:
-        source: Cat        # Source of the edge
-        target: Justin     # Target of the edge
+        source: Justin     # Source of the edge
+        target: Cat        # Target of the edge
         label: owns        # Name of the label of the node
         bound: [1, 1]      # Bound of the label
         static: true
         t_lower: 0         # Starting time
-        t_upper: 0         # Ending time. In this case it will be active for the first timestep t=0
+        t_upper: 0         # Ending time. 
 
     fact_3:
-        source: Dog        # Source of the edge
-        target: Justin     # Target of the edge
+        source: Justin     # Source of the edge
+        target: Dog        # Target of the edge
         label: owns        # Name of the label of the node
         bound: [1, 1]      # Bound of the label
         static: true
         t_lower: 0         # Starting time
-        t_upper: 0         # Ending time. In this case it will be active for the first timestep t=0
+        t_upper: 0         # Ending time. 
 
     fact_4:
-        source: Dog        # Source of the edge
-        target: John       # Target of the edge
+        source: John       # Source of the edge
+        target: Dog        # Target of the edge
         label: owns        # Name of the label of the node
         bound: [1, 1]      # Bound of the label
         static: true
         t_lower: 0         # Starting time
-        t_upper: 0         # Ending time. In this case it will be active for the first timestep t=0
+        t_upper: 0         # Ending time. 
 
     fact_5:
-        source: Mary       # Source of the edge
+        source: Justin     # Source of the edge
+        target: Mary       # Target of the edge
+        label: friends     # Name of the label of the node
+        bound: [1, 1]      # Bound of the label
+        static: true
+        t_lower: 0         # Starting time
+        t_upper: 0         # Ending time. 
+
+    fact_6:
+        source: John       # Source of the edge
         target: Justin     # Target of the edge
         label: friends     # Name of the label of the node
         bound: [1, 1]      # Bound of the label
         static: true
         t_lower: 0         # Starting time
-        t_upper: 0         # Ending time. In this case it will be active for the first timestep t=0
-
-    fact_6:
-        source: Justin     # Source of the edge
-        target: John       # Target of the edge
-        label: friends     # Name of the label of the node
-        bound: [1, 1]      # Bound of the label
-        static: true
-        t_lower: 0         # Starting time
-        t_upper: 0         # Ending time. In this case it will be active for the first timestep t=0
+        t_upper: 0         # Ending time. 
 
     fact_7:
-        source: Mary       # Source of the edge
-        target: John       # Target of the edge
+        source: John       # Source of the edge
+        target: Mary       # Target of the edge
         label: friends     # Name of the label of the node
         bound: [1, 1]      # Bound of the label
         static: true
         t_lower: 0         # Starting time
-        t_upper: 0         # Ending time. In this case it will be active for the first timestep t=0
-    
+        t_upper: 0         # Ending time. 
 ```
 
 This tells us who is friends with who and who owns what.
@@ -154,9 +153,9 @@ rule_1:
 
     neigh_criteria:        # List of all neighbour criteria in the form [criteria on node/edge, variable, label, [lower_bound, upper_bound], [equal/greater/less/greater_equal/less_equal, number/[percent, total/available], value]]
         - [node, [x1], popular, [1,1], [greater_equal, number, 1]]
-        - [edge, [x1, target], friends, [1,1], [greater_equal, number, 1]]
-        - [edge, [x2, x1], owns, [1,1], [greater_equal, number, 1]]
-        - [edge, [x2, target], owns, [1,1], [greater_equal, number, 1]]
+        - [edge, [target, x1], friends, [1,1], [greater_equal, number, 1]]
+        - [edge, [x1, x2], owns, [1,1], [greater_equal, number, 1]]
+        - [edge, [target, x2], owns, [1,1], [greater_equal, number, 1]]
 
     ann_fn: [1,1]          # Annotation function name or bound. See annotation_functions.py for list of available functions. The name of that function comes here
                            # Could be func_name or [l, u]
