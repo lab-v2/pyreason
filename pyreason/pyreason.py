@@ -36,7 +36,7 @@ class _Settings:
 
     @property
     def verbose(self) -> bool:
-        """Returns whether verbose mode is on or not
+        """Returns whether verbose mode is on or not. Default is True
 
         :return: bool
         """
@@ -44,7 +44,7 @@ class _Settings:
     
     @property
     def output_to_file(self) -> bool:
-        """Returns whether output is going to be printed to file or not
+        """Returns whether output is going to be printed to file or not. Default is False
 
         :return: bool
         """
@@ -52,7 +52,7 @@ class _Settings:
 
     @property
     def output_file_name(self) -> str:
-        """Returns whether name of the file output will be saved in. Only applicable if `output_to_file` is true
+        """Returns whether name of the file output will be saved in. Only applicable if `output_to_file` is true. Default is pyreason_output
 
         :return: str
         """
@@ -60,7 +60,7 @@ class _Settings:
 
     @property
     def graph_attribute_parsing(self) -> bool:
-        """Returns whether graph will be parsed for attributes or not
+        """Returns whether graph will be parsed for attributes or not. Default is True
 
         :return: bool
         """
@@ -68,7 +68,7 @@ class _Settings:
 
     @property
     def abort_on_inconsistency(self) -> bool:
-        """Returns whether program will abort when it encounters an inconsistency in the interpretation or not
+        """Returns whether program will abort when it encounters an inconsistency in the interpretation or not. Default is False
 
         :return: bool
         """
@@ -76,7 +76,7 @@ class _Settings:
 
     @property
     def memory_profile(self) -> bool:
-        """Returns whether program will profile maximum memory usage or not
+        """Returns whether program will profile maximum memory usage or not. Default is False
 
         :return: bool
         """
@@ -85,7 +85,7 @@ class _Settings:
     @property
     def reverse_digraph(self) -> bool:
         """Returns whether graph will be reversed or not.
-        If graph is reversed, an edge a->b will become b->a
+        If graph is reversed, an edge a->b will become b->a. Default is False
 
         :return: bool
         """
@@ -94,7 +94,7 @@ class _Settings:
     @property
     def atom_trace(self) -> bool:
         """Returns whether to keep track of all atoms that are responsible for the firing of rules or not.
-        NOTE: Turning this on may increase memory usage
+        NOTE: Turning this on may increase memory usage. Default is False
 
         :return: bool
         """
@@ -103,7 +103,7 @@ class _Settings:
     @property
     def save_graph_attributes_to_trace(self) -> bool:
         """Returns whether to save the graph attribute facts to the rule trace. Graphs are large and turning this on can result in more memory usage.
-        NOTE: Turning this on may increase memory usage
+        NOTE: Turning this on may increase memory usage. Default is False
 
         :return: bool
         """
@@ -111,7 +111,7 @@ class _Settings:
     
     @property
     def canonical(self) -> bool:
-        """Returns whether the interpretation is canonical or non-canonical
+        """Returns whether the interpretation is canonical or non-canonical. Default is False
 
         :return: bool
         """
@@ -119,7 +119,7 @@ class _Settings:
    
     @property
     def inconsistency_check(self) -> bool:
-        """Returns whether to check for inconsistencies in the interpretation or not
+        """Returns whether to check for inconsistencies in the interpretation or not. Default is True
 
         :return: bool
         """
@@ -127,7 +127,7 @@ class _Settings:
     
     @property
     def static_graph_facts(self) -> bool:
-        """Returns whether to make graph facts static or not
+        """Returns whether to make graph facts static or not. Default is True
 
         :return: bool
         """
