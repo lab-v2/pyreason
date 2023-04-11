@@ -66,8 +66,12 @@ class Output:
                     # Go through each clause
                     for j in range(len(qn)):
                         max_j = max(j, max_j)
-                        # Node clause
-                        row.append(list(qn[j]))
+                        if len(qe[j])==0:
+                            # Node clause
+                            row.append(list(qn[j]))
+                        elif len(qn[j])==0:
+                            # Edge clause
+                            row.append(list(qe[j]))
 
 
                 data.append(row)
