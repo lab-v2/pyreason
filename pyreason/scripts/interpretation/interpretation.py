@@ -22,8 +22,7 @@ class Interpretation:
 	specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(node_type))
 	specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(edge_type))
 
-	def __init__(self, graph, tmax, ipl, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, convergence_threshold, convergence_bound_threshold):
-		self.tmax = tmax
+	def __init__(self, graph, ipl, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check):
 		self.graph = graph
 		self.ipl = ipl
 		self.reverse_graph = reverse_graph
@@ -32,17 +31,6 @@ class Interpretation:
 		self.canonical = canonical
 		self.inconsistency_check = inconsistency_check
 		self.time = 0
-
-		# Set up convergence criteria
-		if convergence_bound_threshold==-1 and convergence_threshold==-1:
-			self._convergence_mode = 'perfect_convergence'
-			self._convergence_delta = 0
-		elif convergence_bound_threshold==-1:
-			self._convergence_mode = 'delta_interpretation'
-			self._convergence_delta = convergence_threshold
-		else:
-			self._convergence_mode = 'delta_bound'
-			self._convergence_delta = convergence_bound_threshold
 
 		# Initialize list of tuples for rules/facts to be applied, along with all the ground atoms that fired the rule. One to One correspondence between rules_to_be_applied_node and rules_to_be_applied_node_trace if atom_trace is true
 		self.rules_to_be_applied_node_trace = numba.typed.List.empty_list(numba.types.Tuple((numba.types.ListType(numba.types.ListType(node_type)), numba.types.ListType(numba.types.ListType(edge_type)), numba.types.string)))
@@ -111,8 +99,25 @@ class Interpretation:
 				interpretations[e].world[l] = interval.closed(0.0, 1.0)
 
 		return interpretations
+	
+	@staticmethod
+	@numba.njit(cache=True)
+	def _init_convergence(convergence_bound_threshold, convergence_threshold):
+		if convergence_bound_threshold==-1 and convergence_threshold==-1:
+			convergence_mode = 'perfect_convergence'
+			convergence_delta = 0
+		elif convergence_bound_threshold==-1:
+			convergence_mode = 'delta_interpretation'
+			convergence_delta = convergence_threshold
+		else:
+			convergence_mode = 'delta_bound'
+			convergence_delta = convergence_bound_threshold
+		return convergence_mode, convergence_delta
+		
 
-	def start_fp(self, facts_node, facts_edge, rules, verbose):
+	def start_fp(self, tmax, facts_node, facts_edge, rules, verbose, convergence_threshold, convergence_bound_threshold):
+		self.tmax = tmax
+		self._convergence_mode, self._convergence_delta = self._init_convergence(convergence_bound_threshold, convergence_threshold)
 		max_facts_time = self._init_facts(facts_node, facts_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.atom_trace)
 		self._start_fp(rules, max_facts_time, verbose)
 
