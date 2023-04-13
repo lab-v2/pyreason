@@ -469,11 +469,13 @@ def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold,
     assert __program is not None, 'To run `reason_again` you need to have reasoned once before'
 
     # If facts have not been inputted, use the old facts
-    if node_facts is not None:    
+    if node_facts is not None:
+        node_facts = numba.typed.List(node_facts)
         node_facts.extend(__non_fluent_graph_facts_node)
     else:
         node_facts = __node_facts
     if edge_facts is not None:
+        edge_facts = numba.typed.List(edge_facts)
         edge_facts.extend(__non_fluent_graph_facts_edge)
     else:
         edge_facts = __edge_facts
