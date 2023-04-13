@@ -69,6 +69,12 @@ class Interval(structref.StructRefProxy):
 
     def to_str(self):
         return self.__repr__()
+    
+    def __eq__(self, interval):
+        if interval.lower==self.lower and interval.upper==self.upper:
+            return True
+        else:
+            return False
 
     def __repr__(self):
         return f'[{self.lower},{self.upper}]'
