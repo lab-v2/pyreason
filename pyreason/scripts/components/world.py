@@ -11,6 +11,10 @@ class World:
         for l in labels:
             self._world[l] = interval.closed(0.0, 1.0)
 
+    @property
+    def world(self):
+        return self._world
+
     def make_world(labels, world):
         w = World(labels)
         w._world = world
