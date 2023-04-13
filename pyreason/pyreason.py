@@ -359,7 +359,7 @@ def load_inconsistent_predicate_list(path: str) -> None:
     __ipl = yaml_parser.parse_ipl(path)
 
 
-def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_threshold: float=-1, again: bool=False, node_facts: List[Type[fact_node.Fact]]=None, edge_facts: List[Type[fact_edge.Fact]]=None):
+def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_threshold: float=-1, again: bool=False, node_facts: List[Type[fact_node.Fact]]=None, edge_facts: List[Type[fact_edge.Fact]]=None, include_graph_facts: bool=True):
     """Function to start the main reasoning process. Graph and rules must already be loaded.
 
     :param timesteps: Max number of timesteps to run. -1 specifies run till convergence, defaults to -1
@@ -368,6 +368,7 @@ def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_t
     :param again: Whether to reason again on an existing interpretation, defaults to False
     :param node_facts: New node facts to use during the next reasoning process. Other facts from file will be discarded, defaults to None
     :param edge_facts: New edge facts to use during the next reasoning process. Other facts from file will be discarded, defaults to None
+    :param include_graph_facts: Whether to add the graph facts to the facts supplied through `node_facts`, defaults to True
     :return: The final interpretation after reasoning.
     """
     global settings, __timestamp
@@ -388,10 +389,10 @@ def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_t
     else:
         if settings.memory_profile:
             start_mem = mp.memory_usage(max_usage=True)
-            mem_usage, interp = mp.memory_usage((_reason_again, [timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts]), max_usage=True, retval=True)
+            mem_usage, interp = mp.memory_usage((_reason_again, [timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts, include_graph_facts]), max_usage=True, retval=True)
             print(f"\nProgram used {mem_usage-start_mem} MB of memory")
         else:
-            interp = _reason_again(timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts)
+            interp = _reason_again(timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts, include_graph_facts)
         
     return interp
 
@@ -461,7 +462,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     return interpretation
 
 
-def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts):
+def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts, include_graph_facts):
     # Globals
     global __graph, __rules, __node_facts, __edge_facts, __ipl, __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels, __graphml_parser
     global settings, __timestamp, __program
@@ -469,16 +470,21 @@ def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold,
     assert __program is not None, 'To run `reason_again` you need to have reasoned once before'
 
     # If facts have not been inputted, use the old facts
+    __program.interp.facts_to_be_applied_node.clear()
+    __program.interp.facts_to_be_applied_edge.clear()
     if node_facts is not None:
         node_facts = numba.typed.List(node_facts)
-        node_facts.extend(__non_fluent_graph_facts_node)
+        if include_graph_facts:
+            node_facts.extend(__non_fluent_graph_facts_node)
     else:
-        node_facts = __node_facts
+        node_facts = numba.typed.List.empty_list(fact_node.fact_type)
+
     if edge_facts is not None:
         edge_facts = numba.typed.List(edge_facts)
-        edge_facts.extend(__non_fluent_graph_facts_edge)
+        if include_graph_facts:
+            edge_facts.extend(__non_fluent_graph_facts_edge)
     else:
-        edge_facts = __edge_facts
+        edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
 
     # Run Program and get final interpretation
     interpretation = __program.reason_again(timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts, settings.verbose)
