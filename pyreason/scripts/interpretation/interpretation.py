@@ -50,6 +50,10 @@ class Interpretation:
 		self.rule_trace_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, numba.types.int8, node_type, label.label_type, interval.interval_type)))
 		self.rule_trace_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, numba.types.int8, edge_type, label.label_type, interval.interval_type)))
 
+		# Nodes and edges of the graph
+		self.nodes = numba.typed.List(self.graph.nodes())
+		self.edges = numba.typed.List(self.graph.edges())
+
 		# Make sure they are correct type
 		if len(self.available_labels_node)==0:
 			self.available_labels_node = numba.typed.List.empty_list(label.label_type)
@@ -146,8 +150,6 @@ class Interpretation:
 
 		
 	def _start_fp(self, rules, max_facts_time, verbose):
-		self.nodes = numba.typed.List(self.graph.nodes())
-		self.edges = numba.typed.List(self.graph.edges())
 		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.tmax, rules, self.nodes, self.edges, self.neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.available_labels_node, self.available_labels_edge, self.specific_node_labels, self.specific_edge_labels, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.canonical, self.inconsistency_check, max_facts_time, self._convergence_mode, self._convergence_delta, verbose)
 		self.time = t
 		if verbose:
