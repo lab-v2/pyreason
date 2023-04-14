@@ -13,6 +13,8 @@ Video: https://www.youtube.com/watch?v=E1PSl3KQCmo
 
 Website: https://neurosymbolic.asu.edu/pyreason/
 
+PyReason Gym: https://github.com/lab-v2/pyreason-gym
+
 Check out the [PyReason Hello World](https://github.com/lab-v2/pyreason/blob/main/docs/hello-world.md) program if you're new, or want get get a feel for the software.
 
 
