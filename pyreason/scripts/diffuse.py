@@ -71,7 +71,7 @@ def main(args):
     ipl = yaml_parser.parse_ipl(args.ipl_yaml_path)
 
     # Program comes here
-    program = Program(graph, tmax, facts_node, facts_edge, rules, ipl, args.reverse_digraph, args.atom_trace, args.save_graph_attributes_to_trace, args.canonical, args.inconsistency_check)
+    program = Program(graph, facts_node, facts_edge, rules, ipl, args.reverse_digraph, args.atom_trace, args.save_graph_attributes_to_trace, args.canonical, args.inconsistency_check)
     program.available_labels_node = node_labels
     program.available_labels_edge = edge_labels
     program.specific_node_labels = specific_node_labels
@@ -81,7 +81,7 @@ def main(args):
     print('Graph loaded successfully, rules, labels, facts and ipl parsed successfully')
     print('Starting diffusion')
     start = time.time()
-    interpretation = program.reason(args.convergence_threshold, args.convergence_bound_threshold)
+    interpretation = program.reason(tmax, args.convergence_threshold, args.convergence_bound_threshold)
     end = time.time()
     print('Time to complete diffusion:', end-start)
     print('Finished diffusion')
