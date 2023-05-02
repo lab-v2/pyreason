@@ -9,18 +9,18 @@ import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 
 
-
 def parse_rules(path):
     with open(path, 'r') as file:
         rules_yaml = yaml.safe_load(file)
 
     rules = numba.typed.List.empty_list(rule.rule_type)
+    immediate_rules = numba.typed.List.empty_list(rule.rule_type)
     for rule_name, values in rules_yaml.items():
         # Set rule target
         target = label.Label('')
         if values['target'] is not None:
             target = label.Label(values['target'])
-        
+
         # Set rule target criteria
         target_criteria = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
         if values['target_criteria'] is not None:
@@ -32,7 +32,7 @@ def parse_rules(path):
 
         # neigh_criteria = [c1, c2, c3, c4]
         # thresholds = [t1, t2, t3, t4]
-        
+
         # Array of thresholds to keep track of for each neighbor criterion. Form [(comparison, (number/percent, total/available), thresh)]
         thresholds = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), numba.types.float64)))
 
@@ -76,7 +76,6 @@ def parse_rules(path):
         # Both target and edge label (if edges are being added) cannot be '' at the same time. One has to have a value
         assert edges[2].get_value()!='' or target.get_value()!='', 'Both target and edge label cannot empty at the same time, one has to take a value. Modify the rules YAML file'
 
-        
         # If annotation function is a string, it is the name of the function. If it is a bound then set it to an empty string
         ann_fn, ann_label = values['ann_fn']
         if isinstance(ann_fn, str):
@@ -92,10 +91,24 @@ def parse_rules(path):
         weights = np.ones(num_clauses, dtype=np.float64)
         weights = np.append(weights, 0)
         if 'weights' in values and values['weights']:
-            weights = np.array(values['weights'], dtype=np.float64)   
-        r = rule.Rule(rule_name, target, target_criteria, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges)
-        rules.append(r)
+            weights = np.array(values['weights'], dtype=np.float64)
 
+        # Immediate rule flag -- whether to be applied before all other rules
+        immediate_rule = False
+        if 'immediate' in values and values['immediate'] is not None:
+            immediate_rule = True
+
+        assert not (immediate_rule and delta_t > 0), 'It is not possible to have an immediate rule and delta_t > 0'
+
+        r = rule.Rule(rule_name, target, target_criteria, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule)
+
+        # Insert to beginning of list if flag for immediate rule is true
+        if immediate_rule:
+            immediate_rules.append(r)
+        else:
+            rules.append(r)
+
+    rules = immediate_rules.extend(rules)
     return rules
 
 
@@ -174,6 +187,7 @@ def parse_labels(path):
                 specific_edge_labels[l] = numba.typed.List([(str(e[0]), str(e[1])) for e in edges])
 
     return node_labels, edge_labels, specific_node_labels, specific_edge_labels
+
 
 def parse_ipl(path):
     with open(path, 'r') as file:
