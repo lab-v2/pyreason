@@ -36,8 +36,8 @@ class Interpretation:
 		self.rules_to_be_applied_edge_trace = numba.typed.List.empty_list(numba.types.Tuple((numba.types.ListType(numba.types.ListType(node_type)), numba.types.ListType(numba.types.ListType(edge_type)), numba.types.string)))
 		self.facts_to_be_applied_node_trace = numba.typed.List.empty_list(numba.types.string)
 		self.facts_to_be_applied_edge_trace = numba.typed.List.empty_list(numba.types.string)
-		self.rules_to_be_applied_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, node_type, label.label_type, interval.interval_type)))
-		self.rules_to_be_applied_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, edge_type, label.label_type, interval.interval_type)))
+		self.rules_to_be_applied_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, node_type, label.label_type, interval.interval_type, numba.types.boolean)))
+		self.rules_to_be_applied_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, edge_type, label.label_type, interval.interval_type, numba.types.boolean)))
 		self.facts_to_be_applied_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, node_type, label.label_type, interval.interval_type, numba.types.boolean, numba.types.boolean)))
 		self.facts_to_be_applied_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.int8, edge_type, label.label_type, interval.interval_type, numba.types.boolean, numba.types.boolean)))
 		self.edges_to_be_added_node_rule = numba.typed.List.empty_list(numba.types.Tuple((numba.types.ListType(node_type), numba.types.ListType(node_type), label.label_type)))
@@ -198,6 +198,14 @@ class Interpretation:
 			max_rules_time = 0
 			update = False
 
+			# Parameters for immediate rules
+			immediate_node_rule_fire = False
+			immediate_edge_rule_fire = False
+			immediate_rule_applied = False
+			rule_pos = 0
+			node_pos = 0
+			edge_pos = 0
+
 			# Start by applying facts
 			# Nodes
 			for i in range(len(facts_to_be_applied_node)):
@@ -312,8 +320,13 @@ class Interpretation:
 				# Apply the rules that need to be applied at this timestep
 				# Nodes
 				for idx, i in enumerate(rules_to_be_applied_node):
+					# If we are coming here from an immediate rule firing with delta_t=0 we have to apply that one rule
+					if immediate_node_rule_fire and rules_to_be_applied_node[-1][4]:
+						i = rules_to_be_applied_node[-1]
+						idx = -1
+
 					if i[0]==t:
-						comp, l, bnd = i[1], i[2], i[3]
+						comp, l, bnd, immediate = i[1], i[2], i[3], i[4]
 						sources, targets, edge_l = edges_to_be_added_node_rule[idx]
 						edges_added, changes = _add_edges(sources, targets, neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge)
 						changes_cnt += changes
@@ -371,13 +384,25 @@ class Interpretation:
 										changes_cnt += changes
 
 						# Delete rules that have been applied from list by changing t to -1
-						rules_to_be_applied_node[idx] = (numba.types.int8(-1), comp, l, bnd)
+						rules_to_be_applied_node[idx] = (numba.types.int8(-1), comp, l, bnd, False)
 
+						# Break out of the apply rules loop if a rule is immediate. Then we go to the fp operator and check for other applicable rules then come back
+						if immediate:
+							# If delta_t=0 we want to apply one rule and go back to the fp operator
+							# If delta_t>0 we want to come back here and apply the rest of the rules
+							if not immediate_node_rule_fire:
+								immediate_rule_applied = True
+							break
 
 				# Edges
 				for idx, i in enumerate(rules_to_be_applied_edge):
+					# If we are coming here from an immediate rule firing with delta_t=0 we have to apply that one rule
+					if immediate_edge_rule_fire and rules_to_be_applied_node[-1][4]:
+						i = rules_to_be_applied_node[-1]
+						idx = -1
+
 					if i[0]==t:
-						comp, l, bnd = i[1], i[2], i[3]
+						comp, l, bnd, immediate = i[1], i[2], i[3], i[4]
 						sources, targets, edge_l = edges_to_be_added_edge_rule[idx]
 						edges_added, changes = _add_edges(sources, targets, neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge)
 						changes_cnt += changes
@@ -414,7 +439,7 @@ class Interpretation:
 							# Check for inconsistencies
 							if check_consistent_edge(interpretations_edge, comp, (l, bnd)):
 								u, changes = _update_edge(interpretations_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, False, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, mode='rule')
-								
+
 								update = u or update
 								# Update convergence params
 								if convergence_mode=='delta_bound':
@@ -427,7 +452,7 @@ class Interpretation:
 									resolve_inconsistency_edge(interpretations_edge, comp, (l, bnd), ipl, t, fp_cnt, atom_trace, rule_trace_edge, rule_trace_edge_atoms)
 								else:
 									u, changes = _override_update_edge(interpretations_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, False, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, mode='rule')
-								
+
 									update = u or update
 									# Update convergence params
 									if convergence_mode=='delta_bound':
@@ -436,69 +461,110 @@ class Interpretation:
 										changes_cnt += changes
 
 						# Delete rules that have been applied from list by changing t to -1
-						rules_to_be_applied_edge[idx] = (numba.types.int8(-1), comp, l, bnd)
+						rules_to_be_applied_edge[idx] = (numba.types.int8(-1), comp, l, bnd, False)
+
+						# Break out of the apply rules loop if a rule is immediate. Then we go to the fp operator and check for other applicable rules then come back
+						if immediate:
+							# If t=0 we want to apply one rule and go back to the fp operator
+							# If t>0 we want to come back here and apply the rest of the rules
+							if not immediate_edge_rule_fire:
+								immediate_rule_applied = True
+							break
 
 				# Fixed point
-				if update:
-					fp_cnt += 1
-					for rule in rules:
+				if update or immediate_node_rule_fire or immediate_edge_rule_fire or immediate_rule_applied:
+					# Increase fp operator count only if not an immediate rule
+					if not (immediate_node_rule_fire or immediate_edge_rule_fire):
+						fp_cnt += 1
+
+					for i in range(rule_pos, len(rules)):
+						rule = rules[i]
 						immediate_rule = rule.is_immediate_rule()
-						immediate_rule_fire = False
+						immediate_node_rule_fire = False
+						immediate_edge_rule_fire = False
 						# Go through all nodes and check if any rules apply to them
 						# Only go through everything if the rule can be applied within the given timesteps or we're running until convergence or it's an immediate rule.
 						# Otherwise it's an unnecessary loop
-						if t+rule.get_delta()<=tmax or tmax==-1:
-							for n in nodes:
+						delta_t = rule.get_delta()
+						if t+delta_t<=tmax or tmax==-1:
+							for j in range(node_pos, len(nodes)):
+								n = nodes[j]
 								target_criteria_satisfaction = are_satisfied_node(interpretations_node, n, rule.get_target_criteria())
 								if (target_criteria_satisfaction and is_satisfied_node(interpretations_node, n, (rule.get_target(), interval.closed(0,1)))) or (target_criteria_satisfaction and rule.get_target().value==''):
 									result, annotations, qualified_nodes, qualified_edges, edges_to_add = _is_rule_applicable(interpretations_node, interpretations_edge, neighbors, n, rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, rule.get_annotation_function(), rule.get_annotation_label(), rule.get_edges(), atom_trace)
 									if (result and rule.get_target().value=='') or (result and not interpretations_node[n].world[rule.get_target()].is_static()):
 										bnd = influence(rule, annotations, rule.get_weights())
-										max_rules_time = max(max_rules_time, t+rule.get_delta())
+										max_rules_time = max(max_rules_time, t+delta_t)
 										edges_to_be_added_node_rule.append(edges_to_add)
-										rules_to_be_applied_node.append((numba.types.int8(t+rule.get_delta()), n, rule.get_target(), bnd))
+										rules_to_be_applied_node.append((numba.types.int8(t+delta_t), n, rule.get_target(), bnd, immediate_rule))
 										if atom_trace:
 											rules_to_be_applied_node_trace.append((qualified_nodes, qualified_edges, rule.get_name()))
+
+										# Handle loop parameters for the next (maybe) fp operation
 										# If it is a t=0 rule or an immediate rule we want to go back for another fp operation to check for new rules that may fire
-										if rule.get_delta()==0:
+										if delta_t==0:
 											in_loop = True
 											update = False
-										if immediate_rule:
-											# update becomes True with immediate rules because we still need to check for more eligible rules, we're not done.
+										if immediate_rule and delta_t==0:
+											# immediate_rule_fire becomes True because we still need to check for more eligible rules, we're not done.
 											in_loop = True
-											update = True
-											immediate_rule_fire = True
+											update = False
+											immediate_node_rule_fire = True
+											# Save the current state of the fp operation. We finished this node, so start from the next
+											rule_pos = i
+											node_pos = j + 1
 											break
+										else:
+											# If not immediate rule, make fp state go back to zero
+											rule_pos = 0
+											node_pos = 0
 							# Break, apply immediate rule then come back to check for more applicable rules
-							if immediate_rule_fire:
+							if immediate_node_rule_fire:
 								break
+
 							# Go through all edges and check if any rules apply to them.
 							# Comment out the following lines if there are no labels or rules that deal with edges. It will be an unnecessary loop
-							for e in edges:
+							for j in range(edge_pos, len(edges)):
+								e = edges[j]
 								target_criteria_satisfaction = are_satisfied_edge(interpretations_edge, e, rule.get_target_criteria())
 								if (target_criteria_satisfaction and is_satisfied_node(interpretations_edge, e, (rule.get_target(), interval.closed(0,1)))) or (target_criteria_satisfaction and rule.get_target().value==''):
 									# Find out if rule is applicable. returns list of list of qualified nodes and qualified edges. one for each clause
 									result, annotations, qualified_nodes, qualified_edges, edges_to_add = _is_rule_applicable_edge(interpretations_node, interpretations_edge, neighbors, e, rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, rule.get_annotation_function(), rule.get_annotation_label(), rule.get_edges(), atom_trace)
 									if (result and rule.get_target().value=='') or (result and not interpretations_edge[e].world[rule.get_target()].is_static()):
 										bnd = influence(rule, annotations, rule.get_weights())
-										max_rules_time = max(max_rules_time, t+rule.get_delta())
+										max_rules_time = max(max_rules_time, t+delta_t)
 										edges_to_be_added_edge_rule.append(edges_to_add)
-										rules_to_be_applied_edge.append((numba.types.int8(t+rule.get_delta()), e, rule.get_target(), bnd))
+										rules_to_be_applied_edge.append((numba.types.int8(t+delta_t), e, rule.get_target(), bnd, immediate_rule))
 										if atom_trace:
 											rules_to_be_applied_edge_trace.append((qualified_nodes, qualified_edges, rule.get_name()))
+
+										# Handle loop parameters for the next (maybe) fp operation
 										# If it is a t=0 rule or an immediate rule we want to go back for another fp operation to check for new rules that may fire
-										if rule.get_delta()==0:
+										if delta_t==0:
 											in_loop = True
 											update = False
-										if immediate_rule:
-											# update becomes True with immediate rules because we still need to check for more eligible rules, we're not done.
+										if immediate_rule and delta_t==0:
+											# immediate_rule_fire becomes True because we still need to check for more eligible rules, we're not done.
 											in_loop = True
-											update = True
-											immediate_rule_fire = True
+											update = False
+											immediate_edge_rule_fire = True
+											# Save the current state of the fp operation. We finished this edge, so start from the next
+											rule_pos = i
+											edge_pos = j + 1
 											break
+										else:
+											# If not immediate rule, make fp state go back to zero
+											rule_pos = 0
+											edge_pos = 0
 							# Break, apply immediate rule then come back to check for more applicable rules
-							if immediate_rule_fire:
+							if immediate_edge_rule_fire:
 								break
+								
+					# Go through all the rules and go back to applying the rules if we came here because of an immediate rule where delta_t>0
+					if immediate_rule_applied and not (immediate_node_rule_fire or immediate_edge_rule_fire):
+						immediate_rule_applied = False
+						in_loop = True
+						update = False
 				
 			# Check for convergence after each timestep (perfect convergence or convergence specified by user)
 			# Check number of changed interpretations or max bound change

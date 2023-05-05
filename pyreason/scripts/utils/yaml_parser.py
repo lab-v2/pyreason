@@ -108,8 +108,10 @@ def parse_rules(path):
         else:
             rules.append(r)
 
-    rules = immediate_rules.extend(rules)
-    return rules
+    all_rules = numba.typed.List.empty_list(rule.rule_type)
+    all_rules.extend(immediate_rules)
+    all_rules.extend(rules)
+    return all_rules
 
 
 def parse_facts(path, reverse):
