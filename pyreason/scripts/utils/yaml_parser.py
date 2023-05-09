@@ -98,8 +98,6 @@ def parse_rules(path):
         if 'immediate' in values and values['immediate'] is not None:
             immediate_rule = True
 
-        assert not (immediate_rule and delta_t > 0), 'It is not possible to have an immediate rule and delta_t > 0'
-
         r = rule.Rule(rule_name, target, target_criteria, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule)
 
         # Insert to beginning of list if flag for immediate rule is true
