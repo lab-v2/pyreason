@@ -611,8 +611,8 @@ def save_rule_trace(interpretation, folder: str='./'):
     output.save_rule_trace(interpretation, folder)
 
 
-def filter_and_sort(interpretation, labels: List[str], bound: interval.Interval=interval.closed(0,1), sort_by: str='lower', descending: bool=True):
-    """Filters and sorts the interpretation and returns as a list of Pandas dataframes that are easy to access
+def filter_and_sort_nodes(interpretation, labels: List[str], bound: interval.Interval=interval.closed(0,1), sort_by: str='lower', descending: bool=True):
+    """Filters and sorts the node changes in the interpretation and returns as a list of Pandas dataframes that are easy to access
 
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
     :param labels: A list of strings, labels that are in the interpretation that are to be filtered
@@ -622,5 +622,20 @@ def filter_and_sort(interpretation, labels: List[str], bound: interval.Interval=
     :return: A list of Pandas dataframes that contain the filtered and sorted interpretations that are easy to access
     """
     filterer = Filter(interpretation.time)
-    filtered_df = filterer.filter_and_sort(interpretation, labels, bound, sort_by, descending)
+    filtered_df = filterer.filter_and_sort_nodes(interpretation, labels, bound, sort_by, descending)
+    return filtered_df
+
+
+def filter_and_sort_edges(interpretation, labels: List[str], bound: interval.Interval=interval.closed(0,1), sort_by: str='lower', descending: bool=True):
+    """Filters and sorts the edge changes in the interpretation and returns as a list of Pandas dataframes that are easy to access
+
+    :param interpretation: the output of `pyreason.reason()`, the final interpretation
+    :param labels: A list of strings, labels that are in the interpretation that are to be filtered
+    :param bound: The bound that will filter any interpretation that is not in it. the default does not filter anything, defaults to interval.closed(0,1)
+    :param sort_by: String that is either 'lower' or 'upper', sorts by the lower/upper bound, defaults to 'lower'
+    :param descending: A bool that sorts by descending/ascending order, defaults to True
+    :return: A list of Pandas dataframes that contain the filtered and sorted interpretations that are easy to access
+    """
+    filterer = Filter(interpretation.time)
+    filtered_df = filterer.filter_and_sort_edges(interpretation, labels, bound, sort_by, descending)
     return filtered_df
