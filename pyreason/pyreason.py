@@ -306,6 +306,17 @@ __graphml_parser = GraphmlParser()
 settings = _Settings()
 
 
+def reset():
+    """Resets certain variables to None to be able to do pr.reason() multiple times in a program
+    without memory blowing up
+    """
+    global __node_facts, __edge_facts, __node_labels, __edge_labels
+    __node_facts = None
+    __edge_facts = None
+    __node_labels = None
+    __edge_labels = None
+
+
 # FUNCTIONS
 def load_graph(path: str) -> None:
     """Loads graph from GraphMl file path into program
