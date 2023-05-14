@@ -3,20 +3,20 @@ import numba
 import time
 import sys
 import warnings
+import numpy as np
 import memory_profiler as mp
 from typing import List, Type
 
 from pyreason.scripts.utils.output import Output
 from pyreason.scripts.utils.filter import Filter
 from pyreason.scripts.program.program import Program
-from pyreason.scripts.interpretation.interpretation import Interpretation
 from pyreason.scripts.utils.graphml_parser import GraphmlParser
 import pyreason.scripts.utils.yaml_parser as yaml_parser
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
+import pyreason.scripts.numba_wrapper.numba_types.rule_type as rule
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
-
 
 
 # USER VARIABLES
@@ -282,6 +282,7 @@ class _Settings:
         else:
             self.__static_graph_facts = value
 
+
 # VARIABLES
 __graph = None
 __rules = None
@@ -303,6 +304,17 @@ __program = None
 
 __graphml_parser = GraphmlParser()
 settings = _Settings()
+
+
+def reset():
+    """Resets certain variables to None to be able to do pr.reason() multiple times in a program
+    without memory blowing up
+    """
+    global __node_facts, __edge_facts, __node_labels, __edge_labels
+    __node_facts = None
+    __edge_facts = None
+    __node_labels = None
+    __edge_labels = None
 
 
 # FUNCTIONS
@@ -334,6 +346,7 @@ def load_labels(path: str) -> None:
     global __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels
     __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels = yaml_parser.parse_labels(path)
 
+
 def load_facts(path: str) -> None:
     """Load facts from YAML file path into program
 
@@ -342,13 +355,19 @@ def load_facts(path: str) -> None:
     global __node_facts, __edge_facts, settings
     __node_facts, __edge_facts = yaml_parser.parse_facts(path, settings.reverse_digraph)
 
+
 def load_rules(path: str) -> None:
     """Load rules from YAML file path into program
 
     :param path: Path for the YAML rules file
     """
     global __rules
-    __rules = yaml_parser.parse_rules(path)
+
+    if __rules is None:
+        __rules = yaml_parser.parse_rules(path)
+    else:
+        __rules.extend(yaml_parser.parse_rules(path))
+
 
 def load_inconsistent_predicate_list(path: str) -> None:
     """Load IPL from YAML file path into program
@@ -357,6 +376,105 @@ def load_inconsistent_predicate_list(path: str) -> None:
     """
     global __ipl
     __ipl = yaml_parser.parse_ipl(path)
+
+
+def add_rules_from_text(rule_text: str, name: str) -> None:
+    """Add a rule to pyreason from text format. This format is not as modular as the YAML format.
+    1. It is not possible to specify target criteria
+    2. It is not possible to specify delta_t. delta_t=0 by default.
+    3. It is not possible to specify thresholds. Threshold is greater than or equal to 1 by default
+    4. It is not possible to add edges between subsets of nodes
+    5. It is not possible to have an annotation function. We set to [1,1] by default
+    6. It is not possible to have weights for different clauses. Weights are 1 by default with bias 0
+
+    Example:
+    `'pred1(x,y) <- pred2(a, b), pred3(b, c)'`
+
+    :param rule_text: The rule in text format
+    :param name: The name of the rule. This will appear in the rule trace
+    """
+    global __rules
+
+    # First remove all spaces from line
+    r = rule_text.replace(' ', '')
+
+    # Separate into head and body
+    head, body = r.split('<-')
+
+    # Separate clauses in body
+    body = body[:-1].replace(')', '))') + ')'
+    body = body.split('),')
+
+    # Find the target predicate
+    idx = head.find('(')
+    target = head[:idx]
+    target = label.Label(target)
+
+    # Variable(s) in the head of the rule
+    head_variables = head[idx + 1:-1].split(',')
+
+    # Target criteria is empty for this text format to pyreason rule
+    target_criteria = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
+
+    # Get the variables in the body
+    body_predicates = []
+    body_variables = []
+    for clause in body:
+        idx = clause.find('(')
+        body_predicates.append(clause[:idx])
+        body_variables.append(clause[idx+1:-1].split(','))
+
+    # Replace the variables in the body with source/target if they match the variables in the head
+    head_var_map = {0: 'source', 1: 'target'}
+    for i in range(len(body_variables)):
+        for j in range(len(body_variables[i])):
+            # Loop through the head variables and see if there's a match
+            for k in range(len(head_variables)):
+                if body_variables[i][j] == head_variables[k]:
+                    body_variables[i][j] = head_var_map[k] if len(head_variables) == 2 else 'target'
+
+    # Start setting up neigh_criteria
+    # neigh_criteria = [c1, c2, c3, c4]
+    # thresholds = [t1, t2, t3, t4]
+
+    # Array of thresholds to keep track of for each neighbor criterion. Form [(comparison, (number/percent, total/available), thresh)]
+    thresholds = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), numba.types.float64)))
+
+    # Array to store clauses for nodes: node/edge, [subset]/[subset1, subset2], label, interval
+    neigh_criteria = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), label.label_type, interval.interval_type)))
+
+    # Loop though clauses
+    for predicate, variables in zip(body_predicates, body_variables):
+        # Neigh criteria
+        clause_type = 'node' if len(variables) == 1 else 'edge'
+        subset = (variables[0], variables[0]) if clause_type == 'node' else (variables[0], variables[1])
+        l = label.Label(predicate)
+        bnd = interval.closed(1, 1)
+        neigh_criteria.append((clause_type, subset, l, bnd))
+
+        # Threshold
+        quantifier = 'greater_equal'
+        quantifier_type = ('number', 'total')
+        thresh = 1
+        thresholds.append((quantifier, quantifier_type, thresh))
+
+    # Cannot add edges
+    edges = ('', '', label.Label(''))
+
+    # Bound to set atom if rule fires
+    bnd = interval.closed(1, 1)
+    ann_fn = ''
+    ann_label = label.Label('')
+
+    weights = np.ones(len(body_predicates), dtype=np.float64)
+    weights = np.append(weights, 0)
+
+    r = rule.Rule(name, target, target_criteria, numba.types.int8(0), neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges)
+
+    # Add to collection of rules
+    if __rules is None:
+        __rules = numba.typed.List.empty_list(rule.rule_type)
+    __rules.append(r)
 
 
 def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_threshold: float=-1, again: bool=False, node_facts: List[Type[fact_node.Fact]]=None, edge_facts: List[Type[fact_edge.Fact]]=None, include_graph_facts: bool=True):
@@ -433,7 +551,6 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
             warnings.warn('Inconsistent Predicate List yaml file has not been loaded. Use `load_ipl`. Loading IPL is optional\n')
         __ipl = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, label.label_type)))
 
-    
     # If graph attribute parsing, add results to existing specific labels and facts
     for label_name, nodes in __specific_graph_node_labels.items():
         if label_name in __specific_node_labels:
@@ -505,8 +622,8 @@ def save_rule_trace(interpretation, folder: str='./'):
     output.save_rule_trace(interpretation, folder)
 
 
-def filter_and_sort(interpretation, labels: List[str], bound: interval.Interval=interval.closed(0,1), sort_by: str='lower', descending: bool=True):
-    """Filters and sorts the interpretation and returns as a list of Pandas dataframes that are easy to access
+def filter_and_sort_nodes(interpretation, labels: List[str], bound: interval.Interval=interval.closed(0,1), sort_by: str='lower', descending: bool=True):
+    """Filters and sorts the node changes in the interpretation and returns as a list of Pandas dataframes that are easy to access
 
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
     :param labels: A list of strings, labels that are in the interpretation that are to be filtered
@@ -516,5 +633,20 @@ def filter_and_sort(interpretation, labels: List[str], bound: interval.Interval=
     :return: A list of Pandas dataframes that contain the filtered and sorted interpretations that are easy to access
     """
     filterer = Filter(interpretation.time)
-    filtered_df = filterer.filter_and_sort(interpretation, labels, bound, sort_by, descending)
+    filtered_df = filterer.filter_and_sort_nodes(interpretation, labels, bound, sort_by, descending)
+    return filtered_df
+
+
+def filter_and_sort_edges(interpretation, labels: List[str], bound: interval.Interval=interval.closed(0,1), sort_by: str='lower', descending: bool=True):
+    """Filters and sorts the edge changes in the interpretation and returns as a list of Pandas dataframes that are easy to access
+
+    :param interpretation: the output of `pyreason.reason()`, the final interpretation
+    :param labels: A list of strings, labels that are in the interpretation that are to be filtered
+    :param bound: The bound that will filter any interpretation that is not in it. the default does not filter anything, defaults to interval.closed(0,1)
+    :param sort_by: String that is either 'lower' or 'upper', sorts by the lower/upper bound, defaults to 'lower'
+    :param descending: A bool that sorts by descending/ascending order, defaults to True
+    :return: A list of Pandas dataframes that contain the filtered and sorted interpretations that are easy to access
+    """
+    filterer = Filter(interpretation.time)
+    filtered_df = filterer.filter_and_sort_edges(interpretation, labels, bound, sort_by, descending)
     return filtered_df
