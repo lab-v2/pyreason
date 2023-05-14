@@ -9,7 +9,6 @@ import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 
 
-
 def parse_rules(path):
     with open(path, 'r') as file:
         rules_yaml = yaml.safe_load(file)
@@ -76,7 +75,6 @@ def parse_rules(path):
         # Both target and edge label (if edges are being added) cannot be '' at the same time. One has to have a value
         assert edges[2].get_value()!='' or target.get_value()!='', 'Both target and edge label cannot empty at the same time, one has to take a value. Modify the rules YAML file'
 
-        
         # If annotation function is a string, it is the name of the function. If it is a bound then set it to an empty string
         ann_fn, ann_label = values['ann_fn']
         if isinstance(ann_fn, str):
@@ -174,6 +172,7 @@ def parse_labels(path):
                 specific_edge_labels[l] = numba.typed.List([(str(e[0]), str(e[1])) for e in edges])
 
     return node_labels, edge_labels, specific_node_labels, specific_edge_labels
+
 
 def parse_ipl(path):
     with open(path, 'r') as file:
