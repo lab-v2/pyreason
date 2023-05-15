@@ -390,17 +390,19 @@ class Interpretation:
 						rules_to_be_applied_node[idx] = (numba.types.int8(-1), comp, l, bnd, False)
 
 						# Break out of the apply rules loop if a rule is immediate. Then we go to the fp operator and check for other applicable rules then come back
-						if immediate and u:
+						if immediate:
 							# If delta_t=0 we want to apply one rule and go back to the fp operator
 							# If delta_t>0 we want to come back here and apply the rest of the rules
-							if not immediate_node_rule_fire:
+							if immediate_edge_rule_fire:
+								break
+							elif not immediate_edge_rule_fire and u:
 								immediate_rule_applied = True
-							break
+								break
 
 				# Edges
 				for idx, i in enumerate(rules_to_be_applied_edge):
 					# If we broke from above loop to apply more rules, then break from here
-					if immediate_rule_applied:
+					if immediate_rule_applied and not immediate_edge_rule_fire:
 						break
 					# If we are coming here from an immediate rule firing with delta_t=0 we have to apply that one rule. Which was just added to the list to_be_applied
 					if immediate_edge_rule_fire and rules_to_be_applied_edge[-1][4]:
@@ -470,12 +472,14 @@ class Interpretation:
 						rules_to_be_applied_edge[idx] = (numba.types.int8(-1), comp, l, bnd, False)
 
 						# Break out of the apply rules loop if a rule is immediate. Then we go to the fp operator and check for other applicable rules then come back
-						if immediate and u:
+						if immediate:
 							# If t=0 we want to apply one rule and go back to the fp operator
 							# If t>0 we want to come back here and apply the rest of the rules
-							if not immediate_edge_rule_fire:
+							if immediate_edge_rule_fire:
+								break
+							elif not immediate_edge_rule_fire and u:
 								immediate_rule_applied = True
-							break
+								break
 
 				# Fixed point
 				# if update or immediate_node_rule_fire or immediate_edge_rule_fire or immediate_rule_applied:
@@ -521,7 +525,7 @@ class Interpretation:
 										if immediate_rule and delta_t==0:
 											# immediate_rule_fire becomes True because we still need to check for more eligible rules, we're not done.
 											in_loop = True
-											update = False
+											update = True
 											immediate_node_rule_fire = True
 											break
 
@@ -559,7 +563,7 @@ class Interpretation:
 										if immediate_rule and delta_t == 0:
 											# immediate_rule_fire becomes True because we still need to check for more eligible rules, we're not done.
 											in_loop = True
-											update = False
+											update = True
 											immediate_edge_rule_fire = True
 											break
 
