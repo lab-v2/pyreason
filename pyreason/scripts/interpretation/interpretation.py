@@ -162,6 +162,7 @@ class Interpretation:
 	@numba.njit(cache=True)
 	def reason(interpretations_node, interpretations_edge, tmax, rules, nodes, edges, neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, labels_node, labels_edge, specific_labels_node, specific_labels_edge, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, max_facts_time, convergence_mode, convergence_delta, verbose):
 		fp_cnt = 0
+		max_rules_time = 0
 		timestep_loop = True
 		t = 0
 		while timestep_loop:
@@ -198,7 +199,6 @@ class Interpretation:
 			# Convergence parameters
 			changes_cnt = 0
 			bound_delta = 0
-			max_rules_time = 0
 			update = False
 
 			# Parameters for immediate rules
