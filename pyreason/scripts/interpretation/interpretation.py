@@ -390,7 +390,7 @@ class Interpretation:
 						rules_to_be_applied_node[idx] = (numba.types.int8(-1), comp, l, bnd, False)
 
 						# Break out of the apply rules loop if a rule is immediate. Then we go to the fp operator and check for other applicable rules then come back
-						if immediate:
+						if immediate and u:
 							# If delta_t=0 we want to apply one rule and go back to the fp operator
 							# If delta_t>0 we want to come back here and apply the rest of the rules
 							if not immediate_node_rule_fire:
@@ -399,6 +399,9 @@ class Interpretation:
 
 				# Edges
 				for idx, i in enumerate(rules_to_be_applied_edge):
+					# If we broke from above loop to apply more rules, then break from here
+					if immediate_rule_applied:
+						break
 					# If we are coming here from an immediate rule firing with delta_t=0 we have to apply that one rule. Which was just added to the list to_be_applied
 					if immediate_edge_rule_fire and rules_to_be_applied_edge[-1][4]:
 						i = rules_to_be_applied_edge[-1]
@@ -467,7 +470,7 @@ class Interpretation:
 						rules_to_be_applied_edge[idx] = (numba.types.int8(-1), comp, l, bnd, False)
 
 						# Break out of the apply rules loop if a rule is immediate. Then we go to the fp operator and check for other applicable rules then come back
-						if immediate:
+						if immediate and u:
 							# If t=0 we want to apply one rule and go back to the fp operator
 							# If t>0 we want to come back here and apply the rest of the rules
 							if not immediate_edge_rule_fire:
@@ -569,6 +572,7 @@ class Interpretation:
 						immediate_rule_applied = False
 						in_loop = True
 						update = False
+						continue
 				
 			# Check for convergence after each timestep (perfect convergence or convergence specified by user)
 			# Check number of changed interpretations or max bound change
