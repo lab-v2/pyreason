@@ -506,20 +506,20 @@ class Interpretation:
 										if atom_trace:
 											rules_to_be_applied_node_trace.append((qualified_nodes, qualified_edges, rule.get_name()))
 
+										# We apply a rule on a node/edge only once in each timestep to prevent it from being added to the to_be_added list continuously (this will improve performance
+										nodes_to_skip.append((i, j))
+
 										# Handle loop parameters for the next (maybe) fp operation
 										# If it is a t=0 rule or an immediate rule we want to go back for another fp operation to check for new rules that may fire
 										# Next fp operation we will skip this rule on this node because anyway there won't be an update
 										if delta_t==0:
 											in_loop = True
 											update = False
-											nodes_to_skip.append((i, j))
 										if immediate_rule and delta_t==0:
 											# immediate_rule_fire becomes True because we still need to check for more eligible rules, we're not done.
 											in_loop = True
 											update = False
 											immediate_node_rule_fire = True
-											# Save the current state of the fp operation. We don't want to apply this rule again for this node/edge
-											nodes_to_skip.append((i, j))
 											break
 
 							# Break, apply immediate rule then come back to check for more applicable rules
@@ -544,20 +544,20 @@ class Interpretation:
 										if atom_trace:
 											rules_to_be_applied_edge_trace.append((qualified_nodes, qualified_edges, rule.get_name()))
 
+										# We apply a rule on a node/edge only once in each timestep to prevent it from being added to the to_be_added list continuously (this will improve performance
+										edges_to_skip.append((i, j))
+
 										# Handle loop parameters for the next (maybe) fp operation
 										# If it is a t=0 rule or an immediate rule we want to go back for another fp operation to check for new rules that may fire
 										# Next fp operation we will skip this rule on this node because anyway there won't be an update
 										if delta_t==0:
 											in_loop = True
 											update = False
-											edges_to_skip.append((i, j))
 										if immediate_rule and delta_t == 0:
 											# immediate_rule_fire becomes True because we still need to check for more eligible rules, we're not done.
 											in_loop = True
 											update = False
 											immediate_edge_rule_fire = True
-											# Save the current state of the fp operation. We don't want to apply this rule again for this node/edge
-											edges_to_skip.append((i, j))
 											break
 
 							# Break, apply immediate rule then come back to check for more applicable rules
