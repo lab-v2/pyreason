@@ -232,7 +232,7 @@ def box_rule(typ, val, c):
     class_obj = c.pyapi.unserialize(c.pyapi.serialize_object(Rule))
     name_obj = c.box(types.string, rule.name)
     target_obj = c.box(label.label_type, rule.target)
-    tc_obj = c.box(types.ListType(types.Tuple((label.label_type, interval.interval_type))), rule.tc_node)
+    tc_obj = c.box(types.ListType(types.Tuple((label.label_type, interval.interval_type))), rule.target_criteria)
     delta_obj = c.box(types.int8, rule.delta)
     neigh_criteria_obj = c.box(types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), label.label_type, interval.interval_type))), rule.neigh_criteria)
     bnd_obj = c.box(interval.interval_type, rule.bnd)

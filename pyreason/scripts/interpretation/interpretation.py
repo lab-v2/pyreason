@@ -14,6 +14,9 @@ edge_type = numba.types.UniTuple(numba.types.string, 2)
 # Type for storing list of qualified nodes
 list_of_nodes = numba.types.ListType(node_type)
 
+# Type for storing int tuple
+int_tuple = numba.types.UniTuple(numba.types.int64, 2)
+
 
 class Interpretation:
 	available_labels_node = []
@@ -202,9 +205,9 @@ class Interpretation:
 			immediate_node_rule_fire = False
 			immediate_edge_rule_fire = False
 			immediate_rule_applied = False
-			rule_pos = 0
-			node_pos = 0
-			edge_pos = 0
+			# When delta_t = 0, we don't want to check the same rule with the same node/edge after coming back to the fp operator
+			nodes_to_skip = numba.typed.List.empty_list(int_tuple)
+			edges_to_skip = numba.typed.List.empty_list(int_tuple)
 
 			# Start by applying facts
 			# Nodes
@@ -320,7 +323,7 @@ class Interpretation:
 				# Apply the rules that need to be applied at this timestep
 				# Nodes
 				for idx, i in enumerate(rules_to_be_applied_node):
-					# If we are coming here from an immediate rule firing with delta_t=0 we have to apply that one rule
+					# If we are coming here from an immediate rule firing with delta_t=0 we have to apply that one rule. Which was just added to the list to_be_applied
 					if immediate_node_rule_fire and rules_to_be_applied_node[-1][4]:
 						i = rules_to_be_applied_node[-1]
 						idx = -1
@@ -396,7 +399,7 @@ class Interpretation:
 
 				# Edges
 				for idx, i in enumerate(rules_to_be_applied_edge):
-					# If we are coming here from an immediate rule firing with delta_t=0 we have to apply that one rule
+					# If we are coming here from an immediate rule firing with delta_t=0 we have to apply that one rule. Which was just added to the list to_be_applied
 					if immediate_edge_rule_fire and rules_to_be_applied_edge[-1][4]:
 						i = rules_to_be_applied_edge[-1]
 						idx = -1
@@ -472,22 +475,25 @@ class Interpretation:
 							break
 
 				# Fixed point
-				if update or immediate_node_rule_fire or immediate_edge_rule_fire or immediate_rule_applied:
+				# if update or immediate_node_rule_fire or immediate_edge_rule_fire or immediate_rule_applied:
+				if update:
 					# Increase fp operator count only if not an immediate rule
 					if not (immediate_node_rule_fire or immediate_edge_rule_fire):
 						fp_cnt += 1
 
-					for i in range(rule_pos, len(rules)):
+					for i in range(len(rules)):
 						rule = rules[i]
 						immediate_rule = rule.is_immediate_rule()
 						immediate_node_rule_fire = False
 						immediate_edge_rule_fire = False
 						# Go through all nodes and check if any rules apply to them
-						# Only go through everything if the rule can be applied within the given timesteps or we're running until convergence or it's an immediate rule.
-						# Otherwise it's an unnecessary loop
+						# Only go through everything if the rule can be applied within the given timesteps, or we're running until convergence or it's an immediate rule.
+						# Otherwise, it's an unnecessary loop
 						delta_t = rule.get_delta()
 						if t+delta_t<=tmax or tmax==-1:
-							for j in range(node_pos, len(nodes)):
+							for j in range(len(nodes)):
+								if (i, j) in nodes_to_skip:
+									continue
 								n = nodes[j]
 								target_criteria_satisfaction = are_satisfied_node(interpretations_node, n, rule.get_target_criteria())
 								if (target_criteria_satisfaction and is_satisfied_node(interpretations_node, n, (rule.get_target(), interval.closed(0,1)))) or (target_criteria_satisfaction and rule.get_target().value==''):
@@ -502,33 +508,33 @@ class Interpretation:
 
 										# Handle loop parameters for the next (maybe) fp operation
 										# If it is a t=0 rule or an immediate rule we want to go back for another fp operation to check for new rules that may fire
+										# Next fp operation we will skip this rule on this node because anyway there won't be an update
 										if delta_t==0:
 											in_loop = True
 											update = False
+											nodes_to_skip.append((i, j))
 										if immediate_rule and delta_t==0:
 											# immediate_rule_fire becomes True because we still need to check for more eligible rules, we're not done.
 											in_loop = True
 											update = False
 											immediate_node_rule_fire = True
-											# Save the current state of the fp operation. We finished this node, so start from the next
-											rule_pos = i
-											node_pos = j + 1
+											# Save the current state of the fp operation. We don't want to apply this rule again for this node/edge
+											nodes_to_skip.append((i, j))
 											break
-										else:
-											# If not immediate rule, make fp state go back to zero
-											rule_pos = 0
-											node_pos = 0
+
 							# Break, apply immediate rule then come back to check for more applicable rules
 							if immediate_node_rule_fire:
 								break
 
 							# Go through all edges and check if any rules apply to them.
 							# Comment out the following lines if there are no labels or rules that deal with edges. It will be an unnecessary loop
-							for j in range(edge_pos, len(edges)):
+							for j in range(len(edges)):
+								if (i, j) in edges_to_skip:
+									continue
 								e = edges[j]
 								target_criteria_satisfaction = are_satisfied_edge(interpretations_edge, e, rule.get_target_criteria())
 								if (target_criteria_satisfaction and is_satisfied_node(interpretations_edge, e, (rule.get_target(), interval.closed(0,1)))) or (target_criteria_satisfaction and rule.get_target().value==''):
-									# Find out if rule is applicable. returns list of list of qualified nodes and qualified edges. one for each clause
+									# Find out if rule is applicable. returns list of list, of qualified nodes and qualified edges. one for each clause
 									result, annotations, qualified_nodes, qualified_edges, edges_to_add = _is_rule_applicable_edge(interpretations_node, interpretations_edge, neighbors, e, rule.get_neigh_criteria(), rule.get_thresholds(), reverse_graph, rule.get_annotation_function(), rule.get_annotation_label(), rule.get_edges(), atom_trace)
 									if (result and rule.get_target().value=='') or (result and not interpretations_edge[e].world[rule.get_target()].is_static()):
 										bnd = influence(rule, annotations, rule.get_weights())
@@ -540,22 +546,20 @@ class Interpretation:
 
 										# Handle loop parameters for the next (maybe) fp operation
 										# If it is a t=0 rule or an immediate rule we want to go back for another fp operation to check for new rules that may fire
+										# Next fp operation we will skip this rule on this node because anyway there won't be an update
 										if delta_t==0:
 											in_loop = True
 											update = False
-										if immediate_rule and delta_t==0:
+											edges_to_skip.append((i, j))
+										if immediate_rule and delta_t == 0:
 											# immediate_rule_fire becomes True because we still need to check for more eligible rules, we're not done.
 											in_loop = True
 											update = False
 											immediate_edge_rule_fire = True
-											# Save the current state of the fp operation. We finished this edge, so start from the next
-											rule_pos = i
-											edge_pos = j + 1
+											# Save the current state of the fp operation. We don't want to apply this rule again for this node/edge
+											edges_to_skip.append((i, j))
 											break
-										else:
-											# If not immediate rule, make fp state go back to zero
-											rule_pos = 0
-											edge_pos = 0
+
 							# Break, apply immediate rule then come back to check for more applicable rules
 							if immediate_edge_rule_fire:
 								break
@@ -592,14 +596,13 @@ class Interpretation:
 			t += 1
 
 		return fp_cnt, t	
-		
 
 
 @numba.njit(cache=True)
 def _is_rule_applicable(interpretations_node, interpretations_edge, neighbors, target_node, neigh_criteria, thresholds, reverse_graph, ann_fn, ann_fn_label, edges, atom_trace):
 	# Initialize dictionary where keys are strings (x1, x2 etc.) and values are lists of qualified neighbors
 	# Keep track of all the edges that are qualified
-	# If its a node clause update (x1 or x2 etc.) qualified neighbors, if its an edge clause update the qualified neighbors for the source and target (x1, x2)
+	# If it's a node clause update (x1 or x2 etc.) qualified neighbors, if it's an edge clause update the qualified neighbors for the source and target (x1, x2)
 	# First gather all the qualified nodes for each clause
 	subsets = numba.typed.Dict.empty(key_type=numba.types.string, value_type=list_of_nodes)
 	qualified_nodes = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
@@ -618,7 +621,11 @@ def _is_rule_applicable(interpretations_node, interpretations_edge, neighbors, t
 	for i, clause in enumerate(neigh_criteria):
 		# Gather qualified nodes/edges
 		if clause[0]=='node':
-			subset = neighbors[target_node] if clause[1][0] not in subsets else subsets[clause[1][0]]
+			if clause[1][0]=='target':
+				subset = numba.typed.List([target_node])
+			else:
+				subset = neighbors[target_node] if clause[1][0] not in subsets else subsets[clause[1][0]]
+
 			subsets[clause[1][0]] = get_qualified_components_node_clause(interpretations_node, subset, clause[2], clause[3])
 			if atom_trace:
 				qualified_nodes.append(numba.typed.List(subsets[clause[1][0]]))
@@ -626,18 +633,19 @@ def _is_rule_applicable(interpretations_node, interpretations_edge, neighbors, t
 
 		elif clause[0]=='edge':
 			# Set sources for possible edges, if target use target node as source
-			subset_source = neighbors[target_node] if clause[1][0] not in subsets else subsets[clause[1][0]]
 			if clause[1][0]=='target':
 				subset_source = numba.typed.List([target_node])
-				
-			subset_target = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
-			for source in subset_source:
-				subset_target.append(neighbors[source] if clause[1][1] not in subsets else subsets[clause[1][1]])
+			else:
+				subset_source = neighbors[target_node] if clause[1][0] not in subsets else subsets[clause[1][0]]
 
-			# Set targets for possible edges, if target use target node as target
+			subset_target = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
 			if clause[1][1]=='target':
+				# Set targets for possible edges, if target use target node as target
 				for source in subset_source:
 					subset_target.append(numba.typed.List([target_node]))
+			else:
+				for source in subset_source:
+					subset_target.append(neighbors[source] if clause[1][1] not in subsets else subsets[clause[1][1]])
 
 			qe = get_qualified_components_edge_clause(interpretations_edge, subset_source, subset_target, clause[2], clause[3], reverse_graph)
 			subsets[clause[1][0]] = qe[0]
@@ -647,7 +655,7 @@ def _is_rule_applicable(interpretations_node, interpretations_edge, neighbors, t
 				qualified_nodes.append(numba.typed.List.empty_list(node_type))
 				qualified_edges.append(numba.typed.List(zip(subsets[clause[1][0]], subsets[clause[1][1]])))
 
-		# Check if clause satisfies threshold
+		# Check if the clause satisfies threshold
 		if thresholds[i][1][1]=='total':
 			if clause[0]=='node':
 				neigh_len = len(subset)
@@ -706,11 +714,12 @@ def _is_rule_applicable(interpretations_node, interpretations_edge, neighbors, t
 
 	return (satisfaction, annotations, qualified_nodes, qualified_edges, edges_to_be_added)
 
+
 @numba.njit(cache=True)
 def _is_rule_applicable_edge(interpretations_node, interpretations_edge, neighbors, target_edge, neigh_criteria, thresholds, reverse_graph, ann_fn, ann_fn_label, edges, atom_trace):
 	# Initialize dictionary where keys are strings (x1, x2 etc.) and values are lists of qualified neighbors
 	# Keep track of all the edges that are qualified
-	# If its a node clause update (x1 or x2 etc.) qualified neighbors, if its an edge clause update the qualified neighbors for the source and target (x1, x2)
+	# If it's a node clause update (x1 or x2 etc.) qualified neighbors, if it's an edge clause update the qualified neighbors for the source and target (x1, x2)
 	# First gather all the qualified nodes for each clause
 	subsets = numba.typed.Dict.empty(key_type=numba.types.string, value_type=list_of_nodes)
 	qualified_nodes = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
@@ -753,13 +762,17 @@ def _is_rule_applicable_edge(interpretations_node, interpretations_edge, neighbo
 				subset_source = neighbors[target_edge[0]] if clause[1][0] not in subsets else subsets[clause[1][0]]
 				
 			subset_target = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
-			for source in subset_source:
-				subset_target.append(neighbors[source] if clause[1][1] not in subsets else subsets[clause[1][1]])
-
-			# Set targets for possible edges, if target use target node as target
-			if clause[1][1]=='target':
+			if clause[1][1]=='source':
+				# Set targets for possible edges, if source use source node as target
+				for source in subset_source:
+					subset_target.append(numba.typed.List([target_edge[0]]))
+			elif clause[1][1]=='target':
+				# Set targets for possible edges, if target use target node as target
 				for source in subset_source:
 					subset_target.append(numba.typed.List([target_edge[1]]))
+			else:
+				for source in subset_source:
+					subset_target.append(neighbors[source] if clause[1][1] not in subsets else subsets[clause[1][1]])
 
 			qe = get_qualified_components_edge_clause(interpretations_edge, subset_source, subset_target, clause[2], clause[3], reverse_graph)
 			subsets[clause[1][0]] = qe[0]
@@ -769,7 +782,7 @@ def _is_rule_applicable_edge(interpretations_node, interpretations_edge, neighbo
 				qualified_nodes.append(numba.typed.List.empty_list(node_type))
 				qualified_edges.append(numba.typed.List(zip(subsets[clause[1][0]], subsets[clause[1][1]])))
 
-		# Check if clause satisfies threshold
+		# Check if the clause satisfies threshold
 		if thresholds[i][1][1]=='total':
 			if clause[0]=='node':
 				neigh_len = len(subset)
@@ -833,7 +846,6 @@ def _is_rule_applicable_edge(interpretations_node, interpretations_edge, neighbo
 	return (satisfaction, annotations, qualified_nodes, qualified_edges, edges_to_be_added)
 
 
-
 @numba.njit(cache=True)
 def get_qualified_components_node_clause(interpretations_node, candidates, l, bnd):
 	# Get all the qualified neighbors for a particular clause
@@ -859,7 +871,6 @@ def get_qualified_components_edge_clause(interpretations_edge, candidates_source
 
 	return (qualified_nodes_source, qualified_nodes_target)
 	
-
 
 @numba.njit(cache=True)
 def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
@@ -923,7 +934,6 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 					elif mode=='rule':
 						qn, qe, name = rules_to_be_applied_trace[idx]
 						_update_rule_trace(rule_trace_atoms, qn, qe, prev_bnd, name)
-			
 
 		# Update complement of predicate (if exists) based on new knowledge of predicate
 		if updated:
@@ -970,6 +980,7 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 
 	except:
 		return (False, 0)
+
 
 @numba.njit(cache=True)
 def _override_update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_trace, idx, facts_to_be_applied_trace, rule_trace_atoms, mode):
@@ -1080,7 +1091,6 @@ def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 					elif mode=='rule':
 						qn, qe, name = rules_to_be_applied_trace[idx]
 						_update_rule_trace(rule_trace_atoms, qn, qe, prev_bnd, name)
-			
 
 		# Update complement of predicate (if exists) based on new knowledge of predicate
 		if updated:
@@ -1127,6 +1137,7 @@ def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 	except:
 		return (False, 0)
 
+
 @numba.njit(cache=True)
 def _override_update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_trace, idx, facts_to_be_applied_trace, rule_trace_atoms, mode):
 	updated = False
@@ -1157,7 +1168,6 @@ def _override_update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_
 					elif mode=='rule':
 						qn, qe, name = rules_to_be_applied_trace[idx]
 						_update_rule_trace(rule_trace_atoms, qn, qe, prev_bnd, name)
-			
 
 		# Update complement of predicate (if exists) based on new knowledge of predicate
 		if updated:
@@ -1217,6 +1227,7 @@ def are_satisfied_node(interpretations, comp, nas):
 		result = result and is_satisfied_node(interpretations, comp, (label, interval))
 	return result
 
+
 @numba.njit(cache=True)
 def is_satisfied_node(interpretations, comp, na):
 	result = False
@@ -1231,12 +1242,14 @@ def is_satisfied_node(interpretations, comp, na):
 		result = True
 	return result
 
+
 @numba.njit(cache=True)
 def are_satisfied_edge(interpretations, comp, nas):
 	result = True
 	for (label, interval) in nas:
 		result = result and is_satisfied_edge(interpretations, comp, (label, interval))
 	return result
+
 
 @numba.njit(cache=True)
 def is_satisfied_edge(interpretations, comp, na):
@@ -1251,6 +1264,7 @@ def is_satisfied_edge(interpretations, comp, na):
 	else:
 		result = True
 	return result
+
 
 @numba.njit(cache=True)
 def influence(rule, annotations, weights):
@@ -1344,6 +1358,7 @@ def _add_node(node, neighbors, nodes, interpretations_node):
 	neighbors[node] = numba.typed.List.empty_list(node_type)
 	interpretations_node[node] = world.World(numba.typed.List.empty_list(label.label_type))
 
+
 @numba.njit(cache=True)
 def _add_edge(source, target, neighbors, nodes, edges, l, interpretations_node, interpretations_edge):
 	# If not a node, add to list of nodes and initialize neighbors
@@ -1372,7 +1387,6 @@ def _add_edge(source, target, neighbors, nodes, edges, l, interpretations_node, 
 			interpretations_edge[edge].world[l] = interval.closed(0,1)
 
 	return (edge, new_edge)
-		
 
 
 @numba.njit(cache=True)
