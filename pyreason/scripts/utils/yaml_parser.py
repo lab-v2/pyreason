@@ -14,12 +14,13 @@ def parse_rules(path):
         rules_yaml = yaml.safe_load(file)
 
     rules = numba.typed.List.empty_list(rule.rule_type)
+    immediate_rules = numba.typed.List.empty_list(rule.rule_type)
     for rule_name, values in rules_yaml.items():
         # Set rule target
         target = label.Label('')
         if values['target'] is not None:
             target = label.Label(values['target'])
-        
+
         # Set rule target criteria
         target_criteria = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
         if values['target_criteria'] is not None:
@@ -31,7 +32,7 @@ def parse_rules(path):
 
         # neigh_criteria = [c1, c2, c3, c4]
         # thresholds = [t1, t2, t3, t4]
-        
+
         # Array of thresholds to keep track of for each neighbor criterion. Form [(comparison, (number/percent, total/available), thresh)]
         thresholds = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), numba.types.float64)))
 
@@ -90,11 +91,25 @@ def parse_rules(path):
         weights = np.ones(num_clauses, dtype=np.float64)
         weights = np.append(weights, 0)
         if 'weights' in values and values['weights']:
-            weights = np.array(values['weights'], dtype=np.float64)   
-        r = rule.Rule(rule_name, target, target_criteria, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges)
-        rules.append(r)
+            weights = np.array(values['weights'], dtype=np.float64)
 
-    return rules
+        # Immediate rule flag -- whether to be applied before all other rules
+        immediate_rule = False
+        if 'immediate' in values and values['immediate'] is not None:
+            immediate_rule = True
+
+        r = rule.Rule(rule_name, target, target_criteria, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule)
+
+        # Insert to beginning of list if flag for immediate rule is true
+        if immediate_rule:
+            immediate_rules.append(r)
+        else:
+            rules.append(r)
+
+    all_rules = numba.typed.List.empty_list(rule.rule_type)
+    all_rules.extend(immediate_rules)
+    all_rules.extend(rules)
+    return all_rules
 
 
 def parse_facts(path, reverse):
