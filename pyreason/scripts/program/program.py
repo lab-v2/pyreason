@@ -34,8 +34,9 @@ class Program:
 		return self.interp
 	
 	def reason_again(self, tmax, convergence_threshold, convergence_bound_threshold, facts_node, facts_edge, verbose=True):
-		self._tmax = tmax
-		self.interp.start_fp(tmax, facts_node, facts_edge, self._rules, verbose, convergence_threshold, convergence_bound_threshold)
+		assert self.interp is not None, 'Call reason before calling reason again'
+		self._tmax = self.interp.time + tmax
+		self.interp.start_fp(self._tmax, facts_node, facts_edge, self._rules, verbose, convergence_threshold, convergence_bound_threshold)
 
 		return self.interp
 		
