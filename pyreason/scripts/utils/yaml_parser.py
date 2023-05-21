@@ -28,7 +28,7 @@ def parse_rules(path):
                 target_criteria.append((label.Label(tc[0]), interval.closed(tc[1], tc[2])))
 
         # Set delta t
-        delta_t = numba.types.int8(values['delta_t'])
+        delta_t = numba.types.uint16(values['delta_t'])
 
         # neigh_criteria = [c1, c2, c3, c4]
         # thresholds = [t1, t2, t3, t4]

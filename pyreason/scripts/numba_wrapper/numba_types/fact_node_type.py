@@ -19,6 +19,7 @@ class FactType(types.Type):
     def __init__(self):
         super(FactType, self).__init__(name='FactNode')
 
+
 fact_type = FactType()
 
 
@@ -46,8 +47,8 @@ class FactModel(models.StructModel):
             ('component', numba.types.string),
             ('l', label.label_type),
             ('bnd', interval.interval_type),
-            ('t_lower', numba.types.int8),
-            ('t_upper', numba.types.int8),
+            ('t_lower', numba.types.uint16),
+            ('t_upper', numba.types.uint16),
             ('static', numba.types.boolean)
             ]
         models.StructModel.__init__(self, dmm, fe_type, members)
@@ -64,7 +65,7 @@ make_attribute_wrapper(FactType, 'static', 'static')
 
 
 # Implement constructor
-@lower_builtin(Fact, numba.types.string, numba.types.string, label.label_type, interval.interval_type, numba.types.int8, numba.types.int8, numba.types.boolean)
+@lower_builtin(Fact, numba.types.string, numba.types.string, label.label_type, interval.interval_type, numba.types.uint16, numba.types.uint16, numba.types.boolean)
 def impl_fact(context, builder, sig, args):
     typ = sig.return_type
     name, component, l, bnd, t_lower, t_upper, static = args
@@ -78,6 +79,7 @@ def impl_fact(context, builder, sig, args):
     fact.static = static
     return fact._getvalue()
 
+
 # Expose properties
 @overload_method(FactType, "get_name")
 def get_name(fact):
@@ -85,11 +87,13 @@ def get_name(fact):
         return fact.name
     return getter
 
+
 @overload_method(FactType, "get_component")
 def get_component(fact):
     def getter(fact):
         return fact.component
     return getter
+
 
 @overload_method(FactType, "get_label")
 def get_label(fact):
@@ -97,17 +101,20 @@ def get_label(fact):
         return fact.l
     return getter
 
+
 @overload_method(FactType, "get_bound")
 def get_bound(fact):
     def getter(fact):
         return fact.bnd
     return getter
 
+
 @overload_method(FactType, "get_time_lower")
 def get_time_lower(fact):
     def getter(fact):
         return fact.t_lower
     return getter
+
 
 @overload_method(FactType, "get_time_upper")
 def get_time_lower(fact):
@@ -131,8 +138,8 @@ def unbox_fact(typ, obj, c):
     fact.component = c.unbox(numba.types.string, component_obj).value
     fact.l = c.unbox(label.label_type, l_obj).value
     fact.bnd = c.unbox(interval.interval_type, bnd_obj).value
-    fact.t_lower = c.unbox(numba.types.int8, t_lower_obj).value
-    fact.t_upper = c.unbox(numba.types.int8, t_upper_obj).value
+    fact.t_lower = c.unbox(numba.types.uint16, t_lower_obj).value
+    fact.t_upper = c.unbox(numba.types.uint16, t_upper_obj).value
     fact.static = c.unbox(numba.types.boolean, static_obj).value
     c.pyapi.decref(name_obj)
     c.pyapi.decref(component_obj)
@@ -154,8 +161,8 @@ def box_fact(typ, val, c):
     component_obj = c.box(numba.types.string, fact.component)
     l_obj = c.box(label.label_type, fact.l)
     bnd_obj = c.box(interval.interval_type, fact.bnd)
-    t_lower_obj = c.box(numba.types.int8, fact.t_lower)
-    t_upper_obj = c.box(numba.types.int8, fact.t_upper)
+    t_lower_obj = c.box(numba.types.uint16, fact.t_lower)
+    t_upper_obj = c.box(numba.types.uint16, fact.t_upper)
     static_obj = c.box(numba.types.boolean, fact.static)
     res = c.pyapi.call_function_objargs(class_obj, (name_obj, component_obj, l_obj, bnd_obj, t_lower_obj, t_upper_obj, static_obj))
     c.pyapi.decref(name_obj)

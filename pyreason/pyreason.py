@@ -469,7 +469,7 @@ def add_rules_from_text(rule_text: str, name: str) -> None:
     weights = np.ones(len(body_predicates), dtype=np.float64)
     weights = np.append(weights, 0)
 
-    r = rule.Rule(name, target, target_criteria, numba.types.int8(0), neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges)
+    r = rule.Rule(name, target, target_criteria, numba.types.uint16(0), neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges)
 
     # Add to collection of rules
     if __rules is None:

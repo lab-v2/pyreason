@@ -46,7 +46,7 @@ class RuleModel(models.StructModel):
             ('name', types.string),
             ('target', label.label_type),
             ('target_criteria', types.ListType(types.Tuple((label.label_type, interval.interval_type)))),
-            ('delta', types.int8),
+            ('delta', types.uint16),
             ('neigh_criteria', types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), label.label_type, interval.interval_type)))),
             ('bnd', interval.interval_type),
             ('thresholds', types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64)))),
@@ -75,7 +75,7 @@ make_attribute_wrapper(RuleType, 'immediate_rule', 'immediate_rule')
 
 
 # Implement constructor
-@lower_builtin(Rule, types.string, label.label_type, types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.int8, types.ListType(types.Tuple((types.string, label.label_type, interval.interval_type))), interval.interval_type, types.ListType(types.ListType(types.Tuple((types.string, types.string, types.float64)))), types.string, label.label_type, types.float64[::1], types.Tuple((types.string, types.string, label.label_type)), types.boolean)
+@lower_builtin(Rule, types.string, label.label_type, types.ListType(types.Tuple((label.label_type, interval.interval_type))), types.uint16, types.ListType(types.Tuple((types.string, label.label_type, interval.interval_type))), interval.interval_type, types.ListType(types.ListType(types.Tuple((types.string, types.string, types.float64)))), types.string, label.label_type, types.float64[::1], types.Tuple((types.string, types.string, label.label_type)), types.boolean)
 def impl_rule(context, builder, sig, args):
     typ = sig.return_type
     name, target, target_criteria, delta, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule = args
@@ -201,7 +201,7 @@ def unbox_rule(typ, obj, c):
     rule.name = c.unbox(types.string, name_obj).value
     rule.target = c.unbox(label.label_type, target_obj).value
     rule.target_criteria = c.unbox(types.ListType(types.Tuple((label.label_type, interval.interval_type))), tc_obj).value
-    rule.delta = c.unbox(types.int8, delta_obj).value
+    rule.delta = c.unbox(types.uint16, delta_obj).value
     rule.neigh_criteria = c.unbox(types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), label.label_type, interval.interval_type))), neigh_criteria_obj).value
     rule.bnd = c.unbox(interval.interval_type, bnd_obj).value
     rule.thresholds = c.unbox(types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64))), thresholds_obj).value
@@ -233,7 +233,7 @@ def box_rule(typ, val, c):
     name_obj = c.box(types.string, rule.name)
     target_obj = c.box(label.label_type, rule.target)
     tc_obj = c.box(types.ListType(types.Tuple((label.label_type, interval.interval_type))), rule.target_criteria)
-    delta_obj = c.box(types.int8, rule.delta)
+    delta_obj = c.box(types.uint16, rule.delta)
     neigh_criteria_obj = c.box(types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), label.label_type, interval.interval_type))), rule.neigh_criteria)
     bnd_obj = c.box(interval.interval_type, rule.bnd)
     thresholds_obj = c.box(types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64))), rule.thresholds)
