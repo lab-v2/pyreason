@@ -32,11 +32,10 @@ class GraphmlParser:
                     l_bnd = float(value)
                     u_bnd = 1
                 else:
-                    l = l = f'{key}-{value}'
+                    l = f'{key}-{value}'
                     l_bnd = 1
                     u_bnd = 1
                 if isinstance(value, str):
-                    l = str(key)
                     bnd_str = value.split(',')
                     if len(bnd_str)==2:
                         try:
@@ -45,6 +44,7 @@ class GraphmlParser:
                             if low<=1 and low>=0 and up<=1 and up>=0:
                                 l_bnd = low
                                 u_bnd = up
+                                l = str(key)
                         except:
                             pass
                 
@@ -61,11 +61,10 @@ class GraphmlParser:
                     l_bnd = float(value)
                     u_bnd = 1
                 else:
-                    l = l = f'{key}-{value}'
+                    l = f'{key}-{value}'
                     l_bnd = 1
                     u_bnd = 1
                 if isinstance(value, str):
-                    l = str(key)
                     bnd_str = value.split(',')
                     if len(bnd_str)==2:
                         try:
@@ -74,6 +73,7 @@ class GraphmlParser:
                             if low<=1 and low>=0 and up<=1 and up>=0:
                                 l_bnd = low
                                 u_bnd = up
+                                l = str(key)
                         except:
                             pass
 
