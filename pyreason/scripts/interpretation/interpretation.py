@@ -181,7 +181,7 @@ class Interpretation:
 		return max_time
 
 	def _start_fp(self, rules, max_facts_time, verbose):
-		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.available_labels_node, self.available_labels_edge, self.specific_node_labels, self.specific_edge_labels, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.canonical, self.inconsistency_check, max_facts_time, self._convergence_mode, self._convergence_delta, verbose)
+		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.canonical, self.inconsistency_check, max_facts_time, self._convergence_mode, self._convergence_delta, verbose)
 		self.time = t - 1
 		# If we need to reason again, store the next timestep to start from
 		self.prev_reasoning_data[0] = t
@@ -191,41 +191,32 @@ class Interpretation:
 
 	@staticmethod
 	@numba.njit(cache=True)
-	def reason(interpretations_node, interpretations_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, labels_node, labels_edge, specific_labels_node, specific_labels_edge, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, max_facts_time, convergence_mode, convergence_delta, verbose):
+	def reason(interpretations_node, interpretations_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, max_facts_time, convergence_mode, convergence_delta, verbose):
 		t = prev_reasoning_data[0]
 		fp_cnt = prev_reasoning_data[1]
 		max_rules_time = 0
 		timestep_loop = True
 		while timestep_loop:
 			if t==tmax:
-				timestep_loop=False
+				timestep_loop = False
 			if verbose:
 				with objmode():
 					print('Timestep:', t, flush=True)
 			# Reset Interpretation at beginning of timestep if non-canonical
 			if t>0 and not canonical:
 				# Reset nodes (only if not static)
-				# General labels
 				for n in nodes:
-					for l in labels_node:
-						if not interpretations_node[n].world[l].is_static():
-							interpretations_node[n].world[l].reset()
-				# Specific labels
-				for l, ns in specific_labels_node.items():
-					for n in ns:
-						if not interpretations_node[n].world[l].is_static():
-							interpretations_node[n].world[l].reset()				
-				# Reset edges
-				# General labels
+					w = interpretations_node[n].world
+					for l in w:
+						if not w[l].is_static():
+							w[l].reset()
+
+				# Reset edges (only if not static)
 				for e in edges:
-					for l in labels_edge:
-						if not interpretations_edge[e].world[l].is_static():
-							interpretations_edge[e].world[l].reset()
-				# Specific labels
-				for l, es in specific_labels_edge.items():
-					for e in es:
-						if not interpretations_edge[e].world[l].is_static():
-							interpretations_edge[e].world[l].reset()
+					w = interpretations_edge[e].world
+					for l in w:
+						if not w[l].is_static():
+							w[l].reset()
 
 			# Convergence parameters
 			changes_cnt = 0
@@ -250,7 +241,7 @@ class Interpretation:
 				if facts_to_be_applied_node[i][0]==t:
 					comp, l, bnd, static, graph_attribute = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4], facts_to_be_applied_node[i][5]
 					# Check if bnd is static. Then no need to update, just add to rule trace, check if graph attribute and add ipl complement to rule trace as well
-					if interpretations_node[comp].world[l].is_static():
+					if l in interpretations_node[comp].world and interpretations_node[comp].world[l].is_static():
 						# Inverse of this is: if not save_graph_attributes_to_rule_trace and graph_attribute
 						if save_graph_attributes_to_rule_trace or not graph_attribute:
 							rule_trace_node.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, l, bnd))
@@ -303,7 +294,7 @@ class Interpretation:
 				if facts_to_be_applied_edge[i][0]==t:
 					comp, l, bnd, static, graph_attribute = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3], facts_to_be_applied_edge[i][4], facts_to_be_applied_edge[i][5]
 					# Check if bnd is static. Then no need to update, just add to rule trace, check if graph attribute, and add ipl complement to rule trace as well
-					if interpretations_edge[comp].world[l].is_static():
+					if l in interpretations_edge[comp].world and interpretations_edge[comp].world[l].is_static():
 						# Inverse of this is: if not save_graph_attributes_to_rule_trace and graph_attribute
 						if save_graph_attributes_to_rule_trace or not graph_attribute:
 							rule_trace_edge.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, l, interpretations_edge[comp].world[l]))
@@ -538,8 +529,8 @@ class Interpretation:
 							# Loop through applicable rules and add them to the rules to be applied for later or next fp operation
 							for applicable_rule in applicable_node_rules:
 								n, annotations, qualified_nodes, qualified_edges, edges_to_add = applicable_rule
-								# If there is an edge to add or the interpretation is not static
-								if len(edges_to_add[0]) > 0 or not interpretations_node[n].world[rule.get_target()].is_static():
+								# If there is an edge to add or the predicate doesn't exist or the interpretation is not static
+								if len(edges_to_add[0]) > 0 or rule.get_target() not in interpretations_node[n].world or not interpretations_node[n].world[rule.get_target()].is_static():
 									bnd = influence(rule, annotations, rule.get_weights())
 									max_rules_time = max(max_rules_time, t + delta_t)
 									edges_to_be_added_node_rule.append(edges_to_add)
@@ -569,8 +560,8 @@ class Interpretation:
 
 							for applicable_rule in applicable_edge_rules:
 								e, annotations, qualified_nodes, qualified_edges, edges_to_add = applicable_rule
-								# If there is an edge to add or the interpretation is not static
-								if len(edges_to_add[0]) > 0 or not interpretations_edge[e].world[rule.get_target()].is_static():
+								# If there is an edge to add or the predicate doesn't exist or the interpretation is not static
+								if len(edges_to_add[0]) > 0 or rule.get_target() not in interpretations_edge[e].world or not interpretations_edge[e].world[rule.get_target()].is_static():
 									bnd = influence(rule, annotations, rule.get_weights())
 									max_rules_time = max(max_rules_time, t+delta_t)
 									edges_to_be_added_edge_rule.append(edges_to_add)
