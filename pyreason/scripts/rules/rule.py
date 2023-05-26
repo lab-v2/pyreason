@@ -1,11 +1,10 @@
 class Rule:
 
-    def __init__(self, name, target, target_criteria, delta, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule):
-        self._name = name
+    def __init__(self, rule_str, target, delta, clauses, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule):
+        self._rule_str = rule_str
         self._target = target
-        self._target_criteria = target_criteria
         self._delta = delta
-        self._neigh_criteria = neigh_criteria
+        self._clauses = clauses
         self._bnd = bnd
         self._thresholds = thresholds
         self._ann_fn = ann_fn
@@ -14,20 +13,17 @@ class Rule:
         self._edges = edges
         self._immediate_rule = immediate_rule
 
-    def get_name(self):
-        return self._name
+    def get_rule_str(self):
+        return self._rule_str
     
     def get_target(self):
         return self._target
-
-    def get_target_criteria(self):
-        return self._target_criteria
 
     def get_delta(self):
         return self._delta
 
     def get_neigh_criteria(self):
-        return self._neigh_criteria
+        return self._clauses
     
     def get_bnd(self):
         return self._bnd
