@@ -378,20 +378,24 @@ def load_inconsistent_predicate_list(path: str) -> None:
     __ipl = yaml_parser.parse_ipl(path)
 
 
-def add_rules_from_text(rule_text: str, name: str) -> None:
+def add_rules_from_text(rule_text: str, name: str, infer_edges: bool = False, immediate_rule: bool = False) -> None:
     """Add a rule to pyreason from text format. This format is not as modular as the YAML format.
-    1. It is not possible to specify target criteria
-    2. It is not possible to specify delta_t. delta_t=0 by default.
-    3. It is not possible to specify thresholds. Threshold is greater than or equal to 1 by default
-    4. It is not possible to add edges between subsets of nodes
-    5. It is not possible to have an annotation function. We set to [1,1] by default
-    6. It is not possible to have weights for different clauses. Weights are 1 by default with bias 0
+    1. It is not possible to specify delta_t. delta_t=0 by default.
+    2. It is not possible to specify thresholds. Threshold is greater than or equal to 1 by default
+    3. It is not possible to have an annotation function. We set to [1,1] by default
+    4. It is not possible to have weights for different clauses. Weights are 1 by default with bias 0
+    TODO: Add threshold class where we can pass this as a parameter
+    TODO: Add delta_t in rule format or as a parameter
+    TODO: Add weights as a parameter
+    TODO: Add annotation function and bounds as a parameter
 
     Example:
     `'pred1(x,y) <- pred2(a, b), pred3(b, c)'`
 
     :param rule_text: The rule in text format
     :param name: The name of the rule. This will appear in the rule trace
+    :param infer_edges: Whether to infer new edges after edge rule fires
+    :param immediate_rule: Whether the rule is immediate. Immediate rules check for more applicable rules immediately after being applied
     """
     global __rules
 
@@ -413,9 +417,6 @@ def add_rules_from_text(rule_text: str, name: str) -> None:
     # Variable(s) in the head of the rule
     head_variables = head[idx + 1:-1].split(',')
 
-    # Target criteria is empty for this text format to pyreason rule
-    target_criteria = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
-
     # Get the variables in the body
     body_predicates = []
     body_variables = []
@@ -425,23 +426,33 @@ def add_rules_from_text(rule_text: str, name: str) -> None:
         body_variables.append(clause[idx+1:-1].split(','))
 
     # Replace the variables in the body with source/target if they match the variables in the head
-    head_var_map = {0: 'source', 1: 'target'}
-    for i in range(len(body_variables)):
-        for j in range(len(body_variables[i])):
-            # Loop through the head variables and see if there's a match
-            for k in range(len(head_variables)):
-                if body_variables[i][j] == head_variables[k]:
-                    body_variables[i][j] = head_var_map[k] if len(head_variables) == 2 else 'target'
+    # If infer_edges is true, then we consider all rules to be node rules, we infer the 2nd variable of the target predicate from the rule body
+    # Else we consider the rule to be an edge rule and replace variables with source/target
+    # Node rules with possibility of adding edges
+    if infer_edges or len(head_variables) == 1:
+        head_source_variable = head_variables[0]
+        for i in range(len(body_variables)):
+            for j in range(len(body_variables[i])):
+                if body_variables[i][j] == head_source_variable:
+                    body_variables[i][j] = 'target'
+    # Edge rule, no edges to be added
+    elif len(head_variables) == 2:
+        for i in range(len(body_variables)):
+            for j in range(len(body_variables[i])):
+                if body_variables[i][j] == head_variables[0]:
+                    body_variables[i][j] = 'source'
+                elif body_variables[i][j] == head_variables[1]:
+                    body_variables[i][j] = 'target'
 
-    # Start setting up neigh_criteria
-    # neigh_criteria = [c1, c2, c3, c4]
+    # Start setting up clauses
+    # clauses = [c1, c2, c3, c4]
     # thresholds = [t1, t2, t3, t4]
 
     # Array of thresholds to keep track of for each neighbor criterion. Form [(comparison, (number/percent, total/available), thresh)]
     thresholds = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), numba.types.float64)))
 
     # Array to store clauses for nodes: node/edge, [subset]/[subset1, subset2], label, interval
-    neigh_criteria = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), label.label_type, interval.interval_type)))
+    clauses = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, label.label_type, numba.types.UniTuple(numba.types.string, 2), interval.interval_type)))
 
     # Loop though clauses
     for predicate, variables in zip(body_predicates, body_variables):
@@ -450,16 +461,21 @@ def add_rules_from_text(rule_text: str, name: str) -> None:
         subset = (variables[0], variables[0]) if clause_type == 'node' else (variables[0], variables[1])
         l = label.Label(predicate)
         bnd = interval.closed(1, 1)
-        neigh_criteria.append((clause_type, subset, l, bnd))
+        clauses.append((clause_type, l, subset, bnd))
 
-        # Threshold
+        # Threshold.
         quantifier = 'greater_equal'
         quantifier_type = ('number', 'total')
         thresh = 1
         thresholds.append((quantifier, quantifier_type, thresh))
 
-    # Cannot add edges
-    edges = ('', '', label.Label(''))
+    # Assert that there are two variables in the head of the rule if we infer edges
+    # Add edges between head variables if necessary
+    if infer_edges:
+        assert len(head_variables) == 2, 'Cannot infer edges with a node rule. There have to be two variables in the head'
+        edges = ('target', head_variables[1], target)
+    else:
+        edges = ('', '', label.Label(''))
 
     # Bound to set atom if rule fires
     bnd = interval.closed(1, 1)
@@ -469,7 +485,7 @@ def add_rules_from_text(rule_text: str, name: str) -> None:
     weights = np.ones(len(body_predicates), dtype=np.float64)
     weights = np.append(weights, 0)
 
-    r = rule.Rule(name, target, target_criteria, numba.types.uint16(0), neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges)
+    r = rule.Rule(name, target, numba.types.uint16(0), clauses, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule)
 
     # Add to collection of rules
     if __rules is None:
