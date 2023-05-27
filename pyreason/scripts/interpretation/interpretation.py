@@ -1324,7 +1324,10 @@ def influence(rule, annotations, weights):
 @numba.njit(cache=True)
 def check_consistent_node(interpretations, comp, na):
 	world = interpretations[comp]
-	bnd = world.world[na[0]]
+	if na[0] in world.world:
+		bnd = world.world[na[0]]
+	else:
+		bnd = interval.closed(0, 1)
 	if (na[1].lower > bnd.upper) or (bnd.lower > na[1].upper):
 		return False
 	else:
@@ -1334,7 +1337,10 @@ def check_consistent_node(interpretations, comp, na):
 @numba.njit(cache=True)
 def check_consistent_edge(interpretations, comp, na):
 	world = interpretations[comp]
-	bnd = world.world[na[0]]
+	if na[0] in world.world:
+		bnd = world.world[na[0]]
+	else:
+		bnd = interval.closed(0, 1)
 	if (na[1].lower > bnd.upper) or (bnd.lower > na[1].upper):
 		return False
 	else:
