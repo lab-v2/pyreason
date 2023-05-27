@@ -587,8 +587,10 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
         else:
             __specific_edge_labels[label_name] = edges
 
-    all_node_facts = numba.typed.List(__node_facts)
-    all_edge_facts = numba.typed.List(__edge_facts)
+    all_node_facts = numba.typed.List.empty_list(fact_node.fact_type)
+    all_edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
+    all_node_facts.extend(numba.typed.List(__node_facts))
+    all_edge_facts.extend(numba.typed.List(__edge_facts))
     all_node_facts.extend(__non_fluent_graph_facts_node)
     all_edge_facts.extend(__non_fluent_graph_facts_edge)
 
