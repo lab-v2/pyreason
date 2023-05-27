@@ -317,6 +317,14 @@ def reset():
     __edge_labels = None
 
 
+def reset_rules():
+    """
+    Resets rules to none
+    """
+    global __rules
+    __rules = None
+
+
 # FUNCTIONS
 def load_graph(path: str) -> None:
     """Loads graph from GraphMl file path into program
