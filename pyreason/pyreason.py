@@ -481,7 +481,8 @@ def add_rules_from_text(rule_text: str, name: str, infer_edges: bool = False, im
     # Add edges between head variables if necessary
     if infer_edges:
         assert len(head_variables) == 2, 'Cannot infer edges with a node rule. There have to be two variables in the head'
-        edges = ('target', head_variables[1], target)
+        var = 'target' if head_variables[0] == head_variables[1] else head_variables[1]
+        edges = ('target', var, target)
     else:
         edges = ('', '', label.Label(''))
 
