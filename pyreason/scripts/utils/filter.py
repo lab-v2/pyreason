@@ -112,6 +112,6 @@ class Filter:
                 dataframe.drop(columns=['source', 'target'], inplace=True)
                 dataframe = dataframe[['component', *labels]]
             else:
-                dataframe = pd.DataFrame(columns=['source', 'target', *labels])
+                dataframe = pd.DataFrame(columns=['component', *labels])
             dataframes.append(dataframe)
         return dataframes
