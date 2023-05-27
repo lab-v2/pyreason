@@ -107,9 +107,11 @@ class Filter:
             dataframe = pd.DataFrame.from_dict(edges[t]).transpose()
             dataframe = dataframe.reset_index()
             if not dataframe.empty:
-                dataframe.columns = ['component', *labels]
+                dataframe.columns = ['source', 'target', *labels]
+                dataframe['component'] = dataframe[['source', 'target']].apply(tuple, axis=1)
+                dataframe.drop(columns=['source', 'target'], inplace=True)
+                dataframe = dataframe[['component', *labels]]
             else:
-                dataframe = pd.DataFrame(columns=['component', *labels])
+                dataframe = pd.DataFrame(columns=['source', 'target', *labels])
             dataframes.append(dataframe)
         return dataframes
-
