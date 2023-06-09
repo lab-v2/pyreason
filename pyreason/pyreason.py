@@ -34,6 +34,7 @@ class _Settings:
         self.__canonical = False
         self.__inconsistency_check = True
         self.__static_graph_facts = True
+        self.__store_interpretation_changes = True
 
     @property
     def verbose(self) -> bool:
@@ -133,6 +134,15 @@ class _Settings:
         :return: bool
         """
         return self.__static_graph_facts
+
+    @property
+    def store_interpretation_changes(self) -> bool:
+        """Returns whether to keep track of changes that occur in the interpretation. You will not be able to view
+        interpretation results after reasoning. Default is True
+
+        :return: bool
+        """
+        return self.__store_interpretation_changes
 
     @verbose.setter
     def verbose(self, value: bool) -> None:
@@ -281,6 +291,19 @@ class _Settings:
             raise TypeError('value has to be a bool')
         else:
             self.__static_graph_facts = value
+
+    @store_interpretation_changes.setter
+    def store_interpretation_changes(self, value: bool) -> None:
+        """Whether to keep track of changes that occur to the interpretation. You will not be able to view interpretation
+        results after reasoning.
+
+        :param value: Whether to make graphml facts static or not
+        :raises TypeError: If not bool raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('value has to be a bool')
+        else:
+            self.__store_interpretation_changes = value
 
 
 # VARIABLES
@@ -568,8 +591,12 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     all_node_facts.extend(__non_fluent_graph_facts_node)
     all_edge_facts.extend(__non_fluent_graph_facts_edge)
 
+    # Atom trace cannot be true when store interpretations is false
+    if not settings.store_interpretation_changes:
+        settings.atom_trace = False
+
     # Setup logical program
-    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check)
+    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes)
     __program.available_labels_node = __node_labels
     __program.available_labels_edge = __edge_labels
     __program.specific_node_labels = __specific_node_labels
@@ -588,14 +615,16 @@ def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold,
 
     assert __program is not None, 'To run `reason_again` you need to have reasoned once before'
 
-    # Extend current set of nodes with the new nodes supplied
+    # Extend current set of facts with the new facts supplied
+    all_edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
+    all_node_facts = numba.typed.List.empty_list(fact_node.fact_type)
     if node_facts is not None:
-        __node_facts.extend(numba.typed.List(node_facts))
+        all_node_facts.extend(numba.typed.List(node_facts))
     if edge_facts is not None:
-        __edge_facts.extend(numba.typed.List(edge_facts))
+        all_edge_facts.extend(numba.typed.List(edge_facts))
 
     # Run Program and get final interpretation
-    interpretation = __program.reason_again(timesteps, convergence_threshold, convergence_bound_threshold, __node_facts, __edge_facts, settings.verbose)
+    interpretation = __program.reason_again(timesteps, convergence_threshold, convergence_bound_threshold, all_node_facts, all_edge_facts, settings.verbose)
 
     return interpretation
 
@@ -607,7 +636,9 @@ def save_rule_trace(interpretation, folder: str='./'):
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
     :param folder: the folder in which to save the result, defaults to './'
     """
-    global __timestamp
+    global __timestamp, settings
+
+    assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to save rule trace'
 
     output = Output(__timestamp)
     output.save_rule_trace(interpretation, folder)
@@ -623,6 +654,7 @@ def filter_and_sort_nodes(interpretation, labels: List[str], bound: interval.Int
     :param descending: A bool that sorts by descending/ascending order, defaults to True
     :return: A list of Pandas dataframes that contain the filtered and sorted interpretations that are easy to access
     """
+    assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to filter and sort nodes'
     filterer = Filter(interpretation.time)
     filtered_df = filterer.filter_and_sort_nodes(interpretation, labels, bound, sort_by, descending)
     return filtered_df
@@ -638,6 +670,7 @@ def filter_and_sort_edges(interpretation, labels: List[str], bound: interval.Int
     :param descending: A bool that sorts by descending/ascending order, defaults to True
     :return: A list of Pandas dataframes that contain the filtered and sorted interpretations that are easy to access
     """
+    assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to filter and sort edges'
     filterer = Filter(interpretation.time)
     filtered_df = filterer.filter_and_sort_edges(interpretation, labels, bound, sort_by, descending)
     return filtered_df
