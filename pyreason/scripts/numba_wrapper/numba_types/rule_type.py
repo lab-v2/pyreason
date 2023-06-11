@@ -32,8 +32,8 @@ def typeof_rule(val, c):
 # Construct object from Numba functions (Doesn't work. We don't need this currently)
 @type_callable(Rule)
 def type_rule(context):
-    def typer(rule_str, rule_type, target, delta, clauses, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule):
-        if isinstance(rule_str, types.UnicodeType) and isinstance(rule_type, types.UnicodeType) and isinstance(target, label.LabelType) and isinstance(delta, types.Integer) and isinstance(clauses, (types.NoneType, types.ListType)) and isinstance(bnd, interval.IntervalType) and isinstance(thresholds, types.ListType) and isinstance(ann_fn, types.UnicodeType) and isinstance(ann_label, label.LabelType) and isinstance(weights, types.Array) and isinstance(edges, types.Tuple) and isinstance(immediate_rule, types.Boolean):
+    def typer(rule_str, type, target, delta, clauses, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule):
+        if isinstance(rule_str, types.UnicodeType) and isinstance(type, types.UnicodeType) and isinstance(target, label.LabelType) and isinstance(delta, types.Integer) and isinstance(clauses, (types.NoneType, types.ListType)) and isinstance(bnd, interval.IntervalType) and isinstance(thresholds, types.ListType) and isinstance(ann_fn, types.UnicodeType) and isinstance(ann_label, label.LabelType) and isinstance(weights, types.Array) and isinstance(edges, types.Tuple) and isinstance(immediate_rule, types.Boolean):
             return rule_type
     return typer
 
@@ -44,7 +44,7 @@ class RuleModel(models.StructModel):
     def __init__(self, dmm, fe_type):
         members = [
             ('rule_str', types.string),
-            ('rule_type', types.string),
+            ('type', types.string),
             ('target', label.label_type),
             ('delta', types.uint16),
             ('clauses', types.ListType(types.Tuple((types.string, label.label_type, types.UniTuple(types.string, 2), interval.interval_type)))),
@@ -61,7 +61,7 @@ class RuleModel(models.StructModel):
 
 # Expose data-model attributes
 make_attribute_wrapper(RuleType, 'rule_str', 'rule_str')
-make_attribute_wrapper(RuleType, 'rule_type', 'rule_type')
+make_attribute_wrapper(RuleType, 'type', 'type')
 make_attribute_wrapper(RuleType, 'target', 'target')
 make_attribute_wrapper(RuleType, 'delta', 'delta')
 make_attribute_wrapper(RuleType, 'clauses', 'clauses')
@@ -78,12 +78,12 @@ make_attribute_wrapper(RuleType, 'immediate_rule', 'immediate_rule')
 @lower_builtin(Rule, types.string, types.string, label.label_type, types.uint16, types.ListType(types.Tuple((types.string, label.label_type, types.UniTuple(types.string, 2), interval.interval_type))), interval.interval_type, types.ListType(types.ListType(types.Tuple((types.string, types.string, types.float64)))), types.string, label.label_type, types.float64[::1], types.Tuple((types.string, types.string, label.label_type)), types.boolean)
 def impl_rule(context, builder, sig, args):
     typ = sig.return_type
-    rule_str, rule_type, target, delta, clauses, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule = args
+    rule_str, type, target, delta, clauses, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule = args
     context.nrt.incref(builder, types.ListType(types.Tuple((types.string, label.label_type, types.UniTuple(types.string, 2), interval.interval_type))), clauses)
     context.nrt.incref(builder, types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64))), thresholds)
     rule = cgutils.create_struct_proxy(typ)(context, builder)
     rule.rule_str = rule_str
-    rule.rule_type = rule_type
+    rule.type = type
     rule.target = target
     rule.delta = delta
     rule.clauses = clauses
@@ -108,7 +108,7 @@ def get_name(rule):
 @overload_method(RuleType, "get_type")
 def get_type(rule):
     def getter(rule):
-        return rule.rule_type
+        return rule.type
     return getter
 
 
@@ -186,7 +186,7 @@ def is_immediate_rule(rule):
 @unbox(RuleType)
 def unbox_rule(typ, obj, c):
     name_obj = c.pyapi.object_getattr_string(obj, "_rule_str")
-    type_obj = c.pyapi.object_getattr_string(obj, "_rule_type")
+    type_obj = c.pyapi.object_getattr_string(obj, "_type")
     target_obj = c.pyapi.object_getattr_string(obj, "_target")
     delta_obj = c.pyapi.object_getattr_string(obj, "_delta")
     clauses_obj = c.pyapi.object_getattr_string(obj, "_clauses")
@@ -199,7 +199,7 @@ def unbox_rule(typ, obj, c):
     immediate_rule_obj = c.pyapi.objecget_namet_getattr_string(obj, "_immediate_rule")
     rule = cgutils.create_struct_proxy(typ)(c.context, c.builder)
     rule.rule_str = c.unbox(types.string, name_obj).value
-    rule.rule_type = c.unbox(types.string, type_obj).value
+    rule.type = c.unbox(types.string, type_obj).value
     rule.target = c.unbox(label.label_type, target_obj).value
     rule.delta = c.unbox(types.uint16, delta_obj).value
     rule.clauses = c.unbox(types.ListType(types.Tuple((types.string, label.label_type, types.UniTuple(types.string, 2), interval.interval_type))), clauses_obj).value
@@ -231,7 +231,7 @@ def box_rule(typ, val, c):
     rule = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
     class_obj = c.pyapi.unserialize(c.pyapi.serialize_object(Rule))
     name_obj = c.box(types.string, rule.rule_str)
-    type_obj = c.box(types.string, rule.rule_type)
+    type_obj = c.box(types.string, rule.type)
     target_obj = c.box(label.label_type, rule.target)
     delta_obj = c.box(types.uint16, rule.delta)
     clauses_obj = c.box(types.ListType(types.Tuple((types.string, label.label_type, types.UniTuple(types.string, 2), interval.interval_type))), rule.clauses)

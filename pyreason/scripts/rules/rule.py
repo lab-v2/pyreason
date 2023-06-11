@@ -2,7 +2,7 @@ class Rule:
 
     def __init__(self, rule_str, rule_type, target, delta, clauses, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule):
         self._rule_str = rule_str
-        self._rule_type = rule_type
+        self._type = rule_type
         self._target = target
         self._delta = delta
         self._clauses = clauses
@@ -18,7 +18,7 @@ class Rule:
         return self._rule_str
 
     def get_rule_type(self):
-        return self._rule_type
+        return self._type
 
     def get_target(self):
         return self._target
