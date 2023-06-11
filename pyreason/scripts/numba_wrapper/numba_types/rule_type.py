@@ -196,7 +196,7 @@ def unbox_rule(typ, obj, c):
     ann_label_obj = c.pyapi.object_getattr_string(obj, "_ann_label")
     weights_obj = c.pyapi.object_getattr_string(obj, "_weights")
     edges_obj = c.pyapi.object_getattr_string(obj, "_edges")
-    immediate_rule_obj = c.pyapi.objecget_namet_getattr_string(obj, "_immediate_rule")
+    immediate_rule_obj = c.pyapi.object_getattr_string(obj, "_immediate_rule")
     rule = cgutils.create_struct_proxy(typ)(c.context, c.builder)
     rule.rule_str = c.unbox(types.string, name_obj).value
     rule.type = c.unbox(types.string, type_obj).value
