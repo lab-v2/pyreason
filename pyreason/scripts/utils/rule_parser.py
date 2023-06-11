@@ -13,6 +13,21 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, immediate_r
     # Separate into head and body
     head, body = r.split('<-')
 
+    # Extract delta_t of rule if it exists else set it to 0
+    t = ''
+    is_digit = True
+    while is_digit:
+        if body[0].isdigit():
+            t += body[0]
+            body = body[1:]
+        else:
+            is_digit = False
+
+    if t == '':
+        t = 0
+    else:
+        t = int(t)
+
     # Separate clauses in body
     body = body[:-1].replace(')', '))') + ')'
     body = body.split('),')
@@ -97,5 +112,5 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, immediate_r
     weights = np.ones(len(body_predicates), dtype=np.float64)
     weights = np.append(weights, 0)
 
-    r = rule.Rule(name, rule_type, target, numba.types.uint16(0), clauses, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule)
+    r = rule.Rule(name, rule_type, target, numba.types.uint16(t), clauses, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule)
     return r
