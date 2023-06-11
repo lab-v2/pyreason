@@ -4,8 +4,8 @@ import pyreason as pr
 
 def test_hello_world():
     # Modify the paths based on where you've stored the files we made above
-    graph_path = 'friends_graph.graphml'
-    facts_path = 'facts.yaml'
+    graph_path = './tests/friends_graph.graphml'
+    facts_path = './tests/facts.yaml'
 
     # Modify pyreason settings to make verbose and to save the rule trace to a file
     pr.settings.verbose = True     # Print info to screen
