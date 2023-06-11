@@ -32,7 +32,8 @@ setup(
         'pandas',
         'numba',
         'numpy',
-        'memory_profiler'
+        'memory_profiler',
+        'pytest'
     ],
     packages=find_packages(),
     include_package_data=True
