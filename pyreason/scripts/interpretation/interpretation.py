@@ -657,6 +657,7 @@ class Interpretation:
 @numba.njit(cache=True)
 def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, neighbors, reverse_neighbors, atom_trace, reverse_graph, nodes_to_skip):
 	# Extract rule params
+	rule_type = rule.get_type()
 	clauses = rule.get_clauses()
 	thresholds = rule.get_thresholds()
 	ann_fn = rule.get_annotation_function()
@@ -665,6 +666,10 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 
 	# We return a list of tuples which specify the target nodes/edges that have made the rule body true
 	applicable_rules = numba.typed.List.empty_list(node_applicable_rule_type)
+
+	# Return empty list if rule is not node rule
+	if rule_type != 'node':
+		return applicable_rules
 
 	# Steps
 	# 1. Loop through all nodes and evaluate each clause with that node and check the truth with the thresholds
@@ -841,6 +846,7 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 @numba.njit(cache=True)
 def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, reverse_graph, edges_to_skip):
 	# Extract rule params
+	rule_type = rule.get_type()
 	clauses = rule.get_clauses()
 	thresholds = rule.get_thresholds()
 	ann_fn = rule.get_annotation_function()
@@ -849,6 +855,10 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 
 	# We return a list of tuples which specify the target nodes/edges that have made the rule body true
 	applicable_rules = numba.typed.List.empty_list(edge_applicable_rule_type)
+
+	# Return empty list if rule is not node rule
+	if rule_type != 'edge':
+		return applicable_rules
 
 	# Steps
 	# 1. Loop through all nodes and evaluate each clause with that node and check the truth with the thresholds
