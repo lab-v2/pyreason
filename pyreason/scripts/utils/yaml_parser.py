@@ -92,7 +92,8 @@ def parse_rules(path):
         if 'immediate' in values and values['immediate'] is not None:
             immediate_rule = True
 
-        r = rule.Rule(rule_name, target, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule)
+        # Dummy rule type. this file is deprecated
+        r = rule.Rule(rule_name, 'node', target, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule)
 
         # Insert to beginning of list if flag for immediate rule is true
         if immediate_rule:
