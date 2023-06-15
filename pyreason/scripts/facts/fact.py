@@ -1,5 +1,3 @@
-import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
-import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 
@@ -11,8 +9,8 @@ from typing import Union
 class Fact:
     def __init__(self, name: str, component: Union[str, Tuple[str, str]], attribute: str, bound: Union[interval.Interval, List[float]], start_time: int, end_time: int, static: bool = False):
         self.name = name
-        self.t_upper = start_time
-        self.t_lower = end_time
+        self.t_upper = end_time
+        self.t_lower = start_time
         self.component = component
         self.label = attribute
         self.interval = bound
@@ -25,7 +23,7 @@ class Fact:
             self.type = 'edge'
 
         # Set label to correct type
-        self._label = label.Label(attribute)
+        self.label = label.Label(attribute)
 
         # Set bound to correct type
         if isinstance(bound, list):

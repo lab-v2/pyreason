@@ -436,6 +436,15 @@ def add_rule(rule_text: str, name: str, infer_edges: bool = False, immediate_rul
     __rules.append(r)
 
 
+def add_rules_from_file(file_path: str, infer_edges: bool = False) -> None:
+    with open(file_path, 'r') as file:
+        rules = [line.rstrip() for line in file]
+
+    rule_offset = 0 if __rules is None else len(__rules)
+    for i, r in enumerate(rules):
+        add_rule(r, f'rule_{i+rule_offset}', infer_edges)
+
+
 def add_fact(pyreason_fact: Fact) -> None:
     """Add a PyReason fact to the program.
 
@@ -443,6 +452,7 @@ def add_fact(pyreason_fact: Fact) -> None:
     :return: None
     """
     global __node_facts, __edge_facts
+
     if pyreason_fact.type == 'node':
         f = fact_node.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.label, pyreason_fact.interval, pyreason_fact.t_lower, pyreason_fact.t_upper, pyreason_fact.static)
         if __node_facts is None:
@@ -520,8 +530,10 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
 
     if __node_facts is None and __edge_facts is None:
         if settings.verbose:
-            warnings.warn('Facts yaml file has not been loaded. Use `load_facts`. Only graph attributes will be used as facts\n')
+            warnings.warn('Facts have not been loaded. Use `add_fact` or `load_facts`. Only graph attributes will be used as facts\n')
+    if __node_facts is None:
         __node_facts = numba.typed.List.empty_list(fact_node.fact_type)
+    if __edge_facts is None:
         __edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
 
     if __ipl is None:
