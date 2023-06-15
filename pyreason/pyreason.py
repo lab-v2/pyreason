@@ -410,19 +410,17 @@ def load_inconsistent_predicate_list(path: str) -> None:
     __ipl = yaml_parser.parse_ipl(path)
 
 
-def add_rules_from_text(rule_text: str, name: str, infer_edges: bool = False, immediate_rule: bool = False) -> None:
+def add_rule(rule_text: str, name: str, infer_edges: bool = False, immediate_rule: bool = False) -> None:
     """Add a rule to pyreason from text format. This format is not as modular as the YAML format.
-    1. It is not possible to specify delta_t. delta_t=0 by default.
-    2. It is not possible to specify thresholds. Threshold is greater than or equal to 1 by default
-    3. It is not possible to have an annotation function. We set to [1,1] by default
-    4. It is not possible to have weights for different clauses. Weights are 1 by default with bias 0
+    1. It is not possible to specify thresholds. Threshold is greater than or equal to 1 by default
+    2. It is not possible to have an annotation function.
+    3. It is not possible to have weights for different clauses. Weights are 1 by default with bias 0
     TODO: Add threshold class where we can pass this as a parameter
-    TODO: Add delta_t in rule format or as a parameter
     TODO: Add weights as a parameter
     TODO: Add annotation function and bounds as a parameter
 
     Example:
-    `'pred1(x,y) <- pred2(a, b), pred3(b, c)'`
+    `'pred1(x,y) : [0.2, 1] <- pred2(a, b) : [1,1], pred3(b, c)'`
 
     :param rule_text: The rule in text format
     :param name: The name of the rule. This will appear in the rule trace

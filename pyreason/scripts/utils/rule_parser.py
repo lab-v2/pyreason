@@ -28,17 +28,61 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, immediate_r
     else:
         t = int(t)
 
-    # Separate clauses in body
-    body = body[:-1].replace(')', '))') + ')'
+    # Raw parsing steps
+    # 1. Remove whitespaces
+    # 2. replace ) by )) and ] by ]] so that we can split without damaging the string
+    # 3. Split with ), and then for each element of list, split with ], and add to new list
+    # 4. Then replace ]] with ] and )) with ) in for loop
+    # 5. Add :[1,1] to the end of each element if a bound is not specified
+    # 6. Then split each element with :
+    # 7. Transform bound strings into pr.intervals
+
+    # 2
+    body = body.replace(')', '))')
+    body = body.replace(']', ']]')
+
+    # 3
     body = body.split('),')
+    split_body = []
+    for b in body:
+        split_body.extend(b.split('],'))
+
+    # 4
+    for i in range(len(split_body)):
+        split_body[i] = split_body[i].replace('))', ')')
+        split_body[i] = split_body[i].replace(']]', ']')
+
+    # 5
+    for i in range(len(split_body)):
+        if split_body[i][-1] != ']':
+            split_body[i] += ':[1,1]'
+
+    # 6
+    body_clauses = []
+    body_bounds = []
+    for b in split_body:
+        clause, bound = b.split(':')
+        body_clauses.append(clause)
+        body_bounds.append(bound)
+
+    # 7
+    for i in range(len(body_bounds)):
+        bound = body_bounds[i]
+        l, u = _str_bound_to_bound(bound)
+        body_bounds[i] = [l, u]
 
     # Find the target predicate
+    if head[-1] != ']':
+        head += ':[1,1]'
+    head, head_bound = head.split(':')
+    target_bound = list(_str_bound_to_bound(head_bound))
     idx = head.find('(')
     target = head[:idx]
     target = label.Label(target)
 
     # Variable(s) in the head of the rule
-    head_variables = head[idx + 1:-1].split(',')
+    end_idx = head.find(')')
+    head_variables = head[idx + 1:end_idx].split(',')
 
     # Assign type of rule
     rule_type = 'node' if len(head_variables) == 1 else 'edge'
@@ -46,7 +90,7 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, immediate_r
     # Get the variables in the body
     body_predicates = []
     body_variables = []
-    for clause in body:
+    for clause in body_clauses:
         idx = clause.find('(')
         body_predicates.append(clause[:idx])
         body_variables.append(clause[idx+1:-1].split(','))
@@ -81,12 +125,12 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, immediate_r
     clauses = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, label.label_type, numba.types.UniTuple(numba.types.string, 2), interval.interval_type)))
 
     # Loop though clauses
-    for predicate, variables in zip(body_predicates, body_variables):
+    for predicate, variables, bounds in zip(body_predicates, body_variables, body_bounds):
         # Neigh criteria
         clause_type = 'node' if len(variables) == 1 else 'edge'
         subset = (variables[0], variables[0]) if clause_type == 'node' else (variables[0], variables[1])
         l = label.Label(predicate)
-        bnd = interval.closed(1, 1)
+        bnd = interval.closed(bounds[0], bounds[1])
         clauses.append((clause_type, l, subset, bnd))
 
         # Threshold.
@@ -114,3 +158,10 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, immediate_r
 
     r = rule.Rule(name, rule_type, target, numba.types.uint16(t), clauses, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule)
     return r
+
+
+def _str_bound_to_bound(str_bound):
+    str_bound = str_bound.replace('[', '')
+    str_bound = str_bound.replace(']', '')
+    l, u = str_bound.split(',')
+    return float(l), float(u)
