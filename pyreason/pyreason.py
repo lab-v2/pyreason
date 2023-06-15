@@ -437,6 +437,14 @@ def add_rule(rule_text: str, name: str, infer_edges: bool = False, immediate_rul
 
 
 def add_rules_from_file(file_path: str, infer_edges: bool = False) -> None:
+    """ Add a set of rules from a text file
+
+    :param file_path: Path to the text file containing rules
+    :type file_path: str
+    :param infer_edges: Whether to infer edges on these rules if an edge doesn't exist between head variables and the body of the rule is satisfied
+    :type infer_edges: bool
+    :return: None
+    """
     with open(file_path, 'r') as file:
         rules = [line.rstrip() for line in file]
 
