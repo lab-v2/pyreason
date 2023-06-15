@@ -14,7 +14,7 @@ import pyreason.scripts.utils.yaml_parser as yaml_parser
 import pyreason.scripts.utils.rule_parser as rule_parser
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.rule_type as rule
-import pyreason.scripts.facts.fact as fact
+from pyreason.scripts.facts.fact import Fact
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
@@ -436,7 +436,7 @@ def add_rule(rule_text: str, name: str, infer_edges: bool = False, immediate_rul
     __rules.append(r)
 
 
-def add_fact(pyreason_fact: fact.Fact) -> None:
+def add_fact(pyreason_fact: Fact) -> None:
     """Add a PyReason fact to the program.
 
     :param pyreason_fact: PyReason fact created using pr.Fact(...)

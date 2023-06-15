@@ -5,7 +5,6 @@ import pyreason as pr
 def test_hello_world():
     # Modify the paths based on where you've stored the files we made above
     graph_path = './tests/friends_graph.graphml'
-    facts_path = './tests/facts.yaml'
 
     # Modify pyreason settings to make verbose and to save the rule trace to a file
     pr.settings.verbose = True     # Print info to screen
@@ -13,7 +12,7 @@ def test_hello_world():
     # Load all the files into pyreason
     pr.load_graph(graph_path)
     pr.add_rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule')
-    pr.load_facts(facts_path)
+    pr.add_fact(pr.Fact('popular-fact', 'Mary', 'popular', [1, 1], 0, 2))
 
     # Run the program for two timesteps to see the diffusion take place
     interpretation = pr.reason(timesteps=2)
