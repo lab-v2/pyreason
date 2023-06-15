@@ -12,7 +12,7 @@ def test_hello_world():
 
     # Load all the files into pyreason
     pr.load_graph(graph_path)
-    pr.add_rules_from_text('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule')
+    pr.add_rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule')
     pr.load_facts(facts_path)
 
     # Run the program for two timesteps to see the diffusion take place
