@@ -3,7 +3,6 @@ import numba
 import time
 import sys
 import warnings
-import numpy as np
 import memory_profiler as mp
 from typing import List, Type
 
@@ -15,6 +14,7 @@ import pyreason.scripts.utils.yaml_parser as yaml_parser
 import pyreason.scripts.utils.rule_parser as rule_parser
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.rule_type as rule
+import pyreason.scripts.facts.fact as fact
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
@@ -434,6 +434,26 @@ def add_rule(rule_text: str, name: str, infer_edges: bool = False, immediate_rul
     if __rules is None:
         __rules = numba.typed.List.empty_list(rule.rule_type)
     __rules.append(r)
+
+
+def add_fact(pyreason_fact: fact.Fact) -> None:
+    """Add a PyReason fact to the program.
+
+    :param pyreason_fact: PyReason fact created using pr.Fact(...)
+    :return: None
+    """
+    global __node_facts, __edge_facts
+    if pyreason_fact.type == 'node':
+        f = fact_node.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.label, pyreason_fact.interval, pyreason_fact.t_lower, pyreason_fact.t_upper, pyreason_fact.static)
+        if __node_facts is None:
+            __node_facts = numba.typed.List.empty_list(fact_node.fact_type)
+        __node_facts.append(f)
+
+    else:
+        f = fact_edge.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.label, pyreason_fact.interval, pyreason_fact.t_lower, pyreason_fact.t_upper, pyreason_fact.static)
+        if __edge_facts is None:
+            __edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
+        __edge_facts.append(f)
 
 
 def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_threshold: float=-1, again: bool=False, node_facts: List[Type[fact_node.Fact]]=None, edge_facts: List[Type[fact_edge.Fact]]=None):
