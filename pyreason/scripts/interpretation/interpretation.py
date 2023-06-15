@@ -108,6 +108,9 @@ class Interpretation:
 					reverse_neighbors[neighbor_node].append(n)
 				else:
 					reverse_neighbors[neighbor_node] = numba.typed.List([n])
+			# This makes sure each node has a value
+			if n not in reverse_neighbors:
+				reverse_neighbors[n] = numba.typed.List.empty_list(node_type)
 
 		return reverse_neighbors
 
