@@ -269,7 +269,9 @@ class Interpretation:
 						# Check for inconsistencies (multiple facts)
 						if check_consistent_node(interpretations_node, comp, (l, bnd)):
 							mode = 'graph-attribute-fact' if graph_attribute else 'fact'
+							print('1')
 							u, changes = _update_node(interpretations_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode=mode)
+							print('2')
 
 							update = u or update
 							# Update convergence params
@@ -1124,6 +1126,7 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 	updated = False
 	# This is to prevent a key error in case the label is a specific label
 	try:
+		print('inside1')
 		world = interpretations[comp]
 		l, bnd = na
 		updated_bnds = numba.typed.List.empty_list(interval.interval_type)
@@ -1132,6 +1135,7 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		if l not in world.world:
 			world.world[l] = interval.closed(0, 1)
 
+		print('inside2')
 		# Check if update is necessary with previous bnd
 		prev_bnd = world.world[l].copy()
 
@@ -1145,17 +1149,20 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 			updated = True
 			updated_bnds.append(world.world[l])
 
+			print('inside3')
 			# Add to rule trace if update happened and add to atom trace if necessary
 			if (save_graph_attributes_to_rule_trace or not mode=='graph-attribute-fact') and store_interpretation_changes:
 				rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, l, world.world[l].copy()))
 				if atom_trace:
 					# Mode can be fact or rule, updation of trace will happen accordingly
 					if mode=='fact' or mode=='graph-attribute-fact':
+						print('inside4')
 						qn = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
 						qe = numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type))
 						name = facts_to_be_applied_trace[idx]
 						_update_rule_trace(rule_trace_atoms, qn, qe, prev_bnd, name)
 					elif mode=='rule':
+						print('inside5')
 						qn, qe, name = rules_to_be_applied_trace[idx]
 						_update_rule_trace(rule_trace_atoms, qn, qe, prev_bnd, name)
 
@@ -1185,7 +1192,7 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 					updated_bnds.append(world.world[p1])
 					if store_interpretation_changes:
 						rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, p1, interval.closed(lower, upper)))
-		
+
 		# Gather convergence data
 		change = 0
 		if updated:
