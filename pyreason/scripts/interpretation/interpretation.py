@@ -708,7 +708,7 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 			# This is a node clause
 			# The groundings for node clauses are either the target node, neighbors of the target node, or an existing subset of nodes
 			if clause_type == 'node':
-				if clause_var_1 == 'target':
+				if clause_var_1 == '__target':
 					subset = numba.typed.List([target_node])
 				else:
 					subset = neighbors[target_node] if clause_var_1 not in subsets else subsets[clause_var_1]
@@ -728,11 +728,11 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 			else:
 				# Case 1:
 				# Check if 1st variable or 1st and 2nd variables are the target
-				if clause_var_1 == 'target':
+				if clause_var_1 == '__target':
 					subset_source = numba.typed.List([target_node])
 
 					# If both variables are the same
-					if clause_var_2 == 'target':
+					if clause_var_2 == '__target':
 						subset_target = numba.typed.List([numba.typed.List([target_node])])
 					elif clause_var_2 in subsets:
 						subset_target = numba.typed.List([subsets[clause_var_2]])
@@ -740,7 +740,7 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 						subset_target = numba.typed.List([neighbors[target_node]])
 
 				# Check if 2nd variable is the target (this means 1st variable isn't the target)
-				elif clause_var_2 == 'target':
+				elif clause_var_2 == '__target':
 					subset_source = reverse_neighbors[target_node] if clause_var_1 not in subsets else subsets[clause_var_1]
 					subset_target = numba.typed.List([numba.typed.List([target_node]) for _ in subset_source])
 
@@ -826,14 +826,14 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 			# Edges to be added
 			if source != '' and target != '':
 				# Check if edge nodes are target
-				if source == 'target':
+				if source == '__target':
 					edges_to_be_added[0].append(target_node)
 				elif source in subsets:
 					edges_to_be_added[0].extend(subsets[source])
 				else:
 					edges_to_be_added[0].append(source)
 
-				if target == 'target':
+				if target == '__target':
 					edges_to_be_added[1].append(target_node)
 				elif target in subsets:
 					edges_to_be_added[1].extend(subsets[target])
@@ -897,9 +897,9 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 			# This is a node clause
 			# The groundings for node clauses are either the source, target, neighbors of the source node, or an existing subset of nodes
 			if clause_type == 'node':
-				if clause_var_1 == 'source':
+				if clause_var_1 == '__source':
 					subset = numba.typed.List([target_edge[0]])
-				elif clause_var_1 == 'target':
+				elif clause_var_1 == '__target':
 					subset = numba.typed.List([target_edge[1]])
 				else:
 					subset = neighbors[target_edge[0]] if clause_var_1 not in subsets else subsets[clause_var_1]
@@ -919,13 +919,13 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 			else:
 				# Case 1:
 				# Check if 1st variable is the source
-				if clause_var_1 == 'source':
+				if clause_var_1 == '__source':
 					subset_source = numba.typed.List([target_edge[0]])
 
 					# If 2nd variable is source/target/something else
-					if clause_var_2 == 'source':
+					if clause_var_2 == '__source':
 						subset_target = numba.typed.List([numba.typed.List([target_edge[0]])])
-					elif clause_var_2 == 'target':
+					elif clause_var_2 == '__target':
 						subset_target = numba.typed.List([numba.typed.List([target_edge[1]])])
 					elif clause_var_2 in subsets:
 						subset_target = numba.typed.List([subsets[clause_var_2]])
@@ -933,13 +933,13 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 						subset_target = numba.typed.List([neighbors[target_edge[0]]])
 
 				# if 1st variable is the target
-				elif clause_var_1 == 'target':
+				elif clause_var_1 == '__target':
 					subset_source = numba.typed.List([target_edge[1]])
 
 					# if 2nd variable is source/target/something else
-					if clause_var_2 == 'source':
+					if clause_var_2 == '__source':
 						subset_target = numba.typed.List([numba.typed.List([target_edge[0]])])
-					elif clause_var_2 == 'target':
+					elif clause_var_2 == '__target':
 						subset_target = numba.typed.List([numba.typed.List([target_edge[1]])])
 					elif clause_var_2 in subsets:
 						subset_target = numba.typed.List([subsets[clause_var_2]])
@@ -947,11 +947,11 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 						subset_target = numba.typed.List([neighbors[target_edge[1]]])
 
 				# Handle the cases where the 2nd variable is source/target but the 1st is something else (cannot be source/target)
-				elif clause_var_2 == 'source':
+				elif clause_var_2 == '__source':
 					subset_source = reverse_neighbors[target_edge[0]] if clause_var_1 not in subsets else subsets[clause_var_1]
 					subset_target = numba.typed.List([numba.typed.List([target_edge[0]]) for _ in subset_source])
 
-				elif clause_var_2 == 'target':
+				elif clause_var_2 == '__target':
 					subset_source = reverse_neighbors[target_edge[1]] if clause_var_1 not in subsets else subsets[clause_var_1]
 					subset_target = numba.typed.List([numba.typed.List([target_edge[1]]) for _ in subset_source])
 
@@ -1037,18 +1037,18 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 			# Edges to be added
 			if source != '' and target != '':
 				# Check if edge nodes are source/target
-				if source == 'source':
+				if source == '__source':
 					edges_to_be_added[0].append(target_edge[0])
-				elif source == 'target':
+				elif source == '__target':
 					edges_to_be_added[0].append(target_edge[1])
 				elif source in subsets:
 					edges_to_be_added[0].extend(subsets[source])
 				else:
 					edges_to_be_added[0].append(source)
 
-				if target == 'source':
+				if target == '__source':
 					edges_to_be_added[1].append(target_edge[0])
-				elif target == 'target':
+				elif target == '__target':
 					edges_to_be_added[1].append(target_edge[1])
 				elif target in subsets:
 					edges_to_be_added[1].extend(subsets[target])

@@ -104,15 +104,15 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, immediate_r
         for i in range(len(body_variables)):
             for j in range(len(body_variables[i])):
                 if body_variables[i][j] == head_source_variable:
-                    body_variables[i][j] = 'target'
+                    body_variables[i][j] = '__target'
     # Edge rule, no edges to be added
     elif len(head_variables) == 2:
         for i in range(len(body_variables)):
             for j in range(len(body_variables[i])):
                 if body_variables[i][j] == head_variables[0]:
-                    body_variables[i][j] = 'source'
+                    body_variables[i][j] = '__source'
                 elif body_variables[i][j] == head_variables[1]:
-                    body_variables[i][j] = 'target'
+                    body_variables[i][j] = '__target'
 
     # Start setting up clauses
     # clauses = [c1, c2, c3, c4]
