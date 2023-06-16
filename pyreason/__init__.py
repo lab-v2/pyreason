@@ -3,7 +3,8 @@ import os
 package_path = os.path.abspath(os.path.dirname(__file__))
 cache_path = os.path.join(package_path, 'cache')
 cache_status_path = os.path.join(package_path, '.cache_status.yaml')
-os.environ['NUMBA_CACHE_DIR'] =  cache_path
+os.environ['NUMBA_CACHE_DIR'] = cache_path
+os.environ['NUMBA_DEBUGINFO'] = 'True'
 
 from pyreason.pyreason import *
 import yaml
