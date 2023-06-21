@@ -149,7 +149,7 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, immediate_r
         edges = ('', '', label.Label(''))
 
     # Bound to set atom if rule fires
-    bnd = interval.closed(1, 1)
+    bnd = interval.closed(*target_bound)
     ann_fn = ''
     ann_label = label.Label('')
 
