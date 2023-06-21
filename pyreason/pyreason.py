@@ -446,7 +446,7 @@ def add_rules_from_file(file_path: str, infer_edges: bool = False) -> None:
     :return: None
     """
     with open(file_path, 'r') as file:
-        rules = [line.rstrip() for line in file]
+        rules = [line.rstrip() for line in file if line.rstrip() != '' and line.rstrip()[0] != '#']
 
     rule_offset = 0 if __rules is None else len(__rules)
     for i, r in enumerate(rules):
