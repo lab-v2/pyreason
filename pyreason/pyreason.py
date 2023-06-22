@@ -410,7 +410,7 @@ def load_inconsistent_predicate_list(path: str) -> None:
     __ipl = yaml_parser.parse_ipl(path)
 
 
-def add_rule(rule_text: str, name: str, infer_edges: bool = False, immediate_rule: bool = False) -> None:
+def add_rule(rule_text: str, name: str, infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False) -> None:
     """Add a rule to pyreason from text format. This format is not as modular as the YAML format.
     1. It is not possible to specify thresholds. Threshold is greater than or equal to 1 by default
     2. It is not possible to have an annotation function.
@@ -425,11 +425,12 @@ def add_rule(rule_text: str, name: str, infer_edges: bool = False, immediate_rul
     :param rule_text: The rule in text format
     :param name: The name of the rule. This will appear in the rule trace
     :param infer_edges: Whether to infer new edges after edge rule fires
+    :param set_static: Whether to set the atom in the head as static if the rule fires. The bounds will no longer change
     :param immediate_rule: Whether the rule is immediate. Immediate rules check for more applicable rules immediately after being applied
     """
     global __rules
 
-    r = rule_parser.parse_rule(rule_text, name, infer_edges, immediate_rule)
+    r = rule_parser.parse_rule(rule_text, name, infer_edges, set_static, immediate_rule)
     # Add to collection of rules
     if __rules is None:
         __rules = numba.typed.List.empty_list(rule.rule_type)

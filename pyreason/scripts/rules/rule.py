@@ -1,7 +1,7 @@
 class Rule:
 
-    def __init__(self, rule_str, rule_type, target, delta, clauses, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule):
-        self._rule_str = rule_str
+    def __init__(self, rule_name, rule_type, target, delta, clauses, bnd, thresholds, ann_fn, ann_label, weights, edges, static, immediate_rule):
+        self._rule_name = rule_name
         self._type = rule_type
         self._target = target
         self._delta = delta
@@ -12,10 +12,11 @@ class Rule:
         self._ann_label = ann_label
         self._weights = weights
         self._edges = edges
+        self._static = static
         self._immediate_rule = immediate_rule
 
-    def get_rule_str(self):
-        return self._rule_str
+    def get_rule_name(self):
+        return self._rule_name
 
     def get_rule_type(self):
         return self._type
@@ -43,6 +44,9 @@ class Rule:
     
     def get_edges(self):
         return self._edges
+
+    def is_static(self):
+        return self._static
 
     def is_immediate_rule(self):
         return self._immediate_rule
