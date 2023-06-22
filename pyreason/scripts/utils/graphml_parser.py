@@ -19,6 +19,10 @@ class GraphmlParser:
 
         return self.graph
 
+    def load_graph(self, graph):
+        self.graph = graph
+        return self.graph
+
     def parse_graph_attributes(self, static_facts):
         facts_node = numba.typed.List.empty_list(fact_node.fact_type)
         facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)

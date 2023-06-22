@@ -10,7 +10,7 @@ def test_hello_world():
     pr.settings.verbose = True     # Print info to screen
 
     # Load all the files into pyreason
-    pr.load_graph(graph_path)
+    pr.load_graphml(graph_path)
     pr.add_rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule')
     pr.add_fact(pr.Fact('popular-fact', 'Mary', 'popular', [1, 1], 0, 2))
 

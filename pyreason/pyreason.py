@@ -1,10 +1,11 @@
 # This is the file that will be imported when "import pyreason" is called. All content will be run automatically
+import networkx as nx
 import numba
 import time
 import sys
 import warnings
 import memory_profiler as mp
-from typing import List, Type
+from typing import List, Type, Union
 
 from pyreason.scripts.utils.output import Output
 from pyreason.scripts.utils.filter import Filter
@@ -350,7 +351,7 @@ def reset_rules():
 
 
 # FUNCTIONS
-def load_graph(path: str) -> None:
+def load_graphml(path: str) -> None:
     """Loads graph from GraphMl file path into program
 
     :param path: Path for the GraphMl file
@@ -368,7 +369,29 @@ def load_graph(path: str) -> None:
         __non_fluent_graph_facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
         __specific_graph_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
         __specific_graph_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
+
+
+def load_graph(graph: nx.DiGraph) -> None:
+    """Load a networkx DiGraph into pyreason
+
+    :param graph: Networkx DiGraph object to load into pyreason
+    :type graph: nx.DiGraph
+    :return: None
+    """
+    global __graph, __graphml_parser, __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels, settings
     
+    # Load graph
+    __graph = __graphml_parser.load_graph(graph)
+
+    # Graph attribute parsing
+    if settings.graph_attribute_parsing:
+        __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels = __graphml_parser.parse_graph_attributes(settings.static_graph_facts)
+    else:
+        __non_fluent_graph_facts_node = numba.typed.List.empty_list(fact_node.fact_type)
+        __non_fluent_graph_facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
+        __specific_graph_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
+        __specific_graph_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
+
 
 def load_labels(path: str) -> None:
     """Load labels from YAML file path into program
