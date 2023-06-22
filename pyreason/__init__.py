@@ -18,7 +18,7 @@ if not cache_status['initialized']:
     graph_path = os.path.join(package_path, 'examples', 'hello-world', 'friends.graphml')
 
     settings.verbose = False
-    load_graph(graph_path)
+    load_graphml(graph_path)
     add_rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule')
     add_fact(Fact('popular-fact', 'Mary', 'popular', [1, 1], 0, 2))
     reason(timesteps=2)

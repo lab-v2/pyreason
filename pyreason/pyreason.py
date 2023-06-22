@@ -5,7 +5,7 @@ import time
 import sys
 import warnings
 import memory_profiler as mp
-from typing import List, Type, Union
+from typing import List, Type
 
 from pyreason.scripts.utils.output import Output
 from pyreason.scripts.utils.filter import Filter
