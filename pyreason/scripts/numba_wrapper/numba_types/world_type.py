@@ -100,11 +100,19 @@ def is_satisfied(world, label, interval):
         return result
     return impl
 
-@overload_method(WorldType, 'update')
-def update(w, label, interval):
-    def impl(w, label, interval):       
+@overload_method(WorldType, 'update_intersection')
+def update_intersection(w, label, bnd):
+    def impl(w, label, bnd):       
         current_bnd = w.world[label]
-        new_bnd = current_bnd.intersection(interval)
+        new_bnd = current_bnd.intersection(bnd)
+        w.world[label] = new_bnd
+    return impl
+
+@overload_method(WorldType, 'update_average')
+def update_average(w, label, bnd):
+    def impl(w, label, bnd):       
+        current_bnd = w.world[label]
+        new_bnd = interval.closed((bnd.lower + current_bnd.lower)/2, (bnd.upper + current_bnd.upper)/2)
         w.world[label] = new_bnd
     return impl
 
