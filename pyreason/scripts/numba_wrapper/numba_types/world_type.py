@@ -112,7 +112,10 @@ def update_intersection(w, label, bnd):
 def update_average(w, label, bnd):
     def impl(w, label, bnd):       
         current_bnd = w.world[label]
-        new_bnd = interval.closed((bnd.lower + current_bnd.lower)/2, (bnd.upper + current_bnd.upper)/2)
+        if current_bnd.lower == 0 and current_bnd.upper == 1:
+            new_bnd = interval.closed(bnd.lower, bnd.upper)
+        else:
+            new_bnd = interval.closed((bnd.lower + current_bnd.lower)/2, (bnd.upper + current_bnd.upper)/2)
         w.world[label] = new_bnd
     return impl
 
