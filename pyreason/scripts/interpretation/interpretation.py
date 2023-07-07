@@ -375,7 +375,7 @@ class Interpretation:
 					if i[0]==t:
 						comp, l, bnd, immediate, set_static = i[1], i[2], i[3], i[4], i[5]
 						sources, targets, edge_l = edges_to_be_added_node_rule[idx]
-						edges_added, changes = _add_edges(sources, targets, neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge)
+						edges_added, changes = _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge)
 						changes_cnt += changes
 
 						# Update bound for newly added edges. Use bnd to update all edges if label is specified, else use bnd to update normally
@@ -463,7 +463,7 @@ class Interpretation:
 					if i[0]==t:
 						comp, l, bnd, immediate, set_static = i[1], i[2], i[3], i[4], i[5]
 						sources, targets, edge_l = edges_to_be_added_edge_rule[idx]
-						edges_added, changes = _add_edges(sources, targets, neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge)
+						edges_added, changes = _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge)
 						changes_cnt += changes
 
 						# Update bound for newly added edges. Use bnd to update all edges if label is specified, else use bnd to update normally
@@ -1450,20 +1450,21 @@ def resolve_inconsistency_edge(interpretations, comp, na, ipl, t_cnt, fp_cnt, at
 
 
 @numba.njit(cache=True)
-def _add_node(node, neighbors, nodes, interpretations_node):
+def _add_node(node, neighbors, nodes, reverse_neighbors, interpretations_node):
 	nodes.append(node)
 	neighbors[node] = numba.typed.List.empty_list(node_type)
+	reverse_neighbors[node] = numba.typed.List.empty_list(node_type)
 	interpretations_node[node] = world.World(numba.typed.List.empty_list(label.label_type))
 
 
 @numba.njit(cache=True)
-def _add_edge(source, target, neighbors, nodes, edges, l, interpretations_node, interpretations_edge):
+def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge):
 	# If not a node, add to list of nodes and initialize neighbors
 	if source not in nodes:
-		_add_node(source, neighbors, nodes, interpretations_node)
+		_add_node(source, neighbors, reverse_neighbors, nodes, interpretations_node)
 
 	if target not in nodes:
-		_add_node(target, neighbors, nodes, interpretations_node)
+		_add_node(target, neighbors, reverse_neighbors, nodes, interpretations_node)
 
 	# Make sure edge doesn't already exist
 	# Make sure, if l=='', not to add the label
@@ -1474,6 +1475,7 @@ def _add_edge(source, target, neighbors, nodes, edges, l, interpretations_node, 
 		new_edge = True
 		edges.append(edge)
 		neighbors[source].append(target)
+		reverse_neighbors[target].append(source)
 		if l.value!='':
 			interpretations_edge[edge] = world.World(numba.typed.List([l]))
 		else:
@@ -1487,12 +1489,12 @@ def _add_edge(source, target, neighbors, nodes, edges, l, interpretations_node, 
 
 
 @numba.njit(cache=True)
-def _add_edges(sources, targets, neighbors, nodes, edges, l, interpretations_node, interpretations_edge):
+def _add_edges(sources, targets, neighbors, nodes, reverse_neighbors, edges, l, interpretations_node, interpretations_edge):
 	changes = 0
 	edges_added = numba.typed.List.empty_list(edge_type)
 	for source in sources:
 		for target in targets:
-			edge, new_edge = _add_edge(source, target, neighbors, nodes, edges, l, interpretations_node, interpretations_edge)
+			edge, new_edge = _add_edge(source, target, neighbors, nodes, reverse_neighbors, edges, l, interpretations_node, interpretations_edge)
 			edges_added.append(edge)
 			changes = changes+1 if new_edge else changes
 	return (edges_added, changes)
