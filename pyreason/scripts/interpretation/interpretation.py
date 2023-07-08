@@ -1450,7 +1450,7 @@ def resolve_inconsistency_edge(interpretations, comp, na, ipl, t_cnt, fp_cnt, at
 
 
 @numba.njit(cache=True)
-def _add_node(node, neighbors, nodes, reverse_neighbors, interpretations_node):
+def _add_node(node, neighbors, reverse_neighbors, nodes, interpretations_node):
 	nodes.append(node)
 	neighbors[node] = numba.typed.List.empty_list(node_type)
 	reverse_neighbors[node] = numba.typed.List.empty_list(node_type)
@@ -1489,12 +1489,12 @@ def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, int
 
 
 @numba.njit(cache=True)
-def _add_edges(sources, targets, neighbors, nodes, reverse_neighbors, edges, l, interpretations_node, interpretations_edge):
+def _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge):
 	changes = 0
 	edges_added = numba.typed.List.empty_list(edge_type)
 	for source in sources:
 		for target in targets:
-			edge, new_edge = _add_edge(source, target, neighbors, nodes, reverse_neighbors, edges, l, interpretations_node, interpretations_edge)
+			edge, new_edge = _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge)
 			edges_added.append(edge)
 			changes = changes+1 if new_edge else changes
 	return (edges_added, changes)
