@@ -95,6 +95,10 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, set_static:
         body_predicates.append(clause[:idx])
         body_variables.append(clause[idx+1:-1].split(','))
 
+    # Change infer edge parameter if it's a node rule
+    if rule_type == 'node':
+        infer_edges = False
+
     # Replace the variables in the body with source/target if they match the variables in the head
     # If infer_edges is true, then we consider all rules to be node rules, we infer the 2nd variable of the target predicate from the rule body
     # Else we consider the rule to be an edge rule and replace variables with source/target
@@ -142,7 +146,6 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, set_static:
     # Assert that there are two variables in the head of the rule if we infer edges
     # Add edges between head variables if necessary
     if infer_edges:
-        assert len(head_variables) == 2, 'Cannot infer edges with a node rule. There have to be two variables in the head'
         var = '__target' if head_variables[0] == head_variables[1] else head_variables[1]
         edges = ('__target', var, target)
     else:

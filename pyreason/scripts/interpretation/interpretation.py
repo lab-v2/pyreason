@@ -15,6 +15,10 @@ edge_type = numba.types.UniTuple(numba.types.string, 2)
 list_of_nodes = numba.types.ListType(node_type)
 list_of_edges = numba.types.ListType(edge_type)
 
+# Type for facts to be applied
+facts_to_be_applied_node_type = numba.types.Tuple((numba.types.uint16, node_type, label.label_type, interval.interval_type, numba.types.boolean, numba.types.boolean))
+facts_to_be_applied_edge_type = numba.types.Tuple((numba.types.uint16, edge_type, label.label_type, interval.interval_type, numba.types.boolean, numba.types.boolean))
+
 # Type for returning list of applicable rules for a certain rule
 # node/edge, annotations, qualified nodes, qualified edges, edges to be added
 node_applicable_rule_type = numba.types.Tuple((
@@ -61,8 +65,8 @@ class Interpretation:
 		self.facts_to_be_applied_edge_trace = numba.typed.List.empty_list(numba.types.string)
 		self.rules_to_be_applied_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.uint16, node_type, label.label_type, interval.interval_type, numba.types.boolean)))
 		self.rules_to_be_applied_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.uint16, edge_type, label.label_type, interval.interval_type, numba.types.boolean)))
-		self.facts_to_be_applied_node = numba.typed.List.empty_list(numba.types.Tuple((numba.types.uint16, node_type, label.label_type, interval.interval_type, numba.types.boolean, numba.types.boolean)))
-		self.facts_to_be_applied_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.uint16, edge_type, label.label_type, interval.interval_type, numba.types.boolean, numba.types.boolean)))
+		self.facts_to_be_applied_node = numba.typed.List.empty_list(facts_to_be_applied_node_type)
+		self.facts_to_be_applied_edge = numba.typed.List.empty_list(facts_to_be_applied_edge_type)
 		self.edges_to_be_added_node_rule = numba.typed.List.empty_list(numba.types.Tuple((numba.types.ListType(node_type), numba.types.ListType(node_type), label.label_type)))
 		self.edges_to_be_added_edge_rule = numba.typed.List.empty_list(numba.types.Tuple((numba.types.ListType(node_type), numba.types.ListType(node_type), label.label_type)))
 
@@ -200,7 +204,8 @@ class Interpretation:
 		fp_cnt = prev_reasoning_data[1]
 		max_rules_time = 0
 		timestep_loop = True
-		facts_to_remove_idx = numba.typed.List.empty_list(numba.types.int64)
+		facts_to_be_applied_node_new = numba.typed.List.empty_list(facts_to_be_applied_node_type)
+		facts_to_be_applied_edge_new = numba.typed.List.empty_list(facts_to_be_applied_edge_type)
 		rules_to_remove_idx = numba.typed.List.empty_list(numba.types.int64)
 		while timestep_loop:
 			if t==tmax:
@@ -243,7 +248,7 @@ class Interpretation:
 
 			# Start by applying facts
 			# Nodes
-			facts_to_remove_idx.clear()
+			facts_to_be_applied_node_new.clear()
 			for i in range(len(facts_to_be_applied_node)):
 				if facts_to_be_applied_node[i][0]==t:
 					comp, l, bnd, static, graph_attribute = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4], facts_to_be_applied_node[i][5]
@@ -293,16 +298,18 @@ class Interpretation:
 									changes_cnt += changes
 
 					if static:
-						facts_to_be_applied_node[i] = (numba.types.uint16(facts_to_be_applied_node[i][0]+1), comp, l, bnd, static, graph_attribute)
-					else:
-						# Add to list to be removed later
-						facts_to_remove_idx.append(i)
+						facts_to_be_applied_node_new.append((numba.types.uint16(facts_to_be_applied_node[i][0]+1), comp, l, bnd, static, graph_attribute))
 
-			# Delete facts that are not static
-			facts_to_be_applied_node[:] = numba.typed.List([facts_to_be_applied_node[i] for i in range(len(facts_to_be_applied_node)) if i not in facts_to_remove_idx])
+				# If time doesn't match, fact to be applied later
+				else:
+					facts_to_be_applied_node_new.append(facts_to_be_applied_node[i])
+
+			# Update list of facts with ones that have not been applied yet (delete applied facts)
+			facts_to_be_applied_node[:] = facts_to_be_applied_node_new.copy()
+			facts_to_be_applied_node_new.clear()
 
 			# Edges
-			facts_to_remove_idx.clear()
+			facts_to_be_applied_edge_new.clear()
 			for i in range(len(facts_to_be_applied_edge)):
 				if facts_to_be_applied_edge[i][0]==t:
 					comp, l, bnd, static, graph_attribute = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3], facts_to_be_applied_edge[i][4], facts_to_be_applied_edge[i][5]
@@ -350,13 +357,15 @@ class Interpretation:
 									changes_cnt += changes
 
 					if static:
-						facts_to_be_applied_edge[i] = (numba.types.uint16(facts_to_be_applied_edge[i][0]+1), comp, l, bnd, static, graph_attribute)
-					else:
-						# Add to list to be removed later
-						facts_to_remove_idx.append(i)
+						facts_to_be_applied_edge_new.append((numba.types.uint16(facts_to_be_applied_edge[i][0]+1), comp, l, bnd, static, graph_attribute))
 
-			# Delete facts that are not static
-			facts_to_be_applied_edge[:] = numba.typed.List([facts_to_be_applied_edge[i] for i in range(len(facts_to_be_applied_edge)) if i not in facts_to_remove_idx])
+				# Time doesn't match, fact to be applied later
+				else:
+					facts_to_be_applied_edge_new.append(facts_to_be_applied_edge[i])
+
+			# Update list of facts with ones that have not been applied yet (delete applied facts)
+			facts_to_be_applied_edge[:] = facts_to_be_applied_edge_new.copy()
+			facts_to_be_applied_edge_new.clear()
 
 			in_loop = True
 			while in_loop:
@@ -660,6 +669,13 @@ class Interpretation:
 
 		return fp_cnt, t
 
+	def add_edge(self, edge, l):
+		# This function is useful for pyreason gym, called externally
+		_add_edge(edge[0], edge[1], self.neighbors, self.reverse_neighbors, self.nodes, self.edges, l, self.interpretations_node, self.interpretations_edge)
+
+	def delete_edge(self, edge):
+		# This function is useful for pyreason gym, called externanlly
+		_delete_edge(edge, self.neighbors, self.reverse_neighbors, self.edges, self.interpretations_edge)
 
 @numba.njit(cache=True)
 def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, neighbors, reverse_neighbors, atom_trace, reverse_graph, nodes_to_skip):
@@ -674,8 +690,8 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 	# We return a list of tuples which specify the target nodes/edges that have made the rule body true
 	applicable_rules = numba.typed.List.empty_list(node_applicable_rule_type)
 
-	# Return empty list if rule is not node rule
-	if rule_type != 'node':
+	# Return empty list if rule is not node rule and if we are not inferring edges
+	if rule_type != 'node' and rule_edges[0] == '':
 		return applicable_rules
 
 	# Steps
@@ -1139,12 +1155,15 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		# Check if update is necessary with previous bnd
 		prev_bnd = world.world[l].copy()
 
-		# override will not check for inconsistencies
-		if override:
-			# world.world[l].set_lower_upper(bnd.lower, bnd.upper)
+		if l.value == 'normal' or l.value == 'abnormal':
 			world.update_average(l, bnd)
 		else:
-			world.update_average(l, bnd)
+			# override will not check for inconsistencies
+			if override:
+				world.world[l].set_lower_upper(bnd.lower, bnd.upper)
+			else:
+				world.update_intersection(l, bnd)
+
 		world.world[l].set_static(static)
 		if world.world[l]!=prev_bnd:
 			updated = True
@@ -1229,12 +1248,15 @@ def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		# Check if update is necessary with previous bnd
 		prev_bnd = world.world[l].copy()
 
-		# override will not check for inconsistencies
-		if override:
-			# world.world[l].set_lower_upper(bnd.lower, bnd.upper)
+		if l.value == 'normal' or l.value == 'abnormal':
 			world.update_average(l, bnd)
 		else:
-			world.update_average(l, bnd)
+			# override will not check for inconsistencies
+			if override:
+				world.world[l].set_lower_upper(bnd.lower, bnd.upper)
+			else:
+				world.update_intersection(l, bnd)
+
 		world.world[l].set_static(static)
 		if world.world[l]!=prev_bnd:
 			updated = True
@@ -1500,6 +1522,14 @@ def _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, l, 
 			edges_added.append(edge)
 			changes = changes+1 if new_edge else changes
 	return (edges_added, changes)
+
+@numba.njit(cache=True)
+def _delete_edge(edge, neighbors, reverse_neighbors, edges, interpretations_edge):
+	source, target = edge
+	edges.remove(edge)
+	del interpretations_edge[edge]
+	neighbors[source].remove(target)
+	reverse_neighbors[target].remove(source)
 
 
 @numba.njit(cache=True)
