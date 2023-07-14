@@ -684,7 +684,6 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 	clauses = rule.get_clauses()
 	thresholds = rule.get_thresholds()
 	ann_fn = rule.get_annotation_function()
-	ann_fn_label = rule.get_annotation_label()
 	rule_edges = rule.get_edges()
 
 	# We return a list of tuples which specify the target nodes/edges that have made the rule body true
@@ -828,15 +827,16 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 			# Collect the annotations that might be used in the annotation function according to the correct subset
 			for clause in clauses:
 				clause_type = clause[0]
+				clause_label = clause[1]
 				clause_var_1, clause_var_2 = clause[2][0], clause[2][1]
 				if ann_fn != '':
 					a = numba.typed.List.empty_list(interval.interval_type)
 					if clause_type == 'node':
 						for qn in subsets[clause_var_1]:
-							a.append(interpretations_node[qn].world[ann_fn_label])
+							a.append(interpretations_node[qn].world[clause_label])
 					else:
 						for qe in numba.typed.List(zip(subsets[clause_var_1], subsets[clause_var_2])):
-							a.append(interpretations_edge[qe].world[ann_fn_label])
+							a.append(interpretations_edge[qe].world[clause_label])
 
 					annotations.append(a)
 
@@ -873,7 +873,6 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 	clauses = rule.get_clauses()
 	thresholds = rule.get_thresholds()
 	ann_fn = rule.get_annotation_function()
-	ann_fn_label = rule.get_annotation_label()
 	rule_edges = rule.get_edges()
 
 	# We return a list of tuples which specify the target nodes/edges that have made the rule body true
@@ -1039,15 +1038,16 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 			# Collect the annotations that might be used in the annotation function according to the correct subset
 			for clause in clauses:
 				clause_type = clause[0]
+				clause_label = clause[1]
 				clause_var_1, clause_var_2 = clause[2][0], clause[2][1]
 				if ann_fn != '':
 					a = numba.typed.List.empty_list(interval.interval_type)
 					if clause_type == 'node':
 						for qn in subsets[clause_var_1]:
-							a.append(interpretations_node[qn].world[ann_fn_label])
+							a.append(interpretations_node[qn].world[clause_label])
 					else:
 						for qe in numba.typed.List(zip(subsets[clause_var_1], subsets[clause_var_2])):
-							a.append(interpretations_edge[qe].world[ann_fn_label])
+							a.append(interpretations_edge[qe].world[clause_label])
 
 					annotations.append(a)
 

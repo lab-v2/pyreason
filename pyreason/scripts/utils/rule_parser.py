@@ -154,12 +154,11 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, set_static:
     # Bound to set atom if rule fires
     bnd = interval.closed(*target_bound)
     ann_fn = ''
-    ann_label = label.Label('')
 
     weights = np.ones(len(body_predicates), dtype=np.float64)
     weights = np.append(weights, 0)
 
-    r = rule.Rule(name, rule_type, target, numba.types.uint16(t), clauses, bnd, thresholds, ann_fn, ann_label, weights, edges, set_static, immediate_rule)
+    r = rule.Rule(name, rule_type, target, numba.types.uint16(t), clauses, bnd, thresholds, ann_fn, weights, edges, set_static, immediate_rule)
     return r
 
 
