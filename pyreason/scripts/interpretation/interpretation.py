@@ -573,6 +573,7 @@ class Interpretation:
 								# If there is an edge to add or the predicate doesn't exist or the interpretation is not static
 								if len(edges_to_add[0]) > 0 or rule.get_target() not in interpretations_node[n].world or not interpretations_node[n].world[rule.get_target()].is_static():
 									bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
+									bnd = interval.closed(bnd[0], bnd[1])
 									max_rules_time = max(max_rules_time, t + delta_t)
 									edges_to_be_added_node_rule.append(edges_to_add)
 									rules_to_be_applied_node.append((numba.types.uint16(t + delta_t), n, rule.get_target(), bnd, immediate_rule, rule.is_static_rule()))
@@ -604,6 +605,7 @@ class Interpretation:
 								# If there is an edge to add or the predicate doesn't exist or the interpretation is not static
 								if len(edges_to_add[0]) > 0 or rule.get_target() not in interpretations_edge[e].world or not interpretations_edge[e].world[rule.get_target()].is_static():
 									bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
+									bnd = interval.closed(bnd[0], bnd[1])
 									max_rules_time = max(max_rules_time, t+delta_t)
 									edges_to_be_added_edge_rule.append(edges_to_add)
 									rules_to_be_applied_edge.append((numba.types.uint16(t+delta_t), e, rule.get_target(), bnd, immediate_rule, rule.is_static_rule()))
@@ -1372,7 +1374,7 @@ def is_satisfied_edge(interpretations, comp, na):
 def annotate(annotation_functions, rule, annotations, weights):
 	func_name = rule.get_annotation_function()
 	if func_name == '':
-		return interval.closed(rule.get_bnd().lower, rule.get_bnd().upper)
+		return (rule.get_bnd().lower, rule.get_bnd().upper)
 	else:
 		with numba.objmode(annotation='Tuple((float64, float64))'):
 			for func in annotation_functions:
