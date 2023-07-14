@@ -14,13 +14,14 @@ class GraphmlParser:
 
     def parse_graph(self, graph_path, reverse):
         self.graph = nx.read_graphml(graph_path)
+        self.graph = nx.DiGraph(self.graph)
         if reverse:
             self.graph = self.graph.reverse()
 
         return self.graph
 
     def load_graph(self, graph):
-        self.graph = graph
+        self.graph = nx.DiGraph(graph)
         return self.graph
 
     def parse_graph_attributes(self, static_facts):
@@ -89,4 +90,4 @@ class GraphmlParser:
                 f = fact_edge.Fact('graph-attribute-fact', (e[0], e[1]), label.Label(l), interval.closed(l_bnd, u_bnd), 0, 0, static=static_facts)
                 facts_edge.append(f)
 
-        return facts_node, facts_edge, specific_node_labels, specific_edge_labels                
+        return facts_node, facts_edge, specific_node_labels, specific_edge_labels
