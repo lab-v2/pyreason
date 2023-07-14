@@ -1374,7 +1374,7 @@ def annotate(annotation_functions, rule, annotations, weights):
 	if func_name == '':
 		return interval.closed(rule.get_bnd().lower, rule.get_bnd().upper)
 	else:
-		with numba.objmode(annotation='interval_type'):
+		with numba.objmode(annotation='Tuple((float64, float64))'):
 			for func in annotation_functions:
 				if func.__name__ == func_name:
 					annotation = func(annotations, weights)
