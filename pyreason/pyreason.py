@@ -5,7 +5,7 @@ import time
 import sys
 import warnings
 import memory_profiler as mp
-from typing import List, Type
+from typing import List, Type, Callable
 
 from pyreason.scripts.utils.output import Output
 from pyreason.scripts.utils.filter import Filter
@@ -324,6 +324,8 @@ __non_fluent_graph_facts_edge = None
 __specific_graph_node_labels = None
 __specific_graph_edge_labels = None
 
+__annotation_functions = []
+
 __timestamp = ''
 __program = None
 
@@ -498,6 +500,21 @@ def add_fact(pyreason_fact: Fact) -> None:
         __edge_facts.append(f)
 
 
+def add_annotation_function(function: Callable) -> None:
+    """Function to add annotation functions to PyReason. The added functions can be used in rules
+
+    :param function: Function to be added. This has to be under a numba `njit` decorator. function has signature: two parameters as input -- annotations, weights
+    :type function: Callable
+    :return: None
+    """
+    global __annotation_functions
+    # Make sure that the functions are jitted so that they can be passed around in other jitted functions
+    # TODO: Remove if necessary
+    # assert hasattr(function, 'nopython_signatures'), 'The function to be added has to be under a `numba.njit` decorator'
+
+    __annotation_functions.append(function)
+
+
 def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_threshold: float=-1, again: bool=False, node_facts: List[Type[fact_node.Fact]]=None, edge_facts: List[Type[fact_edge.Fact]]=None):
     """Function to start the main reasoning process. Graph and rules must already be loaded.
 
@@ -597,8 +614,11 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     if not settings.store_interpretation_changes:
         settings.atom_trace = False
 
+    # Convert list of annotation functions into tuple to be numba compatible
+    annotation_functions = tuple(__annotation_functions)
+
     # Setup logical program
-    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes)
+    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes)
     __program.available_labels_node = __node_labels
     __program.available_labels_edge = __edge_labels
     __program.specific_node_labels = __specific_node_labels
