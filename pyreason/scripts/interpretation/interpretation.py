@@ -1374,7 +1374,7 @@ def is_satisfied_edge(interpretations, comp, na):
 def annotate(annotation_functions, rule, annotations, weights):
 	func_name = rule.get_annotation_function()
 	if func_name == '':
-		return (rule.get_bnd().lower, rule.get_bnd().upper)
+		return rule.get_bnd().lower, rule.get_bnd().upper
 	else:
 		with numba.objmode(annotation='Tuple((float64, float64))'):
 			for func in annotation_functions:
