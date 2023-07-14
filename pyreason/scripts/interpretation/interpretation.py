@@ -740,6 +740,12 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 					qualified_nodes.append(numba.typed.List(subsets[clause_var_1]))
 					qualified_edges.append(numba.typed.List.empty_list(edge_type))
 
+				# Add annotations if necessary
+				if ann_fn != '':
+					a = numba.typed.List.empty_list(interval.interval_type)
+					for qn in subsets[clause_var_1]:
+						a.append(interpretations_node[qn].world[clause_label])
+
 			# This is an edge clause
 			# There are 5 cases for predicate(Y,Z):
 			# 1. Either one or both of Y, Z are the target node
@@ -804,6 +810,12 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 					qualified_nodes.append(numba.typed.List.empty_list(node_type))
 					qualified_edges.append(numba.typed.List(zip(subsets[clause_var_1], subsets[clause_var_2])))
 
+					# Add annotations if necessary
+					if ann_fn != '':
+						a = numba.typed.List.empty_list(interval.interval_type)
+						for qe in numba.typed.List(zip(subsets[clause_var_1], subsets[clause_var_2])):
+							a.append(interpretations_edge[qe].world[clause_label])
+
 			# Check if thresholds are satisfied
 			if threshold_quantifier_type == 'total':
 				if clause_type == 'node':
@@ -824,25 +836,7 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 			if not satisfaction:
 				break
 
-		# Here we are done going through each clause of the rule
-		# If all clauses we're satisfied, proceed to collect annotations and prepare edges to be added
 		if satisfaction:
-			# Collect the annotations that might be used in the annotation function according to the correct subset
-			for clause in clauses:
-				clause_type = clause[0]
-				clause_label = clause[1]
-				clause_var_1, clause_var_2 = clause[2][0], clause[2][1]
-				if ann_fn != '':
-					a = numba.typed.List.empty_list(interval.interval_type)
-					if clause_type == 'node':
-						for qn in subsets[clause_var_1]:
-							a.append(interpretations_node[qn].world[clause_label])
-					else:
-						for qe in numba.typed.List(zip(subsets[clause_var_1], subsets[clause_var_2])):
-							a.append(interpretations_edge[qe].world[clause_label])
-
-					annotations.append(a)
-
 			# Collect edges to be added
 			source, target, _ = rule_edges
 
@@ -931,6 +925,12 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 					qualified_nodes.append(numba.typed.List(subsets[clause_var_1]))
 					qualified_edges.append(numba.typed.List.empty_list(edge_type))
 
+				# Add annotations if necessary
+				if ann_fn != '':
+					a = numba.typed.List.empty_list(interval.interval_type)
+					for qn in subsets[clause_var_1]:
+						a.append(interpretations_node[qn].world[clause_label])
+
 			# This is an edge clause
 			# There are 5 cases for predicate(Y,Z):
 			# 1. Either one or both of Y, Z are the source or target node
@@ -1015,6 +1015,12 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 					qualified_nodes.append(numba.typed.List.empty_list(node_type))
 					qualified_edges.append(numba.typed.List(zip(subsets[clause_var_1], subsets[clause_var_2])))
 
+				# Add annotations if necessary
+				if ann_fn != '':
+					a = numba.typed.List.empty_list(interval.interval_type)
+					for qe in numba.typed.List(zip(subsets[clause_var_1], subsets[clause_var_2])):
+						a.append(interpretations_edge[qe].world[clause_label])
+
 			# Check if thresholds are satisfied
 			if threshold_quantifier_type == 'total':
 				if clause_type == 'node':
@@ -1038,22 +1044,6 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 		# Here we are done going through each clause of the rule
 		# If all clauses we're satisfied, proceed to collect annotations and prepare edges to be added
 		if satisfaction:
-			# Collect the annotations that might be used in the annotation function according to the correct subset
-			for clause in clauses:
-				clause_type = clause[0]
-				clause_label = clause[1]
-				clause_var_1, clause_var_2 = clause[2][0], clause[2][1]
-				if ann_fn != '':
-					a = numba.typed.List.empty_list(interval.interval_type)
-					if clause_type == 'node':
-						for qn in subsets[clause_var_1]:
-							a.append(interpretations_node[qn].world[clause_label])
-					else:
-						for qe in numba.typed.List(zip(subsets[clause_var_1], subsets[clause_var_2])):
-							a.append(interpretations_edge[qe].world[clause_label])
-
-					annotations.append(a)
-
 			# Collect edges to be added
 			source, target, _ = rule_edges
 
