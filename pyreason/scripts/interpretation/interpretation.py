@@ -680,6 +680,7 @@ class Interpretation:
 		# This function is useful for pyreason gym, called externally
 		_delete_edge(edge, self.neighbors, self.reverse_neighbors, self.edges, self.interpretations_edge)
 
+
 @numba.njit(cache=True)
 def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, neighbors, reverse_neighbors, atom_trace, reverse_graph, nodes_to_skip):
 	# Extract rule params
@@ -745,6 +746,7 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 					a = numba.typed.List.empty_list(interval.interval_type)
 					for qn in subsets[clause_var_1]:
 						a.append(interpretations_node[qn].world[clause_label])
+					annotations.append(a)
 
 			# This is an edge clause
 			# There are 5 cases for predicate(Y,Z):
@@ -810,11 +812,12 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 					qualified_nodes.append(numba.typed.List.empty_list(node_type))
 					qualified_edges.append(numba.typed.List(zip(subsets[clause_var_1], subsets[clause_var_2])))
 
-					# Add annotations if necessary
-					if ann_fn != '':
-						a = numba.typed.List.empty_list(interval.interval_type)
-						for qe in numba.typed.List(zip(subsets[clause_var_1], subsets[clause_var_2])):
-							a.append(interpretations_edge[qe].world[clause_label])
+				# Add annotations if necessary
+				if ann_fn != '':
+					a = numba.typed.List.empty_list(interval.interval_type)
+					for qe in numba.typed.List(zip(subsets[clause_var_1], subsets[clause_var_2])):
+						a.append(interpretations_edge[qe].world[clause_label])
+					annotations.append(a)
 
 			# Check if thresholds are satisfied
 			if threshold_quantifier_type == 'total':
@@ -930,6 +933,7 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 					a = numba.typed.List.empty_list(interval.interval_type)
 					for qn in subsets[clause_var_1]:
 						a.append(interpretations_node[qn].world[clause_label])
+					annotations.append(a)
 
 			# This is an edge clause
 			# There are 5 cases for predicate(Y,Z):
@@ -1020,6 +1024,7 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 					a = numba.typed.List.empty_list(interval.interval_type)
 					for qe in numba.typed.List(zip(subsets[clause_var_1], subsets[clause_var_2])):
 						a.append(interpretations_edge[qe].world[clause_label])
+					annotations.append(a)
 
 			# Check if thresholds are satisfied
 			if threshold_quantifier_type == 'total':
