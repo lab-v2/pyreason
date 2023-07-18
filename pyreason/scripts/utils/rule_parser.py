@@ -71,11 +71,26 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, set_static:
         l, u = _str_bound_to_bound(bound)
         body_bounds[i] = [l, u]
 
-    # Find the target predicate
-    if head[-1] != ']':
+    # Find the target predicate and bounds and annotation function if any.
+    # Possible heads:
+    # pred(x) : [x,y]
+    # pred(x) : f
+    # pred(x)
+
+    # This means there is no bound or annotation function specified
+    if head[-1] == ')':
         head += ':[1,1]'
+
     head, head_bound = head.split(':')
-    target_bound = list(_str_bound_to_bound(head_bound))
+    # Check if we have a bound or annotation function
+    if _is_bound(head_bound):
+        target_bound = list(_str_bound_to_bound(head_bound))
+        target_bound = interval.closed(*target_bound)
+        ann_fn = ''
+    else:
+        target_bound = interval.closed(0, 1)
+        ann_fn = head_bound
+
     idx = head.find('(')
     target = head[:idx]
     target = label.Label(target)
@@ -151,15 +166,10 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, set_static:
     else:
         edges = ('', '', label.Label(''))
 
-    # Bound to set atom if rule fires
-    bnd = interval.closed(*target_bound)
-    ann_fn = ''
-    ann_label = label.Label('')
-
     weights = np.ones(len(body_predicates), dtype=np.float64)
     weights = np.append(weights, 0)
 
-    r = rule.Rule(name, rule_type, target, numba.types.uint16(t), clauses, bnd, thresholds, ann_fn, ann_label, weights, edges, set_static, immediate_rule)
+    r = rule.Rule(name, rule_type, target, numba.types.uint16(t), clauses, target_bound, thresholds, ann_fn, weights, edges, set_static, immediate_rule)
     return r
 
 
@@ -168,3 +178,19 @@ def _str_bound_to_bound(str_bound):
     str_bound = str_bound.replace(']', '')
     l, u = str_bound.split(',')
     return float(l), float(u)
+
+def _is_bound(str_bound):
+    str_bound = str_bound.replace('[', '')
+    str_bound = str_bound.replace(']', '')
+    try:
+        l, u = str_bound.split(',')
+        l = l.replace('.', '')
+        u = u.replace('.', '')
+        if l.isdigit() and u.isdigit():
+            result = True
+        else:
+            result = False
+    except:
+        result = False
+
+    return result

@@ -1,6 +1,6 @@
 class Rule:
 
-    def __init__(self, rule_name, rule_type, target, delta, clauses, bnd, thresholds, ann_fn, ann_label, weights, edges, static, immediate_rule):
+    def __init__(self, rule_name, rule_type, target, delta, clauses, bnd, thresholds, ann_fn, weights, edges, static, immediate_rule):
         self._rule_name = rule_name
         self._type = rule_type
         self._target = target
@@ -9,7 +9,6 @@ class Rule:
         self._bnd = bnd
         self._thresholds = thresholds
         self._ann_fn = ann_fn
-        self._ann_label = ann_label
         self._weights = weights
         self._edges = edges
         self._static = static
@@ -38,9 +37,6 @@ class Rule:
 
     def get_annotation_function(self):
         return self._ann_fn
-
-    def get_ann_label(self):
-        return self._ann_label
     
     def get_edges(self):
         return self._edges
