@@ -37,6 +37,7 @@ class _Settings:
         self.__inconsistency_check = True
         self.__static_graph_facts = True
         self.__store_interpretation_changes = True
+        self.__parallel_computing = False
 
     @property
     def verbose(self) -> bool:
@@ -145,6 +146,15 @@ class _Settings:
         :return: bool
         """
         return self.__store_interpretation_changes
+
+    @property
+    def parallel_computing(self) -> bool:
+        """Returns whether to use multiple CPU cores for inference. This will disable cacheing and pyreason will have
+        to be re-compiled at each run - but after compilation it will be faster. Default is False
+
+        :return: bool
+        """
+        return self.__parallel_computing
 
     @verbose.setter
     def verbose(self, value: bool) -> None:
@@ -306,6 +316,19 @@ class _Settings:
             raise TypeError('value has to be a bool')
         else:
             self.__store_interpretation_changes = value
+
+    @parallel_computing.setter
+    def parallel_computing(self, value: bool) -> None:
+        """Whether to use multiple CPU cores for inference. This will disable cacheing and pyreason will have
+        to be re-compiled at each run - but after compilation it will be faster. Default is False
+
+        :param value: Whether to make inference run on parallel hardware (multiple CPU cores)
+        :raises TypeError: If not bool raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('value has to be a bool')
+        else:
+            self.__parallel_computing = value
 
 
 # VARIABLES
@@ -618,7 +641,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     annotation_functions = tuple(__annotation_functions)
 
     # Setup logical program
-    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes)
+    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing)
     __program.available_labels_node = __node_labels
     __program.available_labels_edge = __edge_labels
     __program.specific_node_labels = __specific_node_labels
