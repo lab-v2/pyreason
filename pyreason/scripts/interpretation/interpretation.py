@@ -623,7 +623,7 @@ class Interpretation:
 			# Make sure there are no rules to be applied, and no facts that will be applied in the future. We do this by checking the max time any rule/fact is applicable
 			# If no more rules/facts to be applied
 			elif convergence_mode=='perfect_convergence':
-				if (t>=max_facts_time and t>=max_rules_time) or (t>=max_facts_time and changes_cnt==0):
+				if t>=max_facts_time and t>=max_rules_time:
 					if verbose:
 						print(f'\nConverged at time: {t}')
 					# Be consistent with time returned when we don't converge
