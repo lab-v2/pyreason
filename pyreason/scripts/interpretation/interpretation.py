@@ -605,7 +605,7 @@ class Interpretation:
 										update = True
 										immediate_node_rule_fire = True
 										break
-
+                    
 							# Break, apply immediate rule then come back to check for more applicable rules
 							if immediate_node_rule_fire:
 								break
