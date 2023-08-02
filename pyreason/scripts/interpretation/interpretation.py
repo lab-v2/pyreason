@@ -1,6 +1,7 @@
 import pyreason.scripts.numba_wrapper.numba_types.world_type as world
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
+from pyreason.scripts.interpretation.interpretation_dict import InterpretationDict
 
 import numba
 from numba import objmode, prange
@@ -689,6 +690,41 @@ class Interpretation:
 	def delete_edge(self, edge):
 		# This function is useful for pyreason gym, called externally
 		_delete_edge(edge, self.neighbors, self.reverse_neighbors, self.edges, self.interpretations_edge)
+
+	def get_interpretation_dict(self):
+		# This function can be called externally to retrieve a dict of the interpretation values
+		# Only values in the rule trace will be added
+
+		# Initialize interpretations for each time and node and edge
+		interpretations = {}
+		for t in range(self.tmax+1):
+			interpretations[t] = {}
+			for node in self.nodes:
+				interpretations[t][node] = InterpretationDict()
+			for edge in self.edges:
+				interpretations[t][edge] = InterpretationDict()
+
+		# Update interpretation nodes
+		for change in self.rule_trace_node:
+			time, _, node, l, bnd = change
+			interpretations[time][node][l._value] = (bnd.lower, bnd.upper)
+
+			# If canonical, update all following timesteps as well
+			if self. canonical:
+				for t in range(time+1, self.tmax+1):
+					interpretations[t][node][l._value] = (bnd.lower, bnd.upper)
+
+		# Update interpretation edges
+		for change in self.rule_trace_edge:
+			time, _, edge, l, bnd, = change
+			interpretations[time][edge][l._value] = (bnd.lower, bnd.upper)
+
+			# If canonical, update all following timesteps as well
+			if self. canonical:
+				for t in range(time+1, self.tmax+1):
+					interpretations[t][edge][l._value] = (bnd.lower, bnd.upper)
+
+		return interpretations
 
 
 @numba.njit(cache=CACHEING, parallel=PARALLEL_COMPUTING)
