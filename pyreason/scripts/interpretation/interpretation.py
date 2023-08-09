@@ -341,7 +341,7 @@ class Interpretation:
 					# If we are coming here from an immediate rule firing with delta_t=0 we have to apply that one rule. Which was just added to the list to_be_applied
 					if immediate_node_rule_fire and rules_to_be_applied_node[-1][4]:
 						i = rules_to_be_applied_node[-1]
-						idx = -1
+						idx = len(rules_to_be_applied_node) - 1
 
 					if i[0]==t:
 						comp, l, bnd, immediate = i[1], i[2], i[3], i[4]
@@ -417,6 +417,8 @@ class Interpretation:
 				# Remove from rules to be applied and edges to be applied lists after coming out from loop
 				rules_to_be_applied_node[:] = numba.typed.List([rules_to_be_applied_node[i] for i in range(len(rules_to_be_applied_node)) if i not in rules_to_remove_idx])
 				edges_to_be_added_node_rule[:] = numba.typed.List([edges_to_be_added_node_rule[i] for i in range(len(edges_to_be_added_node_rule)) if i not in rules_to_remove_idx])
+				if atom_trace:
+					rules_to_be_applied_node_trace[:] = numba.typed.List([rules_to_be_applied_node_trace[i] for i in range(len(rules_to_be_applied_node_trace)) if i not in rules_to_remove_idx])
 
 				# Edges
 				rules_to_remove_idx.clear()
@@ -427,7 +429,7 @@ class Interpretation:
 					# If we are coming here from an immediate rule firing with delta_t=0 we have to apply that one rule. Which was just added to the list to_be_applied
 					if immediate_edge_rule_fire and rules_to_be_applied_edge[-1][4]:
 						i = rules_to_be_applied_edge[-1]
-						idx = -1
+						idx = len(rules_to_be_applied_edge) - 1
 
 					if i[0]==t:
 						comp, l, bnd, immediate = i[1], i[2], i[3], i[4]
@@ -504,6 +506,8 @@ class Interpretation:
 				# Remove from rules to be applied and edges to be applied lists after coming out from loop
 				rules_to_be_applied_edge[:] = numba.typed.List([rules_to_be_applied_edge[i] for i in range(len(rules_to_be_applied_edge)) if i not in rules_to_remove_idx])
 				edges_to_be_added_edge_rule[:] = numba.typed.List([edges_to_be_added_edge_rule[i] for i in range(len(edges_to_be_added_edge_rule)) if i not in rules_to_remove_idx])
+				if atom_trace:
+					rules_to_be_applied_edge_trace[:] = numba.typed.List([rules_to_be_applied_edge_trace[i] for i in range(len(rules_to_be_applied_edge_trace)) if i not in rules_to_remove_idx])
 
 				# Fixed point
 				# if update or immediate_node_rule_fire or immediate_edge_rule_fire or immediate_rule_applied:
