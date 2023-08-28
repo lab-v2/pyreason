@@ -391,7 +391,7 @@ class Interpretation:
 					# If we are coming here from an immediate rule firing with delta_t=0 we have to apply that one rule. Which was just added to the list to_be_applied
 					if immediate_node_rule_fire and rules_to_be_applied_node[-1][4]:
 						i = rules_to_be_applied_node[-1]
-						idx = -1
+						idx = len(rules_to_be_applied_node) - 1
 
 					if i[0]==t:
 						comp, l, bnd, immediate, set_static = i[1], i[2], i[3], i[4], i[5]
@@ -479,7 +479,7 @@ class Interpretation:
 					# If we are coming here from an immediate rule firing with delta_t=0 we have to apply that one rule. Which was just added to the list to_be_applied
 					if immediate_edge_rule_fire and rules_to_be_applied_edge[-1][4]:
 						i = rules_to_be_applied_edge[-1]
-						idx = -1
+						idx = len(rules_to_be_applied_edge) - 1
 
 					if i[0]==t:
 						comp, l, bnd, immediate, set_static = i[1], i[2], i[3], i[4], i[5]
