@@ -768,8 +768,9 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 			# Unpack clause variables
 			clause_type = clause[0]
 			clause_label = clause[1]
-			clause_var_1, clause_var_2 = clause[2][0], clause[2][1]
+			clause_variables = clause[2]
 			clause_bnd = clause[3]
+			clause_operator = clause[4]
 
 			# Unpack thresholds
 			# This value is total/available
@@ -778,12 +779,11 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 			# This is a node clause
 			# The groundings for node clauses are either the target node, neighbors of the target node, or an existing subset of nodes
 			if clause_type == 'node':
-				if clause_var_1 == '__target':
-					subset = numba.typed.List([target_node])
-				else:
-					subset = neighbors[target_node] if clause_var_1 not in subsets else subsets[clause_var_1]
+				clause_var_1 = clause_variables[0]
+				subset = get_node_rule_node_clause_subset(clause_var_1, target_node, subsets, neighbors)
 
 				subsets[clause_var_1] = get_qualified_components_node_clause(interpretations_node, subset, clause_label, clause_bnd)
+
 				if atom_trace:
 					qualified_nodes.append(numba.typed.List(subsets[clause_var_1]))
 					qualified_edges.append(numba.typed.List.empty_list(edge_type))
@@ -796,59 +796,9 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 					annotations.append(a)
 
 			# This is an edge clause
-			# There are 5 cases for predicate(Y,Z):
-			# 1. Either one or both of Y, Z are the target node
-			# 2. Both predicate variables Y and Z have not been encountered before
-			# 3. The source variable Y has not been encountered before but the target variable Z has
-			# 4. The target variable Z has not been encountered before but the source variable Y has
-			# 5. Both predicate variables Y and Z have been encountered before
-			else:
-				# Case 1:
-				# Check if 1st variable or 1st and 2nd variables are the target
-				if clause_var_1 == '__target':
-					subset_source = numba.typed.List([target_node])
-
-					# If both variables are the same
-					if clause_var_2 == '__target':
-						subset_target = numba.typed.List([numba.typed.List([target_node])])
-					elif clause_var_2 in subsets:
-						subset_target = numba.typed.List([subsets[clause_var_2]])
-					else:
-						subset_target = numba.typed.List([neighbors[target_node]])
-
-				# Check if 2nd variable is the target (this means 1st variable isn't the target)
-				elif clause_var_2 == '__target':
-					subset_source = reverse_neighbors[target_node] if clause_var_1 not in subsets else subsets[clause_var_1]
-					subset_target = numba.typed.List([numba.typed.List([target_node]) for _ in subset_source])
-
-				# Case 2:
-				# We replace Y by all nodes and Z by the neighbors of each of these nodes
-				elif clause_var_1 not in subsets and clause_var_2 not in subsets:
-					subset_source = numba.typed.List(nodes)
-					subset_target = numba.typed.List([neighbors[n] for n in subset_source])
-
-				# Case 3:
-				# We replace Y by the sources of Z
-				elif clause_var_1 not in subsets and clause_var_2 in subsets:
-					subset_source = numba.typed.List.empty_list(node_type)
-					subset_target = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
-
-					for n in subsets[clause_var_2]:
-						sources = reverse_neighbors[n]
-						for source in sources:
-							subset_source.append(source)
-							subset_target.append(numba.typed.List([n]))
-
-				# Case 4:
-				# We replace Z by the neighbors of Y
-				elif clause_var_1 in subsets and clause_var_2 not in subsets:
-					subset_source = subsets[clause_var_1]
-					subset_target = numba.typed.List([neighbors[n] for n in subset_source])
-
-				# Case 5:
-				else:
-					subset_source = subsets[clause_var_1]
-					subset_target = numba.typed.List([subsets[clause_var_2] for _ in subset_source])
+			elif clause_type == 'edge':
+				clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
+				subset_source, subset_target = get_node_rule_edge_clause_subset(clause_var_1, clause_var_2, target_node, subsets, neighbors, reverse_neighbors, nodes)
 
 				# Get qualified edges
 				qe = get_qualified_components_edge_clause(interpretations_edge, subset_source, subset_target, clause_label, clause_bnd, reverse_graph)
@@ -865,23 +815,109 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 					for qe in numba.typed.List(zip(subsets[clause_var_1], subsets[clause_var_2])):
 						a.append(interpretations_edge[qe].world[clause_label])
 					annotations.append(a)
+			else:
+				# This is a comparison clause
+				# Make sure there is at least one ground atom such that pred-num(x) : [1,1] or pred-num(x,y) : [1,1]
+				# Remember that the predicate in the clause will not contain the "-num" where num is some number.
+				# We have to remove that manually while checking
+				# Steps:
+				# 1. get qualified nodes/edges as well as number associated for first predicate
+				# 2. get qualified nodes/edges as well as number associated for second predicate
+				# 3. if there's no number in steps 1 or 2 return false clause
+				# 4. do comparison with each qualified component from step 1 with each qualified component in step 2
+
+				# It's a node comparison
+				if len(clause_variables) == 2:
+					clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
+					subset_1 = get_node_rule_node_clause_subset(clause_var_1, target_node, subsets, neighbors)
+					subset_2 = get_node_rule_node_clause_subset(clause_var_2, target_node, subsets, neighbors)
+
+					# 1, 2
+					subsets[clause_var_1], numbers_1 = get_qualified_components_node_comparison_clause(interpretations_node, subset_1, clause_label, clause_bnd)
+					subsets[clause_var_2], numbers_2 = get_qualified_components_node_comparison_clause(interpretations_node, subset_2, clause_label, clause_bnd)
+
+				# It's an edge comparison
+				elif len(clause_variables) == 4:
+					clause_var_1_source, clause_var_1_target, clause_var_2_source, clause_var_2_target = clause_variables[0], clause_variables[1], clause_variables[2], clause_variables[3]
+					subset_1_source, subset_1_target = get_node_rule_edge_clause_subset(clause_var_1_source, clause_var_1_target, target_node, subsets, neighbors, reverse_neighbors, nodes)
+					subset_2_source, subset_2_target = get_node_rule_edge_clause_subset(clause_var_2_source, clause_var_2_target, target_node, subsets, neighbors, reverse_neighbors, nodes)
+
+					# 1, 2
+					subsets[clause_var_1_source], subsets[clause_var_1_target], numbers_1 = get_qualified_components_edge_comparison_clause(interpretations_edge, subset_1_source, subset_1_target, clause_label, clause_bnd, reverse_graph)
+					subsets[clause_var_2_source], subsets[clause_var_2_target], numbers_2 = get_qualified_components_edge_comparison_clause(interpretations_edge, subset_2_source, subset_2_target, clause_label, clause_bnd, reverse_graph)
 
 			# Check if thresholds are satisfied
-			if threshold_quantifier_type == 'total':
-				if clause_type == 'node':
-					neigh_len = len(subset)
-				else:
-					neigh_len = sum([len(l) for l in subset_target])
+			# If it's a comparison clause we just need to check if the numbers list is not empty (no threshold support)
+			if clause_type == 'comparison':
+				if len(numbers_1) == 0 or len(numbers_2) == 0:
+					satisfaction = False
+				# Node comparison. Compare stage
+				elif len(clause_variables) == 2:
+					satisfaction, qualified_nodes_1, qualified_nodes_2 = compare_numbers_node_predicate(numbers_1, numbers_2, clause_operator, subsets[clause_var_1], subsets[clause_var_2])
 
-			# Available is all neighbors that have a particular label with bound inside [0,1]
-			elif threshold_quantifier_type == 'available':
-				if clause_type == 'node':
-					neigh_len = len(get_qualified_components_node_clause(interpretations_node, subset, clause_label, interval.closed(0,1)))
-				else:
-					neigh_len = len(get_qualified_components_edge_clause(interpretations_edge, subset_source, subset_target, clause_label, interval.closed(0,1), reverse_graph)[0])
+					# Update subsets with final qualified nodes
+					subsets[clause_var_1] = qualified_nodes_1
+					subsets[clause_var_2] = qualified_nodes_2
+					qualified_comparison_nodes = numba.typed.List(qualified_nodes_1)
+					qualified_comparison_nodes.extend(qualified_nodes_2)
 
-			qualified_neigh_len = len(subsets[clause_var_1])
-			satisfaction = _satisfies_threshold(neigh_len, qualified_neigh_len, thresholds[i]) and satisfaction
+					if atom_trace:
+						qualified_nodes.append(qualified_comparison_nodes)
+						qualified_edges.append(numba.typed.List.empty_list(edge_type))
+
+					# Add annotations for comparison clause. For now, we don't distinguish between LHS and RHS annotations
+					if ann_fn != '':
+						a = numba.typed.List.empty_list(interval.interval_type)
+						for qn in qualified_comparison_nodes:
+							a.append(interval.closed(1, 1))
+						annotations.append(a)
+				# Edge comparison. Compare stage
+				else:
+					satisfaction, qualified_nodes_1_source, qualified_nodes_1_target, qualified_nodes_2_source, qualified_nodes_2_target = compare_numbers_edge_predicate(numbers_1, numbers_2, clause_operator,
+																																										  subsets[clause_var_1_source],
+																																										  subsets[clause_var_1_target],
+																																										  subsets[clause_var_2_source],
+																																										  subsets[clause_var_2_target])
+					# Update subsets with final qualified nodes
+					subsets[clause_var_1_source] = qualified_nodes_1_source
+					subsets[clause_var_1_target] = qualified_nodes_1_target
+					subsets[clause_var_2_source] = qualified_nodes_2_source
+					subsets[clause_var_2_target] = qualified_nodes_2_target
+
+					qualified_comparison_nodes_1 = numba.typed.List(zip(qualified_nodes_1_source, qualified_nodes_1_target))
+					qualified_comparison_nodes_2 = numba.typed.List(zip(qualified_nodes_2_source, qualified_nodes_2_target))
+					qualified_comparison_nodes = numba.typed.List(qualified_comparison_nodes_1)
+					qualified_comparison_nodes.extend(qualified_comparison_nodes_2)
+
+					if atom_trace:
+						qualified_nodes.append(numba.typed.List.empty_list(node_type))
+						qualified_edges.append(qualified_comparison_nodes)
+
+					# Add annotations for comparison clause. For now, we don't distinguish between LHS and RHS annotations
+					if ann_fn != '':
+						a = numba.typed.List.empty_list(interval.interval_type)
+						for qe in qualified_comparison_nodes:
+							a.append(interval.closed(1, 1))
+						annotations.append(a)
+
+			# Non comparison clause
+			else:
+				if threshold_quantifier_type == 'total':
+					if clause_type == 'node':
+						neigh_len = len(subset)
+					else:
+						neigh_len = sum([len(l) for l in subset_target])
+
+				# Available is all neighbors that have a particular label with bound inside [0,1]
+				elif threshold_quantifier_type == 'available':
+					if clause_type == 'node':
+						neigh_len = len(get_qualified_components_node_clause(interpretations_node, subset, clause_label, interval.closed(0,1)))
+					else:
+						neigh_len = len(get_qualified_components_edge_clause(interpretations_edge, subset_source, subset_target, clause_label, interval.closed(0,1), reverse_graph)[0])
+
+				qualified_neigh_len = len(subsets[clause_var_1])
+				satisfaction = _satisfies_threshold(neigh_len, qualified_neigh_len, thresholds[i]) and satisfaction
+
 			# Exit loop if even one clause is not satisfied
 			if not satisfaction:
 				break
@@ -954,8 +990,9 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 			# Unpack clause variables
 			clause_type = clause[0]
 			clause_label = clause[1]
-			clause_var_1, clause_var_2 = clause[2][0], clause[2][1]
+			clause_variables = clause[2]
 			clause_bnd = clause[3]
+			clause_operator = clause[4]
 
 			# Unpack thresholds
 			# This value is total/available
@@ -964,13 +1001,9 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 			# This is a node clause
 			# The groundings for node clauses are either the source, target, neighbors of the source node, or an existing subset of nodes
 			if clause_type == 'node':
-				if clause_var_1 == '__source':
-					subset = numba.typed.List([target_edge[0]])
-				elif clause_var_1 == '__target':
-					subset = numba.typed.List([target_edge[1]])
-				else:
-					subset = neighbors[target_edge[0]] if clause_var_1 not in subsets else subsets[clause_var_1]
-
+				clause_var_1 = clause_variables[0]
+				subset = get_edge_rule_node_clause_subset(clause_var_1, target_edge, subsets, neighbors)
+				
 				subsets[clause_var_1] = get_qualified_components_node_clause(interpretations_node, subset, clause_label, clause_bnd)
 				if atom_trace:
 					qualified_nodes.append(numba.typed.List(subsets[clause_var_1]))
@@ -984,79 +1017,9 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 					annotations.append(a)
 
 			# This is an edge clause
-			# There are 5 cases for predicate(Y,Z):
-			# 1. Either one or both of Y, Z are the source or target node
-			# 2. Both predicate variables Y and Z have not been encountered before
-			# 3. The source variable Y has not been encountered before but the target variable Z has
-			# 4. The target variable Z has not been encountered before but the source variable Y has
-			# 5. Both predicate variables Y and Z have been encountered before
-			else:
-				# Case 1:
-				# Check if 1st variable is the source
-				if clause_var_1 == '__source':
-					subset_source = numba.typed.List([target_edge[0]])
-
-					# If 2nd variable is source/target/something else
-					if clause_var_2 == '__source':
-						subset_target = numba.typed.List([numba.typed.List([target_edge[0]])])
-					elif clause_var_2 == '__target':
-						subset_target = numba.typed.List([numba.typed.List([target_edge[1]])])
-					elif clause_var_2 in subsets:
-						subset_target = numba.typed.List([subsets[clause_var_2]])
-					else:
-						subset_target = numba.typed.List([neighbors[target_edge[0]]])
-
-				# if 1st variable is the target
-				elif clause_var_1 == '__target':
-					subset_source = numba.typed.List([target_edge[1]])
-
-					# if 2nd variable is source/target/something else
-					if clause_var_2 == '__source':
-						subset_target = numba.typed.List([numba.typed.List([target_edge[0]])])
-					elif clause_var_2 == '__target':
-						subset_target = numba.typed.List([numba.typed.List([target_edge[1]])])
-					elif clause_var_2 in subsets:
-						subset_target = numba.typed.List([subsets[clause_var_2]])
-					else:
-						subset_target = numba.typed.List([neighbors[target_edge[1]]])
-
-				# Handle the cases where the 2nd variable is source/target but the 1st is something else (cannot be source/target)
-				elif clause_var_2 == '__source':
-					subset_source = reverse_neighbors[target_edge[0]] if clause_var_1 not in subsets else subsets[clause_var_1]
-					subset_target = numba.typed.List([numba.typed.List([target_edge[0]]) for _ in subset_source])
-
-				elif clause_var_2 == '__target':
-					subset_source = reverse_neighbors[target_edge[1]] if clause_var_1 not in subsets else subsets[clause_var_1]
-					subset_target = numba.typed.List([numba.typed.List([target_edge[1]]) for _ in subset_source])
-
-				# Case 2:
-				# We replace Y by all nodes and Z by the neighbors of each of these nodes
-				elif clause_var_1 not in subsets and clause_var_2 not in subsets:
-					subset_source = numba.typed.List(nodes)
-					subset_target = numba.typed.List([neighbors[n] for n in subset_source])
-
-				# Case 3:
-				# We replace Y by the sources of Z
-				elif clause_var_1 not in subsets and clause_var_2 in subsets:
-					subset_source = numba.typed.List.empty_list(node_type)
-					subset_target = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
-
-					for n in subsets[clause_var_2]:
-						sources = reverse_neighbors[n]
-						for source in sources:
-							subset_source.append(source)
-							subset_target.append(numba.typed.List([n]))
-
-				# Case 4:
-				# We replace Z by the neighbors of Y
-				elif clause_var_1 in subsets and clause_var_2 not in subsets:
-					subset_source = subsets[clause_var_1]
-					subset_target = numba.typed.List([neighbors[n] for n in subset_source])
-
-				# Case 5:
-				else:
-					subset_source = subsets[clause_var_1]
-					subset_target = numba.typed.List([subsets[clause_var_2] for _ in subset_source])
+			elif clause_type == 'edge':
+				clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
+				subset_source, subset_target = get_edge_rule_edge_clause_subset(clause_var_1, clause_var_2, target_edge, subsets, neighbors, reverse_neighbors, nodes)
 
 				# Get qualified edges
 				qe = get_qualified_components_edge_clause(interpretations_edge, subset_source, subset_target, clause_label, clause_bnd, reverse_graph)
@@ -1073,23 +1036,110 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 					for qe in numba.typed.List(zip(subsets[clause_var_1], subsets[clause_var_2])):
 						a.append(interpretations_edge[qe].world[clause_label])
 					annotations.append(a)
+					
+			else:
+				# This is a comparison clause
+				# Make sure there is at least one ground atom such that pred-num(x) : [1,1] or pred-num(x,y) : [1,1]
+				# Remember that the predicate in the clause will not contain the "-num" where num is some number.
+				# We have to remove that manually while checking
+				# Steps:
+				# 1. get qualified nodes/edges as well as number associated for first predicate
+				# 2. get qualified nodes/edges as well as number associated for second predicate
+				# 3. if there's no number in steps 1 or 2 return false clause
+				# 4. do comparison with each qualified component from step 1 with each qualified component in step 2
+				
+				# It's a node comparison
+				if len(clause_variables) == 2:
+					clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
+					subset_1 = get_edge_rule_node_clause_subset(clause_var_1, target_edge, subsets, neighbors)
+					subset_2 = get_edge_rule_node_clause_subset(clause_var_2, target_edge, subsets, neighbors)
+					
+					# 1, 2
+					subsets[clause_var_1], numbers_1 = get_qualified_components_node_comparison_clause(interpretations_node, subset_1, clause_label, clause_bnd)
+					subsets[clause_var_2], numbers_2 = get_qualified_components_node_comparison_clause(interpretations_node, subset_2, clause_label, clause_bnd)
+				
+				# It's an edge comparison
+				elif len(clause_variables) == 4:
+					clause_var_1_source, clause_var_1_target, clause_var_2_source, clause_var_2_target = clause_variables[0], clause_variables[1], clause_variables[2], clause_variables[3]
+					subset_1_source, subset_1_target = get_edge_rule_edge_clause_subset(clause_var_1_source, clause_var_1_target, target_edge, subsets, neighbors, reverse_neighbors, nodes)
+					subset_2_source, subset_2_target = get_edge_rule_edge_clause_subset(clause_var_2_source, clause_var_2_target, target_edge, subsets, neighbors, reverse_neighbors, nodes)
+
+					# 1, 2
+					subsets[clause_var_1_source], subsets[clause_var_1_target], numbers_1 = get_qualified_components_edge_comparison_clause(interpretations_edge, subset_1_source, subset_1_target, clause_label, clause_bnd, reverse_graph)
+					subsets[clause_var_2_source], subsets[clause_var_2_target], numbers_2 = get_qualified_components_edge_comparison_clause(interpretations_edge, subset_2_source, subset_2_target, clause_label, clause_bnd, reverse_graph)
 
 			# Check if thresholds are satisfied
-			if threshold_quantifier_type == 'total':
-				if clause_type == 'node':
-					neigh_len = len(subset)
-				else:
-					neigh_len = sum([len(l) for l in subset_target])
+			# If it's a comparison clause we just need to check if the numbers list is not empty (no threshold support)
+			if clause_type == 'comparison':
+				if len(numbers_1) == 0 or len(numbers_2) == 0:
+					satisfaction = False
+				# Node comparison. Compare stage
+				elif len(clause_variables) == 2:
+					satisfaction, qualified_nodes_1, qualified_nodes_2 = compare_numbers_node_predicate(numbers_1, numbers_2, clause_operator, subsets[clause_var_1], subsets[clause_var_2])
 
-			# Available is all neighbors that have a particular label with bound inside [0,1]
-			elif threshold_quantifier_type == 'available':
-				if clause_type == 'node':
-					neigh_len = len(get_qualified_components_node_clause(interpretations_node, subset, clause_label, interval.closed(0, 1)))
-				else:
-					neigh_len = len(get_qualified_components_edge_clause(interpretations_edge, subset_source, subset_target, clause_label, interval.closed(0, 1), reverse_graph)[0])
+					# Update subsets with final qualified nodes
+					subsets[clause_var_1] = qualified_nodes_1
+					subsets[clause_var_2] = qualified_nodes_2
+					qualified_comparison_nodes = numba.typed.List(qualified_nodes_1)
+					qualified_comparison_nodes.extend(qualified_nodes_2)
 
-			qualified_neigh_len = len(subsets[clause_var_1])
-			satisfaction = _satisfies_threshold(neigh_len, qualified_neigh_len, thresholds[i]) and satisfaction
+					if atom_trace:
+						qualified_nodes.append(qualified_comparison_nodes)
+						qualified_edges.append(numba.typed.List.empty_list(edge_type))
+
+					# Add annotations for comparison clause. For now, we don't distinguish between LHS and RHS annotations
+					if ann_fn != '':
+						a = numba.typed.List.empty_list(interval.interval_type)
+						for qn in qualified_comparison_nodes:
+							a.append(interval.closed(1, 1))
+						annotations.append(a)
+				# Edge comparison. Compare stage
+				else:
+					satisfaction, qualified_nodes_1_source, qualified_nodes_1_target, qualified_nodes_2_source, qualified_nodes_2_target = compare_numbers_edge_predicate(numbers_1, numbers_2, clause_operator,
+																																										  subsets[clause_var_1_source],
+																																										  subsets[clause_var_1_target],
+																																										  subsets[clause_var_2_source],
+																																										  subsets[clause_var_2_target])
+					# Update subsets with final qualified nodes
+					subsets[clause_var_1_source] = qualified_nodes_1_source
+					subsets[clause_var_1_target] = qualified_nodes_1_target
+					subsets[clause_var_2_source] = qualified_nodes_2_source
+					subsets[clause_var_2_target] = qualified_nodes_2_target
+
+					qualified_comparison_nodes_1 = numba.typed.List(zip(qualified_nodes_1_source, qualified_nodes_1_target))
+					qualified_comparison_nodes_2 = numba.typed.List(zip(qualified_nodes_2_source, qualified_nodes_2_target))
+					qualified_comparison_nodes = numba.typed.List(qualified_comparison_nodes_1)
+					qualified_comparison_nodes.extend(qualified_comparison_nodes_2)
+
+					if atom_trace:
+						qualified_nodes.append(numba.typed.List.empty_list(node_type))
+						qualified_edges.append(qualified_comparison_nodes)
+
+					# Add annotations for comparison clause. For now, we don't distinguish between LHS and RHS annotations
+					if ann_fn != '':
+						a = numba.typed.List.empty_list(interval.interval_type)
+						for qe in qualified_comparison_nodes:
+							a.append(interval.closed(1, 1))
+						annotations.append(a)
+			
+			# Non comparison clause
+			else:
+				if threshold_quantifier_type == 'total':
+					if clause_type == 'node':
+						neigh_len = len(subset)
+					else:
+						neigh_len = sum([len(l) for l in subset_target])
+	
+				# Available is all neighbors that have a particular label with bound inside [0,1]
+				elif threshold_quantifier_type == 'available':
+					if clause_type == 'node':
+						neigh_len = len(get_qualified_components_node_clause(interpretations_node, subset, clause_label, interval.closed(0, 1)))
+					else:
+						neigh_len = len(get_qualified_components_edge_clause(interpretations_edge, subset_source, subset_target, clause_label, interval.closed(0, 1), reverse_graph)[0])
+	
+				qualified_neigh_len = len(subsets[clause_var_1])
+				satisfaction = _satisfies_threshold(neigh_len, qualified_neigh_len, thresholds[i]) and satisfaction
+			
 			# Exit loop if even one clause is not satisfied
 			if not satisfaction:
 				break
@@ -1128,6 +1178,165 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 
 
 @numba.njit(cache=CACHEING)
+def get_node_rule_node_clause_subset(clause_var_1, target_node, subsets, neighbors):
+	# The groundings for node clauses are either the target node, neighbors of the target node, or an existing subset of nodes
+	if clause_var_1 == '__target':
+		subset = numba.typed.List([target_node])
+	else:
+		subset = neighbors[target_node] if clause_var_1 not in subsets else subsets[clause_var_1]
+	return subset
+
+
+@numba.njit(cache=CACHEING)
+def get_node_rule_edge_clause_subset(clause_var_1, clause_var_2, target_node, subsets, neighbors, reverse_neighbors, nodes):
+	# There are 5 cases for predicate(Y,Z):
+	# 1. Either one or both of Y, Z are the target node
+	# 2. Both predicate variables Y and Z have not been encountered before
+	# 3. The source variable Y has not been encountered before but the target variable Z has
+	# 4. The target variable Z has not been encountered before but the source variable Y has
+	# 5. Both predicate variables Y and Z have been encountered before
+
+	# Case 1:
+	# Check if 1st variable or 1st and 2nd variables are the target
+	if clause_var_1 == '__target':
+		subset_source = numba.typed.List([target_node])
+
+		# If both variables are the same
+		if clause_var_2 == '__target':
+			subset_target = numba.typed.List([numba.typed.List([target_node])])
+		elif clause_var_2 in subsets:
+			subset_target = numba.typed.List([subsets[clause_var_2]])
+		else:
+			subset_target = numba.typed.List([neighbors[target_node]])
+
+	# Check if 2nd variable is the target (this means 1st variable isn't the target)
+	elif clause_var_2 == '__target':
+		subset_source = reverse_neighbors[target_node] if clause_var_1 not in subsets else subsets[clause_var_1]
+		subset_target = numba.typed.List([numba.typed.List([target_node]) for _ in subset_source])
+
+	# Case 2:
+	# We replace Y by all nodes and Z by the neighbors of each of these nodes
+	elif clause_var_1 not in subsets and clause_var_2 not in subsets:
+		subset_source = numba.typed.List(nodes)
+		subset_target = numba.typed.List([neighbors[n] for n in subset_source])
+
+	# Case 3:
+	# We replace Y by the sources of Z
+	elif clause_var_1 not in subsets and clause_var_2 in subsets:
+		subset_source = numba.typed.List.empty_list(node_type)
+		subset_target = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
+
+		for n in subsets[clause_var_2]:
+			sources = reverse_neighbors[n]
+			for source in sources:
+				subset_source.append(source)
+				subset_target.append(numba.typed.List([n]))
+
+	# Case 4:
+	# We replace Z by the neighbors of Y
+	elif clause_var_1 in subsets and clause_var_2 not in subsets:
+		subset_source = subsets[clause_var_1]
+		subset_target = numba.typed.List([neighbors[n] for n in subset_source])
+
+	# Case 5:
+	else:
+		subset_source = subsets[clause_var_1]
+		subset_target = numba.typed.List([subsets[clause_var_2] for _ in subset_source])
+
+	return subset_source, subset_target
+
+
+@numba.njit(cache=CACHEING)
+def get_edge_rule_node_clause_subset(clause_var_1, target_edge, subsets, neighbors):
+	# The groundings for node clauses are either the source, target, neighbors of the source node, or an existing subset of nodes
+	if clause_var_1 == '__source':
+		subset = numba.typed.List([target_edge[0]])
+	elif clause_var_1 == '__target':
+		subset = numba.typed.List([target_edge[1]])
+	else:
+		subset = neighbors[target_edge[0]] if clause_var_1 not in subsets else subsets[clause_var_1]
+	return subset
+
+
+@numba.njit(cache=CACHEING)
+def get_edge_rule_edge_clause_subset(clause_var_1, clause_var_2, target_edge, subsets, neighbors, reverse_neighbors, nodes):
+	# There are 5 cases for predicate(Y,Z):
+	# 1. Either one or both of Y, Z are the source or target node
+	# 2. Both predicate variables Y and Z have not been encountered before
+	# 3. The source variable Y has not been encountered before but the target variable Z has
+	# 4. The target variable Z has not been encountered before but the source variable Y has
+	# 5. Both predicate variables Y and Z have been encountered before
+	# Case 1:
+	# Check if 1st variable is the source
+	if clause_var_1 == '__source':
+		subset_source = numba.typed.List([target_edge[0]])
+
+		# If 2nd variable is source/target/something else
+		if clause_var_2 == '__source':
+			subset_target = numba.typed.List([numba.typed.List([target_edge[0]])])
+		elif clause_var_2 == '__target':
+			subset_target = numba.typed.List([numba.typed.List([target_edge[1]])])
+		elif clause_var_2 in subsets:
+			subset_target = numba.typed.List([subsets[clause_var_2]])
+		else:
+			subset_target = numba.typed.List([neighbors[target_edge[0]]])
+
+	# if 1st variable is the target
+	elif clause_var_1 == '__target':
+		subset_source = numba.typed.List([target_edge[1]])
+
+		# if 2nd variable is source/target/something else
+		if clause_var_2 == '__source':
+			subset_target = numba.typed.List([numba.typed.List([target_edge[0]])])
+		elif clause_var_2 == '__target':
+			subset_target = numba.typed.List([numba.typed.List([target_edge[1]])])
+		elif clause_var_2 in subsets:
+			subset_target = numba.typed.List([subsets[clause_var_2]])
+		else:
+			subset_target = numba.typed.List([neighbors[target_edge[1]]])
+
+	# Handle the cases where the 2nd variable is source/target but the 1st is something else (cannot be source/target)
+	elif clause_var_2 == '__source':
+		subset_source = reverse_neighbors[target_edge[0]] if clause_var_1 not in subsets else subsets[clause_var_1]
+		subset_target = numba.typed.List([numba.typed.List([target_edge[0]]) for _ in subset_source])
+
+	elif clause_var_2 == '__target':
+		subset_source = reverse_neighbors[target_edge[1]] if clause_var_1 not in subsets else subsets[clause_var_1]
+		subset_target = numba.typed.List([numba.typed.List([target_edge[1]]) for _ in subset_source])
+
+	# Case 2:
+	# We replace Y by all nodes and Z by the neighbors of each of these nodes
+	elif clause_var_1 not in subsets and clause_var_2 not in subsets:
+		subset_source = numba.typed.List(nodes)
+		subset_target = numba.typed.List([neighbors[n] for n in subset_source])
+
+	# Case 3:
+	# We replace Y by the sources of Z
+	elif clause_var_1 not in subsets and clause_var_2 in subsets:
+		subset_source = numba.typed.List.empty_list(node_type)
+		subset_target = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
+
+		for n in subsets[clause_var_2]:
+			sources = reverse_neighbors[n]
+			for source in sources:
+				subset_source.append(source)
+				subset_target.append(numba.typed.List([n]))
+
+	# Case 4:
+	# We replace Z by the neighbors of Y
+	elif clause_var_1 in subsets and clause_var_2 not in subsets:
+		subset_source = subsets[clause_var_1]
+		subset_target = numba.typed.List([neighbors[n] for n in subset_source])
+
+	# Case 5:
+	else:
+		subset_source = subsets[clause_var_1]
+		subset_target = numba.typed.List([subsets[clause_var_2] for _ in subset_source])
+
+	return subset_source, subset_target
+
+
+@numba.njit(cache=CACHEING)
 def get_qualified_components_node_clause(interpretations_node, candidates, l, bnd):
 	# Get all the qualified neighbors for a particular clause
 	qualified_nodes = numba.typed.List.empty_list(node_type)
@@ -1136,6 +1345,20 @@ def get_qualified_components_node_clause(interpretations_node, candidates, l, bn
 			qualified_nodes.append(n)
 
 	return qualified_nodes
+
+
+@numba.njit(cache=CACHEING)
+def get_qualified_components_node_comparison_clause(interpretations_node, candidates, l, bnd):
+	# Get all the qualified neighbors for a particular comparison clause and return them along with the number associated
+	qualified_nodes = numba.typed.List.empty_list(node_type)
+	qualified_nodes_numbers = numba.typed.List.empty_list(numba.types.float64)
+	for n in candidates:
+		result, number = is_satisfied_node_comparison(interpretations_node, n, (l, bnd))
+		if result:
+			qualified_nodes.append(n)
+			qualified_nodes_numbers.append(number)
+
+	return qualified_nodes, qualified_nodes_numbers
 
 
 @numba.njit(cache=CACHEING)
@@ -1150,8 +1373,94 @@ def get_qualified_components_edge_clause(interpretations_edge, candidates_source
 				qualified_nodes_source.append(source)
 				qualified_nodes_target.append(target)
 
-	return (qualified_nodes_source, qualified_nodes_target)
-	
+	return qualified_nodes_source, qualified_nodes_target
+
+
+@numba.njit(cache=CACHEING)
+def get_qualified_components_edge_comparison_clause(interpretations_edge, candidates_source, candidates_target, l, bnd, reverse_graph):
+	# Get all the qualified sources and targets for a particular clause
+	qualified_nodes_source = numba.typed.List.empty_list(node_type)
+	qualified_nodes_target = numba.typed.List.empty_list(node_type)
+	qualified_edges_numbers = numba.typed.List.empty_list(numba.types.float64)
+	for i, source in enumerate(candidates_source):
+		for target in candidates_target[i]:
+			edge = (source, target) if not reverse_graph else (target, source)
+			result, number = is_satisfied_edge_comparison(interpretations_edge, edge, (l, bnd))
+			if result:
+				qualified_nodes_source.append(source)
+				qualified_nodes_target.append(target)
+				qualified_edges_numbers.append(number)
+
+	return qualified_nodes_source, qualified_nodes_target, qualified_edges_numbers
+
+
+@numba.njit(cache=CACHEING)
+def compare_numbers_node_predicate(numbers_1, numbers_2, op, qualified_nodes_1, qualified_nodes_2):
+	result = False
+	final_qualified_nodes_1 = numba.typed.List.empty_list(node_type)
+	final_qualified_nodes_2 = numba.typed.List.empty_list(node_type)
+	for i in range(len(numbers_1)):
+		for j in range(len(numbers_2)):
+			if op == '<':
+				if numbers_1[i] < numbers_2[j]:
+					result = True
+			elif op == '<=':
+				if numbers_1[i] <= numbers_2[j]:
+					result = True
+			elif op == '>':
+				if numbers_1[i] > numbers_2[j]:
+					result = True
+			elif op == '>=':
+				if numbers_1[i] >= numbers_2[j]:
+					result = True
+			elif op == '==':
+				if numbers_1[i] == numbers_2[j]:
+					result = True
+			elif op == '!=':
+				if numbers_1[i] != numbers_2[j]:
+					result = True
+
+			if result:
+				final_qualified_nodes_1.append(qualified_nodes_1[i])
+				final_qualified_nodes_2.append(qualified_nodes_2[j])
+	return result, final_qualified_nodes_1, final_qualified_nodes_2
+
+
+@numba.njit(cache=CACHEING)
+def compare_numbers_edge_predicate(numbers_1, numbers_2, op, qualified_nodes_1a, qualified_nodes_1b, qualified_nodes_2a, qualified_nodes_2b):
+	result = False
+	final_qualified_nodes_1a = numba.typed.List.empty_list(node_type)
+	final_qualified_nodes_1b = numba.typed.List.empty_list(node_type)
+	final_qualified_nodes_2a = numba.typed.List.empty_list(node_type)
+	final_qualified_nodes_2b = numba.typed.List.empty_list(node_type)
+	for i in range(len(numbers_1)):
+		for j in range(len(numbers_2)):
+			if op == '<':
+				if numbers_1[i] < numbers_2[j]:
+					result = True
+			elif op == '<=':
+				if numbers_1[i] <= numbers_2[j]:
+					result = True
+			elif op == '>':
+				if numbers_1[i] > numbers_2[j]:
+					result = True
+			elif op == '>=':
+				if numbers_1[i] >= numbers_2[j]:
+					result = True
+			elif op == '==':
+				if numbers_1[i] == numbers_2[j]:
+					result = True
+			elif op == '!=':
+				if numbers_1[i] != numbers_2[j]:
+					result = True
+
+			if result:
+				final_qualified_nodes_1a.append(qualified_nodes_1a[i])
+				final_qualified_nodes_1b.append(qualified_nodes_1b[i])
+				final_qualified_nodes_2a.append(qualified_nodes_2a[i])
+				final_qualified_nodes_2b.append(qualified_nodes_2b[i])
+	return result, final_qualified_nodes_1a, final_qualified_nodes_1b, final_qualified_nodes_2a, final_qualified_nodes_2b
+
 
 @numba.njit(cache=CACHEING)
 def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
@@ -1391,6 +1700,33 @@ def is_satisfied_node(interpretations, comp, na):
 
 
 @numba.njit(cache=CACHEING)
+def is_satisfied_node_comparison(interpretations, comp, na):
+	result = False
+	number = 0
+	l, bnd = na
+	l_str = l.value
+
+	if not (l is None or bnd is None):
+		# This is to prevent a key error in case the label is a specific label
+		try:
+			world = interpretations[comp]
+			for world_l in world.world.keys():
+				world_l_str = world_l.value
+				if l_str in world_l_str and world_l_str[len(l_str)+1:].replace('.', '').replace('-', '').isdigit():
+					# The label is contained in the world
+					result = world.is_satisfied(world_l, na[1])
+					# Find the suffix number
+					number = str_to_float(world_l_str[len(l_str)+1:])
+					break
+
+		except:
+			result = False
+	else:
+		result = True
+	return result, number
+
+
+@numba.njit(cache=CACHEING)
 def are_satisfied_edge(interpretations, comp, nas):
 	result = True
 	for (label, interval) in nas:
@@ -1411,6 +1747,33 @@ def is_satisfied_edge(interpretations, comp, na):
 	else:
 		result = True
 	return result
+
+
+@numba.njit(cache=CACHEING)
+def is_satisfied_edge_comparison(interpretations, comp, na):
+	result = False
+	number = 0
+	l, bnd = na
+	l_str = l.value
+
+	if not (l is None or bnd is None):
+		# This is to prevent a key error in case the label is a specific label
+		try:
+			world = interpretations[comp]
+			for world_l in world.world.keys():
+				world_l_str = world_l.value
+				if l_str in world_l_str and world_l_str[len(l_str)+1:].replace('.', '').replace('-', '').isdigit():
+					# The label is contained in the world
+					result = world.is_satisfied(world_l, na[1])
+					# Find the suffix number
+					number = str_to_float(world_l_str[len(l_str)+1:])
+					break
+
+		except:
+			result = False
+	else:
+		result = True
+	return result, number
 
 
 @numba.njit(cache=CACHEING)
@@ -1557,7 +1920,8 @@ def _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, l, 
 			edge, new_edge = _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge)
 			edges_added.append(edge)
 			changes = changes+1 if new_edge else changes
-	return (edges_added, changes)
+	return edges_added, changes
+
 
 @numba.njit(cache=CACHEING)
 def _delete_edge(edge, neighbors, reverse_neighbors, edges, interpretations_edge):
@@ -1574,3 +1938,30 @@ def float_to_str(value):
 	decimal = int(value % 1 * 1000)
 	float_str = f'{number}.{decimal}'
 	return float_str
+
+
+@numba.njit(cache=CACHEING)
+def str_to_float(value):
+	decimal_pos = value.find('.')
+	if decimal_pos != -1:
+		after_decimal_len = len(value[decimal_pos+1:])
+	else:
+		after_decimal_len = 0
+	value = value.replace('.', '')
+	value = str_to_int(value)
+	value = value / 10**after_decimal_len
+	return value
+
+
+@numba.njit(cache=CACHEING)
+def str_to_int(value):
+	if value[0] == '-':
+		negative = True
+		value = value.replace('-','')
+	else:
+		negative = False
+	final_index, result = len(value) - 1, 0
+	for i, v in enumerate(value):
+		result += (ord(v) - 48) * (10 ** (final_index - i))
+	result = -result if negative else result
+	return result

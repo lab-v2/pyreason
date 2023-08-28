@@ -103,12 +103,21 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, set_static:
     rule_type = 'node' if len(head_variables) == 1 else 'edge'
 
     # Get the variables in the body
+    # If there's an operator in the body then discard anything that comes after the operator, but keep the variables
     body_predicates = []
     body_variables = []
     for clause in body_clauses:
-        idx = clause.find('(')
-        body_predicates.append(clause[:idx])
-        body_variables.append(clause[idx+1:-1].split(','))
+        start_idx = clause.find('(')
+        end_idx = clause.find(')')
+        body_predicates.append(clause[:start_idx])
+
+        # Add body variables depending on whether there's an operator or not
+        variables = clause[start_idx+1:end_idx].split(',')
+        start_idx = clause.find('(', start_idx+1)
+        end_idx = clause.find(')', end_idx+1)
+        if start_idx != -1 and end_idx != -1:
+            variables += clause[start_idx+1:end_idx].split(',')
+        body_variables.append(variables)
 
     # Change infer edge parameter if it's a node rule
     if rule_type == 'node':
@@ -140,17 +149,21 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, set_static:
     # Array of thresholds to keep track of for each neighbor criterion. Form [(comparison, (number/percent, total/available), thresh)]
     thresholds = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), numba.types.float64)))
 
-    # Array to store clauses for nodes: node/edge, [subset]/[subset1, subset2], label, interval
-    clauses = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, label.label_type, numba.types.UniTuple(numba.types.string, 2), interval.interval_type)))
+    # Array to store clauses for nodes: node/edge, [subset]/[subset1, subset2], label, interval, operator
+    clauses = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, label.label_type, numba.types.ListType(numba.types.string), interval.interval_type, numba.types.string)))
 
     # Loop though clauses
-    for predicate, variables, bounds in zip(body_predicates, body_variables, body_bounds):
+    for body_clause, predicate, variables, bounds in zip(body_clauses, body_predicates, body_variables, body_bounds):
         # Neigh criteria
         clause_type = 'node' if len(variables) == 1 else 'edge'
-        subset = (variables[0], variables[0]) if clause_type == 'node' else (variables[0], variables[1])
+        op = _get_operator_from_clause(body_clause)
+        if op:
+            clause_type = 'comparison'
+
+        subset = numba.typed.List(variables)
         l = label.Label(predicate)
         bnd = interval.closed(bounds[0], bounds[1])
-        clauses.append((clause_type, l, subset, bnd))
+        clauses.append((clause_type, l, subset, bnd, op))
 
         # Threshold.
         quantifier = 'greater_equal'
@@ -179,6 +192,7 @@ def _str_bound_to_bound(str_bound):
     l, u = str_bound.split(',')
     return float(l), float(u)
 
+
 def _is_bound(str_bound):
     str_bound = str_bound.replace('[', '')
     str_bound = str_bound.replace(']', '')
@@ -194,3 +208,13 @@ def _is_bound(str_bound):
         result = False
 
     return result
+
+
+def _get_operator_from_clause(clause):
+    operators = ['<=', '>=', '<', '>', '==', '!=']
+    for op in operators:
+        if op in clause:
+            return op
+
+    # No operator found in clause
+    return ''
