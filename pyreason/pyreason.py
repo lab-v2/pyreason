@@ -4,8 +4,9 @@ import numba
 import time
 import sys
 import warnings
+import pandas as pd
 import memory_profiler as mp
-from typing import List, Type, Callable
+from typing import List, Type, Callable, Tuple
 
 from pyreason.scripts.utils.output import Output
 from pyreason.scripts.utils.filter import Filter
@@ -675,7 +676,7 @@ def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold,
 
 
 def save_rule_trace(interpretation, folder: str='./'):
-    """Saves the trace of the program. This includes every change that has occured to the interpretation. If `atom_trace` was set to true
+    """Saves the trace of the program. This includes every change that has occurred to the interpretation. If `atom_trace` was set to true
     this gives us full explainability of why interpretations changed
 
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
@@ -687,6 +688,22 @@ def save_rule_trace(interpretation, folder: str='./'):
 
     output = Output(__timestamp)
     output.save_rule_trace(interpretation, folder)
+
+
+def get_rule_trace(interpretation) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Returns the trace of the program as 2 pandas dataframes (one for nodes, one for edges).
+    This includes every change that has occurred to the interpretation. If `atom_trace` was set to true
+    this gives us full explainability of why interpretations changed
+
+    :param interpretation: the output of `pyreason.reason()`, the final interpretation
+    :returns two pandas dataframes (nodes, edges) representing the changes that occurred during reasoning
+    """
+    global __timestamp, settings
+
+    assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to save rule trace'
+
+    output = Output(__timestamp)
+    return output.get_rule_trace(interpretation)
 
 
 def filter_and_sort_nodes(interpretation, labels: List[str], bound: interval.Interval=interval.closed(0,1), sort_by: str='lower', descending: bool=True):

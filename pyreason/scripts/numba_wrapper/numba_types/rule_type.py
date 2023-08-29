@@ -32,7 +32,7 @@ def typeof_rule(val, c):
 # Construct object from Numba functions (Doesn't work. We don't need this currently)
 @type_callable(Rule)
 def type_rule(context):
-    def typer(rule_name, type, target, delta, clauses, bnd, thresholds, ann_fn, weights, edges, static,immediate_rule):
+    def typer(rule_name, type, target, delta, clauses, bnd, thresholds, ann_fn, weights, edges, static, immediate_rule):
         if isinstance(rule_name, types.UnicodeType) and isinstance(type, types.UnicodeType) and isinstance(target, label.LabelType) and isinstance(delta, types.Integer) and isinstance(clauses, (types.NoneType, types.ListType)) and isinstance(bnd, interval.IntervalType) and isinstance(thresholds, types.ListType) and isinstance(ann_fn, types.UnicodeType) and isinstance(weights, types.Array) and isinstance(edges, types.Tuple) and isinstance(static, types.Boolean) and isinstance(immediate_rule, types.Boolean):
             return rule_type
     return typer
@@ -47,7 +47,7 @@ class RuleModel(models.StructModel):
             ('type', types.string),
             ('target', label.label_type),
             ('delta', types.uint16),
-            ('clauses', types.ListType(types.Tuple((types.string, label.label_type, types.UniTuple(types.string, 2), interval.interval_type)))),
+            ('clauses', types.ListType(types.Tuple((types.string, label.label_type, types.ListType(types.string), interval.interval_type, types.string)))),
             ('bnd', interval.interval_type),
             ('thresholds', types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64)))),
             ('ann_fn', types.string),
@@ -75,11 +75,11 @@ make_attribute_wrapper(RuleType, 'immediate_rule', 'immediate_rule')
 
 
 # Implement constructor
-@lower_builtin(Rule, types.string, types.string, label.label_type, types.uint16, types.ListType(types.Tuple((types.string, label.label_type, types.UniTuple(types.string, 2), interval.interval_type))), interval.interval_type, types.ListType(types.ListType(types.Tuple((types.string, types.string, types.float64)))), types.string, types.float64[::1], types.Tuple((types.string, types.string, label.label_type)), types.boolean, types.boolean)
+@lower_builtin(Rule, types.string, types.string, label.label_type, types.uint16, types.ListType(types.Tuple((types.string, label.label_type, types.ListType(types.string), interval.interval_type, types.string))), interval.interval_type, types.ListType(types.ListType(types.Tuple((types.string, types.string, types.float64)))), types.string, types.float64[::1], types.Tuple((types.string, types.string, label.label_type)), types.boolean, types.boolean)
 def impl_rule(context, builder, sig, args):
     typ = sig.return_type
     rule_name, type, target, delta, clauses, bnd, thresholds, ann_fn, weights, edges, static, immediate_rule = args
-    context.nrt.incref(builder, types.ListType(types.Tuple((types.string, label.label_type, types.UniTuple(types.string, 2), interval.interval_type))), clauses)
+    context.nrt.incref(builder, types.ListType(types.Tuple((types.string, label.label_type, types.ListType(types.string), interval.interval_type, types.string))), clauses)
     context.nrt.incref(builder, types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64))), thresholds)
     rule = cgutils.create_struct_proxy(typ)(context, builder)
     rule.rule_name = rule_name
@@ -202,7 +202,7 @@ def unbox_rule(typ, obj, c):
     rule.type = c.unbox(types.string, type_obj).value
     rule.target = c.unbox(label.label_type, target_obj).value
     rule.delta = c.unbox(types.uint16, delta_obj).value
-    rule.clauses = c.unbox(types.ListType(types.Tuple((types.string, label.label_type, types.UniTuple(types.string, 2), interval.interval_type))), clauses_obj).value
+    rule.clauses = c.unbox(types.ListType(types.Tuple((types.string, label.label_type, types.ListType(types.string), interval.interval_type, types.string))), clauses_obj).value
     rule.bnd = c.unbox(interval.interval_type, bnd_obj).value
     rule.thresholds = c.unbox(types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64))), thresholds_obj).value
     rule.ann_fn = c.unbox(types.string, ann_fn_obj).value
@@ -234,7 +234,7 @@ def box_rule(typ, val, c):
     type_obj = c.box(types.string, rule.type)
     target_obj = c.box(label.label_type, rule.target)
     delta_obj = c.box(types.uint16, rule.delta)
-    clauses_obj = c.box(types.ListType(types.Tuple((types.string, label.label_type, types.UniTuple(types.string, 2), interval.interval_type))), rule.clauses)
+    clauses_obj = c.box(types.ListType(types.Tuple((types.string, label.label_type, types.ListType(types.string), interval.interval_type, types.string))), rule.clauses)
     bnd_obj = c.box(interval.interval_type, rule.bnd)
     thresholds_obj = c.box(types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64))), rule.thresholds)
     ann_fn_obj = c.box(types.string, rule.ann_fn)
