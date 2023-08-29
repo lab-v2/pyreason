@@ -104,7 +104,7 @@ class Interpretation:
 		self.reverse_neighbors = self._init_reverse_neighbors(self.neighbors)
 
 	@staticmethod
-	@numba.njit(cache=False)
+	@numba.njit(cache=True)
 	def _init_reverse_neighbors(neighbors):
 		reverse_neighbors = numba.typed.Dict.empty(key_type=node_type, value_type=list_of_nodes)
 		for n, neighbor_nodes in neighbors.items():
@@ -120,7 +120,7 @@ class Interpretation:
 		return reverse_neighbors
 
 	@staticmethod
-	@numba.njit(cache=False)
+	@numba.njit(cache=True)
 	def _init_interpretations_node(nodes, available_labels, specific_labels):
 		interpretations = numba.typed.Dict.empty(key_type=node_type, value_type=world.world_type)
 		# General labels
@@ -134,7 +134,7 @@ class Interpretation:
 		return interpretations
 
 	@staticmethod
-	@numba.njit(cache=False)
+	@numba.njit(cache=True)
 	def _init_interpretations_edge(edges, available_labels, specific_labels):
 		interpretations = numba.typed.Dict.empty(key_type=edge_type, value_type=world.world_type)
 		# General labels
@@ -148,7 +148,7 @@ class Interpretation:
 		return interpretations
 
 	@staticmethod
-	@numba.njit(cache=False)
+	@numba.njit(cache=True)
 	def _init_convergence(convergence_bound_threshold, convergence_threshold):
 		if convergence_bound_threshold==-1 and convergence_threshold==-1:
 			convergence_mode = 'perfect_convergence'
@@ -168,7 +168,7 @@ class Interpretation:
 		self._start_fp(rules, max_facts_time, verbose, again)
 
 	@staticmethod
-	@numba.njit(cache=False)
+	@numba.njit(cache=True)
 	def _init_facts(facts_node, facts_edge, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, atom_trace):
 		max_time = 0
 		for fact in facts_node:
@@ -199,7 +199,7 @@ class Interpretation:
 			print('Fixed Point iterations:', fp_cnt)
 
 	@staticmethod
-	@numba.njit(cache=False)
+	@numba.njit(cache=True)
 	def reason(interpretations_node, interpretations_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, max_facts_time, annotation_functions, convergence_mode, convergence_delta, verbose, again):
 		t = prev_reasoning_data[0]
 		fp_cnt = prev_reasoning_data[1]
@@ -716,7 +716,7 @@ class Interpretation:
 		return interpretations
 
 
-@numba.njit(cache=False, parallel=True)
+@numba.njit(cache=True, parallel=False)
 def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, neighbors, reverse_neighbors, atom_trace, reverse_graph, nodes_to_skip):
 	# Extract rule params
 	rule_type = rule.get_type()
@@ -938,7 +938,7 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 	return applicable_rules
 
 
-@numba.njit(cache=False, parallel=True)
+@numba.njit(cache=True, parallel=False)
 def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, reverse_graph, edges_to_skip):
 	# Extract rule params
 	rule_type = rule.get_type()
@@ -1166,7 +1166,7 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 	return applicable_rules
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def get_node_rule_node_clause_subset(clause_var_1, target_node, subsets, neighbors):
 	# The groundings for node clauses are either the target node, neighbors of the target node, or an existing subset of nodes
 	if clause_var_1 == '__target':
@@ -1176,7 +1176,7 @@ def get_node_rule_node_clause_subset(clause_var_1, target_node, subsets, neighbo
 	return subset
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def get_node_rule_edge_clause_subset(clause_var_1, clause_var_2, target_node, subsets, neighbors, reverse_neighbors, nodes):
 	# There are 5 cases for predicate(Y,Z):
 	# 1. Either one or both of Y, Z are the target node
@@ -1235,7 +1235,7 @@ def get_node_rule_edge_clause_subset(clause_var_1, clause_var_2, target_node, su
 	return subset_source, subset_target
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def get_edge_rule_node_clause_subset(clause_var_1, target_edge, subsets, neighbors):
 	# The groundings for node clauses are either the source, target, neighbors of the source node, or an existing subset of nodes
 	if clause_var_1 == '__source':
@@ -1247,7 +1247,7 @@ def get_edge_rule_node_clause_subset(clause_var_1, target_edge, subsets, neighbo
 	return subset
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def get_edge_rule_edge_clause_subset(clause_var_1, clause_var_2, target_edge, subsets, neighbors, reverse_neighbors, nodes):
 	# There are 5 cases for predicate(Y,Z):
 	# 1. Either one or both of Y, Z are the source or target node
@@ -1325,7 +1325,7 @@ def get_edge_rule_edge_clause_subset(clause_var_1, clause_var_2, target_edge, su
 	return subset_source, subset_target
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def get_qualified_components_node_clause(interpretations_node, candidates, l, bnd):
 	# Get all the qualified neighbors for a particular clause
 	qualified_nodes = numba.typed.List.empty_list(node_type)
@@ -1336,7 +1336,7 @@ def get_qualified_components_node_clause(interpretations_node, candidates, l, bn
 	return qualified_nodes
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def get_qualified_components_node_comparison_clause(interpretations_node, candidates, l, bnd):
 	# Get all the qualified neighbors for a particular comparison clause and return them along with the number associated
 	qualified_nodes = numba.typed.List.empty_list(node_type)
@@ -1350,7 +1350,7 @@ def get_qualified_components_node_comparison_clause(interpretations_node, candid
 	return qualified_nodes, qualified_nodes_numbers
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def get_qualified_components_edge_clause(interpretations_edge, candidates_source, candidates_target, l, bnd, reverse_graph):
 	# Get all the qualified sources and targets for a particular clause
 	qualified_nodes_source = numba.typed.List.empty_list(node_type)
@@ -1365,7 +1365,7 @@ def get_qualified_components_edge_clause(interpretations_edge, candidates_source
 	return qualified_nodes_source, qualified_nodes_target
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def get_qualified_components_edge_comparison_clause(interpretations_edge, candidates_source, candidates_target, l, bnd, reverse_graph):
 	# Get all the qualified sources and targets for a particular clause
 	qualified_nodes_source = numba.typed.List.empty_list(node_type)
@@ -1383,7 +1383,7 @@ def get_qualified_components_edge_comparison_clause(interpretations_edge, candid
 	return qualified_nodes_source, qualified_nodes_target, qualified_edges_numbers
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def compare_numbers_node_predicate(numbers_1, numbers_2, op, qualified_nodes_1, qualified_nodes_2):
 	result = False
 	final_qualified_nodes_1 = numba.typed.List.empty_list(node_type)
@@ -1415,7 +1415,7 @@ def compare_numbers_node_predicate(numbers_1, numbers_2, op, qualified_nodes_1, 
 	return result, final_qualified_nodes_1, final_qualified_nodes_2
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def compare_numbers_edge_predicate(numbers_1, numbers_2, op, qualified_nodes_1a, qualified_nodes_1b, qualified_nodes_2a, qualified_nodes_2b):
 	result = False
 	final_qualified_nodes_1a = numba.typed.List.empty_list(node_type)
@@ -1451,7 +1451,7 @@ def compare_numbers_edge_predicate(numbers_1, numbers_2, op, qualified_nodes_1a,
 	return result, final_qualified_nodes_1a, final_qualified_nodes_1b, final_qualified_nodes_2a, final_qualified_nodes_2b
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
 	# Checks if qualified neighbors satisfy threshold. This is for one clause
 	if threshold[1][0]=='number':
@@ -1483,7 +1483,7 @@ def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
 	return result
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_trace, idx, facts_to_be_applied_trace, rule_trace_atoms, store_interpretation_changes, mode, override=False):
 	updated = False
 	# This is to prevent a key error in case the label is a specific label
@@ -1572,7 +1572,7 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		return (False, 0)
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_trace, idx, facts_to_be_applied_trace, rule_trace_atoms, store_interpretation_changes, mode, override=False):
 	updated = False
 	# This is to prevent a key error in case the label is a specific label
@@ -1660,12 +1660,12 @@ def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		return (False, 0)
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def _update_rule_trace(rule_trace, qn, qe, prev_bnd, name):
 	rule_trace.append((qn, qe, prev_bnd.copy(), name))
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def are_satisfied_node(interpretations, comp, nas):
 	result = True
 	for (label, interval) in nas:
@@ -1673,7 +1673,7 @@ def are_satisfied_node(interpretations, comp, nas):
 	return result
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def is_satisfied_node(interpretations, comp, na):
 	result = False
 	if (not (na[0] is None or na[1] is None)):
@@ -1688,7 +1688,7 @@ def is_satisfied_node(interpretations, comp, na):
 	return result
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def is_satisfied_node_comparison(interpretations, comp, na):
 	result = False
 	number = 0
@@ -1715,7 +1715,7 @@ def is_satisfied_node_comparison(interpretations, comp, na):
 	return result, number
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def are_satisfied_edge(interpretations, comp, nas):
 	result = True
 	for (label, interval) in nas:
@@ -1723,7 +1723,7 @@ def are_satisfied_edge(interpretations, comp, nas):
 	return result
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def is_satisfied_edge(interpretations, comp, na):
 	result = False
 	if (not (na[0] is None or na[1] is None)):
@@ -1738,7 +1738,7 @@ def is_satisfied_edge(interpretations, comp, na):
 	return result
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def is_satisfied_edge_comparison(interpretations, comp, na):
 	result = False
 	number = 0
@@ -1765,7 +1765,7 @@ def is_satisfied_edge_comparison(interpretations, comp, na):
 	return result, number
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def annotate(annotation_functions, rule, annotations, weights):
 	func_name = rule.get_annotation_function()
 	if func_name == '':
@@ -1778,7 +1778,7 @@ def annotate(annotation_functions, rule, annotations, weights):
 		return annotation
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def check_consistent_node(interpretations, comp, na):
 	world = interpretations[comp]
 	if na[0] in world.world:
@@ -1791,7 +1791,7 @@ def check_consistent_node(interpretations, comp, na):
 		return True
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def check_consistent_edge(interpretations, comp, na):
 	world = interpretations[comp]
 	if na[0] in world.world:
@@ -1804,7 +1804,7 @@ def check_consistent_edge(interpretations, comp, na):
 		return True
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def resolve_inconsistency_node(interpretations, comp, na, ipl, t_cnt, fp_cnt, atom_trace, rule_trace, rule_trace_atoms, store_interpretation_changes):
 	world = interpretations[comp]
 	if store_interpretation_changes:
@@ -1833,7 +1833,7 @@ def resolve_inconsistency_node(interpretations, comp, na, ipl, t_cnt, fp_cnt, at
 	# Add inconsistent predicates to a list
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def resolve_inconsistency_edge(interpretations, comp, na, ipl, t_cnt, fp_cnt, atom_trace, rule_trace, rule_trace_atoms, store_interpretation_changes):
 	w = interpretations[comp]
 	if store_interpretation_changes:
@@ -1861,7 +1861,7 @@ def resolve_inconsistency_edge(interpretations, comp, na, ipl, t_cnt, fp_cnt, at
 				rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, p1, interval.closed(0,1)))
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def _add_node(node, neighbors, reverse_neighbors, nodes, interpretations_node):
 	nodes.append(node)
 	neighbors[node] = numba.typed.List.empty_list(node_type)
@@ -1869,7 +1869,7 @@ def _add_node(node, neighbors, reverse_neighbors, nodes, interpretations_node):
 	interpretations_node[node] = world.World(numba.typed.List.empty_list(label.label_type))
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge):
 	# If not a node, add to list of nodes and initialize neighbors
 	if source not in nodes:
@@ -1900,7 +1900,7 @@ def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, int
 	return (edge, new_edge)
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge):
 	changes = 0
 	edges_added = numba.typed.List.empty_list(edge_type)
@@ -1912,7 +1912,7 @@ def _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, l, 
 	return edges_added, changes
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def _delete_edge(edge, neighbors, reverse_neighbors, edges, interpretations_edge):
 	source, target = edge
 	edges.remove(edge)
@@ -1921,7 +1921,7 @@ def _delete_edge(edge, neighbors, reverse_neighbors, edges, interpretations_edge
 	reverse_neighbors[target].remove(source)
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def float_to_str(value):
 	number = int(value)
 	decimal = int(value % 1 * 1000)
@@ -1929,7 +1929,7 @@ def float_to_str(value):
 	return float_str
 
 
-@numba.njit(cache=False)
+@numba.njit(cache=True)
 def str_to_float(value):
 	decimal_pos = value.find('.')
 	if decimal_pos != -1:
