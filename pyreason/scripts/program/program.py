@@ -1,4 +1,5 @@
-from pyreason.scripts.interpretation.interpretation import Interpretation
+from pyreason.scripts.interpretation.interpretation import Interpretation as Interpretation
+from pyreason.scripts.interpretation.interpretation import Interpretation as InterpretationParallel
 
 
 class Program:
@@ -31,12 +32,11 @@ class Program:
 		Interpretation.specific_node_labels = self.specific_node_labels
 		Interpretation.specific_edge_labels = self.specific_edge_labels
 
-		# Set up parallel computing settings (we cannot cache with parallel=True)
-		Interpretation.parallel_computing = self._parallel_computing
+		# Instantiate correct interpretation class based on whether we parallelize the code or not. (We cannot parallelize with cache on)
 		if self._parallel_computing:
-			Interpretation.cacheing = False
-
-		self.interp = Interpretation(self._graph, self._ipl, self._annotation_functions, self._reverse_graph, self._atom_trace, self._save_graph_attributes_to_rule_trace, self._canonical, self._inconsistency_check, self._store_interpretation_changes)
+			self.interp = InterpretationParallel(self._graph, self._ipl, self._annotation_functions, self._reverse_graph, self._atom_trace, self._save_graph_attributes_to_rule_trace, self._canonical, self._inconsistency_check, self._store_interpretation_changes)
+		else:
+			self.interp = Interpretation(self._graph, self._ipl, self._annotation_functions, self._reverse_graph, self._atom_trace, self._save_graph_attributes_to_rule_trace, self._canonical, self._inconsistency_check, self._store_interpretation_changes)
 		self.interp.start_fp(self._tmax, self._facts_node, self._facts_edge, self._rules, verbose, convergence_threshold, convergence_bound_threshold)
 
 		return self.interp
