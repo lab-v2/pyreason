@@ -822,8 +822,8 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 					subset_2 = get_node_rule_node_clause_subset(clause_var_2, target_node, subsets, neighbors)
 
 					# 1, 2
-					subsets[clause_var_1], numbers_1 = get_qualified_components_node_comparison_clause(interpretations_node, subset_1, clause_label, clause_bnd)
-					subsets[clause_var_2], numbers_2 = get_qualified_components_node_comparison_clause(interpretations_node, subset_2, clause_label, clause_bnd)
+					qualified_nodes_for_comparison_1, numbers_1 = get_qualified_components_node_comparison_clause(interpretations_node, subset_1, clause_label, clause_bnd)
+					qualified_nodes_for_comparison_2, numbers_2 = get_qualified_components_node_comparison_clause(interpretations_node, subset_2, clause_label, clause_bnd)
 
 				# It's an edge comparison
 				elif len(clause_variables) == 4:
@@ -832,8 +832,8 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 					subset_2_source, subset_2_target = get_node_rule_edge_clause_subset(clause_var_2_source, clause_var_2_target, target_node, subsets, neighbors, reverse_neighbors, nodes)
 
 					# 1, 2
-					subsets[clause_var_1_source], subsets[clause_var_1_target], numbers_1 = get_qualified_components_edge_comparison_clause(interpretations_edge, subset_1_source, subset_1_target, clause_label, clause_bnd, reverse_graph)
-					subsets[clause_var_2_source], subsets[clause_var_2_target], numbers_2 = get_qualified_components_edge_comparison_clause(interpretations_edge, subset_2_source, subset_2_target, clause_label, clause_bnd, reverse_graph)
+					qualified_nodes_for_comparison_1_source, qualified_nodes_for_comparison_1_target, numbers_1 = get_qualified_components_edge_comparison_clause(interpretations_edge, subset_1_source, subset_1_target, clause_label, clause_bnd, reverse_graph)
+					qualified_nodes_for_comparison_2_source, qualified_nodes_for_comparison_2_target, numbers_2 = get_qualified_components_edge_comparison_clause(interpretations_edge, subset_2_source, subset_2_target, clause_label, clause_bnd, reverse_graph)
 
 			# Check if thresholds are satisfied
 			# If it's a comparison clause we just need to check if the numbers list is not empty (no threshold support)
@@ -842,7 +842,7 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 					satisfaction = False
 				# Node comparison. Compare stage
 				elif len(clause_variables) == 2:
-					satisfaction, qualified_nodes_1, qualified_nodes_2 = compare_numbers_node_predicate(numbers_1, numbers_2, clause_operator, subsets[clause_var_1], subsets[clause_var_2])
+					satisfaction, qualified_nodes_1, qualified_nodes_2 = compare_numbers_node_predicate(numbers_1, numbers_2, clause_operator, qualified_nodes_for_comparison_1, qualified_nodes_for_comparison_2)
 
 					# Update subsets with final qualified nodes
 					subsets[clause_var_1] = qualified_nodes_1
@@ -863,10 +863,10 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 				# Edge comparison. Compare stage
 				else:
 					satisfaction, qualified_nodes_1_source, qualified_nodes_1_target, qualified_nodes_2_source, qualified_nodes_2_target = compare_numbers_edge_predicate(numbers_1, numbers_2, clause_operator,
-																																										  subsets[clause_var_1_source],
-																																										  subsets[clause_var_1_target],
-																																										  subsets[clause_var_2_source],
-																																										  subsets[clause_var_2_target])
+																																										  qualified_nodes_for_comparison_1_source,
+																																										  qualified_nodes_for_comparison_1_target,
+																																										  qualified_nodes_for_comparison_2_source,
+																																										  qualified_nodes_for_comparison_2_target)
 					# Update subsets with final qualified nodes
 					subsets[clause_var_1_source] = qualified_nodes_1_source
 					subsets[clause_var_1_target] = qualified_nodes_1_target
@@ -1044,8 +1044,8 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 					subset_2 = get_edge_rule_node_clause_subset(clause_var_2, target_edge, subsets, neighbors)
 					
 					# 1, 2
-					subsets[clause_var_1], numbers_1 = get_qualified_components_node_comparison_clause(interpretations_node, subset_1, clause_label, clause_bnd)
-					subsets[clause_var_2], numbers_2 = get_qualified_components_node_comparison_clause(interpretations_node, subset_2, clause_label, clause_bnd)
+					qualified_nodes_for_comparison_1, numbers_1 = get_qualified_components_node_comparison_clause(interpretations_node, subset_1, clause_label, clause_bnd)
+					qualified_nodes_for_comparison_2, numbers_2 = get_qualified_components_node_comparison_clause(interpretations_node, subset_2, clause_label, clause_bnd)
 				
 				# It's an edge comparison
 				elif len(clause_variables) == 4:
@@ -1054,8 +1054,8 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 					subset_2_source, subset_2_target = get_edge_rule_edge_clause_subset(clause_var_2_source, clause_var_2_target, target_edge, subsets, neighbors, reverse_neighbors, nodes)
 
 					# 1, 2
-					subsets[clause_var_1_source], subsets[clause_var_1_target], numbers_1 = get_qualified_components_edge_comparison_clause(interpretations_edge, subset_1_source, subset_1_target, clause_label, clause_bnd, reverse_graph)
-					subsets[clause_var_2_source], subsets[clause_var_2_target], numbers_2 = get_qualified_components_edge_comparison_clause(interpretations_edge, subset_2_source, subset_2_target, clause_label, clause_bnd, reverse_graph)
+					qualified_nodes_for_comparison_1_source, qualified_nodes_for_comparison_1_target, numbers_1 = get_qualified_components_edge_comparison_clause(interpretations_edge, subset_1_source, subset_1_target, clause_label, clause_bnd, reverse_graph)
+					qualified_nodes_for_comparison_2_source, qualified_nodes_for_comparison_2_target, numbers_2 = get_qualified_components_edge_comparison_clause(interpretations_edge, subset_2_source, subset_2_target, clause_label, clause_bnd, reverse_graph)
 
 			# Check if thresholds are satisfied
 			# If it's a comparison clause we just need to check if the numbers list is not empty (no threshold support)
@@ -1064,7 +1064,7 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 					satisfaction = False
 				# Node comparison. Compare stage
 				elif len(clause_variables) == 2:
-					satisfaction, qualified_nodes_1, qualified_nodes_2 = compare_numbers_node_predicate(numbers_1, numbers_2, clause_operator, subsets[clause_var_1], subsets[clause_var_2])
+					satisfaction, qualified_nodes_1, qualified_nodes_2 = compare_numbers_node_predicate(numbers_1, numbers_2, clause_operator, qualified_nodes_for_comparison_1, qualified_nodes_for_comparison_2)
 
 					# Update subsets with final qualified nodes
 					subsets[clause_var_1] = qualified_nodes_1
@@ -1085,10 +1085,10 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 				# Edge comparison. Compare stage
 				else:
 					satisfaction, qualified_nodes_1_source, qualified_nodes_1_target, qualified_nodes_2_source, qualified_nodes_2_target = compare_numbers_edge_predicate(numbers_1, numbers_2, clause_operator,
-																																										  subsets[clause_var_1_source],
-																																										  subsets[clause_var_1_target],
-																																										  subsets[clause_var_2_source],
-																																										  subsets[clause_var_2_target])
+																																										  qualified_nodes_for_comparison_1_source,
+																																										  qualified_nodes_for_comparison_1_target,
+																																										  qualified_nodes_for_comparison_2_source,
+																																										  qualified_nodes_for_comparison_2_target)
 					# Update subsets with final qualified nodes
 					subsets[clause_var_1_source] = qualified_nodes_1_source
 					subsets[clause_var_1_target] = qualified_nodes_1_target
@@ -1446,8 +1446,8 @@ def compare_numbers_edge_predicate(numbers_1, numbers_2, op, qualified_nodes_1a,
 			if result:
 				final_qualified_nodes_1a.append(qualified_nodes_1a[i])
 				final_qualified_nodes_1b.append(qualified_nodes_1b[i])
-				final_qualified_nodes_2a.append(qualified_nodes_2a[i])
-				final_qualified_nodes_2b.append(qualified_nodes_2b[i])
+				final_qualified_nodes_2a.append(qualified_nodes_2a[j])
+				final_qualified_nodes_2b.append(qualified_nodes_2b[j])
 	return result, final_qualified_nodes_1a, final_qualified_nodes_1b, final_qualified_nodes_2a, final_qualified_nodes_2b
 
 
