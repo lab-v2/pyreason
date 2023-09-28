@@ -1,19 +1,22 @@
 # This is the file that will be imported when "import pyreason" is called. All content will be run automatically
+import networkx as nx
 import numba
 import time
 import sys
 import warnings
-import numpy as np
+import pandas as pd
 import memory_profiler as mp
-from typing import List, Type
+from typing import List, Type, Callable, Tuple
 
 from pyreason.scripts.utils.output import Output
 from pyreason.scripts.utils.filter import Filter
 from pyreason.scripts.program.program import Program
 from pyreason.scripts.utils.graphml_parser import GraphmlParser
 import pyreason.scripts.utils.yaml_parser as yaml_parser
+import pyreason.scripts.utils.rule_parser as rule_parser
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.rule_type as rule
+from pyreason.scripts.facts.fact import Fact
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
@@ -35,6 +38,7 @@ class _Settings:
         self.__inconsistency_check = True
         self.__static_graph_facts = True
         self.__store_interpretation_changes = True
+        self.__parallel_computing = False
 
     @property
     def verbose(self) -> bool:
@@ -143,6 +147,15 @@ class _Settings:
         :return: bool
         """
         return self.__store_interpretation_changes
+
+    @property
+    def parallel_computing(self) -> bool:
+        """Returns whether to use multiple CPU cores for inference. This will disable cacheing and pyreason will have
+        to be re-compiled at each run - but after compilation it will be faster. Default is False
+
+        :return: bool
+        """
+        return self.__parallel_computing
 
     @verbose.setter
     def verbose(self, value: bool) -> None:
@@ -305,6 +318,19 @@ class _Settings:
         else:
             self.__store_interpretation_changes = value
 
+    @parallel_computing.setter
+    def parallel_computing(self, value: bool) -> None:
+        """Whether to use multiple CPU cores for inference. This will disable cacheing and pyreason will have
+        to be re-compiled at each run - but after compilation it will be faster. Default is False
+
+        :param value: Whether to make inference run on parallel hardware (multiple CPU cores)
+        :raises TypeError: If not bool raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('value has to be a bool')
+        else:
+            self.__parallel_computing = value
+
 
 # VARIABLES
 __graph = None
@@ -321,6 +347,8 @@ __non_fluent_graph_facts_node = None
 __non_fluent_graph_facts_edge = None
 __specific_graph_node_labels = None
 __specific_graph_edge_labels = None
+
+__annotation_functions = []
 
 __timestamp = ''
 __program = None
@@ -340,8 +368,16 @@ def reset():
     __edge_labels = None
 
 
+def reset_rules():
+    """
+    Resets rules to none
+    """
+    global __rules
+    __rules = None
+
+
 # FUNCTIONS
-def load_graph(path: str) -> None:
+def load_graphml(path: str) -> None:
     """Loads graph from GraphMl file path into program
 
     :param path: Path for the GraphMl file
@@ -359,7 +395,29 @@ def load_graph(path: str) -> None:
         __non_fluent_graph_facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
         __specific_graph_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
         __specific_graph_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
+
+
+def load_graph(graph: nx.DiGraph) -> None:
+    """Load a networkx DiGraph into pyreason
+
+    :param graph: Networkx DiGraph object to load into pyreason
+    :type graph: nx.DiGraph
+    :return: None
+    """
+    global __graph, __graphml_parser, __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels, settings
     
+    # Load graph
+    __graph = __graphml_parser.load_graph(graph)
+
+    # Graph attribute parsing
+    if settings.graph_attribute_parsing:
+        __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels = __graphml_parser.parse_graph_attributes(settings.static_graph_facts)
+    else:
+        __non_fluent_graph_facts_node = numba.typed.List.empty_list(fact_node.fact_type)
+        __non_fluent_graph_facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
+        __specific_graph_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
+        __specific_graph_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
+
 
 def load_labels(path: str) -> None:
     """Load labels from YAML file path into program
@@ -401,103 +459,84 @@ def load_inconsistent_predicate_list(path: str) -> None:
     __ipl = yaml_parser.parse_ipl(path)
 
 
-def add_rules_from_text(rule_text: str, name: str) -> None:
+def add_rule(rule_text: str, name: str, infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False) -> None:
     """Add a rule to pyreason from text format. This format is not as modular as the YAML format.
-    1. It is not possible to specify target criteria
-    2. It is not possible to specify delta_t. delta_t=0 by default.
-    3. It is not possible to specify thresholds. Threshold is greater than or equal to 1 by default
-    4. It is not possible to add edges between subsets of nodes
-    5. It is not possible to have an annotation function. We set to [1,1] by default
-    6. It is not possible to have weights for different clauses. Weights are 1 by default with bias 0
+    1. It is not possible to specify thresholds. Threshold is greater than or equal to 1 by default
+    2. It is not possible to have an annotation function.
+    3. It is not possible to have weights for different clauses. Weights are 1 by default with bias 0
+    TODO: Add threshold class where we can pass this as a parameter
+    TODO: Add weights as a parameter
+    TODO: Add annotation function and bounds as a parameter
 
     Example:
-    `'pred1(x,y) <- pred2(a, b), pred3(b, c)'`
+    `'pred1(x,y) : [0.2, 1] <- pred2(a, b) : [1,1], pred3(b, c)'`
 
     :param rule_text: The rule in text format
     :param name: The name of the rule. This will appear in the rule trace
+    :param infer_edges: Whether to infer new edges after edge rule fires
+    :param set_static: Whether to set the atom in the head as static if the rule fires. The bounds will no longer change
+    :param immediate_rule: Whether the rule is immediate. Immediate rules check for more applicable rules immediately after being applied
     """
     global __rules
 
-    # First remove all spaces from line
-    r = rule_text.replace(' ', '')
-
-    # Separate into head and body
-    head, body = r.split('<-')
-
-    # Separate clauses in body
-    body = body[:-1].replace(')', '))') + ')'
-    body = body.split('),')
-
-    # Find the target predicate
-    idx = head.find('(')
-    target = head[:idx]
-    target = label.Label(target)
-
-    # Variable(s) in the head of the rule
-    head_variables = head[idx + 1:-1].split(',')
-
-    # Target criteria is empty for this text format to pyreason rule
-    target_criteria = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
-
-    # Get the variables in the body
-    body_predicates = []
-    body_variables = []
-    for clause in body:
-        idx = clause.find('(')
-        body_predicates.append(clause[:idx])
-        body_variables.append(clause[idx+1:-1].split(','))
-
-    # Replace the variables in the body with source/target if they match the variables in the head
-    head_var_map = {0: 'source', 1: 'target'}
-    for i in range(len(body_variables)):
-        for j in range(len(body_variables[i])):
-            # Loop through the head variables and see if there's a match
-            for k in range(len(head_variables)):
-                if body_variables[i][j] == head_variables[k]:
-                    body_variables[i][j] = head_var_map[k] if len(head_variables) == 2 else 'target'
-
-    # Start setting up neigh_criteria
-    # neigh_criteria = [c1, c2, c3, c4]
-    # thresholds = [t1, t2, t3, t4]
-
-    # Array of thresholds to keep track of for each neighbor criterion. Form [(comparison, (number/percent, total/available), thresh)]
-    thresholds = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), numba.types.float64)))
-
-    # Array to store clauses for nodes: node/edge, [subset]/[subset1, subset2], label, interval
-    neigh_criteria = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), label.label_type, interval.interval_type)))
-
-    # Loop though clauses
-    for predicate, variables in zip(body_predicates, body_variables):
-        # Neigh criteria
-        clause_type = 'node' if len(variables) == 1 else 'edge'
-        subset = (variables[0], variables[0]) if clause_type == 'node' else (variables[0], variables[1])
-        l = label.Label(predicate)
-        bnd = interval.closed(1, 1)
-        neigh_criteria.append((clause_type, subset, l, bnd))
-
-        # Threshold
-        quantifier = 'greater_equal'
-        quantifier_type = ('number', 'total')
-        thresh = 1
-        thresholds.append((quantifier, quantifier_type, thresh))
-
-    # Cannot add edges
-    edges = ('', '', label.Label(''))
-
-    # Bound to set atom if rule fires
-    bnd = interval.closed(1, 1)
-    ann_fn = ''
-    ann_label = label.Label('')
-
-    weights = np.ones(len(body_predicates), dtype=np.float64)
-    weights = np.append(weights, 0)
-
-    r = rule.Rule(name, target, target_criteria, numba.types.uint16(0), neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges)
-
+    r = rule_parser.parse_rule(rule_text, name, infer_edges, set_static, immediate_rule)
     # Add to collection of rules
     if __rules is None:
         __rules = numba.typed.List.empty_list(rule.rule_type)
     __rules.append(r)
+
+
+def add_rules_from_file(file_path: str, infer_edges: bool = False) -> None:
+    """ Add a set of rules from a text file
+
+    :param file_path: Path to the text file containing rules
+    :type file_path: str
+    :param infer_edges: Whether to infer edges on these rules if an edge doesn't exist between head variables and the body of the rule is satisfied
+    :type infer_edges: bool
+    :return: None
+    """
+    with open(file_path, 'r') as file:
+        rules = [line.rstrip() for line in file if line.rstrip() != '' and line.rstrip()[0] != '#']
+
+    rule_offset = 0 if __rules is None else len(__rules)
+    for i, r in enumerate(rules):
+        add_rule(r, f'rule_{i+rule_offset}', infer_edges)
+
+
+def add_fact(pyreason_fact: Fact) -> None:
+    """Add a PyReason fact to the program.
+
+    :param pyreason_fact: PyReason fact created using pr.Fact(...)
+    :return: None
+    """
+    global __node_facts, __edge_facts
+
+    if pyreason_fact.type == 'node':
+        f = fact_node.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.label, pyreason_fact.interval, pyreason_fact.t_lower, pyreason_fact.t_upper, pyreason_fact.static)
+        if __node_facts is None:
+            __node_facts = numba.typed.List.empty_list(fact_node.fact_type)
+        __node_facts.append(f)
+
+    else:
+        f = fact_edge.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.label, pyreason_fact.interval, pyreason_fact.t_lower, pyreason_fact.t_upper, pyreason_fact.static)
+        if __edge_facts is None:
+            __edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
+        __edge_facts.append(f)
+
+
+def add_annotation_function(function: Callable) -> None:
+    """Function to add annotation functions to PyReason. The added functions can be used in rules
+
+    :param function: Function to be added. This has to be under a numba `njit` decorator. function has signature: two parameters as input -- annotations, weights
+    :type function: Callable
+    :return: None
+    """
+    global __annotation_functions
+    # Make sure that the functions are jitted so that they can be passed around in other jitted functions
+    # TODO: Remove if necessary
+    # assert hasattr(function, 'nopython_signatures'), 'The function to be added has to be under a `numba.njit` decorator'
+
+    __annotation_functions.append(function)
 
 
 def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_threshold: float=-1, again: bool=False, node_facts: List[Type[fact_node.Fact]]=None, edge_facts: List[Type[fact_edge.Fact]]=None):
@@ -564,8 +603,10 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
 
     if __node_facts is None and __edge_facts is None:
         if settings.verbose:
-            warnings.warn('Facts yaml file has not been loaded. Use `load_facts`. Only graph attributes will be used as facts\n')
+            warnings.warn('Facts have not been loaded. Use `add_fact` or `load_facts`. Only graph attributes will be used as facts\n')
+    if __node_facts is None:
         __node_facts = numba.typed.List.empty_list(fact_node.fact_type)
+    if __edge_facts is None:
         __edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
 
     if __ipl is None:
@@ -586,8 +627,10 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
         else:
             __specific_edge_labels[label_name] = edges
 
-    all_node_facts = numba.typed.List(__node_facts)
-    all_edge_facts = numba.typed.List(__edge_facts)
+    all_node_facts = numba.typed.List.empty_list(fact_node.fact_type)
+    all_edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
+    all_node_facts.extend(numba.typed.List(__node_facts))
+    all_edge_facts.extend(numba.typed.List(__edge_facts))
     all_node_facts.extend(__non_fluent_graph_facts_node)
     all_edge_facts.extend(__non_fluent_graph_facts_edge)
 
@@ -595,8 +638,11 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     if not settings.store_interpretation_changes:
         settings.atom_trace = False
 
+    # Convert list of annotation functions into tuple to be numba compatible
+    annotation_functions = tuple(__annotation_functions)
+
     # Setup logical program
-    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes)
+    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing)
     __program.available_labels_node = __node_labels
     __program.available_labels_edge = __edge_labels
     __program.specific_node_labels = __specific_node_labels
@@ -630,7 +676,7 @@ def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold,
 
 
 def save_rule_trace(interpretation, folder: str='./'):
-    """Saves the trace of the program. This includes every change that has occured to the interpretation. If `atom_trace` was set to true
+    """Saves the trace of the program. This includes every change that has occurred to the interpretation. If `atom_trace` was set to true
     this gives us full explainability of why interpretations changed
 
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
@@ -642,6 +688,22 @@ def save_rule_trace(interpretation, folder: str='./'):
 
     output = Output(__timestamp)
     output.save_rule_trace(interpretation, folder)
+
+
+def get_rule_trace(interpretation) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Returns the trace of the program as 2 pandas dataframes (one for nodes, one for edges).
+    This includes every change that has occurred to the interpretation. If `atom_trace` was set to true
+    this gives us full explainability of why interpretations changed
+
+    :param interpretation: the output of `pyreason.reason()`, the final interpretation
+    :returns two pandas dataframes (nodes, edges) representing the changes that occurred during reasoning
+    """
+    global __timestamp, settings
+
+    assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to save rule trace'
+
+    output = Output(__timestamp)
+    return output.get_rule_trace(interpretation)
 
 
 def filter_and_sort_nodes(interpretation, labels: List[str], bound: interval.Interval=interval.closed(0,1), sort_by: str='lower', descending: bool=True):

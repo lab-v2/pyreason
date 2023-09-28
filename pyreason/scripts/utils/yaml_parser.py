@@ -21,12 +21,6 @@ def parse_rules(path):
         if values['target'] is not None:
             target = label.Label(values['target'])
 
-        # Set rule target criteria
-        target_criteria = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
-        if values['target_criteria'] is not None:
-            for tc in values['target_criteria']:
-                target_criteria.append((label.Label(tc[0]), interval.closed(tc[1], tc[2])))
-
         # Set delta t
         delta_t = numba.types.uint16(values['delta_t'])
 
@@ -37,7 +31,7 @@ def parse_rules(path):
         thresholds = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), numba.types.float64)))
 
         # Array to store clauses for nodes: node/edge, [subset]/[subset1, subset2], label, interval
-        neigh_criteria = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), label.label_type, interval.interval_type)))
+        neigh_criteria = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, label.label_type, numba.types.UniTuple(numba.types.string, 2), interval.interval_type)))
         if values['neigh_criteria'] is not None:
             # Loop through clauses
             for clause in values['neigh_criteria']:
@@ -47,7 +41,7 @@ def parse_rules(path):
                 subset = (clause[1][0], clause[1][0]) if clause_type=='node' else (clause[1][0], clause[1][1])
                 l = label.Label(clause[2])
                 bnd = interval.closed(clause[3][0], clause[3][1])
-                neigh_criteria.append((clause_type, subset, l, bnd))
+                neigh_criteria.append((clause_type, l, subset, bnd))
 
                 # Append threshold corresponding to clause if specified in rule, else use default of greater equal to 1
                 if len(clause)>4:
@@ -98,7 +92,8 @@ def parse_rules(path):
         if 'immediate' in values and values['immediate'] is not None:
             immediate_rule = True
 
-        r = rule.Rule(rule_name, target, target_criteria, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule)
+        # Dummy rule type. this file is deprecated
+        r = rule.Rule(rule_name, 'node', target, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule)
 
         # Insert to beginning of list if flag for immediate rule is true
         if immediate_rule:

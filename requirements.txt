@@ -4,3 +4,4 @@ pandas
 numba
 numpy
 memory_profiler
+pytest

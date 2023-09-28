@@ -1,33 +1,33 @@
 class Rule:
 
-    def __init__(self, name, target, target_criteria, delta, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule):
-        self._name = name
+    def __init__(self, rule_name, rule_type, target, delta, clauses, bnd, thresholds, ann_fn, weights, edges, static, immediate_rule):
+        self._rule_name = rule_name
+        self._type = rule_type
         self._target = target
-        self._target_criteria = target_criteria
         self._delta = delta
-        self._neigh_criteria = neigh_criteria
+        self._clauses = clauses
         self._bnd = bnd
         self._thresholds = thresholds
         self._ann_fn = ann_fn
-        self._ann_label = ann_label
         self._weights = weights
         self._edges = edges
+        self._static = static
         self._immediate_rule = immediate_rule
 
-    def get_name(self):
-        return self._name
-    
+    def get_rule_name(self):
+        return self._rule_name
+
+    def get_rule_type(self):
+        return self._type
+
     def get_target(self):
         return self._target
-
-    def get_target_criteria(self):
-        return self._target_criteria
 
     def get_delta(self):
         return self._delta
 
     def get_neigh_criteria(self):
-        return self._neigh_criteria
+        return self._clauses
     
     def get_bnd(self):
         return self._bnd
@@ -37,12 +37,12 @@ class Rule:
 
     def get_annotation_function(self):
         return self._ann_fn
-
-    def get_ann_label(self):
-        return self._ann_label
     
     def get_edges(self):
         return self._edges
+
+    def is_static(self):
+        return self._static
 
     def is_immediate_rule(self):
         return self._immediate_rule

@@ -14,18 +14,21 @@ class GraphmlParser:
 
     def parse_graph(self, graph_path, reverse):
         self.graph = nx.read_graphml(graph_path)
+        self.graph = nx.DiGraph(self.graph)
         if reverse:
             self.graph = self.graph.reverse()
 
         return self.graph
 
+    def load_graph(self, graph):
+        self.graph = nx.DiGraph(graph)
+        return self.graph
+
     def parse_graph_attributes(self, static_facts):
         facts_node = numba.typed.List.empty_list(fact_node.fact_type)
         facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
-        specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type,
-                                                      value_type=numba.types.ListType(numba.types.string))
-        specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(
-            numba.types.Tuple((numba.types.string, numba.types.string))))
+        specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
+        specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
         for n in self.graph.nodes:
             for key, value in self.graph.nodes[n].items():
                 # IF attribute is a float or int and it is less than 1, then make it a bound, else make it a label
@@ -54,8 +57,7 @@ class GraphmlParser:
                 if label.Label(l) not in specific_node_labels.keys():
                     specific_node_labels[label.Label(l)] = numba.typed.List.empty_list(numba.types.string)
                 specific_node_labels[label.Label(l)].append(n)
-                f = fact_node.Fact('graph-attribute-fact', n, label.Label(l), interval.closed(l_bnd, u_bnd), 0, 0,
-                                   static=static_facts)
+                f = fact_node.Fact('graph-attribute-fact', n, label.Label(l), interval.closed(l_bnd, u_bnd), 0, 0, static=static_facts)
                 facts_node.append(f)
         for e in self.graph.edges:
             for key, value in self.graph.edges[e].items():
@@ -83,11 +85,9 @@ class GraphmlParser:
                             pass
 
                 if label.Label(l) not in specific_edge_labels.keys():
-                    specific_edge_labels[label.Label(l)] = numba.typed.List.empty_list(
-                        numba.types.Tuple((numba.types.string, numba.types.string)))
+                    specific_edge_labels[label.Label(l)] = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.string)))
                 specific_edge_labels[label.Label(l)].append((e[0], e[1]))
-                f = fact_edge.Fact('graph-attribute-fact', (e[0], e[1]), label.Label(l), interval.closed(l_bnd, u_bnd),
-                                   0, 0, static=static_facts)
+                f = fact_edge.Fact('graph-attribute-fact', (e[0], e[1]), label.Label(l), interval.closed(l_bnd, u_bnd), 0, 0, static=static_facts)
                 facts_edge.append(f)
 
-        return facts_node, facts_edge, specific_node_labels, specific_edge_labels                
+        return facts_node, facts_edge, specific_node_labels, specific_edge_labels
