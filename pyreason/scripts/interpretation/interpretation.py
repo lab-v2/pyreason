@@ -676,6 +676,13 @@ class Interpretation:
 		# This function is useful for pyreason gym, called externally
 		_add_edge(edge[0], edge[1], self.neighbors, self.reverse_neighbors, self.nodes, self.edges, l, self.interpretations_node, self.interpretations_edge)
 
+	def add_node(self, node, labels):
+		# This function is useful for pyreason gym, called externally
+		if node not in self.nodes:
+			_add_node(node, self.neighbors, self.reverse_neighbors, self.nodes, self.interpretations_node)
+			for l in labels:
+				self.interpretations_node[node].world[label.Label(l)] = interval.closed(0, 1)
+
 	def delete_edge(self, edge):
 		# This function is useful for pyreason gym, called externally
 		_delete_edge(edge, self.neighbors, self.reverse_neighbors, self.edges, self.interpretations_edge)
@@ -1897,7 +1904,7 @@ def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, int
 			new_edge = True
 			interpretations_edge[edge].world[l] = interval.closed(0, 1)
 
-	return (edge, new_edge)
+	return edge, new_edge
 
 
 @numba.njit(cache=True)
