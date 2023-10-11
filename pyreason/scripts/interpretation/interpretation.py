@@ -78,8 +78,10 @@ class Interpretation:
 		self.rule_trace_edge = numba.typed.List.empty_list(numba.types.Tuple((numba.types.uint16, numba.types.uint16, edge_type, label.label_type, interval.interval_type)))
 
 		# Nodes and edges of the graph
-		self.nodes = numba.typed.List(self.graph.nodes())
-		self.edges = numba.typed.List(self.graph.edges())
+		self.nodes = numba.typed.List.empty_list(node_type)
+		self.edges = numba.typed.List.empty_list(edge_type)
+		self.nodes.extend(numba.typed.List(self.graph.nodes()))
+		self.edges.extend(numba.typed.List(self.graph.edges()))
 
 		# Make sure they are correct type
 		if len(self.available_labels_node)==0:
@@ -91,8 +93,8 @@ class Interpretation:
 		else:
 			self.available_labels_edge = numba.typed.List(self.available_labels_edge)
 
-		self.interpretations_node = self._init_interpretations_node(numba.typed.List(self.graph.nodes()), self.available_labels_node, self.specific_node_labels)
-		self.interpretations_edge = self._init_interpretations_edge(numba.typed.List(self.graph.edges()), self.available_labels_edge, self.specific_edge_labels)
+		self.interpretations_node = self._init_interpretations_node(self.nodes, self.available_labels_node, self.specific_node_labels)
+		self.interpretations_edge = self._init_interpretations_edge(self.edges, self.available_labels_edge, self.specific_edge_labels)
 
 		# Setup graph neighbors and reverse neighbors
 		self.neighbors = numba.typed.Dict.empty(key_type=node_type, value_type=numba.types.ListType(node_type))
@@ -686,6 +688,10 @@ class Interpretation:
 	def delete_edge(self, edge):
 		# This function is useful for pyreason gym, called externally
 		_delete_edge(edge, self.neighbors, self.reverse_neighbors, self.edges, self.interpretations_edge)
+
+	def delete_node(self, node):
+		# This function is useful for pyreason gym, called externally
+		_delete_node(node, self.neighbors, self.reverse_neighbors, self.nodes, self.interpretations_node)
 
 	def get_interpretation_dict(self):
 		# This function can be called externally to retrieve a dict of the interpretation values
@@ -1926,6 +1932,22 @@ def _delete_edge(edge, neighbors, reverse_neighbors, edges, interpretations_edge
 	del interpretations_edge[edge]
 	neighbors[source].remove(target)
 	reverse_neighbors[target].remove(source)
+
+
+@numba.njit(cache=True)
+def _delete_node(node, neighbors, reverse_neighbors, nodes, interpretations_node):
+	nodes.remove(node)
+	del interpretations_node[node]
+	del neighbors[node]
+	del reverse_neighbors[node]
+
+	# Remove all occurrences of node in neighbors
+	for n in neighbors.keys():
+		if node in neighbors[n]:
+			neighbors[n].remove(node)
+	for n in reverse_neighbors.keys():
+		if node in reverse_neighbors[n]:
+			reverse_neighbors[n].remove(node)
 
 
 @numba.njit(cache=True)
