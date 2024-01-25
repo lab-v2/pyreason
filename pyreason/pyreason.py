@@ -39,6 +39,7 @@ class _Settings:
         self.__static_graph_facts = True
         self.__store_interpretation_changes = True
         self.__parallel_computing = False
+        self.__update_mode = 'intersection'
 
     @property
     def verbose(self) -> bool:
@@ -156,6 +157,14 @@ class _Settings:
         :return: bool
         """
         return self.__parallel_computing
+
+    @property
+    def update_mode(self) -> str:
+        """Returns the way interpretations are going to be updated. This could be "intersection" or "override"
+
+        :return: str
+        """
+        return self.__update_mode
 
     @verbose.setter
     def verbose(self, value: bool) -> None:
@@ -331,6 +340,19 @@ class _Settings:
         else:
             self.__parallel_computing = value
 
+    @update_mode.setter
+    def update_mode(self, value: str) -> None:
+        """The way interpretations are going to be updated. This could be "intersection" or "override". Default is
+         'intersection'
+
+        :param value: "intersection" or "override"
+        :raises TypeError: If not str raise error
+        """
+        if not isinstance(value, str):
+            raise TypeError('value has to be a str')
+        else:
+            self.__update_mode = value
+
 
 # VARIABLES
 __graph = None
@@ -462,11 +484,9 @@ def load_inconsistent_predicate_list(path: str) -> None:
 def add_rule(rule_text: str, name: str, infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False) -> None:
     """Add a rule to pyreason from text format. This format is not as modular as the YAML format.
     1. It is not possible to specify thresholds. Threshold is greater than or equal to 1 by default
-    2. It is not possible to have an annotation function.
-    3. It is not possible to have weights for different clauses. Weights are 1 by default with bias 0
+    2. It is not possible to have weights for different clauses. Weights are 1 by default with bias 0
     TODO: Add threshold class where we can pass this as a parameter
     TODO: Add weights as a parameter
-    TODO: Add annotation function and bounds as a parameter
 
     Example:
     `'pred1(x,y) : [0.2, 1] <- pred2(a, b) : [1,1], pred3(b, c)'`
@@ -642,7 +662,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     annotation_functions = tuple(__annotation_functions)
 
     # Setup logical program
-    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing)
+    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode)
     __program.available_labels_node = __node_labels
     __program.available_labels_edge = __edge_labels
     __program.specific_node_labels = __specific_node_labels
