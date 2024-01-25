@@ -15,7 +15,7 @@ with open(cache_status_path) as file:
 
 if not cache_status['initialized']:
     print('Imported PyReason for the first time. Initializing ... this will take a minute')
-    graph_path = os.path.join(package_path, 'tests', 'friends_graph.graphml')
+    graph_path = os.path.join(package_path, os.pardir, 'tests', 'friends_graph.graphml')
 
     settings.verbose = False
     load_graphml(graph_path)
