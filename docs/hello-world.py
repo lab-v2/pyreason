@@ -32,7 +32,7 @@ pr.settings.atom_trace = True  # This allows us to view all the atoms that have 
 # Load all rules and the graph into pyreason
 # Someone is "popular" if they have a friend who is popular and they both own the same pet
 pr.load_graph(g)
-pr.add_rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule')
+pr.add_rule(pr.Rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule'))
 pr.add_fact(pr.Fact('popular-fact', 'Mary', 'popular', [1, 1], 0, 2))
 
 
