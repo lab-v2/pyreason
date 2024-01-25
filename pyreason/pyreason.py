@@ -3,7 +3,6 @@ import networkx as nx
 import numba
 import time
 import sys
-import warnings
 import pandas as pd
 import memory_profiler as mp
 from typing import List, Type, Callable, Tuple
@@ -441,37 +440,6 @@ def load_graph(graph: nx.DiGraph) -> None:
         __specific_graph_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
 
 
-def load_labels(path: str) -> None:
-    """Load labels from YAML file path into program
-
-    :param path: Path for the YAML labels file
-    """
-    global __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels
-    __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels = yaml_parser.parse_labels(path)
-
-
-def load_facts(path: str) -> None:
-    """Load facts from YAML file path into program
-
-    :param path: Path for the YAML facts file
-    """
-    global __node_facts, __edge_facts, settings
-    __node_facts, __edge_facts = yaml_parser.parse_facts(path, settings.reverse_digraph)
-
-
-def load_rules(path: str) -> None:
-    """Load rules from YAML file path into program
-
-    :param path: Path for the YAML rules file
-    """
-    global __rules
-
-    if __rules is None:
-        __rules = yaml_parser.parse_rules(path)
-    else:
-        __rules.extend(yaml_parser.parse_rules(path))
-
-
 def load_inconsistent_predicate_list(path: str) -> None:
     """Load IPL from YAML file path into program
 
@@ -614,24 +582,17 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
 
     # Check variables that are highly recommended. Warnings
     if __node_labels is None and __edge_labels is None:
-        if settings.verbose:
-            warnings.warn('Labels yaml file has not been loaded. Use `load_labels`. Only graph attributes will be used as labels\n')
         __node_labels = numba.typed.List.empty_list(label.label_type)
         __edge_labels = numba.typed.List.empty_list(label.label_type)
         __specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
         __specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
 
-    if __node_facts is None and __edge_facts is None:
-        if settings.verbose:
-            warnings.warn('Facts have not been loaded. Use `add_fact` or `load_facts`. Only graph attributes will be used as facts\n')
     if __node_facts is None:
         __node_facts = numba.typed.List.empty_list(fact_node.fact_type)
     if __edge_facts is None:
         __edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
 
     if __ipl is None:
-        if settings.verbose:
-            warnings.warn('Inconsistent Predicate List yaml file has not been loaded. Use `load_ipl`. Loading IPL is optional\n')
         __ipl = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, label.label_type)))
 
     # If graph attribute parsing, add results to existing specific labels and facts
