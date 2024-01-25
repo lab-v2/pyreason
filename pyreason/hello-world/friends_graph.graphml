@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="owns" for="edge" attr.name="owns" attr.type="long" />
+  <key id="Friends" for="edge" attr.name="Friends" attr.type="long" />
+  <graph edgedefault="directed">
+    <node id="John" />
+    <node id="Mary" />
+    <node id="Justin" />
+    <node id="Dog" />
+    <node id="Cat" />
+    <edge source="John" target="Mary">
+      <data key="Friends">1</data>
+    </edge>
+    <edge source="John" target="Justin">
+      <data key="Friends">1</data>
+    </edge>
+    <edge source="John" target="Dog">
+      <data key="owns">1</data>
+    </edge>
+    <edge source="Mary" target="Cat">
+      <data key="owns">1</data>
+    </edge>
+    <edge source="Justin" target="Mary">
+      <data key="Friends">1</data>
+    </edge>
+    <edge source="Justin" target="Cat">
+      <data key="owns">1</data>
+    </edge>
+    <edge source="Justin" target="Dog">
+      <data key="owns">1</data>
+    </edge>
+  </graph>
+</graphml>
