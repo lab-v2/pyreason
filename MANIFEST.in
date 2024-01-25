@@ -1,2 +1,3 @@
 include pyreason/examples/hello-world/*
 include pyreason/.cache_status.yaml
+include tests/*
