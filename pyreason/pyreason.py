@@ -16,6 +16,7 @@ import pyreason.scripts.utils.rule_parser as rule_parser
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.rule_type as rule
 from pyreason.scripts.facts.fact import Fact
+from pyreason.scripts.rules.rule import Rule
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
@@ -449,29 +450,15 @@ def load_inconsistent_predicate_list(path: str) -> None:
     __ipl = yaml_parser.parse_ipl(path)
 
 
-def add_rule(rule_text: str, name: str, infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False) -> None:
+def add_rule(pr_rule: Rule) -> None:
     """Add a rule to pyreason from text format. This format is not as modular as the YAML format.
-    1. It is not possible to specify thresholds. Threshold is greater than or equal to 1 by default
-    2. It is not possible to have weights for different clauses. Weights are 1 by default with bias 0
-    TODO: Add threshold class where we can pass this as a parameter
-    TODO: Add weights as a parameter
-
-    Example:
-    `'pred1(x,y) : [0.2, 1] <- pred2(a, b) : [1,1], pred3(b, c)'`
-
-    :param rule_text: The rule in text format
-    :param name: The name of the rule. This will appear in the rule trace
-    :param infer_edges: Whether to infer new edges after edge rule fires
-    :param set_static: Whether to set the atom in the head as static if the rule fires. The bounds will no longer change
-    :param immediate_rule: Whether the rule is immediate. Immediate rules check for more applicable rules immediately after being applied
     """
     global __rules
 
-    r = rule_parser.parse_rule(rule_text, name, infer_edges, set_static, immediate_rule)
     # Add to collection of rules
     if __rules is None:
         __rules = numba.typed.List.empty_list(rule.rule_type)
-    __rules.append(r)
+    __rules.append(pr_rule.rule)
 
 
 def add_rules_from_file(file_path: str, infer_edges: bool = False) -> None:
@@ -488,7 +475,7 @@ def add_rules_from_file(file_path: str, infer_edges: bool = False) -> None:
 
     rule_offset = 0 if __rules is None else len(__rules)
     for i, r in enumerate(rules):
-        add_rule(r, f'rule_{i+rule_offset}', infer_edges)
+        add_rule(Rule(r, f'rule_{i+rule_offset}', infer_edges))
 
 
 def add_fact(pyreason_fact: Fact) -> None:
@@ -578,7 +565,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     if __graph is None:
         raise Exception('Graph not loaded. Use `load_graph` to load the graphml file')
     if __rules is None:
-        raise Exception('Rules not loaded. Use `load_rules` to load the rules yaml file')
+        raise Exception('There are no rules, use `add_rule` or `add_rules_from_file`')
 
     # Check variables that are highly recommended. Warnings
     if __node_labels is None and __edge_labels is None:

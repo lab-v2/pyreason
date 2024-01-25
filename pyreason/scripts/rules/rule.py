@@ -1,48 +1,22 @@
+import pyreason.scripts.utils.rule_parser as rule_parser
+
+
 class Rule:
+    """
+    Example text:
+            `'pred1(x,y) : [0.2, 1] <- pred2(a, b) : [1,1], pred3(b, c)'`
 
-    def __init__(self, rule_name, rule_type, target, delta, clauses, bnd, thresholds, ann_fn, weights, edges, static, immediate_rule):
-        self._rule_name = rule_name
-        self._type = rule_type
-        self._target = target
-        self._delta = delta
-        self._clauses = clauses
-        self._bnd = bnd
-        self._thresholds = thresholds
-        self._ann_fn = ann_fn
-        self._weights = weights
-        self._edges = edges
-        self._static = static
-        self._immediate_rule = immediate_rule
-
-    def get_rule_name(self):
-        return self._rule_name
-
-    def get_rule_type(self):
-        return self._type
-
-    def get_target(self):
-        return self._target
-
-    def get_delta(self):
-        return self._delta
-
-    def get_neigh_criteria(self):
-        return self._clauses
-    
-    def get_bnd(self):
-        return self._bnd
-
-    def get_thresholds(self):
-        return self._thresholds 
-
-    def get_annotation_function(self):
-        return self._ann_fn
-    
-    def get_edges(self):
-        return self._edges
-
-    def is_static(self):
-        return self._static
-
-    def is_immediate_rule(self):
-        return self._immediate_rule
+    1. It is not possible to specify thresholds. Threshold is greater than or equal to 1 by default
+    2. It is not possible to have weights for different clauses. Weights are 1 by default with bias 0
+    TODO: Add threshold class where we can pass this as a parameter
+    TODO: Add weights as a parameter
+    """
+    def __init__(self, rule_text: str, name: str, infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False):
+        """
+        :param rule_text: The rule in text format
+        :param name: The name of the rule. This will appear in the rule trace
+        :param infer_edges: Whether to infer new edges after edge rule fires
+        :param set_static: Whether to set the atom in the head as static if the rule fires. The bounds will no longer change
+        :param immediate_rule: Whether the rule is immediate. Immediate rules check for more applicable rules immediately after being applied
+        """
+        self.rule = rule_parser.parse_rule(rule_text, name, infer_edges, set_static, immediate_rule)

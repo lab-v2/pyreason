@@ -1,6 +1,6 @@
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
-from pyreason.scripts.rules.rule import Rule
+from pyreason.scripts.rules.rule_internal import Rule
 
 from numba import types
 from numba.extending import typeof_impl
