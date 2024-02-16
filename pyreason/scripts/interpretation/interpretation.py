@@ -582,7 +582,10 @@ class Interpretation:
 								# If there is an edge to add or the predicate doesn't exist or the interpretation is not static
 								if len(edges_to_add[0]) > 0 or rule.get_target() not in interpretations_node[n].world or not interpretations_node[n].world[rule.get_target()].is_static():
 									bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
-									bnd = interval.closed(bnd[0], bnd[1])
+									# Bound annotations in between 0 and 1
+									bnd_l = min(max(bnd[0], 0), 1)
+									bnd_u = min(max(bnd[1], 0), 1)
+									bnd = interval.closed(bnd_l, bnd_u)
 									max_rules_time = max(max_rules_time, t + delta_t)
 									edges_to_be_added_node_rule.append(edges_to_add)
 									rules_to_be_applied_node.append((numba.types.uint16(t + delta_t), n, rule.get_target(), bnd, immediate_rule, rule.is_static_rule()))
@@ -590,7 +593,9 @@ class Interpretation:
 										rules_to_be_applied_node_trace.append((qualified_nodes, qualified_edges, rule.get_name()))
 
 									# We apply a rule on a node/edge only once in each timestep to prevent it from being added to the to_be_added list continuously (this will improve performance
-									nodes_to_skip[i].append(n)
+									# It's possible to have an annotation function that keeps changing the value of a node/edge. Do this only for delta_t>0
+									if delta_t != 0:
+										nodes_to_skip[i].append(n)
 
 									# Handle loop parameters for the next (maybe) fp operation
 									# If it is a t=0 rule or an immediate rule we want to go back for another fp operation to check for new rules that may fire
@@ -614,7 +619,10 @@ class Interpretation:
 								# If there is an edge to add or the predicate doesn't exist or the interpretation is not static
 								if len(edges_to_add[0]) > 0 or rule.get_target() not in interpretations_edge[e].world or not interpretations_edge[e].world[rule.get_target()].is_static():
 									bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
-									bnd = interval.closed(bnd[0], bnd[1])
+									# Bound annotations in between 0 and 1
+									bnd_l = min(max(bnd[0], 0), 1)
+									bnd_u = min(max(bnd[1], 0), 1)
+									bnd = interval.closed(bnd_l, bnd_u)
 									max_rules_time = max(max_rules_time, t+delta_t)
 									edges_to_be_added_edge_rule.append(edges_to_add)
 									rules_to_be_applied_edge.append((numba.types.uint16(t+delta_t), e, rule.get_target(), bnd, immediate_rule, rule.is_static_rule()))
@@ -622,7 +630,9 @@ class Interpretation:
 										rules_to_be_applied_edge_trace.append((qualified_nodes, qualified_edges, rule.get_name()))
 
 									# We apply a rule on a node/edge only once in each timestep to prevent it from being added to the to_be_added list continuously (this will improve performance
-									edges_to_skip[i].append(e)
+									# It's possible to have an annotation function that keeps changing the value of a node/edge. Do this only for delta_t>0
+									if delta_t != 0:
+										edges_to_skip[i].append(e)
 
 									# Handle loop parameters for the next (maybe) fp operation
 									# If it is a t=0 rule or an immediate rule we want to go back for another fp operation to check for new rules that may fire
