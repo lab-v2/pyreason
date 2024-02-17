@@ -41,6 +41,10 @@ class _Settings:
         self.__parallel_computing = False
         self.__update_mode = 'intersection'
 
+        self.__ad_hoc_grounding = False
+        self.__resolution_levels = 0
+        self.__step_size = 1
+
     @property
     def verbose(self) -> bool:
         """Returns whether verbose mode is on or not. Default is True
@@ -165,6 +169,28 @@ class _Settings:
         :return: str
         """
         return self.__update_mode
+
+
+    @property
+    def ad_hoc_grounding(self) -> bool:
+        """Returns whether ground atoms as and when we need them. This can be used for specific cases. Default is off
+        :return: bool
+        """
+        return self.__ad_hoc_grounding
+
+    @property
+    def resolution_levels(self) -> int:
+        """Returns the resolution level of the space, how many levels of quadrants there are. Used along side ad-hoc grounding
+        :return: int
+        """
+        return self.__resolution_levels
+
+    @property
+    def step_size(self) -> int:
+        """Returns the step size for grounding neighbors. Default is 1 (adjacent neighbors). Used along side ad-hoc grounding
+        :return: int
+        """
+        return self.__step_size
 
     @verbose.setter
     def verbose(self, value: bool) -> None:
@@ -352,6 +378,39 @@ class _Settings:
             raise TypeError('value has to be a str')
         else:
             self.__update_mode = value
+
+    @ad_hoc_grounding.setter
+    def ad_hoc_grounding(self, value: bool) -> None:
+        """Whether to ground atoms as and when we need them. This can be used for specific cases. Default is off
+        :param value: Whether to ground atoms as and when we need them. This can be used for specific cases. Default is off
+        :raises TypeError: If not bool raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('value has to be a bool')
+        else:
+            self.__ad_hoc_grounding = value
+
+    @resolution_levels.setter
+    def resolution_levels(self, value: int) -> None:
+        """The resolution level of the space, how many levels of quadrants there are. Used along side ad-hoc grounding. Default is 0
+        :param value: Resolution level, number of hierarchical quadrants
+        :raises TypeError: If not int raise error
+        """
+        if not isinstance(value, int):
+            raise TypeError('value has to be a int')
+        else:
+            self.__resolution_levels = value
+
+    @step_size.setter
+    def step_size(self, value: int) -> None:
+        """The step size for grounding neighbors. Default is 1 (adjacent neighbors). Used along side ad-hoc grounding
+        :param value: Step size
+        :raises TypeError: If not int raise error
+        """
+        if not isinstance(value, int):
+            raise TypeError('value has to be a int')
+        else:
+            self.__step_size = value
 
 
 # VARIABLES
@@ -610,7 +669,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     annotation_functions = tuple(__annotation_functions)
 
     # Setup logical program
-    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode)
+    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.ad_hoc_grounding, settings.resolution_levels, settings.step_size)
     __program.available_labels_node = __node_labels
     __program.available_labels_edge = __edge_labels
     __program.specific_node_labels = __specific_node_labels

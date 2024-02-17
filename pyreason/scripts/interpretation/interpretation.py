@@ -44,7 +44,7 @@ class Interpretation:
 	specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(node_type))
 	specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(edge_type))
 
-	def __init__(self, graph, ipl, annotation_functions, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, update_mode):
+	def __init__(self, graph, ipl, annotation_functions, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, ad_hoc_grounding, resolution_levels, step_size, store_interpretation_changes, update_mode):
 		self.graph = graph
 		self.ipl = ipl
 		self.annotation_functions = annotation_functions
@@ -55,6 +55,10 @@ class Interpretation:
 		self.inconsistency_check = inconsistency_check
 		self.store_interpretation_changes = store_interpretation_changes
 		self.update_mode = update_mode
+
+		self.ad_hoc_grounding = ad_hoc_grounding
+		self.resolution_levels = resolution_levels
+		self.step_size = step_size
 
 		# For reasoning and reasoning again (contains previous time and previous fp operation cnt)
 		self.time = 0
@@ -105,6 +109,12 @@ class Interpretation:
 			self.neighbors[n] = l
 
 		self.reverse_neighbors = self._init_reverse_neighbors(self.neighbors)
+
+		# Labels for ad hoc grounding here for now, not working inside njit function. To be removed
+		# Get labels for the new nodes: loc-l1, loc-l2 ...
+		self.ad_hoc_quadrant_labels = numba.typed.List.empty_list(label.label_type)
+		for i in range(1, self.resolution_levels + 1):
+			self.ad_hoc_quadrant_labels.append(label.Label(f'loc_l{i}'))
 
 	@staticmethod
 	@numba.njit(cache=True)
@@ -193,7 +203,7 @@ class Interpretation:
 		return max_time
 
 	def _start_fp(self, rules, max_facts_time, verbose, again):
-		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.canonical, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, max_facts_time, self.annotation_functions, self._convergence_mode, self._convergence_delta, verbose, again)
+		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.canonical, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, max_facts_time, self.annotation_functions, self.ad_hoc_grounding, self.resolution_levels, self.step_size, self.ad_hoc_quadrant_labels, self._convergence_mode, self._convergence_delta, verbose, again)
 		self.time = t - 1
 		# If we need to reason again, store the next timestep to start from
 		self.prev_reasoning_data[0] = t
@@ -203,7 +213,7 @@ class Interpretation:
 
 	@staticmethod
 	@numba.njit(cache=True)
-	def reason(interpretations_node, interpretations_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, update_mode, max_facts_time, annotation_functions, convergence_mode, convergence_delta, verbose, again):
+	def reason(interpretations_node, interpretations_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, update_mode, max_facts_time, annotation_functions, ad_hoc_grounding, resolution_levels, step_size, ad_hoc_quadrant_labels, convergence_mode, convergence_delta, verbose, again):
 		t = prev_reasoning_data[0]
 		fp_cnt = prev_reasoning_data[1]
 		max_rules_time = 0
@@ -377,9 +387,9 @@ class Interpretation:
 			while in_loop:
 				# This will become true only if delta_t = 0 for some rule, otherwise we go to the next timestep
 				in_loop = False
-
 				# Apply the rules that need to be applied at this timestep
 				# Nodes
+				print(edges_to_be_added_node_rule)
 				rules_to_remove_idx.clear()
 				for idx, i in enumerate(rules_to_be_applied_node):
 					# If we are coming here from an immediate rule firing with delta_t=0 we have to apply that one rule. Which was just added to the list to_be_applied
@@ -393,6 +403,8 @@ class Interpretation:
 						edges_added, changes = _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge)
 						changes_cnt += changes
 
+						# print(edge_l)
+						# print('-------------------------------------------------------')
 						# Update bound for newly added edges. Use bnd to update all edges if label is specified, else use bnd to update normally
 						if edge_l.value!='':
 							for e in edges_added:
@@ -421,6 +433,45 @@ class Interpretation:
 											bound_delta = max(bound_delta, changes)
 										else:
 											changes_cnt += changes
+
+								# Ad-hoc-grounding (very specific version, make more general later)
+								if ad_hoc_grounding:
+									# Up/Down/Left/Right Locations of target node. Target node should be
+									target_node = e[1]
+									up_node = _search(target_node, 'u', step_size)
+									down_node = _search(target_node, 'd', step_size)
+									left_node = _search(target_node, 'l', step_size)
+									right_node = _search(target_node, 'r', step_size)
+									neigh_nodes = numba.typed.List(
+										[up_node, down_node, left_node, right_node])
+									directions = numba.typed.List(
+										[label.Label('up'), label.Label('down'), label.Label('left'),
+										 label.Label('right')])
+
+									# Ideally labels should be defined here but there is an issue with constructing a label indide a jitted function
+									# Add edges to new nodes and set
+									for d, n in zip(directions, neigh_nodes):
+										if n != 'invalid':
+											edge, changes = _add_edge(target_node, n, neighbors, reverse_neighbors, nodes,
+																	  edges, d, interpretations_node,
+																	  interpretations_edge,
+																	  ad_hoc_quadrant_labels)
+
+											# Set the correct bounds for the labels of newly added edges (change to update_edge later?)
+											for l, pos in zip(ad_hoc_quadrant_labels, n):
+												interpretations_node[n].world[l].set_lower_upper(
+													str_to_int(pos) / 10, 1)
+
+											# Set blocked to false if it is not in node attributes
+											if label.Label('blocked') not in interpretations_node[n].world:
+												interpretations_node[n].world[
+													label.Label('blocked')] = interval.closed(0, 0)
+
+											# Set up/down/left/right edge bound to [1,1]
+											interpretations_edge[edge].world[d].set_lower_upper(1, 1)
+											# print(interpretations_edge)
+											# print("=====================================")
+
 						else:
 							# Check for inconsistencies
 							if check_consistent_node(interpretations_node, comp, (l, bnd)):
@@ -1882,22 +1933,19 @@ def resolve_inconsistency_edge(interpretations, comp, na, ipl, t_cnt, fp_cnt, at
 
 
 @numba.njit(cache=True)
-def _add_node(node, neighbors, reverse_neighbors, nodes, interpretations_node):
-	nodes.append(node)
-	neighbors[node] = numba.typed.List.empty_list(node_type)
-	reverse_neighbors[node] = numba.typed.List.empty_list(node_type)
-	interpretations_node[node] = world.World(numba.typed.List.empty_list(label.label_type))
+def _add_node(node, neighbors, reverse_neighbors, nodes, interpretations_node, labels):
+	if node not in nodes:
+		nodes.append(node)
+		neighbors[node] = numba.typed.List.empty_list(node_type)
+		reverse_neighbors[node] = numba.typed.List.empty_list(node_type)
+		interpretations_node[node] = world.World(labels)
 
 
 @numba.njit(cache=True)
-def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge):
-	# If not a node, add to list of nodes and initialize neighbors
-	if source not in nodes:
-		_add_node(source, neighbors, reverse_neighbors, nodes, interpretations_node)
-
-	if target not in nodes:
-		_add_node(target, neighbors, reverse_neighbors, nodes, interpretations_node)
-
+def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge, node_labels):
+	# Add nodes if necessary
+	_add_node(source, neighbors, reverse_neighbors, nodes, interpretations_node, node_labels)
+	_add_node(target, neighbors, reverse_neighbors, nodes, interpretations_node, node_labels)
 	# Make sure edge doesn't already exist
 	# Make sure, if l=='', not to add the label
 	# Make sure, if edge exists, that we don't override the l label if it exists
@@ -1926,7 +1974,7 @@ def _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, l, 
 	edges_added = numba.typed.List.empty_list(edge_type)
 	for source in sources:
 		for target in targets:
-			edge, new_edge = _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge)
+			edge, new_edge = _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge, numba.typed.List.empty_list(label.label_type))
 			edges_added.append(edge)
 			changes = changes+1 if new_edge else changes
 	return edges_added, changes
@@ -1990,3 +2038,109 @@ def str_to_int(value):
 		result += (ord(v) - 48) * (10 ** (final_index - i))
 	result = -result if negative else result
 	return result
+
+@numba.njit(cache=True)
+def _search(location, direction, count=1):
+    quadrants = list(location)
+    new_loc = []
+    carry = 1
+    if direction == 'u':
+        for idx, quad in reverse(list(enumerate(quadrants))):
+            if carry:
+                if quad == '1':
+                    if idx == 0:
+                        return 'invalid'
+                    new_loc.append('4')
+                    carry = 1
+                elif quad == '2':
+                    if idx == 0:
+                        return 'invalid'
+                    new_loc.append('3')
+                    carry = 1
+                elif quad == '3':
+                    new_loc.append('2')
+                    carry = 0
+                elif quad == '4':
+                    new_loc.append('1')
+                    carry = 0
+            else:
+                new_loc.append(quad)
+    elif direction == 'l':
+        for idx, quad in reverse(list(enumerate(quadrants))):
+            if carry:
+                if quad == '1':
+                    new_loc.append('2')
+                    carry = 0
+                elif quad == '2':
+                    if idx == 0:
+                        return 'invalid'
+                    new_loc.append('1')
+                    carry = 1
+                elif quad == '3':
+                    if idx == 0:
+                        return 'invalid'
+                    new_loc.append('4')
+                    carry = 1
+                elif quad == '4':
+                    new_loc.append('3')
+                    carry = 0
+            else:
+                new_loc.append(quad)
+    elif direction == 'd':
+        for idx, quad in reverse(list(enumerate(quadrants))):
+            if carry:
+                if quad == '1':
+                    new_loc.append('4')
+                    carry = 0
+                elif quad == '2':
+                    new_loc.append('3')
+                    carry = 0
+                elif quad == '3':
+                    if idx == 0:
+                        return 'invalid'
+                    new_loc.append('2')
+                    carry = 1
+                elif quad == '4':
+                    if idx == 0:
+                        return 'invalid'
+                    new_loc.append('1')
+                    carry = 1
+            else:
+                new_loc.append(quad)
+    elif direction == 'r':
+        for idx, quad in reverse(list(enumerate(quadrants))):
+            if carry:
+                if quad == '1':
+                    if idx == 0:
+                        return 'invalid'
+                    new_loc.append('2')
+                    carry = 1
+                elif quad == '2':
+                    new_loc.append('1')
+                    carry = 0
+                elif quad == '3':
+                    new_loc.append('4')
+                    carry = 0
+                elif quad == '4':
+                    if idx == 0:
+                        return 'invalid'
+                    new_loc.append('3')
+                    carry = 1
+            else:
+                new_loc.append(quad)
+    if count > 1:
+        return _search(''.join(reverse(new_loc)), direction, count-1)
+    else:
+        return ''.join(reverse(new_loc))
+
+@numba.njit(cache=True)
+def reverse(lst):
+    new_lst = lst[::-1]
+    return new_lst
+
+@numba.njit(cache=True)
+def str_to_int(s):
+    final_index, result = len(s) - 1, 0
+    for i,v in enumerate(s):
+        result += (ord(v) - 48) * (10 ** (final_index - i))
+    return result

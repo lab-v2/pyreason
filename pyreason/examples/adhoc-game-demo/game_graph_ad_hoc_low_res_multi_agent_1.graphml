@@ -1,0 +1,164 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="team" for="edge" attr.name="team" attr.type="long" />
+  <key id="right" for="edge" attr.name="right" attr.type="long" />
+  <key id="down" for="edge" attr.name="down" attr.type="long" />
+  <key id="left" for="edge" attr.name="left" attr.type="long" />
+  <key id="up" for="edge" attr.name="up" attr.type="long" />
+  <key id="atLoc" for="edge" attr.name="atLoc" attr.type="long" />
+  <key id="teamBlue" for="node" attr.name="teamBlue" attr.type="long" />
+  <key id="teamRed" for="node" attr.name="teamRed" attr.type="long" />
+  <key id="moveRight" for="node" attr.name="moveRight" attr.type="long" />
+  <key id="moveLeft" for="node" attr.name="moveLeft" attr.type="long" />
+  <key id="moveDown" for="node" attr.name="moveDown" attr.type="long" />
+  <key id="moveUp" for="node" attr.name="moveUp" attr.type="long" />
+  <key id="health" for="node" attr.name="health" attr.type="long" />
+  <key id="isMountain" for="node" attr.name="isMountain" attr.type="long" />
+  <key id="loc_l3" for="node" attr.name="loc_l3" attr.type="double" />
+  <key id="loc_l2" for="node" attr.name="loc_l2" attr.type="double" />
+  <key id="loc_l1" for="node" attr.name="loc_l1" attr.type="double" />
+  <key id="blocked" for="node" attr.name="blocked" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="red-base" />
+    <node id="blue-base" />
+    <node id="444">
+      <data key="blocked">0,0</data>
+      <data key="loc_l1">0.4</data>
+      <data key="loc_l2">0.4</data>
+      <data key="loc_l3">0.4</data>
+    </node>
+    <node id="222">
+      <data key="blocked">0,0</data>
+      <data key="loc_l1">0.2</data>
+      <data key="loc_l2">0.2</data>
+      <data key="loc_l3">0.2</data>
+    </node>
+    <node id="mountain">
+      <data key="isMountain">1</data>
+    </node>
+    <node id="132">
+      <data key="blocked">0,0</data>
+      <data key="loc_l1">0.1</data>
+      <data key="loc_l2">0.3</data>
+      <data key="loc_l3">0.2</data>
+    </node>
+    <node id="243">
+      <data key="blocked">0,0</data>
+      <data key="loc_l1">0.2</data>
+      <data key="loc_l2">0.4</data>
+      <data key="loc_l3">0.3</data>
+    </node>
+    <node id="244">
+      <data key="blocked">0,0</data>
+      <data key="loc_l1">0.2</data>
+      <data key="loc_l2">0.4</data>
+      <data key="loc_l3">0.4</data>
+    </node>
+    <node id="133">
+      <data key="blocked">0,0</data>
+      <data key="loc_l1">0.1</data>
+      <data key="loc_l2">0.3</data>
+      <data key="loc_l3">0.3</data>
+    </node>
+    <node id="312">
+      <data key="blocked">0,0</data>
+      <data key="loc_l1">0.3</data>
+      <data key="loc_l2">0.1</data>
+      <data key="loc_l3">0.2</data>
+    </node>
+    <node id="311">
+      <data key="blocked">0,0</data>
+      <data key="loc_l1">0.3</data>
+      <data key="loc_l2">0.1</data>
+      <data key="loc_l3">0.1</data>
+    </node>
+    <node id="red-soldier-1">
+      <data key="health">1</data>
+      <data key="moveUp">0</data>
+      <data key="moveDown">0</data>
+      <data key="moveLeft">0</data>
+      <data key="moveRight">0</data>
+      <data key="teamRed">1</data>
+    </node>
+    <node id="blue-soldier-1">
+      <data key="health">1</data>
+      <data key="moveUp">0</data>
+      <data key="moveDown">0</data>
+      <data key="moveLeft">0</data>
+      <data key="moveRight">0</data>
+      <data key="teamBlue">1</data>
+    </node>
+    <node id="441">
+      <data key="blocked">0,0</data>
+      <data key="loc_l1">0.4</data>
+      <data key="loc_l2">0.4</data>
+      <data key="loc_l3">0.1</data>
+    </node>
+    <node id="223">
+      <data key="blocked">0,0</data>
+      <data key="loc_l1">0.2</data>
+      <data key="loc_l2">0.2</data>
+      <data key="loc_l3">0.3</data>
+    </node>
+    <node id="443">
+      <data key="blocked">0,0</data>
+      <data key="loc_l1">0.4</data>
+      <data key="loc_l2">0.4</data>
+      <data key="loc_l3">0.3</data>
+    </node>
+    <node id="221">
+      <data key="blocked">0,0</data>
+      <data key="loc_l1">0.2</data>
+      <data key="loc_l2">0.2</data>
+      <data key="loc_l3">0.1</data>
+    </node>
+    <edge source="red-base" target="444">
+      <data key="atLoc">1</data>
+    </edge>
+    <edge source="blue-base" target="222">
+      <data key="atLoc">1</data>
+    </edge>
+    <edge source="444" target="441">
+      <data key="up">1</data>
+    </edge>
+    <edge source="444" target="443">
+      <data key="left">1</data>
+    </edge>
+    <edge source="222" target="223">
+      <data key="down">1</data>
+    </edge>
+    <edge source="222" target="221">
+      <data key="right">1</data>
+    </edge>
+    <edge source="132" target="mountain">
+      <data key="atLoc">1</data>
+    </edge>
+    <edge source="243" target="mountain">
+      <data key="atLoc">1</data>
+    </edge>
+    <edge source="244" target="mountain">
+      <data key="atLoc">1</data>
+    </edge>
+    <edge source="133" target="mountain">
+      <data key="atLoc">1</data>
+    </edge>
+    <edge source="312" target="mountain">
+      <data key="atLoc">1</data>
+    </edge>
+    <edge source="311" target="mountain">
+      <data key="atLoc">1</data>
+    </edge>
+    <edge source="red-soldier-1" target="red-base">
+      <data key="team">1</data>
+    </edge>
+    <edge source="red-soldier-1" target="444">
+      <data key="atLoc">1</data>
+    </edge>
+    <edge source="blue-soldier-1" target="blue-base">
+      <data key="team">1</data>
+    </edge>
+    <edge source="blue-soldier-1" target="222">
+      <data key="atLoc">1</data>
+    </edge>
+  </graph>
+</graphml>

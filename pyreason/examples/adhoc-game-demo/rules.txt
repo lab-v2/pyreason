@@ -1,0 +1,21 @@
+# Makes a spot on the grid 'blocked' if there is a mountain associated with that spot
+blocked(TARGET) <-0 blocked(TARGET):[0,0], isMountain(X), atLoc(TARGET, X)
+
+# Moving rules
+# Move UP
+
+atLoc(AGENT, NEWLOC) <-1 moveUp(AGENT), health(AGENT), atLoc(AGENT, OLDLOC), up(OLDLOC, NEWLOC), blocked(NEWLOC):[0,0]
+atLoc(AGENT, OLDLOC):[0,0] <-1 atLoc(AGENT, OLDLOC), moveUp(AGENT), health(AGENT),up(OLDLOC, NEWLOC), blocked(NEWLOC):[0,0]
+
+# Move DOWN
+
+atLoc(AGENT, NEWLOC) <-1 moveDown(AGENT), health(AGENT), atLoc(AGENT, OLDLOC), down(OLDLOC, NEWLOC), blocked(NEWLOC):[0,0]
+atLoc(AGENT, OLDLOC):[0,0] <-1 atLoc(AGENT, OLDLOC), moveDown(AGENT), health(AGENT), down(OLDLOC, NEWLOC), blocked(NEWLOC):[0,0]
+
+# Move LEFT
+atLoc(AGENT, NEWLOC) <-1 moveLeft(AGENT), health(AGENT), atLoc(AGENT, OLDLOC), left(OLDLOC, NEWLOC), blocked(NEWLOC):[0,0]
+atLoc(AGENT, OLDLOC):[0,0] <-1 atLoc(AGENT, OLDLOC), moveLeft(AGENT), health(AGENT),left(OLDLOC, NEWLOC), blocked(NEWLOC):[0,0]
+
+#Move RIGHT
+atLoc(AGENT, NEWLOC) <-1 moveRight(AGENT), health(AGENT), atLoc(AGENT, OLDLOC), right(OLDLOC, NEWLOC), blocked(NEWLOC):[0,0]
+atLoc(AGENT, OLDLOC):[0,0] <-1 atLoc(AGENT, OLDLOC), moveRight(AGENT), health(AGENT), right(OLDLOC, NEWLOC), blocked(NEWLOC):[0,0]

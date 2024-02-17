@@ -65,6 +65,12 @@ def argparser():
     parser.add_argument("--filter_ascending", dest='descending', action='store_false', help='Sort by ascending order instead of descending')
     parser.add_argument("--filter_descending", dest='descending', action='store_true', help='Sort by descending order instead of descending')
     parser.set_defaults(descending=True)
+
+    # Ad hoc grounding
+    parser.add_argument("--ad_hoc_grounding", dest='ad_hoc_grounding', action='store_true',help='Option to ground atoms as and when we need them. This can be used for specific cases. Default is off')
+    parser.set_defaults(ad_hoc_grounding=False)
+    parser.add_argument("--resolution_levels", type=int, default=0, help='The resolution number of levels used in ad-hoc grounding')
+    parser.add_argument("--step_size", type=int, default=1, help='The step size for ad-hoc grounding. Default is 1')
     
 
 
