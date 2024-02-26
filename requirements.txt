@@ -5,3 +5,7 @@ numba
 numpy
 memory_profiler
 pytest
+
+sphinx_rtd_theme
+sphinx
+sphinx-autopackagesummary
