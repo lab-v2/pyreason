@@ -40,7 +40,7 @@ Step-by-Step Guide
 
    -  Restart your shell so the path changes take effect.
 
-3. Install Python Using `pyenv`
+3. Install Python using `pyenv`
 
 .. code-block:: bash
 

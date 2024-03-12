@@ -18,7 +18,7 @@ We now have the relationships between the customers , cars , pets and travel det
 
 .. literalinclude:: advanced_graph.py
    :language: python
-   :lines: 64-48
+   :lines: 67-78
 
 Based on the relationships we now connect the nodes, edges and the form the graph.
 
@@ -26,7 +26,12 @@ Based on the relationships we now connect the nodes, edges and the form the grap
    :language: python
    :lines: 84-124
 
-We now have the graph ready. We can now add the rules for our use case. Take a look at it at advanced_graph.png
+We now have the graph ready. We can now add the rules for our use case. Take a look at it at
+
+.. figure:: advanced_graph.png
+   :alt: image
+
+   advanced graph image
 
 Rules
 -----
