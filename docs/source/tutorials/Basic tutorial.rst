@@ -12,7 +12,11 @@ they own.
 2. Mary is friends with John
 3. Justin is friends with John
 
-And 1. Mary owns a cat 2. Justin owns a cat and a dog 3. John owns a dog
+And
+
+1. Mary owns a cat
+2. Justin owns a cat and a dog
+3. John owns a dog
 
 PyReason needs a few things to run: 1. A Graph (or knowledge base) 2.
 Rules (that determine how things can change in the graph in time) 3.
@@ -118,18 +122,17 @@ who has the same pet as they do, then they are popular.
 
    popular(x) : [1,1] <-1 popular(y) : [1,1] , Friends(x,y) : [1,1] , owns(y,z) : [1,1] , owns(x,z) : [1,1]
 
-Since PyReason by default assumes bounds in a rule to be ``[1,1]``, we
-can omit them here and write:
+Since PyReason by default assumes bounds in a rule to be `[1,1]`, we can omit them here and write:
 
 .. code:: text
 
    popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)
 
-The rule is read as follows: - The ``head`` of the rule is
-``popular(x)`` and the body is
-``popular(y), Friends(x,y), owns(y,z), owns(x,z)``. The head and body
+The rule is read as follows: - The `head` of the rule is
+`popular(x)` and the body is
+`popular(y), Friends(x,y), owns(y,z), owns(x,z)`. The head and body
 are separated by an arrow and the time after which the head will become
-true ``<-1`` in our case this happens after ``1`` timestep.
+true `<-1` in our case this happens after `1` timestep.
 
 To add this rule to PyReason, we can do the following:
 
@@ -146,7 +149,7 @@ To add the rule directly, we must specify the rule and a name for it.
 The name helps understand which rules fired during reasoning later on.
 
 Adding the rule from a file is also possible. The file should be in
-``.txt`` format and should contain the rule in the format shown above.
+`.txt` format and should contain the rule in the format shown above.
 
 .. code:: text
 
@@ -164,22 +167,22 @@ Facts
 
 Facts are initial conditions that we want to set in the graph.
 
-In the graph we have created, suppose we want to set ``Mary`` to be
-``popular`` initially.
+In the graph we have created, suppose we want to set `Mary` to be
+`popular` initially.
 
 .. code:: python
 
    import pyreason as pr
    pr.add_fact(pr.Fact(name='popular-fact', component='Mary', attribute='popular', bound=[1, 1], start_time=0, end_time=2))
 
-The fact indicates that ``Mary`` is ``popular`` at time ``0`` and will
-remain so until time ``2``.
+The fact indicates that `Mary` is `popular` at time `0` and will
+remain so until time `2`.
 
 Running PyReason
 ----------------
 
 The complete code for the basic tutorial is in the file
-``basic_tutorial.py``.
+`basic_tutorial.py`.
 
 The main line that runs the reasoning in that file is:
 
@@ -187,9 +190,9 @@ The main line that runs the reasoning in that file is:
 
    interpretation = pr.reason(timesteps=2)
 
-This line runs the reasoning for ``2`` timesteps and returns the
+This line runs the reasoning for `2` timesteps and returns the
 interpretation of the graph at each timestep. We can also skip the
-``timesteps`` argument and let PyReason run until the convergence is
+`timesteps` argument and let PyReason run until the convergence is
 reached.
 
 Expected Output
@@ -199,11 +202,11 @@ Before checking the output , we can check manually what the expected
 output should be. Since we have a small graph, we can reason through it
 manually.
 
-1. At timestep 0, we have ``Mary`` to be ``popular``.
-2. At timestep 1, ``Justin`` becomes ``popular`` because he has a
-   popular friend (``Mary``) and has the same pet as ``Mary`` (cat).
-3. At timestep 2, ``John`` becomes ``popular`` because he has a popular
-   friend (``Justin``) and has the same pet as ``Justin`` (dog).
+1. At timestep 0, we have `Mary` to be `popular`.
+2. At timestep 1, `Justin` becomes `popular` because he has a
+   popular friend (`Mary`) and has the same pet as `Mary` (cat).
+3. At timestep 2, `John` becomes `popular` because he has a popular
+   friend (`Justin`) and has the same pet as `Justin` (dog).
 4. At timestep 3, no new nodes become popular and the reasoning stops.
 
 The output of the reasoning is as follows:

@@ -37,7 +37,7 @@ pr.add_fact(pr.Fact('popular-fact', 'Mary', 'popular', [1, 1], 0, 2))
 
 
 # Run the program for two timesteps to see the diffusion take place
-interpretation = pr.reason(timesteps=2)
+interpretation = pr.reason(timesteps=6)
 
 # Display the changes in the interpretation for each timestep
 dataframes = pr.filter_and_sort_nodes(interpretation, ['popular'])

@@ -2,50 +2,82 @@ Running Pyreason with an advanced graph 🚀
 ==========================================
 
 In this tutorial, we will look at how to run PyReason with a more
-complex graph. ## Graph
+complex graph.
 
-We can create a graph in two ways: 1. Using Networkx
+Graph
+------------
 
-.. code:: python
+We use a larger graph for this example. In this example , we have customers , cars , pets and their relationships.
+We first have customer details followed by car details , pet details , travel details .
 
-   import networkx as nx
+.. literalinclude:: advanced_graph.py
+   :language: python
+   :lines: 16-24, 28-34 , 39-52, 58-63
 
-   # ================================ CREATE GRAPH====================================
-   g = nx.DiGraph()
+We now have the relationships between the customers , cars , pets and travel details.
 
-   customers = ['John', 'Mary', 'Justin', 'Alice', 'Bob']
-   cars = [('Toyota Camry', 'Red'), ('Honda Civic', 'Blue'), ('Ford Focus', 'Red'), ('BMW 3 Series', 'Black'),
-           ('Tesla Model S', 'Red')]
-   pets = ['Dog', 'Cat', 'Rabbit']
+.. literalinclude:: advanced_graph.py
+   :language: python
+   :lines: 64-48
 
-   g.add_nodes_from(customers)
+Based on the relationships we now connect the nodes, edges and the form the graph.
 
-   for i, (model, color) in enumerate(cars):
-       g.add_node(f"Car_{i}", model=model, color=color)
+.. literalinclude:: advanced_graph.py
+   :language: python
+   :lines: 84-124
 
-   g.add_nodes_from(pets)
-
-   friendships = [('Justin', 'Mary'), ('John', 'Mary'), ('John', 'Justin'), ('Alice', 'Bob'), ('Bob', 'John')]
-   car_ownerships = [('Mary', 1), ('Justin', 0), ('John', 2), ('Alice', 3), ('Bob', 4), ('Alice', 1), ('Justin', 3),
-                     ('Justin', 2)]
-   pet_ownerships = [('Mary', 'Cat'), ('Justin', 'Cat'), ('Justin', 'Dog'), ('John', 'Dog'), ('Alice', 'Rabbit'),
-                     ('Bob', 'Cat')]
-
-   for f1, f2 in friendships:
-       g.add_edge(f1, f2, Friends=1)
-
-   for owner, car_index in car_ownerships:
-       g.add_edge(owner, f"Car_{car_index}", owns_car=1)
-
-   for owner, pet in pet_ownerships:
-       g.add_edge(owner, pet, owns_pet=1)
-
-.. image:: advanced_graph.png
-   :alt: image
-    Advanced Graph
+We now have the graph ready. We can now add the rules for our use case. Take a look at it at advanced_graph.png
 
 Rules
 -----
 
-Now we want to add more rules for the graph. The below are the rules we
-want to add:
+The below are the rules we want to add:
+
+1. A customer is popular if he is friends with a popular customer.
+2. A customer has a cool car if he owns a car and the car is of type Car_4.
+3. A customer has a cool pet if he owns a pet and the pet is of type Pet_2.
+4. A customer is trendy if he has a cool car and a cool pet.
+
+.. code-block:: python
+
+    pr.add_rule(pr.Rule('popular(x) <-1 popular(y), Friends(x,y)', 'popular_pet_rule'))
+    pr.add_rule(pr.Rule('cool_car(x) <-1 owns_car(x,y),Car_4(y)', 'cool_car_rule'))
+    pr.add_rule(pr.Rule('cool_pet(x)<-1 owns_pet(x,y),Pet_2(y)', 'cool_pet_rule'))
+    pr.add_rule(pr.Rule('trendy(x) <- cool_car(x) , cool_pet(x)', 'trendy_rule'))
+The above rules are based on nodes. Now let us add some more rules based on the edges.
+
+1. Two customers are car_friends if they own the same car.
+2. Two customers are friends if they own the same color car.
+
+.. code-block:: python
+
+    pr.add_rule(pr.Rule("car_friend(x,y) <- owns_car(x,z), owns_car(y,z) , c_id(x) != c_id(y) ", "car_friend_rule"))
+    pr.add_rule(pr.Rule("same_color_car(x, y) <- owns_car(x, c1) , owns_car(y, c2),  car_color_id(x,c1) == car_color_id(y,c2) , c_id(x) != c_id(y)","same_car_color_rule"))
+
+Facts
+-------
+
+We now add the facts to the graph.
+There is only one fact we are going to use.
+1. customer_0 is popular from time 0 to 5.
+
+.. code-block:: python
+
+    pr.add_fact(pr.Fact(name='popular-fact', component='customer_0', attribute='popular', bound=[1, 1], start_time=0, end_time=5))
+
+
+Running Pyreason
+----------------
+
+We now run the PyReason with the graph and the rules.
+
+.. code-block:: python
+
+    interpretation = pr.reason(timesteps=6)
+    # pr.save_rule_trace(interpretation)
+
+    interpretations_dict = interpretation.get_interpretation_dict()
+
+    df1 = pr.filter_and_sort_nodes(interpretation, ['trendy', 'cool_car', 'cool_pet', 'popular'])
+    df2 = pr.filter_and_sort_edges(interpretation, ['car_friend', 'same_color_car'])
+
