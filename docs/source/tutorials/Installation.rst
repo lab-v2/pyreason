@@ -11,6 +11,11 @@ Prerequisites
 -  Familiarity with terminal or command prompt commands.
 -  Basic knowledge of Python and its package ecosystem.
 
+.. note::
+
+    Use python version 3.8 or higher to install PyReason.
+
+
 Step-by-Step Guide
 ------------------
 
