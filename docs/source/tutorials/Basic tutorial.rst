@@ -1,4 +1,4 @@
-PyReason Hello World! 🚀
+PyReason Hello World!
 ========================
 
 Welcome to PyReason! In this document we outline a simple program that
@@ -27,7 +27,11 @@ PyReason needs a few things to run:
 Graph
 -----
 
-We can create a graph in two ways: 1. Using Networkx 2. Using GraphML
+We can create a graph in two ways:
+
+1. Using Networkx
+2. Using GraphML
+
 
 Let’s look at how to create a graph using Networkx
 

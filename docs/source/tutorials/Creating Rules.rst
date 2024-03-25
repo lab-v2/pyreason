@@ -43,8 +43,17 @@ Some points to note about the writing rules
 
 1. The head of the rule is always on the left hand side of the rule.
 2. The body of the rule is always on the right hand side of the rule.
-3. You can include timestep in the rule by using the <-timestep body.
-4. You can include multiple bodies in the rule by using the <-timestep body1, body2, body3.
-5. To compare two nodes, both the nodes should have an attribute in common.
-    1. For example , in the below rule , both the customers have an attribute 'c_id' in common which is the customer id.
+3. You can include timestep in the rule by using the `<-timestep` body.
+4. You can include multiple bodies in the rule by using the `<-timestep body1, body2, body3`.
+
+.. note::
+
+    5. To compare two nodes, both the nodes should have an attribute in common.
+        1. For example , in the below rule , both the customers have an attribute 'c_id' in common which is the customer id.
+        2. So, we can compare the customer id of both the customers to check if they are the same person or not.
+
+        .. code-block:: python
+
+            pr.add_rule(pr.Rule("car_friend(x,y) <- owns_car(x,z), owns_car(y,z) , c_id(x) != c_id(y) ", "car_friend_rule"))
+
 6. To compare a particular attribute of a node with another node, you need to use the attribute like in Rule 2 above.

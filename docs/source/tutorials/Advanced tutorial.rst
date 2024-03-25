@@ -1,4 +1,4 @@
-Running Pyreason with an advanced graph 🚀
+Running Pyreason with an advanced graph
 ==========================================
 
 In this tutorial, we will look at how to run PyReason with a more
