@@ -1,7 +1,7 @@
 Understanding Key Concepts
 ==========================
 
-RULE
+Rule
 ~~~~
 
 -  A rule is a statement that establishes a relationship between
@@ -11,7 +11,7 @@ RULE
 -  Every rule has a head and a body. The head determines what will
    change in the graph if the body is true.
 
-FACT
+Fact
 ~~~~
 
 -  A fact is a statement that is true in the graph. It is a basic unit
@@ -19,22 +19,22 @@ FACT
 -  Facts are used to initialize the graph and are the starting point for
    reasoning.
 
-ANNOTATED ATOM / FUNCTION
+Annotated atom / function
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 - An annotated atom or function in logic, refers to an atomic formula (or a simple predicate) that is augmented with additional information, such as a certainty factor, a probability, or other annotations that provide context or constraints.
 
-INTERPRETATION
+Interpretation
 ~~~~~~~~~~~~~~
 - An interpretation is a mapping from the set of atoms to the set of truth values. It is a way of assigning truth values to the atoms in the graph.
 
-FIXED POINT OPERATOR
+Fixed point operator
 ~~~~~~~~~~~~~~~~~~~~
 
 - In simple terms, a fixed point operator is a function that says if you have a set of atoms,
   return that set plus any atoms that can be derived by a single application of a rule in the program.
 
 
-INCONSISTENT PREDICATE LIST
+Inconsistent predicate list
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - A logic program is consistent if there exists an interpretation that satisfies the logic program, i.e., makes all the rules true. If no such interpretation exists, the logic program is inconsistent. An inconsistent predicate list is a list of predicates that are inconsistent with each other.

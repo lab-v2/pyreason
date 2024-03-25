@@ -18,10 +18,11 @@ And
 2. Justin owns a cat and a dog
 3. John owns a dog
 
-PyReason needs a few things to run: 1. A Graph (or knowledge base) 2.
-Rules (that determine how things can change in the graph in time) 3.
-Facts (that specify initial conditions in the graph. This can be
-specified in the graph or externally)
+PyReason needs a few things to run:
+
+1. A Graph (or knowledge base)
+2. Rules (that determine how things can change in the graph in time)
+3. Facts (that specify initial conditions in the graph. This can be specified in the graph or externally)
 
 Graph
 -----

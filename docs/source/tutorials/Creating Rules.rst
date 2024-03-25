@@ -36,7 +36,7 @@ In the above example, note that Car_4 is both the node and the attribute of the 
     pr.add_rule(pr.Rule("car_friend(x,y) <- owns_car(x,z), owns_car(y,z) , c_id(x) != c_id(y) ", "car_friend_rule"))
 
 
-Important Tips:
+Important Tips
 ---------------
 
 Some points to note about the writing rules
