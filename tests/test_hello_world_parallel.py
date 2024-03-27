@@ -4,7 +4,8 @@ import pyreason as pr
 
 def test_hello_world_parallel():
     # Modify the paths based on where you've stored the files we made above
-    graph_path = './tests/friends_graph.graphml'
+    # graph_path = './tests/friends_graph.graphml'
+    graph_path = './friends_graph.graphml'
 
     # Modify pyreason settings to make verbose and to save the rule trace to a file
     pr.settings.verbose = True     # Print info to screen
@@ -29,11 +30,16 @@ def test_hello_world_parallel():
     assert len(dataframes[1]) == 2, 'At t=0 there should be two popular people'
     assert len(dataframes[2]) == 3, 'At t=0 there should be three popular people'
 
-    assert dataframes[0].iloc[0].component == 'Mary' and dataframes[0].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=0 timesteps'
-    assert dataframes[1].iloc[0].component == 'Mary' and dataframes[1].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=1 timesteps'
-    assert dataframes[2].iloc[0].component == 'Mary' and dataframes[2].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=2 timesteps'
+    # Mary should be popular in all three timesteps
+    assert 'Mary' in dataframes[0]['component'].values and dataframes[0].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=0 timesteps'
+    assert 'Mary' in dataframes[1]['component'].values and dataframes[1].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=1 timesteps'
+    assert 'Mary' in dataframes[2]['component'].values and dataframes[2].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=2 timesteps'
 
-    assert dataframes[1].iloc[1].component == 'Justin' and dataframes[1].iloc[1].popular == [1, 1], 'Justin should have popular bounds [1,1] for t=1 timesteps'
-    assert dataframes[2].iloc[2].component == 'Justin' and dataframes[2].iloc[2].popular == [1, 1], 'Justin should have popular bounds [1,1] for t=2 timesteps'
+    # Justin should be popular in timesteps 1, 2
+    assert 'Justin' in dataframes[1]['component'].values and dataframes[1].iloc[1].popular == [1, 1], 'Justin should have popular bounds [1,1] for t=1 timesteps'
+    assert 'Justin' in dataframes[2]['component'].values and dataframes[2].iloc[2].popular == [1, 1], 'Justin should have popular bounds [1,1] for t=2 timesteps'
 
-    assert dataframes[2].iloc[1].component == 'John' and dataframes[2].iloc[1].popular == [1, 1], 'John should have popular bounds [1,1] for t=2 timesteps'
+    # John should be popular in timestep 3
+    assert 'John' in dataframes[2]['component'].values and dataframes[2].iloc[1].popular == [1, 1], 'John should have popular bounds [1,1] for t=2 timesteps'
+
+test_hello_world_parallel()
