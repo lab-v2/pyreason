@@ -149,7 +149,7 @@ To add the rule directly, we must specify the rule and a name for it.
 .. code:: python
 
    import pyreason as pr
-   pr.add_rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule')
+   pr.add_rule(pr.Rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule'))
 
 The name helps understand which rules fired during reasoning later on.
 

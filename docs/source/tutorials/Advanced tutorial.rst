@@ -86,3 +86,5 @@ We now run the PyReason with the graph and the rules.
     df1 = pr.filter_and_sort_nodes(interpretation, ['trendy', 'cool_car', 'cool_pet', 'popular'])
     df2 = pr.filter_and_sort_edges(interpretation, ['car_friend', 'same_color_car'])
 
+.. note::
+    The complete code for this example is on github at advanced_graph.py
