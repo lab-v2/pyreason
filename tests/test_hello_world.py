@@ -4,8 +4,7 @@ import pyreason as pr
 
 def test_hello_world():
     # Modify the paths based on where you've stored the files we made above
-    # graph_path = './tests/friends_graph.graphml'
-    graph_path = './friends_graph.graphml'
+    graph_path = './tests/friends_graph.graphml'
 
     # Modify pyreason settings to make verbose and to save the rule trace to a file
     pr.settings.verbose = True     # Print info to screen
@@ -40,5 +39,3 @@ def test_hello_world():
 
     # John should be popular in timestep 3
     assert 'John' in dataframes[2]['component'].values and dataframes[2].iloc[1].popular == [1, 1], 'John should have popular bounds [1,1] for t=2 timesteps'
-
-test_hello_world()
