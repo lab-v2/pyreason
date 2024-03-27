@@ -1,5 +1,5 @@
 from pyreason.scripts.interpretation.interpretation import Interpretation as Interpretation
-from pyreason.scripts.interpretation.interpretation import Interpretation as InterpretationParallel
+from pyreason.scripts.interpretation.interpretation_parallel import Interpretation as InterpretationParallel
 
 
 class Program:
