@@ -1,7 +1,7 @@
 networkx
 pyyaml
 pandas
-numba==0.59.1
+numba==0.58.1
 numpy
 memory_profiler
 pytest
