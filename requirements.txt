@@ -5,3 +5,8 @@ numba==0.59.1
 numpy
 memory_profiler
 pytest
+
+sphinx_rtd_theme
+sphinx
+sphinx-autopackagesummary
+sphinx-autoapi
