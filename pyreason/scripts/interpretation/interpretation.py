@@ -799,7 +799,7 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 			# The groundings for node clauses are either the target node, neighbors of the target node, or an existing subset of nodes
 			if clause_type == 'node':
 				clause_var_1 = clause_variables[0]
-				subset = get_node_rule_node_clause_subset(clause_var_1, target_node, subsets, neighbors)
+				subset = get_node_rule_node_clause_subset(clause_var_1, target_node, subsets, nodes)
 
 				subsets[clause_var_1] = get_qualified_components_node_clause(interpretations_node, subset, clause_label, clause_bnd)
 
@@ -848,8 +848,8 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 				# It's a node comparison
 				if len(clause_variables) == 2:
 					clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
-					subset_1 = get_node_rule_node_clause_subset(clause_var_1, target_node, subsets, neighbors)
-					subset_2 = get_node_rule_node_clause_subset(clause_var_2, target_node, subsets, neighbors)
+					subset_1 = get_node_rule_node_clause_subset(clause_var_1, target_node, subsets, nodes)
+					subset_2 = get_node_rule_node_clause_subset(clause_var_2, target_node, subsets, nodes)
 
 					# 1, 2
 					qualified_nodes_for_comparison_1, numbers_1 = get_qualified_components_node_comparison_clause(interpretations_node, subset_1, clause_label, clause_bnd)
@@ -961,6 +961,10 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 					edges_to_be_added[1].extend(subsets[target])
 				else:
 					edges_to_be_added[1].append(target)
+
+			# Add qualified nodes/edges to trace
+
+			# Add annotations to annotation function variable
 
 			# node/edge, annotations, qualified nodes, qualified edges, edges to be added
 			applicable_rules.append((target_node, annotations, qualified_nodes, qualified_edges, edges_to_be_added))
@@ -1197,12 +1201,12 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 
 
 @numba.njit(cache=True)
-def get_node_rule_node_clause_subset(clause_var_1, target_node, subsets, neighbors):
+def get_node_rule_node_clause_subset(clause_var_1, target_node, subsets, nodes):
 	# The groundings for node clauses are either the target node, neighbors of the target node, or an existing subset of nodes
 	if clause_var_1 == '__target':
 		subset = numba.typed.List([target_node])
 	else:
-		subset = neighbors[target_node] if clause_var_1 not in subsets else subsets[clause_var_1]
+		subset = nodes if clause_var_1 not in subsets else subsets[clause_var_1]
 	return subset
 
 
