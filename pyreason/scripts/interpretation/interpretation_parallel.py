@@ -758,6 +758,10 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 	# We return a list of tuples which specify the target nodes/edges that have made the rule body true
 	applicable_rules = numba.typed.List.empty_list(node_applicable_rule_type)
 
+	# Create pre-allocated data structure so that parallel code does not need to use "append" to be threadsafe
+	# One array for each node, then condense into a single list later
+	applicable_rules_threadsafe = numba.typed.List([numba.typed.List.empty_list(node_applicable_rule_type) for _ in nodes])
+
 	# Return empty list if rule is not node rule and if we are not inferring edges
 	if rule_type != 'node' and rule_edges[0] == '':
 		return applicable_rules
@@ -963,7 +967,12 @@ def _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, n
 					edges_to_be_added[1].append(target)
 
 			# node/edge, annotations, qualified nodes, qualified edges, edges to be added
-			applicable_rules.append((target_node, annotations, qualified_nodes, qualified_edges, edges_to_be_added))
+			applicable_rules_threadsafe[piter] = numba.typed.List([(target_node, annotations, qualified_nodes, qualified_edges, edges_to_be_added)])
+
+	# Merge all threadsafe rules into one single array
+	for applicable_rule in applicable_rules_threadsafe:
+		if len(applicable_rule) > 0:
+			applicable_rules.append(applicable_rule[0])
 
 	return applicable_rules
 
@@ -979,6 +988,10 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 
 	# We return a list of tuples which specify the target nodes/edges that have made the rule body true
 	applicable_rules = numba.typed.List.empty_list(edge_applicable_rule_type)
+
+	# Create pre-allocated data structure so that parallel code does not need to use "append" to be threadsafe
+	# One array for each node, then condense into a single list later
+	applicable_rules_threadsafe = numba.typed.List([numba.typed.List.empty_list(edge_applicable_rule_type) for _ in edges])
 
 	# Return empty list if rule is not node rule
 	if rule_type != 'edge':
@@ -1191,7 +1204,12 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 					edges_to_be_added[1].append(target)
 
 			# node/edge, annotations, qualified nodes, qualified edges, edges to be added
-			applicable_rules.append((target_edge, annotations, qualified_nodes, qualified_edges, edges_to_be_added))
+			applicable_rules_threadsafe[piter] = numba.typed.List([(target_edge, annotations, qualified_nodes, qualified_edges, edges_to_be_added)])
+
+	# Merge all threadsafe rules into one single array
+	for applicable_rule in applicable_rules_threadsafe:
+		if len(applicable_rule) > 0:
+			applicable_rules.append(applicable_rule[0])
 
 	return applicable_rules
 
