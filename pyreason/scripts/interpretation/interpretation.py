@@ -222,6 +222,10 @@ class Interpretation:
 		facts_to_be_applied_edge_new = numba.typed.List.empty_list(facts_to_be_applied_edge_type)
 		rules_to_remove_idx = numba.typed.List.empty_list(numba.types.int64)
 		while timestep_loop:
+			# print(t)
+			# print(interpretations_node)
+			# print(interpretations_edge)
+			# print('================================================')
 			if t==tmax:
 				timestep_loop = False
 			if verbose:
@@ -389,23 +393,28 @@ class Interpretation:
 				in_loop = False
 				# Apply the rules that need to be applied at this timestep
 				# Nodes
-				print(edges_to_be_added_node_rule)
+				# print(edges_to_be_added_node_rule)
 				rules_to_remove_idx.clear()
 				for idx, i in enumerate(rules_to_be_applied_node):
 					# If we are coming here from an immediate rule firing with delta_t=0 we have to apply that one rule. Which was just added to the list to_be_applied
 					if immediate_node_rule_fire and rules_to_be_applied_node[-1][4]:
 						i = rules_to_be_applied_node[-1]
 						idx = len(rules_to_be_applied_node) - 1
-
+					# print('==========================')
+					# print(idx, i)
+					# print('---------------------------')
 					if i[0]==t:
 						comp, l, bnd, immediate, set_static = i[1], i[2], i[3], i[4], i[5]
 						sources, targets, edge_l = edges_to_be_added_node_rule[idx]
 						edges_added, changes = _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge)
 						changes_cnt += changes
 
-						# print(edge_l)
+
 						# print('-------------------------------------------------------')
 						# Update bound for newly added edges. Use bnd to update all edges if label is specified, else use bnd to update normally
+						# print(edges_to_be_added_node_rule[idx])
+						# print('#####################')
+
 						if edge_l.value!='':
 							for e in edges_added:
 								if check_consistent_edge(interpretations_edge, e, (edge_l, bnd)):
@@ -437,20 +446,47 @@ class Interpretation:
 								# Ad-hoc-grounding (very specific version, make more general later)
 								if ad_hoc_grounding:
 									# Up/Down/Left/Right Locations of target node. Target node should be
+
 									target_node = e[1]
+									if 'field' in comp:
+										step_size = 2
+										directions = numba.typed.List(
+											[label.Label('fastUp'), label.Label('fastDown'), label.Label('fastLeft'),
+											 label.Label('fastRight')])
+									else:
+										step_size = 1
+										directions = numba.typed.List(
+											[label.Label('up'), label.Label('down'), label.Label('left'),
+											 label.Label('right')])
+									# print(comp, step_size)
 									up_node = _search(target_node, 'u', step_size)
 									down_node = _search(target_node, 'd', step_size)
 									left_node = _search(target_node, 'l', step_size)
 									right_node = _search(target_node, 'r', step_size)
+
+									#Check if this new node is border node
+									border_up_node = _check_border(up_node)
+									border_down_node = _check_border(down_node)
+									border_left_node = _check_border(left_node)
+									border_right_node = _check_border(right_node)
+
 									neigh_nodes = numba.typed.List(
 										[up_node, down_node, left_node, right_node])
-									directions = numba.typed.List(
-										[label.Label('up'), label.Label('down'), label.Label('left'),
-										 label.Label('right')])
+									border_nodes = [border_up_node, border_down_node, border_left_node, border_right_node]
+									# print(neigh_nodes)
+
+									# if step_size == 2:
+									# 	directions = numba.typed.List(
+									# 		[label.Label('fastUp'), label.Label('fastDown'), label.Label('fastLeft'),
+									# 		 label.Label('fastRight')])
+									# else:
+									# 	directions = numba.typed.List(
+									# 		[label.Label('up'), label.Label('down'), label.Label('left'),
+									# 		 label.Label('right')])
 
 									# Ideally labels should be defined here but there is an issue with constructing a label indide a jitted function
 									# Add edges to new nodes and set
-									for d, n in zip(directions, neigh_nodes):
+									for d, n, b_flag in zip(directions, neigh_nodes, border_nodes):
 										if n != 'invalid':
 											edge, changes = _add_edge(target_node, n, neighbors, reverse_neighbors, nodes,
 																	  edges, d, interpretations_node,
@@ -461,11 +497,20 @@ class Interpretation:
 											for l, pos in zip(ad_hoc_quadrant_labels, n):
 												interpretations_node[n].world[l].set_lower_upper(
 													str_to_int(pos) / 10, 1)
+											if b_flag:
+												interpretations_node[n].world[label.Label('borderLoc')] = interval.closed(
+													1, 1)
+											else:
+												interpretations_node[n].world[
+													label.Label('borderLoc')] = interval.closed(
+													0, 0)
+
 
 											# Set blocked to false if it is not in node attributes
-											if label.Label('blocked') not in interpretations_node[n].world:
-												interpretations_node[n].world[
-													label.Label('blocked')] = interval.closed(0, 0)
+											interpretations_node[n].world[label.Label('blocked')] = interval.closed(0, 0)
+											# if label.Label('blocked') not in interpretations_node[n].world:
+											# 	interpretations_node[n].world[
+											# 		label.Label('blocked')] = interval.closed(0, 0)
 
 											# Set up/down/left/right edge bound to [1,1]
 											interpretations_edge[edge].world[d].set_lower_upper(1, 1)
@@ -2038,6 +2083,21 @@ def str_to_int(value):
 		result += (ord(v) - 48) * (10 ** (final_index - i))
 	result = -result if negative else result
 	return result
+
+@numba.njit(cache=True)
+def _check_border(node):
+    unique_numbers = set(node)
+    accepted_unique_numbers = [{'1', '2'}, {'1', '4'}, {'2', '3'}, {'3', '4'}, {'2','1'}, {'4','1'}, {'3','2'}, {'4','3'}]
+
+    if len(unique_numbers)>2:
+        return False
+    elif len(unique_numbers) == 1:
+        return True
+    elif unique_numbers in accepted_unique_numbers:
+        return True
+    else:
+        return False
+
 
 @numba.njit(cache=True)
 def _search(location, direction, count=1):
