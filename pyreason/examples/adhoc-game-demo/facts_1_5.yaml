@@ -1,0 +1,182 @@
+nodes:
+  red_1_moveDown_fact_1:
+    node: red-soldier-1
+    label: moveDown
+    bound:
+    - 1
+    - 1
+    static: false
+    t_lower: 1
+    t_upper: 1
+  red_1_moveDownOff_fact_1:
+    node: red-soldier-1
+    label: moveDown
+    bound:
+    - 0
+    - 0
+    static: false
+    t_lower: 2
+    t_upper: 2
+  red_1_moveDown_fact_2:
+    node: red-soldier-1
+    label: moveDown
+    bound:
+    - 1
+    - 1
+    static: false
+    t_lower: 2
+    t_upper: 2
+  red_1_moveDownOff_fact_2:
+    node: red-soldier-1
+    label: moveDown
+    bound:
+    - 0
+    - 0
+    static: false
+    t_lower: 3
+    t_upper: 3
+  red_1_moveUp_fact_3:
+    node: red-soldier-1
+    label: moveUp
+    bound:
+    - 1
+    - 1
+    static: false
+    t_lower: 3
+    t_upper: 3
+  red_1_moveUpOff_fact_3:
+    node: red-soldier-1
+    label: moveUp
+    bound:
+    - 0
+    - 0
+    static: false
+    t_lower: 4
+    t_upper: 4
+  red_1_moveDown_fact_4:
+    node: red-soldier-1
+    label: moveDown
+    bound:
+    - 1
+    - 1
+    static: false
+    t_lower: 4
+    t_upper: 4
+  red_1_moveDownOff_fact_4:
+    node: red-soldier-1
+    label: moveDown
+    bound:
+    - 0
+    - 0
+    static: false
+    t_lower: 5
+    t_upper: 5
+  red_1_moveLeft_fact_5:
+    node: red-soldier-1
+    label: moveLeft
+    bound:
+    - 1
+    - 1
+    static: false
+    t_lower: 5
+    t_upper: 5
+  red_1_moveLeftOff_fact_5:
+    node: red-soldier-1
+    label: moveLeft
+    bound:
+    - 0
+    - 0
+    static: false
+    t_lower: 6
+    t_upper: 6
+  blue_1_moveDown_fact_1:
+    node: blue-soldier-1
+    label: moveDown
+    bound:
+    - 1
+    - 1
+    static: false
+    t_lower: 1
+    t_upper: 1
+  blue_1_moveDownOff_fact_1:
+    node: blue-soldier-1
+    label: moveDown
+    bound:
+    - 0
+    - 0
+    static: false
+    t_lower: 2
+    t_upper: 2
+  blue_1_moveRight_fact_2:
+    node: blue-soldier-1
+    label: moveRight
+    bound:
+    - 1
+    - 1
+    static: false
+    t_lower: 2
+    t_upper: 2
+  blue_1_moveRightOff_fact_2:
+    node: blue-soldier-1
+    label: moveRight
+    bound:
+    - 0
+    - 0
+    static: false
+    t_lower: 3
+    t_upper: 3
+  blue_1_moveLeft_fact_3:
+    node: blue-soldier-1
+    label: moveLeft
+    bound:
+    - 1
+    - 1
+    static: false
+    t_lower: 3
+    t_upper: 3
+  blue_1_moveLeftOff_fact_3:
+    node: blue-soldier-1
+    label: moveLeft
+    bound:
+    - 0
+    - 0
+    static: false
+    t_lower: 4
+    t_upper: 4
+  blue_1_moveUp_fact_4:
+    node: blue-soldier-1
+    label: moveUp
+    bound:
+    - 1
+    - 1
+    static: false
+    t_lower: 4
+    t_upper: 4
+  blue_1_moveUpOff_fact_4:
+    node: blue-soldier-1
+    label: moveUp
+    bound:
+    - 0
+    - 0
+    static: false
+    t_lower: 5
+    t_upper: 5
+  blue_1_moveLeft_fact_5:
+    node: blue-soldier-1
+    label: moveLeft
+    bound:
+    - 1
+    - 1
+    static: false
+    t_lower: 5
+    t_upper: 5
+  blue_1_moveLeftOff_fact_5:
+    node: blue-soldier-1
+    label: moveLeft
+    bound:
+    - 0
+    - 0
+    static: false
+    t_lower: 6
+    t_upper: 6
+edges: {}

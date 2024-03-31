@@ -15,184 +15,96 @@ And
 2. Justin owns a cat and a dog
 3. John owns a dog
 
-All of this is represented in [GraphML format](../pyreason/examples/hello-world/friends.graphml).  
 
 Let's assume that a person's popularity (for illustration 😀) is determined by whether they have AT LEAST ONE friend who is popular AND who has the same pet that they do. If this is true, then they are considered popular.
+This will be represented as a Rule later on.
 
-PyReason needs 4 files to run:
-1. labels.yaml
-2. facts.yaml
-3. rules.yaml
-4. ipl.yaml
+PyReason needs a few things to run:
+1. A Graph (or knowledge base)
+2. Rules (that determine how things can change in the graph in time)
+3. Facts (that specify initial conditions in the graph. This can be specified in the graph or externally like we'll do now)
 
-These are all YAML files but need to be in a specific PyReason format to work. See the examples below, or the [example yamls](../pyreason/examples/example_yamls/)
+## Graph
+Let's look at how to create a graph using Networkx
 
-## Labels
-Our labels.yaml file will look like this:
+```python
+import networkx as nx
 
-```yaml
----
-# Labels that apply to all nodes
-node_labels:
-    - popular
+# ================================ CREATE GRAPH====================================
+# Create a Directed graph
+g = nx.DiGraph()
 
-# Labels that apply to all edges
-edge_labels:
-    - owns
-    - friends
+# Add the nodes
+g.add_nodes_from(['John', 'Mary', 'Justin'])
+g.add_nodes_from(['Dog', 'Cat'])
 
-# Labels that apply to specific nodes. In this case nothing
-node_specific_labels:
+# Add the edges and their attributes. When an attribute = x which is <= 1, the annotation
+# associated with it will be [x,1]. NOTE: These attributes are immutable
+# Friend edges
+g.add_edge('Justin', 'Mary', Friends=1)
+g.add_edge('John', 'Mary', Friends=1)
+g.add_edge('John', 'Justin', Friends=1)
 
-# Labels that apply to specific edges. In this case nothing
-edge_specific_labels:
+# Pet edges
+g.add_edge('Mary', 'Cat', owns=1)
+g.add_edge('Justin', 'Cat', owns=1)
+g.add_edge('Justin', 'Dog', owns=1)
+g.add_edge('John', 'Dog', owns=1)
 ```
-
-Each node will receive a `popular` label, and each edge will get a `owns` and `friends` label. The bounds for each of these are set to `[0, 1]` initially.
-
-## Facts
-To set initial conditions on labels we need a facts.yaml file. This is how we initialize the bounds to what we want before the program runs
-
-Our facts.yaml will look like:
-
-```yaml
----
-# List all facts below
-nodes:
-    fact_1:
-        node: Mary          # Name of the node
-        label: popular      # Name of the label of the node
-        bound: [1, 1]       # Bound of the label
-        static: false       # Whether it applies to all timesteps and cannot change
-        t_lower: 0          # Starting time
-        t_upper: 2          # Ending time. 
-
-edges:
-    fact_1:
-        source: Mary       # Source of the edge
-        target: Cat        # Target of the edge
-        label: owns        # Name of the label of the node
-        bound: [1, 1]      # Bound of the label
-        static: true
-        t_lower: 0         # Starting time
-        t_upper: 0         # Ending time. 
-
-    fact_2:
-        source: Justin     # Source of the edge
-        target: Cat        # Target of the edge
-        label: owns        # Name of the label of the node
-        bound: [1, 1]      # Bound of the label
-        static: true
-        t_lower: 0         # Starting time
-        t_upper: 0         # Ending time. 
-
-    fact_3:
-        source: Justin     # Source of the edge
-        target: Dog        # Target of the edge
-        label: owns        # Name of the label of the node
-        bound: [1, 1]      # Bound of the label
-        static: true
-        t_lower: 0         # Starting time
-        t_upper: 0         # Ending time. 
-
-    fact_4:
-        source: John       # Source of the edge
-        target: Dog        # Target of the edge
-        label: owns        # Name of the label of the node
-        bound: [1, 1]      # Bound of the label
-        static: true
-        t_lower: 0         # Starting time
-        t_upper: 0         # Ending time. 
-
-    fact_5:
-        source: Justin     # Source of the edge
-        target: Mary       # Target of the edge
-        label: friends     # Name of the label of the node
-        bound: [1, 1]      # Bound of the label
-        static: true
-        t_lower: 0         # Starting time
-        t_upper: 0         # Ending time. 
-
-    fact_6:
-        source: John       # Source of the edge
-        target: Justin     # Target of the edge
-        label: friends     # Name of the label of the node
-        bound: [1, 1]      # Bound of the label
-        static: true
-        t_lower: 0         # Starting time
-        t_upper: 0         # Ending time. 
-
-    fact_7:
-        source: John       # Source of the edge
-        target: Mary       # Target of the edge
-        label: friends     # Name of the label of the node
-        bound: [1, 1]      # Bound of the label
-        static: true
-        t_lower: 0         # Starting time
-        t_upper: 0         # Ending time. 
-```
-
-This tells us who is friends with who and who owns what.
 
 
 ## Rules
+Let's look at the PyReason rule format. Every rule has a `head` and a `body`. The `head` determines what will change in the graph if the `body` is true.
+In our case, the rule would look like:
 
-Now lets define the rules.yaml file which will tell the program how bounds should changed if certain criteria are satisfied. In our case we want a person's `popular` label to be set to `[0,1]` if they have AT LEAST ONE friend who is `popular: [1,1]` AND who has the same pet as they do. We represent this in the following PyReason rule format
-
-```yaml
----
-# All Rules come under here
-rule_1:
-    target: popular     # Target label
-
-    target_criteria:       # List of all target criteria
-        # All criteria come here in the form [label, lower_bound, upper_bound]
-        - [popular, 0, 1]
-
-    delta_t: 1             # Delta t, time when this rule is applicable
-
-    neigh_criteria:        # List of all neighbour criteria in the form [criteria on node/edge, variable, label, [lower_bound, upper_bound], [equal/greater/less/greater_equal/less_equal, number/[percent, total/available], value]]
-        - [node, [x1], popular, [1,1], [greater_equal, number, 1]]
-        - [edge, [target, x1], friends, [1,1], [greater_equal, number, 1]]
-        - [edge, [x1, x2], owns, [1,1], [greater_equal, number, 1]]
-        - [edge, [target, x2], owns, [1,1], [greater_equal, number, 1]]
-
-    ann_fn: [1,1]          # Annotation function name or bound. See annotation_functions.py for list of available functions. The name of that function comes here
-                           # Could be func_name or [l, u]
+```text
+popular(x) : [1,1] <-1 popular(y) : [1,1] , Friends(x,y) : [1,1] , owns(y,z) : [1,1] , owns(x,z) : [1,1] 
 ```
 
-The `neigh_criteria` describes the conditions on the neighbors to be satisfied for the rule to fire.
+Since PyReason by default assumes bounds in a rule to be `[1,1]`, we can omit them here and write:
 
-In English this rule says: rule_1 will fire in 1 timestep on node `x`'s `popular` label if `x` has the label popular associated with it, and if node `x` has at least one popular neighbor and has the same pet as node `x`. When the rule fires on node `x`, the label `popular` will be set to `[1,1]`
-
-There are 4 clauses in the rule (`neigh_criteria`):
-(Variables in clauses represent subsets of neighbors. The first mention of a variable means it is the entire set of neighbors)
-1. In the subset `x1` there should be at least one node with `popular: [1,1]`
-2. Out of subset `x1` (all the nodes that are neighbors and have `popular: [1,1]`), there should be at least one node that is a friend with the target node.
-3. Out of all the neighbors that are popular and friends with the target node, `x2` is the subset of all the pets that they own.
-4. There should be at least one pet in `x2` that is the target node's pet as well
-
-## IPL (Inconsistent Predicate List)
-For now we will leave this file empty because we are not dealing with predicates/labels that can be inconsistent with one another.
-
-The ipl.yaml will look like:
-```yaml
----
-ipl: null
+```text
+popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)
 ```
 
+The `head` of the rule is `popular(x)` and the body is `popular(y), Friends(x,y), owns(y,z), owns(x,z)`. The head and body are separated by an arrow and the time after which the head
+will become true `<-1` in our case this happens after `1` timestep.
+
+We add the rule into pyreason with:
+
+```python
+import pyreason as pr
+
+pr.add_rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule')
+```
+Where `popular_rule` is just the name of the rule. This helps understand which rules fired during reasoning later on.
+
+## Facts
+The facts determine the initial conditions of elements in the graph. They can be specified from the graph attributes but in that
+case they will be immutable later on. Adding PyReason facts gives us more flexibility.
+
+In our case we want to set on of the people in our graph to be `popular` and use PyReason to see how others in the graph are affected by that.
+We add a fact in PyReason like so:
+```python
+import pyreason as pr
+
+pr.add_fact(pr.Fact(name='popular-fact', component='Mary', attribute='popular', bound=[1, 1], start_time=0, end_time=2))
+```
+
+This allows us to specify the component that has an initial condition, the initial condition itself in the form of bounds
+as well as the start and end time of this condition. 
 
 ## Running PyReason
+Find the full code for this example [here](hello-world.py)
 
-Run PyReason as a python package:
-```bash
-python -m pyreason.scripts.diffuse --graph_path pyreason/examples/hello-world/friends.graphml --timesteps 2 --rules_yaml_path pyreason/examples/hello-world/rules.yaml --facts_yaml_path pyreason/examples/hello-world/facts.yaml --labels_yaml_path pyreason/examples/hello-world/labels.yaml --ipl pyreason/examples/hello-world/ipl.yaml --filter_label popular
+The main line that runs the reasoning in that file is:
+```python
+interpretation = pr.reason(timesteps=2)
 ```
-
-Typing `python -m pyreason.scripts.diffuse -h` will display more command line options
+This specifies how many timesteps to run for.
 
 ## Expected Output
-The output after running this is:
+After running the python file, the expected output is:
 
 ```
  TIMESTEP - 0
@@ -217,3 +129,6 @@ The output after running this is:
 1. For timestep 0 we set `Mary -> popular: [1,1]` in the facts
 2. For timestep 1, Justin is the only node who has one popular friend (Mary) and who has the same pet as Mary (cat). Therefore `Justin -> popular: [1,1]`
 3. For timestep 2, since Justin has just become popular, John now has one popular friend (Justin) and the same pet as Justin (dog). Therefore `Justin -> popular: [1,1]`
+
+
+We also output two CSV files detailing all the events that took place during reasoning (one for nodes, one for edges)

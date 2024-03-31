@@ -9,35 +9,29 @@ import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 
 
-
 def parse_rules(path):
     with open(path, 'r') as file:
         rules_yaml = yaml.safe_load(file)
 
     rules = numba.typed.List.empty_list(rule.rule_type)
+    immediate_rules = numba.typed.List.empty_list(rule.rule_type)
     for rule_name, values in rules_yaml.items():
         # Set rule target
         target = label.Label('')
         if values['target'] is not None:
             target = label.Label(values['target'])
-        
-        # Set rule target criteria
-        target_criteria = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, interval.interval_type)))
-        if values['target_criteria'] is not None:
-            for tc in values['target_criteria']:
-                target_criteria.append((label.Label(tc[0]), interval.closed(tc[1], tc[2])))
 
         # Set delta t
-        delta_t = numba.types.int8(values['delta_t'])
+        delta_t = numba.types.uint16(values['delta_t'])
 
         # neigh_criteria = [c1, c2, c3, c4]
         # thresholds = [t1, t2, t3, t4]
-        
+
         # Array of thresholds to keep track of for each neighbor criterion. Form [(comparison, (number/percent, total/available), thresh)]
         thresholds = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), numba.types.float64)))
 
         # Array to store clauses for nodes: node/edge, [subset]/[subset1, subset2], label, interval
-        neigh_criteria = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), label.label_type, interval.interval_type)))
+        neigh_criteria = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, label.label_type, numba.types.UniTuple(numba.types.string, 2), interval.interval_type)))
         if values['neigh_criteria'] is not None:
             # Loop through clauses
             for clause in values['neigh_criteria']:
@@ -47,7 +41,7 @@ def parse_rules(path):
                 subset = (clause[1][0], clause[1][0]) if clause_type=='node' else (clause[1][0], clause[1][1])
                 l = label.Label(clause[2])
                 bnd = interval.closed(clause[3][0], clause[3][1])
-                neigh_criteria.append((clause_type, subset, l, bnd))
+                neigh_criteria.append((clause_type, l, subset, bnd))
 
                 # Append threshold corresponding to clause if specified in rule, else use default of greater equal to 1
                 if len(clause)>4:
@@ -76,7 +70,6 @@ def parse_rules(path):
         # Both target and edge label (if edges are being added) cannot be '' at the same time. One has to have a value
         assert edges[2].get_value()!='' or target.get_value()!='', 'Both target and edge label cannot empty at the same time, one has to take a value. Modify the rules YAML file'
 
-        
         # If annotation function is a string, it is the name of the function. If it is a bound then set it to an empty string
         ann_fn, ann_label = values['ann_fn']
         if isinstance(ann_fn, str):
@@ -92,11 +85,26 @@ def parse_rules(path):
         weights = np.ones(num_clauses, dtype=np.float64)
         weights = np.append(weights, 0)
         if 'weights' in values and values['weights']:
-            weights = np.array(values['weights'], dtype=np.float64)   
-        r = rule.Rule(rule_name, target, target_criteria, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges)
-        rules.append(r)
+            weights = np.array(values['weights'], dtype=np.float64)
 
-    return rules
+        # Immediate rule flag -- whether to be applied before all other rules
+        immediate_rule = False
+        if 'immediate' in values and values['immediate'] is not None:
+            immediate_rule = True
+
+        # Dummy rule type. this file is deprecated
+        r = rule.Rule(rule_name, 'node', target, delta_t, neigh_criteria, bnd, thresholds, ann_fn, ann_label, weights, edges, immediate_rule)
+
+        # Insert to beginning of list if flag for immediate rule is true
+        if immediate_rule:
+            immediate_rules.append(r)
+        else:
+            rules.append(r)
+
+    all_rules = numba.typed.List.empty_list(rule.rule_type)
+    all_rules.extend(immediate_rules)
+    all_rules.extend(rules)
+    return all_rules
 
 
 def parse_facts(path, reverse):
@@ -174,6 +182,7 @@ def parse_labels(path):
                 specific_edge_labels[l] = numba.typed.List([(str(e[0]), str(e[1])) for e in edges])
 
     return node_labels, edge_labels, specific_node_labels, specific_edge_labels
+
 
 def parse_ipl(path):
     with open(path, 'r') as file:

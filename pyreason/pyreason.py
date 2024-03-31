@@ -1,22 +1,25 @@
 # This is the file that will be imported when "import pyreason" is called. All content will be run automatically
+import networkx as nx
 import numba
 import time
 import sys
-import warnings
+import pandas as pd
 import memory_profiler as mp
-from typing import List, Type
+from typing import List, Type, Callable, Tuple
 
 from pyreason.scripts.utils.output import Output
 from pyreason.scripts.utils.filter import Filter
 from pyreason.scripts.program.program import Program
-from pyreason.scripts.interpretation.interpretation import Interpretation
 from pyreason.scripts.utils.graphml_parser import GraphmlParser
 import pyreason.scripts.utils.yaml_parser as yaml_parser
+import pyreason.scripts.utils.rule_parser as rule_parser
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
+import pyreason.scripts.numba_wrapper.numba_types.rule_type as rule
+from pyreason.scripts.facts.fact import Fact
+from pyreason.scripts.rules.rule import Rule
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
-
 
 
 # USER VARIABLES
@@ -34,6 +37,10 @@ class _Settings:
         self.__canonical = False
         self.__inconsistency_check = True
         self.__static_graph_facts = True
+        self.__store_interpretation_changes = True
+        self.__parallel_computing = False
+        self.__update_mode = 'intersection'
+
         self.__ad_hoc_grounding = False
         self.__resolution_levels = 0
         self.__step_size = 1
@@ -138,9 +145,35 @@ class _Settings:
         return self.__static_graph_facts
 
     @property
+    def store_interpretation_changes(self) -> bool:
+        """Returns whether to keep track of changes that occur in the interpretation. You will not be able to view
+        interpretation results after reasoning. Default is True
+
+        :return: bool
+        """
+        return self.__store_interpretation_changes
+
+    @property
+    def parallel_computing(self) -> bool:
+        """Returns whether to use multiple CPU cores for inference. This will disable cacheing and pyreason will have
+        to be re-compiled at each run - but after compilation it will be faster. Default is False
+
+        :return: bool
+        """
+        return self.__parallel_computing
+
+    @property
+    def update_mode(self) -> str:
+        """Returns the way interpretations are going to be updated. This could be "intersection" or "override"
+
+        :return: str
+        """
+        return self.__update_mode
+
+
+    @property
     def ad_hoc_grounding(self) -> bool:
         """Returns whether ground atoms as and when we need them. This can be used for specific cases. Default is off
-
         :return: bool
         """
         return self.__ad_hoc_grounding
@@ -148,7 +181,6 @@ class _Settings:
     @property
     def resolution_levels(self) -> int:
         """Returns the resolution level of the space, how many levels of quadrants there are. Used along side ad-hoc grounding
-
         :return: int
         """
         return self.__resolution_levels
@@ -156,7 +188,6 @@ class _Settings:
     @property
     def step_size(self) -> int:
         """Returns the step size for grounding neighbors. Default is 1 (adjacent neighbors). Used along side ad-hoc grounding
-
         :return: int
         """
         return self.__step_size
@@ -309,10 +340,48 @@ class _Settings:
         else:
             self.__static_graph_facts = value
 
+    @store_interpretation_changes.setter
+    def store_interpretation_changes(self, value: bool) -> None:
+        """Whether to keep track of changes that occur to the interpretation. You will not be able to view interpretation
+        results after reasoning.
+
+        :param value: Whether to make graphml facts static or not
+        :raises TypeError: If not bool raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('value has to be a bool')
+        else:
+            self.__store_interpretation_changes = value
+
+    @parallel_computing.setter
+    def parallel_computing(self, value: bool) -> None:
+        """Whether to use multiple CPU cores for inference. This will disable cacheing and pyreason will have
+        to be re-compiled at each run - but after compilation it will be faster. Default is False
+
+        :param value: Whether to make inference run on parallel hardware (multiple CPU cores)
+        :raises TypeError: If not bool raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('value has to be a bool')
+        else:
+            self.__parallel_computing = value
+
+    @update_mode.setter
+    def update_mode(self, value: str) -> None:
+        """The way interpretations are going to be updated. This could be "intersection" or "override". Default is
+         'intersection'
+
+        :param value: "intersection" or "override"
+        :raises TypeError: If not str raise error
+        """
+        if not isinstance(value, str):
+            raise TypeError('value has to be a str')
+        else:
+            self.__update_mode = value
+
     @ad_hoc_grounding.setter
     def ad_hoc_grounding(self, value: bool) -> None:
         """Whether to ground atoms as and when we need them. This can be used for specific cases. Default is off
-
         :param value: Whether to ground atoms as and when we need them. This can be used for specific cases. Default is off
         :raises TypeError: If not bool raise error
         """
@@ -324,7 +393,6 @@ class _Settings:
     @resolution_levels.setter
     def resolution_levels(self, value: int) -> None:
         """The resolution level of the space, how many levels of quadrants there are. Used along side ad-hoc grounding. Default is 0
-
         :param value: Resolution level, number of hierarchical quadrants
         :raises TypeError: If not int raise error
         """
@@ -336,7 +404,6 @@ class _Settings:
     @step_size.setter
     def step_size(self, value: int) -> None:
         """The step size for grounding neighbors. Default is 1 (adjacent neighbors). Used along side ad-hoc grounding
-
         :param value: Step size
         :raises TypeError: If not int raise error
         """
@@ -344,6 +411,7 @@ class _Settings:
             raise TypeError('value has to be a int')
         else:
             self.__step_size = value
+
 
 # VARIABLES
 __graph = None
@@ -361,6 +429,8 @@ __non_fluent_graph_facts_edge = None
 __specific_graph_node_labels = None
 __specific_graph_edge_labels = None
 
+__annotation_functions = []
+
 __timestamp = ''
 __program = None
 
@@ -368,8 +438,27 @@ __graphml_parser = GraphmlParser()
 settings = _Settings()
 
 
+def reset():
+    """Resets certain variables to None to be able to do pr.reason() multiple times in a program
+    without memory blowing up
+    """
+    global __node_facts, __edge_facts, __node_labels, __edge_labels
+    __node_facts = None
+    __edge_facts = None
+    __node_labels = None
+    __edge_labels = None
+
+
+def reset_rules():
+    """
+    Resets rules to none
+    """
+    global __rules
+    __rules = None
+
+
 # FUNCTIONS
-def load_graph(path: str) -> None:
+def load_graphml(path: str) -> None:
     """Loads graph from GraphMl file path into program
 
     :param path: Path for the GraphMl file
@@ -387,31 +476,29 @@ def load_graph(path: str) -> None:
         __non_fluent_graph_facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
         __specific_graph_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
         __specific_graph_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
+
+
+def load_graph(graph: nx.DiGraph) -> None:
+    """Load a networkx DiGraph into pyreason
+
+    :param graph: Networkx DiGraph object to load into pyreason
+    :type graph: nx.DiGraph
+    :return: None
+    """
+    global __graph, __graphml_parser, __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels, settings
     
+    # Load graph
+    __graph = __graphml_parser.load_graph(graph)
 
-def load_labels(path: str) -> None:
-    """Load labels from YAML file path into program
+    # Graph attribute parsing
+    if settings.graph_attribute_parsing:
+        __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels = __graphml_parser.parse_graph_attributes(settings.static_graph_facts)
+    else:
+        __non_fluent_graph_facts_node = numba.typed.List.empty_list(fact_node.fact_type)
+        __non_fluent_graph_facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
+        __specific_graph_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
+        __specific_graph_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
 
-    :param path: Path for the YAML labels file
-    """
-    global __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels
-    __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels = yaml_parser.parse_labels(path)
-
-def load_facts(path: str) -> None:
-    """Load facts from YAML file path into program
-
-    :param path: Path for the YAML facts file
-    """
-    global __node_facts, __edge_facts, settings
-    __node_facts, __edge_facts = yaml_parser.parse_facts(path, settings.reverse_digraph)
-
-def load_rules(path: str) -> None:
-    """Load rules from YAML file path into program
-
-    :param path: Path for the YAML rules file
-    """
-    global __rules
-    __rules = yaml_parser.parse_rules(path)
 
 def load_inconsistent_predicate_list(path: str) -> None:
     """Load IPL from YAML file path into program
@@ -422,16 +509,79 @@ def load_inconsistent_predicate_list(path: str) -> None:
     __ipl = yaml_parser.parse_ipl(path)
 
 
-def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_threshold: float=-1, again: bool=False, node_facts: List[Type[fact_node.Fact]]=None, edge_facts: List[Type[fact_edge.Fact]]=None, include_graph_facts: bool=True):
+def add_rule(pr_rule: Rule) -> None:
+    """Add a rule to pyreason from text format. This format is not as modular as the YAML format.
+    """
+    global __rules
+
+    # Add to collection of rules
+    if __rules is None:
+        __rules = numba.typed.List.empty_list(rule.rule_type)
+    __rules.append(pr_rule.rule)
+
+
+def add_rules_from_file(file_path: str, infer_edges: bool = False) -> None:
+    """ Add a set of rules from a text file
+
+    :param file_path: Path to the text file containing rules
+    :type file_path: str
+    :param infer_edges: Whether to infer edges on these rules if an edge doesn't exist between head variables and the body of the rule is satisfied
+    :type infer_edges: bool
+    :return: None
+    """
+    with open(file_path, 'r') as file:
+        rules = [line.rstrip() for line in file if line.rstrip() != '' and line.rstrip()[0] != '#']
+
+    rule_offset = 0 if __rules is None else len(__rules)
+    for i, r in enumerate(rules):
+        add_rule(Rule(r, f'rule_{i+rule_offset}', infer_edges))
+
+
+def add_fact(pyreason_fact: Fact) -> None:
+    """Add a PyReason fact to the program.
+
+    :param pyreason_fact: PyReason fact created using pr.Fact(...)
+    :return: None
+    """
+    global __node_facts, __edge_facts
+
+    if pyreason_fact.type == 'node':
+        f = fact_node.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.label, pyreason_fact.interval, pyreason_fact.t_lower, pyreason_fact.t_upper, pyreason_fact.static)
+        if __node_facts is None:
+            __node_facts = numba.typed.List.empty_list(fact_node.fact_type)
+        __node_facts.append(f)
+
+    else:
+        f = fact_edge.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.label, pyreason_fact.interval, pyreason_fact.t_lower, pyreason_fact.t_upper, pyreason_fact.static)
+        if __edge_facts is None:
+            __edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
+        __edge_facts.append(f)
+
+
+def add_annotation_function(function: Callable) -> None:
+    """Function to add annotation functions to PyReason. The added functions can be used in rules
+
+    :param function: Function to be added. This has to be under a numba `njit` decorator. function has signature: two parameters as input -- annotations, weights
+    :type function: Callable
+    :return: None
+    """
+    global __annotation_functions
+    # Make sure that the functions are jitted so that they can be passed around in other jitted functions
+    # TODO: Remove if necessary
+    # assert hasattr(function, 'nopython_signatures'), 'The function to be added has to be under a `numba.njit` decorator'
+
+    __annotation_functions.append(function)
+
+
+def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_threshold: float=-1, again: bool=False, node_facts: List[Type[fact_node.Fact]]=None, edge_facts: List[Type[fact_edge.Fact]]=None):
     """Function to start the main reasoning process. Graph and rules must already be loaded.
 
-    :param timesteps: Max number of timesteps to run. -1 specifies run till convergence, defaults to -1
+    :param timesteps: Max number of timesteps to run. -1 specifies run till convergence. If reasoning again, this is the number of timesteps to reason for extra (no zero timestep), defaults to -1
     :param convergence_threshold: Maximim number of interpretations that have changed between timesteps or fixed point operations until considered convergent. Program will end at convergence. -1 => no changes, perfect convergence, defaults to -1
     :param convergence_bound_threshold: Maximum change in any interpretation (bounds) between timesteps or fixed point operations until considered convergent, defaults to -1
     :param again: Whether to reason again on an existing interpretation, defaults to False
     :param node_facts: New node facts to use during the next reasoning process. Other facts from file will be discarded, defaults to None
     :param edge_facts: New edge facts to use during the next reasoning process. Other facts from file will be discarded, defaults to None
-    :param include_graph_facts: Whether to add the graph facts to the facts supplied through `node_facts`, defaults to True
     :return: The final interpretation after reasoning.
     """
     global settings, __timestamp
@@ -452,11 +602,11 @@ def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_t
     else:
         if settings.memory_profile:
             start_mem = mp.memory_usage(max_usage=True)
-            mem_usage, interp = mp.memory_usage((_reason_again, [timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts, include_graph_facts]), max_usage=True, retval=True)
+            mem_usage, interp = mp.memory_usage((_reason_again, [timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts]), max_usage=True, retval=True)
             print(f"\nProgram used {mem_usage-start_mem} MB of memory")
         else:
-            interp = _reason_again(timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts, include_graph_facts)
-
+            interp = _reason_again(timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts)
+        
     return interp
 
 
@@ -474,29 +624,23 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     if __graph is None:
         raise Exception('Graph not loaded. Use `load_graph` to load the graphml file')
     if __rules is None:
-        raise Exception('Rules not loaded. Use `load_rules` to load the rules yaml file')
+        raise Exception('There are no rules, use `add_rule` or `add_rules_from_file`')
 
     # Check variables that are highly recommended. Warnings
     if __node_labels is None and __edge_labels is None:
-        if settings.verbose:
-            warnings.warn('Labels yaml file has not been loaded. Use `load_labels`. Only graph attributes will be used as labels\n')
         __node_labels = numba.typed.List.empty_list(label.label_type)
         __edge_labels = numba.typed.List.empty_list(label.label_type)
         __specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
         __specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
 
-    if __node_facts is None and __edge_facts is None:
-        if settings.verbose:
-            warnings.warn('Facts yaml file has not been loaded. Use `load_facts`. Only graph attributes will be used as facts\n')
+    if __node_facts is None:
         __node_facts = numba.typed.List.empty_list(fact_node.fact_type)
+    if __edge_facts is None:
         __edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
 
     if __ipl is None:
-        if settings.verbose:
-            warnings.warn('Inconsistent Predicate List yaml file has not been loaded. Use `load_ipl`. Loading IPL is optional\n')
         __ipl = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, label.label_type)))
 
-    
     # If graph attribute parsing, add results to existing specific labels and facts
     for label_name, nodes in __specific_graph_node_labels.items():
         if label_name in __specific_node_labels:
@@ -509,11 +653,23 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
             __specific_edge_labels[label_name].extend(edges)
         else:
             __specific_edge_labels[label_name] = edges
-    __node_facts.extend(__non_fluent_graph_facts_node)
-    __edge_facts.extend(__non_fluent_graph_facts_edge)   
+
+    all_node_facts = numba.typed.List.empty_list(fact_node.fact_type)
+    all_edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
+    all_node_facts.extend(numba.typed.List(__node_facts))
+    all_edge_facts.extend(numba.typed.List(__edge_facts))
+    all_node_facts.extend(__non_fluent_graph_facts_node)
+    all_edge_facts.extend(__non_fluent_graph_facts_edge)
+
+    # Atom trace cannot be true when store interpretations is false
+    if not settings.store_interpretation_changes:
+        settings.atom_trace = False
+
+    # Convert list of annotation functions into tuple to be numba compatible
+    annotation_functions = tuple(__annotation_functions)
 
     # Setup logical program
-    __program = Program(__graph, __node_facts, __edge_facts, __rules, __ipl, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.ad_hoc_grounding, settings.resolution_levels, settings.step_size)
+    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.ad_hoc_grounding, settings.resolution_levels, settings.step_size)
     __program.available_labels_node = __node_labels
     __program.available_labels_edge = __edge_labels
     __program.specific_node_labels = __specific_node_labels
@@ -525,51 +681,60 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     return interpretation
 
 
-def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts, include_graph_facts):
+def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts):
     # Globals
     global __graph, __rules, __node_facts, __edge_facts, __ipl, __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels, __graphml_parser
     global settings, __timestamp, __program
 
     assert __program is not None, 'To run `reason_again` you need to have reasoned once before'
 
-    # If facts have not been inputted, use the old facts
-    __program.interp.facts_to_be_applied_node.clear()
-    __program.interp.facts_to_be_applied_edge.clear()
+    # Extend current set of facts with the new facts supplied
+    all_edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
+    all_node_facts = numba.typed.List.empty_list(fact_node.fact_type)
     if node_facts is not None:
-        node_facts = numba.typed.List(node_facts)
-        if include_graph_facts:
-            node_facts.extend(__non_fluent_graph_facts_node)
-    else:
-        node_facts = numba.typed.List.empty_list(fact_node.fact_type)
-
+        all_node_facts.extend(numba.typed.List(node_facts))
     if edge_facts is not None:
-        edge_facts = numba.typed.List(edge_facts)
-        if include_graph_facts:
-            edge_facts.extend(__non_fluent_graph_facts_edge)
-    else:
-        edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
+        all_edge_facts.extend(numba.typed.List(edge_facts))
 
     # Run Program and get final interpretation
-    interpretation = __program.reason_again(timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts, settings.verbose)
+    interpretation = __program.reason_again(timesteps, convergence_threshold, convergence_bound_threshold, all_node_facts, all_edge_facts, settings.verbose)
 
     return interpretation
 
 
 def save_rule_trace(interpretation, folder: str='./'):
-    """Saves the trace of the program. This includes every change that has occured to the interpretation. If `atom_trace` was set to true
+    """Saves the trace of the program. This includes every change that has occurred to the interpretation. If `atom_trace` was set to true
     this gives us full explainability of why interpretations changed
 
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
     :param folder: the folder in which to save the result, defaults to './'
     """
-    global __timestamp
+    global __timestamp, settings
+
+    assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to save rule trace'
 
     output = Output(__timestamp)
     output.save_rule_trace(interpretation, folder)
 
 
-def filter_and_sort(interpretation, labels: List[str], bound: interval.Interval=interval.closed(0,1), sort_by: str='lower', descending: bool=True):
-    """Filters and sorts the interpretation and returns as a list of Pandas dataframes that are easy to access
+def get_rule_trace(interpretation) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Returns the trace of the program as 2 pandas dataframes (one for nodes, one for edges).
+    This includes every change that has occurred to the interpretation. If `atom_trace` was set to true
+    this gives us full explainability of why interpretations changed
+
+    :param interpretation: the output of `pyreason.reason()`, the final interpretation
+    :returns two pandas dataframes (nodes, edges) representing the changes that occurred during reasoning
+    """
+    global __timestamp, settings
+
+    assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to save rule trace'
+
+    output = Output(__timestamp)
+    return output.get_rule_trace(interpretation)
+
+
+def filter_and_sort_nodes(interpretation, labels: List[str], bound: interval.Interval=interval.closed(0,1), sort_by: str='lower', descending: bool=True):
+    """Filters and sorts the node changes in the interpretation and returns as a list of Pandas dataframes that are easy to access
 
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
     :param labels: A list of strings, labels that are in the interpretation that are to be filtered
@@ -578,6 +743,23 @@ def filter_and_sort(interpretation, labels: List[str], bound: interval.Interval=
     :param descending: A bool that sorts by descending/ascending order, defaults to True
     :return: A list of Pandas dataframes that contain the filtered and sorted interpretations that are easy to access
     """
+    assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to filter and sort nodes'
     filterer = Filter(interpretation.time)
-    filtered_df = filterer.filter_and_sort(interpretation, labels, bound, sort_by, descending)
+    filtered_df = filterer.filter_and_sort_nodes(interpretation, labels, bound, sort_by, descending)
+    return filtered_df
+
+
+def filter_and_sort_edges(interpretation, labels: List[str], bound: interval.Interval=interval.closed(0,1), sort_by: str='lower', descending: bool=True):
+    """Filters and sorts the edge changes in the interpretation and returns as a list of Pandas dataframes that are easy to access
+
+    :param interpretation: the output of `pyreason.reason()`, the final interpretation
+    :param labels: A list of strings, labels that are in the interpretation that are to be filtered
+    :param bound: The bound that will filter any interpretation that is not in it. the default does not filter anything, defaults to interval.closed(0,1)
+    :param sort_by: String that is either 'lower' or 'upper', sorts by the lower/upper bound, defaults to 'lower'
+    :param descending: A bool that sorts by descending/ascending order, defaults to True
+    :return: A list of Pandas dataframes that contain the filtered and sorted interpretations that are easy to access
+    """
+    assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to filter and sort edges'
+    filterer = Filter(interpretation.time)
+    filtered_df = filterer.filter_and_sort_edges(interpretation, labels, bound, sort_by, descending)
     return filtered_df
