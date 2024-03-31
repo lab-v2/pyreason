@@ -2,12 +2,13 @@
 import pyreason as pr
 
 
-def test_hello_world():
+def test_hello_world_parallel():
     # Modify the paths based on where you've stored the files we made above
     graph_path = './tests/friends_graph.graphml'
 
     # Modify pyreason settings to make verbose and to save the rule trace to a file
     pr.settings.verbose = True     # Print info to screen
+    pr.settings.parallel_computing = True
 
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
