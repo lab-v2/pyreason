@@ -13,7 +13,7 @@ Prerequisites
 
 .. note::
 
-    Use python version 3.8 or higher to install PyReason.
+    Use python version 3.9 or 3.10 .
 
 
 Step-by-Step Guide
