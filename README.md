@@ -1,8 +1,11 @@
 # PyReason
 <img src="https://raw.githubusercontent.com/lab-v2/pyreason/main/media/pyreason_logo.jpg"/>
 
-[![Python Build](https://github.com/lab-v2/pyreason/actions/workflows/python-publish.yml/badge.svg)](https://github.com/lab-v2/pyreason/actions/workflows/python-publish.yml)
-[![Python version compatibility](https://github.com/lab-v2/pyreason/actions/workflows/python-package-version-test.yml/badge.svg)](https://github.com/lab-v2/pyreason/actions/workflows/python-package-version-test.yml)
+[![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
+[![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
+[![pypi](https://github.com/lab-v2/pyreason/actions/workflows/python-publish.yml/badge.svg)](https://github.com/lab-v2/pyreason/actions/workflows/python-publish.yml)
+[![Tests](https://github.com/lab-v2/pyreason/actions/workflows/python-package-version-test.yml/badge.svg)](https://github.com/lab-v2/pyreason/actions/workflows/python-package-version-test.yml)
+
 
 An explainable inference software supporting annotated, real valued, graph based and temporal logic.
 
@@ -15,56 +18,34 @@ An explainable inference software supporting annotated, real valued, graph based
 
 [🏋️‍♂️ PyReason Gym](https://github.com/lab-v2/pyreason-gym)
 
-Check out the [PyReason Hello World](https://github.com/lab-v2/pyreason/blob/main/docs/hello-world.md) program if you're new, or want get get a feel for the software.
+[🗎 Documentation](https://pyreason-rtd.readthedocs.io/en/latest/)
+
+Check out the [PyReason Hello World](https://pyreason-rtd.readthedocs.io/en/latest/tutorials/Basic%20tutorial.html) program if you're new, or want get get a feel for the software.
 
 
 ## Table of Contents
   
 1. [Introduction](#1-introduction)
-2. [Install](#2-install)
-    * [Install as a Python Library](#21-install-as-a-python-library)
-    * [Install as a command line tool](#22-install-as-a-command-line-tool)
-3. [Usage](#3-usage)
-4. [Bibtex](#4-bibtex)
-5. [License](#5-license)
-6. [Contact](#6-contact)
+2. [Documentation](#2-documentation)
+3. [Install](#3-install)
+5. [Bibtex](#4-bibtex)
+6. [License](#5-license)
+7. [Contact](#6-contact)
 
 
 ## 1. Introduction
-PyReason makes use of 4 files:
+PyReason is a graphical inference tool that uses a set of logical rules and facts (initial conditions) to reason over graph structures. To get more details, refer to the paper/video/hello-world-example mentioned above.
 
-1. A GraphMl file containing the graph (required)
-2. A YAML file containing the pyreason rules (required)
-3. A YAML file containing the pyreason facts (optional but recommended)
-4. A YAML file containing the pyreason labels (optional but recommended)
-5. A YAML file containing the pyreason ipl (inconsistent predicate list) (optional)
+## 2. Documentation 
+All API documentation and code examples can be found on [ReadTheDocs](https://pyreason-rtd.readthedocs.io/en/latest/)
 
-The format of these files is very important. Please refer to the [example YAML files provided](https://github.com/lab-v2/pyreason/blob/main/pyreason/examples/example_yamls) when making your own rules/facts/labels/ipl. TODO: make doc for each format.
+## 3. Install
+PyReason can be installed as a python library using
 
-## 2. Install
-PyReason can be installed as a python library (recommended) or as a command line tool
-
-## 2.1 Install as a Python Library
-We import pyreason to initialize it for the first time, this may take a few minutes
 ```bash
 pip install pyreason
-python
-import pyreason
 ```
-
-## 2.2 Install as a Command Line Tool
-
-```bash
-git clone https://github.com/lab-v2/pyreason
-cd pyreason
-pip install -r requirements.txt
-python initialize.py
-```
-
-## 3. Usage
-Please refer to the documentation that is relevant to you
-1. [Usage as Python Library](https://github.com/lab-v2/pyreason/blob/main/docs/pyreason_library.md)
-2. [Usage as a Command Line Tool](https://github.com/lab-v2/pyreason/blob/main/docs/pyreason_cmd_line.md)
+The Python versions that are currently supported are `3.7`, `3.8`, `3.9`, `3.10`. If you want multi-core parallel support only `3.9` and `3.10` versions work due to limited numba support.
 
 ## 4. Bibtex
 If you used this software in your work please cite our paper
