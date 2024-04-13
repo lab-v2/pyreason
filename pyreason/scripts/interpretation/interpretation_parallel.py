@@ -1156,7 +1156,7 @@ def _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, e
 
 			# Refine subsets based on any updates
 			if satisfaction:
-				satisfaction = refine_subsets_node_rule(interpretations_edge, clauses, i, subsets, target_edge, neighbors, reverse_neighbors, nodes, thresholds, reverse_graph) and satisfaction
+				satisfaction = refine_subsets_edge_rule(interpretations_edge, clauses, i, subsets, target_edge, neighbors, reverse_neighbors, nodes, thresholds, reverse_graph) and satisfaction
 
 			# Exit loop if even one clause is not satisfied
 			if not satisfaction:
