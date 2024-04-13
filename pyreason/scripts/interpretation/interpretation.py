@@ -722,7 +722,7 @@ class Interpretation:
 
 		# Initialize interpretations for each time and node and edge
 		interpretations = {}
-		for t in range(self.tmax+1):
+		for t in range(len(interpretations)):
 			interpretations[t] = {}
 			for node in self.nodes:
 				interpretations[t][node] = InterpretationDict()
@@ -736,7 +736,7 @@ class Interpretation:
 
 			# If canonical, update all following timesteps as well
 			if self. canonical:
-				for t in range(time+1, self.tmax+1):
+				for t in range(time+1, len(interpretations)):
 					interpretations[t][node][l._value] = (bnd.lower, bnd.upper)
 
 		# Update interpretation edges
@@ -746,7 +746,7 @@ class Interpretation:
 
 			# If canonical, update all following timesteps as well
 			if self. canonical:
-				for t in range(time+1, self.tmax+1):
+				for t in range(time+1, len(interpretations)):
 					interpretations[t][edge][l._value] = (bnd.lower, bnd.upper)
 
 		return interpretations
