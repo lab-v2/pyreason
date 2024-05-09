@@ -5,8 +5,7 @@ import pyreason.scripts.numba_wrapper.numba_types.rule_type as rule
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 
-
-def parse_rule(rule_text: str, name: str, infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False) -> rule.Rule:
+def parse_rule(rule_text: str, name: str,custom_thresholds: list, infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False) -> rule.Rule:  
     # First remove all spaces from line
     r = rule_text.replace(' ', '')
 
@@ -152,7 +151,23 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, set_static:
     # Array to store clauses for nodes: node/edge, [subset]/[subset1, subset2], label, interval, operator
     clauses = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, label.label_type, numba.types.ListType(numba.types.string), interval.interval_type, numba.types.string)))
 
-    # Loop though clauses
+    # gather count of clauses for threshold validation
+    num_clauses = len(body_clauses)
+
+    if (custom_thresholds) and (len(custom_thresholds) != num_clauses):
+        # raise exception here 
+        pass 
+    
+    #If no custom thresholds provided, use defaults
+    #otherwise loop through user-defined thresholds and convert to numba compatible format
+    if not custom_thresholds:
+        for _ in range(num_clauses):  
+            thresholds.append(('greater_equal', ('number', 'total'), 1.0))
+    else:  
+        for threshold in custom_thresholds:  
+            thresholds.append(threshold.to_tuple())
+
+    # # Loop though clauses
     for body_clause, predicate, variables, bounds in zip(body_clauses, body_predicates, body_variables, body_bounds):
         # Neigh criteria
         clause_type = 'node' if len(variables) == 1 else 'edge'
@@ -164,12 +179,6 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, set_static:
         l = label.Label(predicate)
         bnd = interval.closed(bounds[0], bounds[1])
         clauses.append((clause_type, l, subset, bnd, op))
-
-        # Threshold.
-        quantifier = 'greater_equal'
-        quantifier_type = ('number', 'total')
-        thresh = 1
-        thresholds.append((quantifier, quantifier_type, thresh))
 
     # Assert that there are two variables in the head of the rule if we infer edges
     # Add edges between head variables if necessary
