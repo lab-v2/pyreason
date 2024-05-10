@@ -153,15 +153,16 @@ def parse_rule(rule_text: str, name: str,custom_thresholds: list, infer_edges: b
 
     # gather count of clauses for threshold validation
     num_clauses = len(body_clauses)
+    print("body_clauses:", body_clauses)
 
-    if (custom_thresholds) and (len(custom_thresholds) != num_clauses):
-        # raise exception here 
-        pass 
+    if custom_thresholds and (len(custom_thresholds) != num_clauses):
+        raise Exception('The length of custom thresholds {} is not equal to number of clauses {}'
+                        .format(len(custom_thresholds), num_clauses))
     
     #If no custom thresholds provided, use defaults
     #otherwise loop through user-defined thresholds and convert to numba compatible format
     if not custom_thresholds:
-        for _ in range(num_clauses):  
+        for _ in range(num_clauses):
             thresholds.append(('greater_equal', ('number', 'total'), 1.0))
     else:  
         for threshold in custom_thresholds:  

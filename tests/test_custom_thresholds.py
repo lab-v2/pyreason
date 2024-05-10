@@ -1,6 +1,8 @@
-# Test if the simple hello world program works with thresholds defined
+# Test if the simple program works with thresholds defined
 import pyreason as pr
 from pyreason import Threshold
+
+
 def test_custom_thresholds():
     # Modify the paths based on where you've stored the files we made above
     graph_path = './tests/friends_graph.graphml'
@@ -10,14 +12,16 @@ def test_custom_thresholds():
 
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
-    # add custom thresholds
-    user_defined_thresholds = [  
-    Threshold('greater_equal', ('number', 'total'), 1),  
-    Threshold('greater_equal', ('percent', 'total'), 100)  
-    ]  
 
-    pr.add_rule(pr.Rule('popular(x) <- friends(x,y), popular(y)', 'popular_rule', user_defined_thresholds))
-    pr.add_fact(pr.Fact('popular-fact', 'Mary', 'popular', [1, 1], 0, 2))
+    # add custom thresholds
+    user_defined_thresholds = [
+    Threshold('greater_equal', ('number', 'total'), 1),
+    Threshold('greater_equal', ('percent', 'total'), 100)
+    ]
+
+    pr.add_rule(pr.Rule('popular(x) <-1 Friends(x,y), popular(y)', 'popular_rule', user_defined_thresholds))
+    pr.add_fact(pr.Fact('popular-fact-mary', 'Mary', 'popular', [1, 1], 0, 2))
+    pr.add_fact(pr.Fact('popular-fact-john', 'John', 'popular', [1, 1], 1, 2))
 
     # Run the program for two timesteps to see the diffusion take place
     interpretation = pr.reason(timesteps=2)
@@ -30,17 +34,19 @@ def test_custom_thresholds():
         print()
 
     assert len(dataframes[0]) == 1, 'At t=0 there should be one popular person'
-    assert len(dataframes[1]) == 2, 'At t=0 there should be two popular people'
-    assert len(dataframes[2]) == 3, 'At t=0 there should be three popular people'
+    assert len(dataframes[1]) == 3, 'At t=1 there should be three popular people since Mary and John are popular by fact and Justin becomes popular by rule'
+    assert len(dataframes[2]) == 3, 'At t=2 there should be three popular people since Mary and John are popular by fact and Justin becomes popular by rule'
 
     # Mary should be popular in all three timesteps
     assert 'Mary' in dataframes[0]['component'].values and dataframes[0].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=0 timesteps'
     assert 'Mary' in dataframes[1]['component'].values and dataframes[1].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=1 timesteps'
     assert 'Mary' in dataframes[2]['component'].values and dataframes[2].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=2 timesteps'
 
+    # John should be popular in timestep 1, 2
+    assert 'John' in dataframes[1]['component'].values and dataframes[1].iloc[1].popular == [1, 1], 'John should have popular bounds [1,1] for t=1 timesteps'
+    assert 'John' in dataframes[2]['component'].values and dataframes[2].iloc[2].popular == [1, 1], 'John should have popular bounds [1,1] for t=2 timesteps'
+
     # Justin should be popular in timesteps 1, 2
     assert 'Justin' in dataframes[1]['component'].values and dataframes[1].iloc[1].popular == [1, 1], 'Justin should have popular bounds [1,1] for t=1 timesteps'
     assert 'Justin' in dataframes[2]['component'].values and dataframes[2].iloc[2].popular == [1, 1], 'Justin should have popular bounds [1,1] for t=2 timesteps'
 
-    # John should be popular in timestep 3
-    assert 'John' in dataframes[2]['component'].values and dataframes[2].iloc[1].popular == [1, 1], 'John should have popular bounds [1,1] for t=2 timesteps'

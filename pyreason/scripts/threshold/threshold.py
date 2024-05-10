@@ -19,11 +19,18 @@ class Threshold:
             quantifier (str): The comparison operator for the threshold.  
             quantifier_type (tuple): The type of quantifier ('number' or 'percent', 'total' or 'available').  
             thresh (int): The numerical value for the threshold.  
-        """  
-        self.quantifier = quantifier  
-        self.quantifier_type = quantifier_type  
-        self.thresh = thresh  
-  
+        """
+
+        if quantifier not in ("greater_equal", "greater", "less_equal", "less", "equal"):
+            raise ValueError("Invalid quantifier")
+
+        if quantifier_type[0] not in ("number", "percent") and quantifier_type[1] not in ("total", "available"):
+            raise ValueError("Invalid quantifier type")
+
+        self.quantifier = quantifier
+        self.quantifier_type = quantifier_type
+        self.thresh = thresh
+
     def to_tuple(self):  
         """  
         Converts the Threshold instance into a tuple compatible with numba types.  
@@ -31,4 +38,4 @@ class Threshold:
         Returns:  
             tuple: A tuple representation of the Threshold instance.  
         """  
-        return (self.quantifier, self.quantifier_type, self.thresh)  
+        return (self.quantifier, self.quantifier_type, self.thresh)
