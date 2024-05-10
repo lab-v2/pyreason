@@ -24,7 +24,7 @@ class Threshold:
         if quantifier not in ("greater_equal", "greater", "less_equal", "less", "equal"):
             raise ValueError("Invalid quantifier")
 
-        if quantifier_type[0] not in ("number", "percent") and quantifier_type[1] not in ("total", "available"):
+        if quantifier_type[0] not in ("number", "percent") or quantifier_type[1] not in ("total", "available"):
             raise ValueError("Invalid quantifier type")
 
         self.quantifier = quantifier
