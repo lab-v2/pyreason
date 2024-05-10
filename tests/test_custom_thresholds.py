@@ -2,10 +2,9 @@
 import pyreason as pr
 from pyreason import Threshold
 
-
 def test_custom_thresholds():
     # Modify the paths based on where you've stored the files we made above
-    graph_path = './tests/friends_graph.graphml'
+    graph_path = './tests/group_chat_graph.graphml'
 
     # Modify pyreason settings to make verbose and to save the rule trace to a file
     pr.settings.verbose = True     # Print info to screen
@@ -19,34 +18,28 @@ def test_custom_thresholds():
     Threshold('greater_equal', ('percent', 'total'), 100)
     ]
 
-    pr.add_rule(pr.Rule('popular(x) <-1 Friends(x,y), popular(y)', 'popular_rule', user_defined_thresholds))
-    pr.add_fact(pr.Fact('popular-fact-mary', 'Mary', 'popular', [1, 1], 0, 2))
-    pr.add_fact(pr.Fact('popular-fact-john', 'John', 'popular', [1, 1], 1, 2))
+    pr.add_rule(pr.Rule('ViewedByAll(x) <- HaveAccess(x,y), Viewed(y)', 'viewed_by_all_rule', user_defined_thresholds))
+
+    pr.add_fact(pr.Fact('seen-fact-zach', 'Zach', 'Viewed', [1, 1], 0, 3))
+    pr.add_fact(pr.Fact('seen-fact-justin', 'Justin', 'Viewed', [1, 1], 0, 3))
+    pr.add_fact(pr.Fact('seen-fact-michelle', 'Michelle', 'Viewed', [1, 1], 1, 3))
+    pr.add_fact(pr.Fact('seen-fact-amy', 'Amy', 'Viewed', [1, 1], 2, 3))
+
 
     # Run the program for two timesteps to see the diffusion take place
-    interpretation = pr.reason(timesteps=2)
+    interpretation = pr.reason(timesteps=3)
 
     # Display the changes in the interpretation for each timestep
-    dataframes = pr.filter_and_sort_nodes(interpretation, ['popular'])
+    dataframes = pr.filter_and_sort_nodes(interpretation, ['ViewedByAll'])
     for t, df in enumerate(dataframes):
         print(f'TIMESTEP - {t}')
         print(df)
         print()
 
-    assert len(dataframes[0]) == 1, 'At t=0 there should be one popular person'
-    assert len(dataframes[1]) == 3, 'At t=1 there should be three popular people since Mary and John are popular by fact and Justin becomes popular by rule'
-    assert len(dataframes[2]) == 3, 'At t=2 there should be three popular people since Mary and John are popular by fact and Justin becomes popular by rule'
+    assert len(dataframes[0]) == 0, 'At t=0 the TextMessage should not have been ViewedByAll'
+    assert len(dataframes[2]) == 1, 'At t=2 the TextMessage should have been ViewedByAll'
 
-    # Mary should be popular in all three timesteps
-    assert 'Mary' in dataframes[0]['component'].values and dataframes[0].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=0 timesteps'
-    assert 'Mary' in dataframes[1]['component'].values and dataframes[1].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=1 timesteps'
-    assert 'Mary' in dataframes[2]['component'].values and dataframes[2].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=2 timesteps'
 
-    # John should be popular in timestep 1, 2
-    assert 'John' in dataframes[1]['component'].values and dataframes[1].iloc[1].popular == [1, 1], 'John should have popular bounds [1,1] for t=1 timesteps'
-    assert 'John' in dataframes[2]['component'].values and dataframes[2].iloc[2].popular == [1, 1], 'John should have popular bounds [1,1] for t=2 timesteps'
-
-    # Justin should be popular in timesteps 1, 2
-    assert 'Justin' in dataframes[1]['component'].values and dataframes[1].iloc[1].popular == [1, 1], 'Justin should have popular bounds [1,1] for t=1 timesteps'
-    assert 'Justin' in dataframes[2]['component'].values and dataframes[2].iloc[2].popular == [1, 1], 'Justin should have popular bounds [1,1] for t=2 timesteps'
+    # TextMessage should be ViewedByAll in t=2
+    assert 'TextMessage' in dataframes[2]['component'].values and dataframes[2].iloc[0].ViewedByAll == [1, 1], 'TextMessage should have ViewedByAll bounds [1,1] for t=2 timesteps'
 
