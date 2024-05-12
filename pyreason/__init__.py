@@ -23,6 +23,9 @@ if not cache_status['initialized']:
     add_fact(Fact('popular-fact', 'Mary', 'popular', [1, 1], 0, 2))
     reason(timesteps=2)
 
+    reset()
+    reset_rules()
+
     # Update cache status
     cache_status['initialized'] = True
     with open(cache_status_path, 'w') as file:
