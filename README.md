@@ -1,4 +1,4 @@
-# PyReason
+https://pyreason.readthedocs.io/en/latest/# PyReason
 <img src="https://raw.githubusercontent.com/lab-v2/pyreason/main/media/pyreason_logo.jpg"/>
 
 [![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
@@ -38,7 +38,7 @@ Check out the [PyReason Hello World](https://pyreason.readthedocs.io/en/latest/t
 PyReason is a graphical inference tool that uses a set of logical rules and facts (initial conditions) to reason over graph structures. To get more details, refer to the paper/video/hello-world-example mentioned above.
 
 ## 2. Documentation 
-All API documentation and code examples can be found on [ReadTheDocs](https://pyreason-rtd.readthedocs.io/en/latest/)
+All API documentation and code examples can be found on [ReadTheDocs](https://pyreason.readthedocs.io/en/latest/)
 
 ## 3. Install
 PyReason can be installed as a python library using
