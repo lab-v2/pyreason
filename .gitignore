@@ -162,3 +162,7 @@ cython_debug/
 .idea/
 
 *env/
+
+# Sphinx Documentation
+/docs/source/_static/css/fonts/
+
