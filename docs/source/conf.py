@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'Pyreason'
+project = 'PyReason'
 copyright = '2024, LabV2'
 author = 'LabV2'
 release = '0.1.0'
