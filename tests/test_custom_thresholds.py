@@ -23,7 +23,7 @@ def test_custom_thresholds():
         pr.Rule(
             "ViewedByAll(x) <- HaveAccess(x,y), Viewed(y)",
             "viewed_by_all_rule",
-            user_defined_thresholds,
+            custom_thresholds=user_defined_thresholds,
         )
     )
 
