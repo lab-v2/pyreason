@@ -71,18 +71,18 @@ case they will be immutable later on. Adding PyReason facts gives us more flexib
 
 In our case we want one person to view the TextMessage in a particular interval of timestep.
 For example, we create facts stating:
-- Zach and Justin view the TextMessage from timestep 0-3
-- Michelle views the TextMessage from timestep 1-3
-- Amy views the TextMessage from timestep 2-3
+- Zach and Justin view the TextMessage from at timestep 0
+- Michelle views the TextMessage at timestep 1
+- Amy views the TextMessage at timestep 2
 
 We add the facts in PyReason as below:
 ```python
 import pyreason as pr
 
-pr.add_fact(pr.Fact("seen-fact-zach", "Zach", "Viewed", [1, 1], 0, 3))
-pr.add_fact(pr.Fact("seen-fact-justin", "Justin", "Viewed", [1, 1], 0, 3))
-pr.add_fact(pr.Fact("seen-fact-michelle", "Michelle", "Viewed", [1, 1], 1, 3))
-pr.add_fact(pr.Fact("seen-fact-amy", "Amy", "Viewed", [1, 1], 2, 3))
+pr.add_fact(pr.Fact("seen-fact-zach", "Zach", "Viewed", [1, 1], 0, 0, static=True))
+pr.add_fact(pr.Fact("seen-fact-justin", "Justin", "Viewed", [1, 1], 0, 0, static=True))
+pr.add_fact(pr.Fact("seen-fact-michelle", "Michelle", "Viewed", [1, 1], 1, 1, static=True))
+pr.add_fact(pr.Fact("seen-fact-amy", "Amy", "Viewed", [1, 1], 2, 2, static=True))
 ```
 
 This allows us to specify the component that has an initial condition, the initial condition itself in the form of bounds
