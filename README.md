@@ -3,6 +3,7 @@
 
 [![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
 [![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
+[![Documentation Status](https://readthedocs.org/projects/pyreason/badge/?version=latest)](https://pyreason.readthedocs.io/en/latest/?badge=latest)
 [![pypi](https://github.com/lab-v2/pyreason/actions/workflows/python-publish.yml/badge.svg)](https://github.com/lab-v2/pyreason/actions/workflows/python-publish.yml)
 [![Tests](https://github.com/lab-v2/pyreason/actions/workflows/python-package-version-test.yml/badge.svg)](https://github.com/lab-v2/pyreason/actions/workflows/python-package-version-test.yml)
 
@@ -18,9 +19,9 @@ An explainable inference software supporting annotated, real valued, graph based
 
 [🏋️‍♂️ PyReason Gym](https://github.com/lab-v2/pyreason-gym)
 
-[🗎 Documentation](https://pyreason-rtd.readthedocs.io/en/latest/)
+[🗎 Documentation](https://pyreason.readthedocs.io/en/latest/)
 
-Check out the [PyReason Hello World](https://pyreason-rtd.readthedocs.io/en/latest/tutorials/Basic%20tutorial.html) program if you're new, or want get get a feel for the software.
+Check out the [PyReason Hello World](https://pyreason.readthedocs.io/en/latest/tutorials/Basic%20tutorial.html) program if you're new, or want get get a feel for the software.
 
 
 ## Table of Contents
