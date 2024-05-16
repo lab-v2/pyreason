@@ -4,6 +4,10 @@ from pyreason import Threshold
 
 
 def test_custom_thresholds():
+    # Reset PyReason
+    pr.reset()
+    pr.reset_rules()
+
     # Modify the paths based on where you've stored the files we made above
     graph_path = "./tests/group_chat_graph.graphml"
 
