@@ -17,6 +17,7 @@ import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.rule_type as rule
 from pyreason.scripts.facts.fact import Fact
 from pyreason.scripts.rules.rule import Rule
+from pyreason.scripts.threshold.threshold import Threshold
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
