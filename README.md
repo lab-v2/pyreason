@@ -1,8 +1,8 @@
-# PyReason
 <img src="https://raw.githubusercontent.com/lab-v2/pyreason/main/media/pyreason_logo.jpg"/>
 
 [![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
 [![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
+[![Documentation Status](https://readthedocs.org/projects/pyreason/badge/?version=latest)](https://pyreason.readthedocs.io/en/latest/?badge=latest)
 [![pypi](https://github.com/lab-v2/pyreason/actions/workflows/python-publish.yml/badge.svg)](https://github.com/lab-v2/pyreason/actions/workflows/python-publish.yml)
 [![Tests](https://github.com/lab-v2/pyreason/actions/workflows/python-package-version-test.yml/badge.svg)](https://github.com/lab-v2/pyreason/actions/workflows/python-package-version-test.yml)
 
@@ -18,9 +18,9 @@ An explainable inference software supporting annotated, real valued, graph based
 
 [🏋️‍♂️ PyReason Gym](https://github.com/lab-v2/pyreason-gym)
 
-[🗎 Documentation](https://pyreason-rtd.readthedocs.io/en/latest/)
+[🗎 Documentation](https://pyreason.readthedocs.io/en/latest/)
 
-Check out the [PyReason Hello World](https://pyreason-rtd.readthedocs.io/en/latest/tutorials/Basic%20tutorial.html) program if you're new, or want get get a feel for the software.
+Check out the [PyReason Hello World](https://pyreason.readthedocs.io/en/latest/tutorials/Basic%20tutorial.html) program if you're new, or want get get a feel for the software.
 
 
 ## Table of Contents
@@ -37,7 +37,7 @@ Check out the [PyReason Hello World](https://pyreason-rtd.readthedocs.io/en/late
 PyReason is a graphical inference tool that uses a set of logical rules and facts (initial conditions) to reason over graph structures. To get more details, refer to the paper/video/hello-world-example mentioned above.
 
 ## 2. Documentation 
-All API documentation and code examples can be found on [ReadTheDocs](https://pyreason-rtd.readthedocs.io/en/latest/)
+All API documentation and code examples can be found on [ReadTheDocs](https://pyreason.readthedocs.io/en/latest/)
 
 ## 3. Install
 PyReason can be installed as a python library using
@@ -60,7 +60,10 @@ year = {2023}}
 ```
 
 ## 5. License
-This repository is licensed under [BSD-3-Clause](https://github.com/lab-v2/pyreason/blob/main/LICENSE.md)
+This repository is licensed under [BSD-2-Clause](https://github.com/lab-v2/pyreason/blob/main/LICENSE.md).
+
+Trademark Permission PyReason™ and PyReason Design Logo <img src="https://raw.githubusercontent.com/lab-v2/pyreason/main/media/pyreason_logo.jpg" width="50"/>™ are trademarks of the Arizona Board of Regents/Arizona State University. Users of the software are permitted to use PyReason™ in association with the software for any purpose, provided such use is related to the software (e.g., Powered by PyReason™). Additionally, educational institutions are permitted to use the PyReason Design Logo <img src="https://raw.githubusercontent.com/lab-v2/pyreason/main/media/pyreason_logo.jpg" width="50"/>™ for non-commercial purposes.
+
 
 ## 6. Contact
 Dyuman Aditya - dyuman.aditya@asu.edu
