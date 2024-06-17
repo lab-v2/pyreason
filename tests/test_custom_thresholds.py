@@ -25,7 +25,7 @@ def test_custom_thresholds():
 
     pr.add_rule(
         pr.Rule(
-            "ViewedByAll(x) <- HaveAccess(x,y), Viewed(y)",
+            "ViewedByAll(y) <- HaveAccess(x,y), Viewed(x)",
             "viewed_by_all_rule",
             custom_thresholds=user_defined_thresholds,
         )
@@ -60,3 +60,5 @@ def test_custom_thresholds():
         1,
         1,
     ], "TextMessage should have ViewedByAll bounds [1,1] for t=2 timesteps"
+
+test_custom_thresholds()
