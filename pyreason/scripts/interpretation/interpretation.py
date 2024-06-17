@@ -812,11 +812,6 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 			# Check satisfaction of those nodes wrt the threshold
 			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, grounding, qualified_groundings, clause_label, thresholds[i]) and satisfaction
 
-			print('sat:', satisfaction)
-			print('grounding:', grounding)
-			print('qualified_groundings:', qualified_groundings)
-			print()
-
 		# This is an edge clause
 		elif clause_type == 'edge':
 			clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
@@ -852,14 +847,6 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 				dependency_graph_reverse_neighbors[clause_var_2] = numba.typed.List([clause_var_1])
 			elif clause_var_1 not in dependency_graph_reverse_neighbors[clause_var_2]:
 				dependency_graph_reverse_neighbors[clause_var_2].append(clause_var_1)
-
-			print('sat:', satisfaction)
-			print('groundings:', grounding)
-			print('qualified_groundings:', qualified_groundings)
-			print('grounding edges:', groundings_edges[(clause_var_1, clause_var_2)])
-			print('grounding 1', groundings[clause_var_1])
-			print('grounding 2', groundings[clause_var_2])
-			print()
 
 		# This is a comparison clause
 		else:
