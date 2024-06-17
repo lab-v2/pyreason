@@ -794,10 +794,6 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 		clause_bnd = clause[3]
 		clause_operator = clause[4]
 
-		print('clause_type:', clause_type)
-		print('clause_label:', clause_label)
-		print('clause_variables:', clause_variables)
-
 		# This is a node clause
 		if clause_type == 'node':
 			clause_var_1 = clause_variables[0]
