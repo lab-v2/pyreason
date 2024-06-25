@@ -24,7 +24,7 @@ Check out the [PyReason Hello World](https://pyreason.readthedocs.io/en/latest/t
 
 
 ## Table of Contents
-  
+
 1. [Introduction](#1-introduction)
 2. [Documentation](#2-documentation)
 3. [Install](#3-install)
