@@ -60,5 +60,3 @@ def test_custom_thresholds():
         1,
         1,
     ], "TextMessage should have ViewedByAll bounds [1,1] for t=2 timesteps"
-
-test_custom_thresholds()
