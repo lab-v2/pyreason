@@ -29,8 +29,8 @@ def test_hello_world():
         print()
 
     assert len(dataframes[0]) == 1, 'At t=0 there should be one popular person'
-    assert len(dataframes[1]) == 2, 'At t=0 there should be two popular people'
-    assert len(dataframes[2]) == 3, 'At t=0 there should be three popular people'
+    assert len(dataframes[1]) == 2, 'At t=1 there should be two popular people'
+    assert len(dataframes[2]) == 3, 'At t=2 there should be three popular people'
 
     # Mary should be popular in all three timesteps
     assert 'Mary' in dataframes[0]['component'].values and dataframes[0].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=0 timesteps'

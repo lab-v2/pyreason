@@ -3,7 +3,7 @@
 Here is an example that utilizes custom thresholds.
 
 The following graph represents a network of People and a Text Message in their group chat.
-<img src="../media/group_chat_graph.png"/>
+<img src="../media/group_chat_graph.png" width="400" height="400"/>
 
 In this case, we want to know when a text message has been viewed by all members of the group chat.
 
@@ -14,7 +14,7 @@ First, lets create the group chat.
 import networkx as nx
 
 # Create an empty graph
-G = nx.Graph()
+G = nx.DiGraph()
 
 # Add nodes
 nodes = ["TextMessage", "Zach", "Justin", "Michelle", "Amy"]
@@ -35,7 +35,7 @@ G.add_edges_from(edges)
 Considering that we only want a text message to be considered viewed by all if it has been viewed by everyone that can view it, we define the rule as follows:
 
 ```text
-ViewedByAll(x) <- HaveAccess(x,y), Viewed(y)
+ViewedByAll(y) <- HaveAccess(x,y), Viewed(x)
 ```
 
 The `head` of the rule is `ViewedByAll(x)` and the body is `HaveAccess(x,y), Viewed(y)`. The head and body are separated by an arrow which means the rule will start evaluating from
