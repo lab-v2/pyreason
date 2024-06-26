@@ -511,8 +511,6 @@ class Interpretation:
 						# Only go through if the rule can be applied within the given timesteps, or we're running until convergence
 						delta_t = rule.get_delta()
 						if t + delta_t <= tmax or tmax == -1 or again:
-							# applicable_node_rules = _ground_node_rule(rule, interpretations_node, interpretations_edge, nodes, neighbors, reverse_neighbors, atom_trace, reverse_graph, nodes_to_skip[i])
-							# applicable_edge_rules = _ground_edge_rule(rule, interpretations_node, interpretations_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, reverse_graph, edges_to_skip[i])
 							applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace)
 
 							# Loop through applicable rules and add them to the rules to be applied for later or next fp operation
@@ -527,10 +525,13 @@ class Interpretation:
 									bnd = interval.closed(bnd_l, bnd_u)
 									max_rules_time = max(max_rules_time, t + delta_t)
 									rules_to_be_applied_node_threadsafe[i].append((numba.types.uint16(t + delta_t), n, rule.get_target(), bnd, immediate_rule, rule.is_static_rule()))
-									# rules_to_be_applied_node.append((numba.types.uint16(t + delta_t), n, rule.get_target(), bnd, immediate_rule, rule.is_static_rule()))
 									if atom_trace:
 										rules_to_be_applied_node_trace_threadsafe[i].append((qualified_nodes, qualified_edges, rule.get_name()))
-										# rules_to_be_applied_node_trace.append((qualified_nodes, qualified_edges, rule.get_name()))
+
+									# If delta_t is zero we apply the rules and check if more are applicable
+									if delta_t == 0:
+										in_loop = True
+										update = False
 
 							for applicable_rule in applicable_edge_rules:
 								e, annotations, qualified_nodes, qualified_edges, edges_to_add = applicable_rule
@@ -550,6 +551,11 @@ class Interpretation:
 										# rules_to_be_applied_edge_trace.append((qualified_nodes, qualified_edges, rule.get_name()))
 										rules_to_be_applied_edge_trace_threadsafe[i].append((qualified_nodes, qualified_edges, rule.get_name()))
 
+									# If delta_t is zero we apply the rules and check if more are applicable
+									if delta_t == 0:
+										in_loop = True
+										update = False
+
 					# Update lists after parallel run
 					for i in range(len(rules)):
 						if len(rules_to_be_applied_node_threadsafe[i]) > 0:
@@ -567,14 +573,14 @@ class Interpretation:
 			# Check for convergence after each timestep (perfect convergence or convergence specified by user)
 			# Check number of changed interpretations or max bound change
 			# User specified convergence
-			if convergence_mode=='delta_interpretation':
+			if convergence_mode == 'delta_interpretation':
 				if changes_cnt <= convergence_delta:
 					if verbose:
 						print(f'\nConverged at time: {t} with {int(changes_cnt)} changes from the previous interpretation')
 					# Be consistent with time returned when we don't converge
 					t += 1
 					break
-			elif convergence_mode=='delta_bound':
+			elif convergence_mode == 'delta_bound':
 				if bound_delta <= convergence_delta:
 					if verbose:
 						print(f'\nConverged at time: {t} with {float_to_str(bound_delta)} as the maximum bound change from the previous interpretation')
@@ -584,8 +590,8 @@ class Interpretation:
 			# Perfect convergence
 			# Make sure there are no rules to be applied, and no facts that will be applied in the future. We do this by checking the max time any rule/fact is applicable
 			# If no more rules/facts to be applied
-			elif convergence_mode=='perfect_convergence':
-				if t>=max_facts_time and t>=max_rules_time:
+			elif convergence_mode == 'perfect_convergence':
+				if t>=max_facts_time and t >= max_rules_time:
 					if verbose:
 						print(f'\nConverged at time: {t}')
 					# Be consistent with time returned when we don't converge
