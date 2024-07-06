@@ -6,7 +6,7 @@ import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 
 
-def parse_rule(rule_text: str, name: str, infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False) -> rule.Rule:
+def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False) -> rule.Rule:
     # First remove all spaces from line
     r = rule_text.replace(' ', '')
 
@@ -123,25 +123,6 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, set_static:
     if rule_type == 'node':
         infer_edges = False
 
-    # Replace the variables in the body with source/target if they match the variables in the head
-    # If infer_edges is true, then we consider all rules to be node rules, we infer the 2nd variable of the target predicate from the rule body
-    # Else we consider the rule to be an edge rule and replace variables with source/target
-    # Node rules with possibility of adding edges
-    if infer_edges or len(head_variables) == 1:
-        head_source_variable = head_variables[0]
-        for i in range(len(body_variables)):
-            for j in range(len(body_variables[i])):
-                if body_variables[i][j] == head_source_variable:
-                    body_variables[i][j] = '__target'
-    # Edge rule, no edges to be added
-    elif len(head_variables) == 2:
-        for i in range(len(body_variables)):
-            for j in range(len(body_variables[i])):
-                if body_variables[i][j] == head_variables[0]:
-                    body_variables[i][j] = '__source'
-                elif body_variables[i][j] == head_variables[1]:
-                    body_variables[i][j] = '__target'
-
     # Start setting up clauses
     # clauses = [c1, c2, c3, c4]
     # thresholds = [t1, t2, t3, t4]
@@ -152,7 +133,23 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, set_static:
     # Array to store clauses for nodes: node/edge, [subset]/[subset1, subset2], label, interval, operator
     clauses = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, label.label_type, numba.types.ListType(numba.types.string), interval.interval_type, numba.types.string)))
 
-    # Loop though clauses
+    # gather count of clauses for threshold validation
+    num_clauses = len(body_clauses)
+
+    if custom_thresholds and (len(custom_thresholds) != num_clauses):
+        raise Exception('The length of custom thresholds {} is not equal to number of clauses {}'
+                        .format(len(custom_thresholds), num_clauses))
+
+    # If no custom thresholds provided, use defaults
+    # otherwise loop through user-defined thresholds and convert to numba compatible format
+    if not custom_thresholds:
+        for _ in range(num_clauses):
+            thresholds.append(('greater_equal', ('number', 'total'), 1.0))
+    else:
+        for threshold in custom_thresholds:
+            thresholds.append(threshold.to_tuple())
+
+    # # Loop though clauses
     for body_clause, predicate, variables, bounds in zip(body_clauses, body_predicates, body_variables, body_bounds):
         # Neigh criteria
         clause_type = 'node' if len(variables) == 1 else 'edge'
@@ -165,24 +162,21 @@ def parse_rule(rule_text: str, name: str, infer_edges: bool = False, set_static:
         bnd = interval.closed(bounds[0], bounds[1])
         clauses.append((clause_type, l, subset, bnd, op))
 
-        # Threshold.
-        quantifier = 'greater_equal'
-        quantifier_type = ('number', 'total')
-        thresh = 1
-        thresholds.append((quantifier, quantifier_type, thresh))
-
     # Assert that there are two variables in the head of the rule if we infer edges
     # Add edges between head variables if necessary
     if infer_edges:
-        var = '__target' if head_variables[0] == head_variables[1] else head_variables[1]
-        edges = ('__target', var, target)
+        # var = '__target' if head_variables[0] == head_variables[1] else head_variables[1]
+        # edges = ('__target', var, target)
+        edges = (head_variables[0], head_variables[1], target)
     else:
         edges = ('', '', label.Label(''))
 
     weights = np.ones(len(body_predicates), dtype=np.float64)
     weights = np.append(weights, 0)
 
-    r = rule.Rule(name, rule_type, target, numba.types.uint16(t), clauses, target_bound, thresholds, ann_fn, weights, edges, set_static, immediate_rule)
+    head_variables = numba.typed.List(head_variables)
+
+    r = rule.Rule(name, rule_type, target, head_variables, numba.types.uint16(t), clauses, target_bound, thresholds, ann_fn, weights, edges, set_static, immediate_rule)
     return r
 
 
