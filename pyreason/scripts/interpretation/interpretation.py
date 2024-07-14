@@ -470,7 +470,7 @@ class Interpretation:
 									# Up/Down/Left/Right Locations of target node. Target node should be
 
 									target_node = e[1]
-									if 'field' in comp:
+									if 'field' in comp[0]:
 										step_size = 2
 										directions = numba.typed.List(
 											[label.Label('fastUp'), label.Label('fastDown'), label.Label('fastLeft'),
