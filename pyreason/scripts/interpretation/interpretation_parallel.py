@@ -709,6 +709,11 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 			# Narrow subset based on predicate
 			qualified_groundings = get_qualified_node_groundings(interpretations_node, grounding, clause_label, clause_bnd)
 			groundings[clause_var_1] = qualified_groundings
+			for c1, c2 in groundings_edges:
+				if c1 == clause_var_1:
+					groundings_edges[(c1, c2)] = numba.typed.List([e for e in groundings_edges[(c1, c2)] if e[0] in qualified_groundings])
+				if c2 == clause_var_1:
+					groundings_edges[(c1, c2)] = numba.typed.List([e for e in groundings_edges[(c1, c2)] if e[1] in qualified_groundings])
 
 			# Check satisfaction of those nodes wrt the threshold
 			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, grounding, qualified_groundings, clause_label, thresholds[i]) and satisfaction
@@ -761,25 +766,11 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 		if not satisfaction:
 			break
 
-	# All clauses of the rule have been satisfied, now add elements to trace and setup any edges that need to be added to the graph
-	if satisfaction:
-		# Check if all clauses are satisfied again in case the refining process changed anything
-		for i, clause in enumerate(clauses):
-			# Unpack clause variables
-			clause_type = clause[0]
-			clause_label = clause[1]
-			clause_variables = clause[2]
-
-			if clause_type == 'node':
-				clause_var_1 = clause_variables[0]
-				satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, groundings[clause_var_1], groundings[clause_var_1], clause_label, thresholds[i]) and satisfaction
-			elif clause_type == 'edge':
-				clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
-				satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], groundings_edges[(clause_var_1, clause_var_2)], clause_label, thresholds[i]) and satisfaction
-
-	# If satisfaction is still true, then continue to setup any edges to be added and annotations
+	# If satisfaction is still true, one final refinement to check if each edge pair is valid in edge rules
+	# Then continue to setup any edges to be added and annotations
 	# Fill out the rules to be applied lists
 	if satisfaction:
+		# Create temp grounding containers to verify if the head groundings are valid (only for edge rules)
 		# Setup edges to be added and fill rules to be applied
 		# Setup traces and inputs for annotation function
 		# Loop through the clause data and setup final annotations and trace variables
@@ -792,6 +783,12 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 				qualified_edges = numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type))
 				annotations = numba.typed.List.empty_list(numba.typed.List.empty_list(interval.interval_type))
 				edges_to_be_added = (numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(node_type), rule_edges[-1])
+
+				# Check for satisfaction one more time in case the refining process has changed the groundings
+				satisfaction = check_all_clause_satisfaction(interpretations_node, interpretations_edge, clauses, thresholds, groundings, groundings_edges)
+				if not satisfaction:
+					continue
+
 				for i, clause in enumerate(clauses):
 					clause_type = clause[0]
 					clause_label = clause[1]
@@ -876,11 +873,44 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 			
 			# Loop through the head variable groundings
 			for valid_e in valid_edge_groundings:
+				satisfaction = True
 				head_var_1_grounding, head_var_2_grounding = valid_e[0], valid_e[1]
 				qualified_nodes = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
 				qualified_edges = numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type))
 				annotations = numba.typed.List.empty_list(numba.typed.List.empty_list(interval.interval_type))
 				edges_to_be_added = (numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(node_type), rule_edges[-1])
+
+				# Containers to keep track of groundings to make sure that the edge pair is valid
+				# We do this because we cannot know beforehand the edge matches from source groundings to target groundings
+				temp_groundings = groundings.copy()
+				temp_groundings_edges = groundings_edges.copy()
+
+				# Refine the temp groundings for the specific edge head grounding
+				# We update the edge collection as well depending on if there's a match between the clause variables and head variables
+				temp_groundings[head_var_1] = numba.typed.List([head_var_1_grounding])
+				temp_groundings[head_var_2] = numba.typed.List([head_var_2_grounding])
+				for c1, c2 in temp_groundings_edges.keys():
+					if c1 == head_var_1 and c2 == head_var_2:
+						temp_groundings_edges[(c1, c2)] = numba.typed.List([e for e in temp_groundings_edges[(c1, c2)] if e == (head_var_1_grounding, head_var_2_grounding)])
+					elif c1 == head_var_2 and c2 == head_var_1:
+						temp_groundings_edges[(c1, c2)] = numba.typed.List([e for e in temp_groundings_edges[(c1, c2)] if e == (head_var_2_grounding, head_var_1_grounding)])
+					elif c1 == head_var_1:
+						temp_groundings_edges[(c1, c2)] = numba.typed.List([e for e in temp_groundings_edges[(c1, c2)] if e[0] == head_var_1_grounding])
+					elif c2 == head_var_1:
+						temp_groundings_edges[(c1, c2)] = numba.typed.List([e for e in temp_groundings_edges[(c1, c2)] if e[1] == head_var_1_grounding])
+					elif c1 == head_var_2:
+						temp_groundings_edges[(c1, c2)] = numba.typed.List([e for e in temp_groundings_edges[(c1, c2)] if e[0] == head_var_2_grounding])
+					elif c2 == head_var_2:
+						temp_groundings_edges[(c1, c2)] = numba.typed.List([e for e in temp_groundings_edges[(c1, c2)] if e[1] == head_var_2_grounding])
+
+				refine_groundings(head_variables, temp_groundings, temp_groundings_edges, dependency_graph_neighbors, dependency_graph_reverse_neighbors)
+
+				# Check if the thresholds are still satisfied
+				# Check if all clauses are satisfied again in case the refining process changed anything
+				satisfaction = check_all_clause_satisfaction(interpretations_node, interpretations_edge, clauses, thresholds, temp_groundings, temp_groundings_edges)
+
+				if not satisfaction:
+					continue
 
 				if infer_edges:
 					edges_to_be_added[0].append(head_var_1_grounding)
@@ -900,7 +930,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 							elif clause_var_1 == head_var_2:
 								qualified_nodes.append(numba.typed.List([head_var_2_grounding]))
 							else:
-								qualified_nodes.append(numba.typed.List(groundings[clause_var_1]))
+								qualified_nodes.append(numba.typed.List(temp_groundings[clause_var_1]))
 							qualified_edges.append(numba.typed.List.empty_list(edge_type))
 						# 2.
 						if ann_fn != '':
@@ -910,7 +940,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 							elif clause_var_1 == head_var_2:
 								a.append(interpretations_node[head_var_2_grounding].world[clause_label])
 							else:
-								for qn in groundings[clause_var_1]:
+								for qn in temp_groundings[clause_var_1]:
 									a.append(interpretations_node[qn].world[clause_label])
 								annotations.append(a)
 
@@ -924,64 +954,85 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 							# 3. None equal
 							qualified_nodes.append(numba.typed.List.empty_list(node_type))
 							if clause_var_1 == head_var_1 and clause_var_2 == head_var_2:
-								es = numba.typed.List([e for e in groundings_edges[(clause_var_1, clause_var_2)] if e[0] == head_var_1_grounding and e[1] == head_var_2_grounding])
+								es = numba.typed.List([e for e in temp_groundings_edges[(clause_var_1, clause_var_2)] if e[0] == head_var_1_grounding and e[1] == head_var_2_grounding])
 								qualified_edges.append(es)
 							elif clause_var_1 == head_var_2 and clause_var_2 == head_var_1:
-								es = numba.typed.List([e for e in groundings_edges[(clause_var_1, clause_var_2)] if e[0] == head_var_2_grounding and e[1] == head_var_1_grounding])
+								es = numba.typed.List([e for e in temp_groundings_edges[(clause_var_1, clause_var_2)] if e[0] == head_var_2_grounding and e[1] == head_var_1_grounding])
 								qualified_edges.append(es)
 							elif clause_var_1 == head_var_1:
-								es = numba.typed.List([e for e in groundings_edges[(clause_var_1, clause_var_2)] if e[0] == head_var_1_grounding])
+								es = numba.typed.List([e for e in temp_groundings_edges[(clause_var_1, clause_var_2)] if e[0] == head_var_1_grounding])
 								qualified_edges.append(es)
 							elif clause_var_1 == head_var_2:
-								es = numba.typed.List([e for e in groundings_edges[(clause_var_1, clause_var_2)] if e[0] == head_var_2_grounding])
+								es = numba.typed.List([e for e in temp_groundings_edges[(clause_var_1, clause_var_2)] if e[0] == head_var_2_grounding])
 								qualified_edges.append(es)
 							elif clause_var_2 == head_var_1:
-								es = numba.typed.List([e for e in groundings_edges[(clause_var_1, clause_var_2)] if e[1] == head_var_1_grounding])
+								es = numba.typed.List([e for e in temp_groundings_edges[(clause_var_1, clause_var_2)] if e[1] == head_var_1_grounding])
 								qualified_edges.append(es)
 							elif clause_var_2 == head_var_2:
-								es = numba.typed.List([e for e in groundings_edges[(clause_var_1, clause_var_2)] if e[1] == head_var_2_grounding])
+								es = numba.typed.List([e for e in temp_groundings_edges[(clause_var_1, clause_var_2)] if e[1] == head_var_2_grounding])
 								qualified_edges.append(es)
 							else:
-								qualified_edges.append(numba.typed.List(groundings_edges[(clause_var_1, clause_var_2)]))
+								qualified_edges.append(numba.typed.List(temp_groundings_edges[(clause_var_1, clause_var_2)]))
 
 						# 2.
 						if ann_fn != '':
 							a = numba.typed.List.empty_list(interval.interval_type)
 							if clause_var_1 == head_var_1 and clause_var_2 == head_var_2:
-								for e in groundings_edges[(clause_var_1, clause_var_2)]:
+								for e in temp_groundings_edges[(clause_var_1, clause_var_2)]:
 									if e[0] == head_var_1_grounding and e[1] == head_var_2_grounding:
 										a.append(interpretations_edge[e].world[clause_label])
 							elif clause_var_1 == head_var_2 and clause_var_2 == head_var_1:
-								for e in groundings_edges[(clause_var_1, clause_var_2)]:
+								for e in temp_groundings_edges[(clause_var_1, clause_var_2)]:
 									if e[0] == head_var_2_grounding and e[1] == head_var_1_grounding:
 										a.append(interpretations_edge[e].world[clause_label])
 							elif clause_var_1 == head_var_1:
-								for e in groundings_edges[(clause_var_1, clause_var_2)]:
+								for e in temp_groundings_edges[(clause_var_1, clause_var_2)]:
 									if e[0] == head_var_1_grounding:
 										a.append(interpretations_edge[e].world[clause_label])
 							elif clause_var_1 == head_var_2:
-								for e in groundings_edges[(clause_var_1, clause_var_2)]:
+								for e in temp_groundings_edges[(clause_var_1, clause_var_2)]:
 									if e[0] == head_var_2_grounding:
 										a.append(interpretations_edge[e].world[clause_label])
 							elif clause_var_2 == head_var_1:
-								for e in groundings_edges[(clause_var_1, clause_var_2)]:
+								for e in temp_groundings_edges[(clause_var_1, clause_var_2)]:
 									if e[1] == head_var_1_grounding:
 										a.append(interpretations_edge[e].world[clause_label])
 							elif clause_var_2 == head_var_2:
-								for e in groundings_edges[(clause_var_1, clause_var_2)]:
+								for e in temp_groundings_edges[(clause_var_1, clause_var_2)]:
 									if e[1] == head_var_2_grounding:
 										a.append(interpretations_edge[e].world[clause_label])
 							else:
-								for qe in groundings_edges[(clause_var_1, clause_var_2)]:
+								for qe in temp_groundings_edges[(clause_var_1, clause_var_2)]:
 									a.append(interpretations_edge[qe].world[clause_label])
 							annotations.append(a)
 
 				# For each grounding combination add a rule to be applied
+				# Only if all the clauses have valid groundings
+				# if satisfaction:
 				e = (head_var_1_grounding, head_var_2_grounding)
 				applicable_rules_edge.append((e, annotations, qualified_nodes, qualified_edges, edges_to_be_added))
 
 	# Return the applicable rules
 	return applicable_rules_node, applicable_rules_edge
+
+
+@numba.njit(cache=False)
+def check_all_clause_satisfaction(interpretations_node, interpretations_edge, clauses, thresholds, groundings, groundings_edges):
+	# Check if the thresholds are satisfied for each clause
+	satisfaction = True
+	for i, clause in enumerate(clauses):
+		# Unpack clause variables
+		clause_type = clause[0]
+		clause_label = clause[1]
+		clause_variables = clause[2]
+
+		if clause_type == 'node':
+			clause_var_1 = clause_variables[0]
+			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, groundings[clause_var_1], groundings[clause_var_1], clause_label, thresholds[i]) and satisfaction
+		elif clause_type == 'edge':
+			clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
+			satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], groundings_edges[(clause_var_1, clause_var_2)], clause_label, thresholds[i]) and satisfaction
+	return satisfaction
 
 
 @numba.njit(cache=False)
