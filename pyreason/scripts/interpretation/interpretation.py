@@ -466,9 +466,9 @@ class Interpretation:
 											changes_cnt += changes
 											
 								# Ad-hoc-grounding (very specific version, make more general later)
-								if ad_hoc_grounding:
+								# Only if we are switching on a location (not off) we add new edges
+								if ad_hoc_grounding and bnd == interval.closed(1, 1):
 									# Up/Down/Left/Right Locations of target node. Target node should be
-
 									target_node = e[1]
 									if 'field' in comp[0]:
 										step_size = 2
@@ -480,7 +480,7 @@ class Interpretation:
 										directions = numba.typed.List(
 											[label.Label('up'), label.Label('down'), label.Label('left'),
 											 label.Label('right')])
-									# print(comp, step_size)
+
 									up_node = _search(target_node, 'u', step_size)
 									down_node = _search(target_node, 'd', step_size)
 									left_node = _search(target_node, 'l', step_size)
@@ -495,7 +495,6 @@ class Interpretation:
 									neigh_nodes = numba.typed.List(
 										[up_node, down_node, left_node, right_node])
 									border_nodes = [border_up_node, border_down_node, border_left_node, border_right_node]
-									# print(neigh_nodes)
 
 									# if step_size == 2:
 									# 	directions = numba.typed.List(
@@ -538,6 +537,52 @@ class Interpretation:
 											interpretations_edge[edge].world[d].set_lower_upper(1, 1)
 											# print(interpretations_edge)
 											# print("=====================================")
+										
+								# If we are switching off a location then we need to delete the old edges
+								# if ad_hoc_grounding and bnd == interval.closed(0, 0):
+								# 	# Up/Down/Left/Right Locations of target node. Target node should be
+								# 	target_node = e[1]
+								#
+								# 	up_node = _search(target_node, 'u', step_size)
+								# 	down_node = _search(target_node, 'd', step_size)
+								# 	left_node = _search(target_node, 'l', step_size)
+								# 	right_node = _search(target_node, 'r', step_size)
+								#
+								# 	# Delete edges that are no longer in use
+								# 	# Make sure that the edge is not being used as a connection between another agent and its location
+								# 	neigh_nodes_to_be_deleted = numba.typed.List.empty_list(node_type)
+								# 	if up_node != 'invalid':
+								# 		neigh_nodes_to_be_deleted.append(up_node)
+								# 	if down_node != 'invalid':
+								# 		neigh_nodes_to_be_deleted.append(down_node)
+								# 	if left_node != 'invalid':
+								# 		neigh_nodes_to_be_deleted.append(left_node)
+								# 	if right_node != 'invalid':
+								# 		neigh_nodes_to_be_deleted.append(right_node)
+								#
+								# 	# Now check whether it is safe to delete these nodes
+								# 	# There should be no agent attached to them and
+								# 	# There should be no agent attached to one of their neighbors (otherwise it will not be able to move to that location)
+								# 	for n in neigh_nodes_to_be_deleted.copy():
+								# 		if n in reverse_neighbors:
+								# 			for nn in reverse_neighbors[n]:
+								# 				if 'soldier' in nn and 'base' not in n and interpretations_edge[(nn, n)].world[label.Label('atLoc')] == interval.closed(1, 1):
+								# 					if n in neigh_nodes_to_be_deleted:
+								# 						neigh_nodes_to_be_deleted.remove(n)
+								# 						break
+								# 			for nn in reverse_neighbors[n]:
+								# 				if nn in reverse_neighbors:
+								# 					for nnn in reverse_neighbors[nn]:
+								# 						if 'soldier' in nnn and 'base' not in nn and interpretations_edge[(nnn, nn)].world[label.Label('atLoc')] == interval.closed(1, 1):
+								# 							if n in neigh_nodes_to_be_deleted:
+								# 								neigh_nodes_to_be_deleted.remove(n)
+								# 								break
+								#
+								# 	# Now that we have made sure that it is safe to delete the nodes, we can delete them
+								# 	for n in neigh_nodes_to_be_deleted:
+								# 		if n in nodes:
+								# 			_delete_node(n, neighbors, reverse_neighbors, nodes, edges, interpretations_node, interpretations_edge)
+
 						else:
 							# Check for inconsistencies
 							if check_consistent_edge(interpretations_edge, comp, (l, bnd)):
@@ -703,7 +748,7 @@ class Interpretation:
 
 	def delete_node(self, node):
 		# This function is useful for pyreason gym, called externally
-		_delete_node(node, self.neighbors, self.reverse_neighbors, self.nodes, self.interpretations_node)
+		_delete_node(node, self.neighbors, self.reverse_neighbors, self.nodes, self.edges, self.interpretations_node, self.interpretations_edge)
 
 	def get_interpretation_dict(self):
 		# This function can be called externally to retrieve a dict of the interpretation values
@@ -792,6 +837,11 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 			# Narrow subset based on predicate
 			qualified_groundings = get_qualified_node_groundings(interpretations_node, grounding, clause_label, clause_bnd)
 			groundings[clause_var_1] = qualified_groundings
+			for c1, c2 in groundings_edges:
+				if c1 == clause_var_1:
+					groundings_edges[(c1, c2)] = numba.typed.List([e for e in groundings_edges[(c1, c2)] if e[0] in qualified_groundings])
+				if c2 == clause_var_1:
+					groundings_edges[(c1, c2)] = numba.typed.List([e for e in groundings_edges[(c1, c2)] if e[1] in qualified_groundings])
 
 			# Check satisfaction of those nodes wrt the threshold
 			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, grounding, qualified_groundings, clause_label, thresholds[i]) and satisfaction
@@ -844,23 +894,8 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 		if not satisfaction:
 			break
 
-	# All clauses of the rule have been satisfied, now add elements to trace and setup any edges that need to be added to the graph
-	if satisfaction:
-		# Check if all clauses are satisfied again in case the refining process changed anything
-		for i, clause in enumerate(clauses):
-			# Unpack clause variables
-			clause_type = clause[0]
-			clause_label = clause[1]
-			clause_variables = clause[2]
-
-			if clause_type == 'node':
-				clause_var_1 = clause_variables[0]
-				satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, groundings[clause_var_1], groundings[clause_var_1], clause_label, thresholds[i]) and satisfaction
-			elif clause_type == 'edge':
-				clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
-				satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], groundings_edges[(clause_var_1, clause_var_2)], clause_label, thresholds[i]) and satisfaction
-
-	# If satisfaction is still true, then continue to setup any edges to be added and annotations
+	# If satisfaction is still true, one final refinement to check if each edge pair is valid in edge rules
+	# Then continue to setup any edges to be added and annotations
 	# Fill out the rules to be applied lists
 	if satisfaction:
 		# Create temp grounding containers to verify if the head groundings are valid (only for edge rules)
@@ -876,6 +911,12 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 				qualified_edges = numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type))
 				annotations = numba.typed.List.empty_list(numba.typed.List.empty_list(interval.interval_type))
 				edges_to_be_added = (numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(node_type), rule_edges[-1])
+
+				# Check for satisfaction one more time in case the refining process has changed the groundings
+				satisfaction = check_all_clause_satisfaction(interpretations_node, interpretations_edge, clauses, thresholds, groundings, groundings_edges)
+				if not satisfaction:
+					continue
+
 				for i, clause in enumerate(clauses):
 					clause_type = clause[0]
 					clause_label = clause[1]
@@ -973,23 +1014,28 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 				temp_groundings_edges = groundings_edges.copy()
 
 				# Refine the temp groundings for the specific edge head grounding
+				# We update the edge collection as well depending on if there's a match between the clause variables and head variables
+				temp_groundings[head_var_1] = numba.typed.List([head_var_1_grounding])
+				temp_groundings[head_var_2] = numba.typed.List([head_var_2_grounding])
+				for c1, c2 in temp_groundings_edges.keys():
+					if c1 == head_var_1 and c2 == head_var_2:
+						temp_groundings_edges[(c1, c2)] = numba.typed.List([e for e in temp_groundings_edges[(c1, c2)] if e == (head_var_1_grounding, head_var_2_grounding)])
+					elif c1 == head_var_2 and c2 == head_var_1:
+						temp_groundings_edges[(c1, c2)] = numba.typed.List([e for e in temp_groundings_edges[(c1, c2)] if e == (head_var_2_grounding, head_var_1_grounding)])
+					elif c1 == head_var_1:
+						temp_groundings_edges[(c1, c2)] = numba.typed.List([e for e in temp_groundings_edges[(c1, c2)] if e[0] == head_var_1_grounding])
+					elif c2 == head_var_1:
+						temp_groundings_edges[(c1, c2)] = numba.typed.List([e for e in temp_groundings_edges[(c1, c2)] if e[1] == head_var_1_grounding])
+					elif c1 == head_var_2:
+						temp_groundings_edges[(c1, c2)] = numba.typed.List([e for e in temp_groundings_edges[(c1, c2)] if e[0] == head_var_2_grounding])
+					elif c2 == head_var_2:
+						temp_groundings_edges[(c1, c2)] = numba.typed.List([e for e in temp_groundings_edges[(c1, c2)] if e[1] == head_var_2_grounding])
+
 				refine_groundings(head_variables, temp_groundings, temp_groundings_edges, dependency_graph_neighbors, dependency_graph_reverse_neighbors)
 
 				# Check if the thresholds are still satisfied
-				#  All clauses of the rule have been satisfied, now add elements to trace and setup any edges that need to be added to the graph
 				# Check if all clauses are satisfied again in case the refining process changed anything
-				for i, clause in enumerate(clauses):
-					# Unpack clause variables
-					clause_type = clause[0]
-					clause_label = clause[1]
-					clause_variables = clause[2]
-
-					if clause_type == 'node':
-						clause_var_1 = clause_variables[0]
-						satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, groundings[clause_var_1], groundings[clause_var_1], clause_label, thresholds[i]) and satisfaction
-					elif clause_type == 'edge':
-						clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
-						satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], groundings_edges[(clause_var_1, clause_var_2)], clause_label, thresholds[i]) and satisfaction
+				satisfaction = check_all_clause_satisfaction(interpretations_node, interpretations_edge, clauses, thresholds, temp_groundings, temp_groundings_edges)
 
 				if not satisfaction:
 					continue
@@ -1005,36 +1051,6 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 
 					if clause_type == 'node':
 						clause_var_1 = clause_variables[0]
-
-						# # Add the narrowed groundings to the temp containers
-						# if clause_var_1 == head_var_1:
-						# 	qualified_nodes_for_clause = numba.typed.List([head_var_1_grounding])
-						# elif clause_var_1 == head_var_2:
-						# 	qualified_nodes_for_clause = numba.typed.List([head_var_2_grounding])
-						# else:
-						# 	qualified_nodes_for_clause = numba.typed.List(temp_groundings[clause_var_1])
-						# qualified_edges_for_clause = numba.typed.List.empty_list(edge_type)
-						#
-						# # If there is a mismatch in the head groundings, it's possible that there are no valid groundings
-						# # for a clause, in that case go on to the next head grounding
-						# if len(qualified_nodes_for_clause) == 0:
-						# 	satisfaction = False
-						# 	break
-						#
-						# # Add the qualified nodes to the temp grounding container
-						# # And refine the edge based on the new node groundings
-						# temp_groundings[clause_var_1] = qualified_nodes_for_clause
-						# for c1, c2 in temp_groundings_edges.keys():
-						# 	if c1 == clause_var_1:
-						# 		temp_groundings_edges[(c1, c2)] = numba.typed.List([e for e in temp_groundings_edges[(c1, c2)] if e[0] in qualified_nodes_for_clause])
-						# 	if c2 == clause_var_1:
-						# 		temp_groundings_edges[(c1, c2)] = numba.typed.List([e for e in temp_groundings_edges[(c1, c2)] if e[1] in qualified_nodes_for_clause])
-						# 	if len(temp_groundings_edges[(c1, c2)]) == 0:
-						# 		satisfaction = False
-						# 		break
-						# if not satisfaction:
-						# 	break
-	
 						# 1.
 						if atom_trace:
 							if clause_var_1 == head_var_1:
@@ -1058,27 +1074,6 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 
 					elif clause_type == 'edge':
 						clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
-						#
-						# # Cases:
-						# # 1. Both equal (cv1 = hv1 and cv2 = hv2 or cv1 = hv2 and cv2 = hv1)
-						# # 2. One equal (cv1 = hv1 or cv2 = hv1 or cv1 = hv2 or cv2 = hv2)
-						# # 3. None equal
-						# qualified_nodes_for_clause = numba.typed.List.empty_list(node_type)
-						# if clause_var_1 == head_var_1 and clause_var_2 == head_var_2:
-						# 	qualified_edges_for_clause = numba.typed.List([e for e in temp_groundings_edges[(clause_var_1, clause_var_2)] if e[0] == head_var_1_grounding and e[1] == head_var_2_grounding])
-						# elif clause_var_1 == head_var_2 and clause_var_2 == head_var_1:
-						# 	qualified_edges_for_clause = numba.typed.List([e for e in temp_groundings_edges[(clause_var_1, clause_var_2)] if e[0] == head_var_2_grounding and e[1] == head_var_1_grounding])
-						# elif clause_var_1 == head_var_1:
-						# 	qualified_edges_for_clause = numba.typed.List([e for e in temp_groundings_edges[(clause_var_1, clause_var_2)] if e[0] == head_var_1_grounding])
-						# elif clause_var_1 == head_var_2:
-						# 	qualified_edges_for_clause = numba.typed.List([e for e in temp_groundings_edges[(clause_var_1, clause_var_2)] if e[0] == head_var_2_grounding])
-						# elif clause_var_2 == head_var_1:
-						# 	qualified_edges_for_clause = numba.typed.List([e for e in temp_groundings_edges[(clause_var_1, clause_var_2)] if e[1] == head_var_1_grounding])
-						# elif clause_var_2 == head_var_2:
-						# 	qualified_edges_for_clause = numba.typed.List([e for e in temp_groundings_edges[(clause_var_1, clause_var_2)] if e[1] == head_var_2_grounding])
-						# else:
-						# 	qualified_edges_for_clause = numba.typed.List(temp_groundings_edges[(clause_var_1, clause_var_2)])
-						
 						# 1.
 						if atom_trace:
 							# Cases:
@@ -1147,6 +1142,25 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 
 	# Return the applicable rules
 	return applicable_rules_node, applicable_rules_edge
+
+
+@numba.njit(cache=True)
+def check_all_clause_satisfaction(interpretations_node, interpretations_edge, clauses, thresholds, groundings, groundings_edges):
+	# Check if the thresholds are satisfied for each clause
+	satisfaction = True
+	for i, clause in enumerate(clauses):
+		# Unpack clause variables
+		clause_type = clause[0]
+		clause_label = clause[1]
+		clause_variables = clause[2]
+
+		if clause_type == 'node':
+			clause_var_1 = clause_variables[0]
+			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, groundings[clause_var_1], groundings[clause_var_1], clause_label, thresholds[i]) and satisfaction
+		elif clause_type == 'edge':
+			clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
+			satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], groundings_edges[(clause_var_1, clause_var_2)], clause_label, thresholds[i]) and satisfaction
+	return satisfaction
 
 
 @numba.njit(cache=True)
@@ -2782,19 +2796,16 @@ def _delete_edge(edge, neighbors, reverse_neighbors, edges, interpretations_edge
 
 
 @numba.njit(cache=True)
-def _delete_node(node, neighbors, reverse_neighbors, nodes, interpretations_node):
+def _delete_node(node, neighbors, reverse_neighbors, nodes, edges, interpretations_node, interpretations_edge):
 	nodes.remove(node)
+
+	for e in edges.copy():
+		if node in e:
+			_delete_edge(e, neighbors, reverse_neighbors, edges, interpretations_edge)
+
 	del interpretations_node[node]
 	del neighbors[node]
 	del reverse_neighbors[node]
-
-	# Remove all occurrences of node in neighbors
-	for n in neighbors.keys():
-		if node in neighbors[n]:
-			neighbors[n].remove(node)
-	for n in reverse_neighbors.keys():
-		if node in reverse_neighbors[n]:
-			reverse_neighbors[n].remove(node)
 
 
 @numba.njit(cache=True)
@@ -2831,125 +2842,126 @@ def str_to_int(value):
 	result = -result if negative else result
 	return result
 
+
 @numba.njit(cache=True)
 def _check_border(node):
-    unique_numbers = set(node)
-    accepted_unique_numbers = [{'1', '2'}, {'1', '4'}, {'2', '3'}, {'3', '4'}, {'2','1'}, {'4','1'}, {'3','2'}, {'4','3'}]
+	unique_numbers = set(node)
+	accepted_unique_numbers = [{'1', '2'}, {'1', '4'}, {'2', '3'}, {'3', '4'}, {'2','1'}, {'4','1'}, {'3','2'}, {'4','3'}]
 
-    if len(unique_numbers)>2:
-        return False
-    elif len(unique_numbers) == 1:
-        return True
-    elif unique_numbers in accepted_unique_numbers:
-        return True
-    else:
-        return False
+	if len(unique_numbers)>2:
+		return False
+	elif len(unique_numbers) == 1:
+		return True
+	elif unique_numbers in accepted_unique_numbers:
+		return True
+	else:
+		return False
 
 
 @numba.njit(cache=True)
 def _search(location, direction, count=1):
-    quadrants = list(location)
-    new_loc = []
-    carry = 1
-    if direction == 'u':
-        for idx, quad in reverse(list(enumerate(quadrants))):
-            if carry:
-                if quad == '1':
-                    if idx == 0:
-                        return 'invalid'
-                    new_loc.append('4')
-                    carry = 1
-                elif quad == '2':
-                    if idx == 0:
-                        return 'invalid'
-                    new_loc.append('3')
-                    carry = 1
-                elif quad == '3':
-                    new_loc.append('2')
-                    carry = 0
-                elif quad == '4':
-                    new_loc.append('1')
-                    carry = 0
-            else:
-                new_loc.append(quad)
-    elif direction == 'l':
-        for idx, quad in reverse(list(enumerate(quadrants))):
-            if carry:
-                if quad == '1':
-                    new_loc.append('2')
-                    carry = 0
-                elif quad == '2':
-                    if idx == 0:
-                        return 'invalid'
-                    new_loc.append('1')
-                    carry = 1
-                elif quad == '3':
-                    if idx == 0:
-                        return 'invalid'
-                    new_loc.append('4')
-                    carry = 1
-                elif quad == '4':
-                    new_loc.append('3')
-                    carry = 0
-            else:
-                new_loc.append(quad)
-    elif direction == 'd':
-        for idx, quad in reverse(list(enumerate(quadrants))):
-            if carry:
-                if quad == '1':
-                    new_loc.append('4')
-                    carry = 0
-                elif quad == '2':
-                    new_loc.append('3')
-                    carry = 0
-                elif quad == '3':
-                    if idx == 0:
-                        return 'invalid'
-                    new_loc.append('2')
-                    carry = 1
-                elif quad == '4':
-                    if idx == 0:
-                        return 'invalid'
-                    new_loc.append('1')
-                    carry = 1
-            else:
-                new_loc.append(quad)
-    elif direction == 'r':
-        for idx, quad in reverse(list(enumerate(quadrants))):
-            if carry:
-                if quad == '1':
-                    if idx == 0:
-                        return 'invalid'
-                    new_loc.append('2')
-                    carry = 1
-                elif quad == '2':
-                    new_loc.append('1')
-                    carry = 0
-                elif quad == '3':
-                    new_loc.append('4')
-                    carry = 0
-                elif quad == '4':
-                    if idx == 0:
-                        return 'invalid'
-                    new_loc.append('3')
-                    carry = 1
-            else:
-                new_loc.append(quad)
-    if count > 1:
-        return _search(''.join(reverse(new_loc)), direction, count-1)
-    else:
-        return ''.join(reverse(new_loc))
+	quadrants = list(location)
+	new_loc = []
+	carry = 1
+	if direction == 'u':
+		for idx, quad in reverse(list(enumerate(quadrants))):
+			if carry:
+				if quad == '1':
+					if idx == 0:
+						return 'invalid'
+					new_loc.append('4')
+					carry = 1
+				elif quad == '2':
+					if idx == 0:
+						return 'invalid'
+					new_loc.append('3')
+					carry = 1
+				elif quad == '3':
+					new_loc.append('2')
+					carry = 0
+				elif quad == '4':
+					new_loc.append('1')
+					carry = 0
+			else:
+				new_loc.append(quad)
+	elif direction == 'l':
+		for idx, quad in reverse(list(enumerate(quadrants))):
+			if carry:
+				if quad == '1':
+					new_loc.append('2')
+					carry = 0
+				elif quad == '2':
+					if idx == 0:
+						return 'invalid'
+					new_loc.append('1')
+					carry = 1
+				elif quad == '3':
+					if idx == 0:
+						return 'invalid'
+					new_loc.append('4')
+					carry = 1
+				elif quad == '4':
+					new_loc.append('3')
+					carry = 0
+			else:
+				new_loc.append(quad)
+	elif direction == 'd':
+		for idx, quad in reverse(list(enumerate(quadrants))):
+			if carry:
+				if quad == '1':
+					new_loc.append('4')
+					carry = 0
+				elif quad == '2':
+					new_loc.append('3')
+					carry = 0
+				elif quad == '3':
+					if idx == 0:
+						return 'invalid'
+					new_loc.append('2')
+					carry = 1
+				elif quad == '4':
+					if idx == 0:
+						return 'invalid'
+					new_loc.append('1')
+					carry = 1
+			else:
+				new_loc.append(quad)
+	elif direction == 'r':
+		for idx, quad in reverse(list(enumerate(quadrants))):
+			if carry:
+				if quad == '1':
+					if idx == 0:
+						return 'invalid'
+					new_loc.append('2')
+					carry = 1
+				elif quad == '2':
+					new_loc.append('1')
+					carry = 0
+				elif quad == '3':
+					new_loc.append('4')
+					carry = 0
+				elif quad == '4':
+					if idx == 0:
+						return 'invalid'
+					new_loc.append('3')
+					carry = 1
+			else:
+				new_loc.append(quad)
+	if count > 1:
+		return _search(''.join(reverse(new_loc)), direction, count-1)
+	else:
+		return ''.join(reverse(new_loc))
 
 
 @numba.njit(cache=True)
 def reverse(lst):
-    new_lst = lst[::-1]
-    return new_lst
+	new_lst = lst[::-1]
+	return new_lst
 
 
 @numba.njit(cache=True)
 def str_to_int(s):
-    final_index, result = len(s) - 1, 0
-    for i,v in enumerate(s):
-        result += (ord(v) - 48) * (10 ** (final_index - i))
-    return result
+	final_index, result = len(s) - 1, 0
+	for i,v in enumerate(s):
+		result += (ord(v) - 48) * (10 ** (final_index - i))
+	return result
