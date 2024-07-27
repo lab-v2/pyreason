@@ -48,6 +48,7 @@ def test_anyBurl_rule_2():
     pr.settings.output_to_file = False
     pr.settings.store_interpretation_changes = True
     pr.settings.save_graph_attributes_to_trace = True
+    pr.settings.parallel_computing = False
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
 
@@ -82,6 +83,7 @@ def test_anyBurl_rule_3():
     pr.settings.output_to_file = False
     pr.settings.store_interpretation_changes = True
     pr.settings.save_graph_attributes_to_trace = True
+    pr.settings.parallel_computing = False
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
 
@@ -116,6 +118,7 @@ def test_anyBurl_rule_4():
     pr.settings.output_to_file = False
     pr.settings.store_interpretation_changes = True
     pr.settings.save_graph_attributes_to_trace = True
+    pr.settings.parallel_computing = False
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
 

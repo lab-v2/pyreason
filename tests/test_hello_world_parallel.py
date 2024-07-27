@@ -13,6 +13,7 @@ def test_hello_world_parallel():
     # Modify pyreason settings to make verbose and to save the rule trace to a file
     pr.settings.verbose = True     # Print info to screen
     pr.settings.parallel_computing = True
+    pr.settings.canonical = False
 
     # Load all the files into pyreason
     pr.load_graphml(graph_path)

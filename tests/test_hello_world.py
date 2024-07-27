@@ -12,6 +12,8 @@ def test_hello_world():
 
     # Modify pyreason settings to make verbose and to save the rule trace to a file
     pr.settings.verbose = True     # Print info to screen
+    pr.settings.canonical = False
+    pr.settings.parallel_computing = False
 
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
