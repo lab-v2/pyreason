@@ -1,9 +1,10 @@
 class Rule:
 
-    def __init__(self, rule_name, rule_type, target, delta, clauses, bnd, thresholds, ann_fn, weights, edges, static, immediate_rule):
+    def __init__(self, rule_name, rule_type, target, head_variables, delta, clauses, bnd, thresholds, ann_fn, weights, edges, static, immediate_rule):
         self._rule_name = rule_name
         self._type = rule_type
         self._target = target
+        self._head_variables = head_variables
         self._delta = delta
         self._clauses = clauses
         self._bnd = bnd
@@ -22,6 +23,9 @@ class Rule:
 
     def get_target(self):
         return self._target
+
+    def get_head_variables(self):
+        return self._head_variables
 
     def get_delta(self):
         return self._delta

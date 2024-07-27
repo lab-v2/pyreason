@@ -35,7 +35,7 @@ Check out the [PyReason Hello World](https://pyreason.readthedocs.io/en/latest/t
 
 ## 1. Introduction
 PyReason is a graphical inference tool that uses a set of logical rules and facts (initial conditions) to reason over graph structures. To get more details, refer to the paper/video/hello-world-example mentioned above.
-
+ 
 ## 2. Documentation 
 All API documentation and code examples can be found on [ReadTheDocs](https://pyreason.readthedocs.io/en/latest/)
 

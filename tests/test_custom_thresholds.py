@@ -25,7 +25,7 @@ def test_custom_thresholds():
 
     pr.add_rule(
         pr.Rule(
-            "ViewedByAll(x) <- HaveAccess(x,y), Viewed(y)",
+            "ViewedByAll(y) <- HaveAccess(x,y), Viewed(x)",
             "viewed_by_all_rule",
             custom_thresholds=user_defined_thresholds,
         )

@@ -123,25 +123,6 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: 
     if rule_type == 'node':
         infer_edges = False
 
-    # Replace the variables in the body with source/target if they match the variables in the head
-    # If infer_edges is true, then we consider all rules to be node rules, we infer the 2nd variable of the target predicate from the rule body
-    # Else we consider the rule to be an edge rule and replace variables with source/target
-    # Node rules with possibility of adding edges
-    if infer_edges or len(head_variables) == 1:
-        head_source_variable = head_variables[0]
-        for i in range(len(body_variables)):
-            for j in range(len(body_variables[i])):
-                if body_variables[i][j] == head_source_variable:
-                    body_variables[i][j] = '__target'
-    # Edge rule, no edges to be added
-    elif len(head_variables) == 2:
-        for i in range(len(body_variables)):
-            for j in range(len(body_variables[i])):
-                if body_variables[i][j] == head_variables[0]:
-                    body_variables[i][j] = '__source'
-                elif body_variables[i][j] == head_variables[1]:
-                    body_variables[i][j] = '__target'
-
     # Start setting up clauses
     # clauses = [c1, c2, c3, c4]
     # thresholds = [t1, t2, t3, t4]
@@ -184,15 +165,18 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: 
     # Assert that there are two variables in the head of the rule if we infer edges
     # Add edges between head variables if necessary
     if infer_edges:
-        var = '__target' if head_variables[0] == head_variables[1] else head_variables[1]
-        edges = ('__target', var, target)
+        # var = '__target' if head_variables[0] == head_variables[1] else head_variables[1]
+        # edges = ('__target', var, target)
+        edges = (head_variables[0], head_variables[1], target)
     else:
         edges = ('', '', label.Label(''))
 
     weights = np.ones(len(body_predicates), dtype=np.float64)
     weights = np.append(weights, 0)
 
-    r = rule.Rule(name, rule_type, target, numba.types.uint16(t), clauses, target_bound, thresholds, ann_fn, weights, edges, set_static, immediate_rule)
+    head_variables = numba.typed.List(head_variables)
+
+    r = rule.Rule(name, rule_type, target, head_variables, numba.types.uint16(t), clauses, target_bound, thresholds, ann_fn, weights, edges, set_static, immediate_rule)
     return r
 
 
