@@ -11,10 +11,9 @@ def test_custom_thresholds():
     # Modify the paths based on where you've stored the files we made above
     graph_path = "./tests/group_chat_graph.graphml"
 
-    # Modify pyreason settings to make verbose and to save the rule trace to a file
+    # Modify pyreason settings to make verbose
+    pr.reset_settings()
     pr.settings.verbose = True  # Print info to screen
-    pr.settings.canonical = False
-    pr.settings.parallel_computing = False
 
     # Load all the files into pyreason
     pr.load_graphml(graph_path)

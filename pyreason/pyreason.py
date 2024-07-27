@@ -399,6 +399,14 @@ def reset_rules():
     __rules = None
 
 
+def reset_settings():
+    """
+    Resets settings to default
+    """
+    global settings
+    settings = _Settings()
+
+
 # FUNCTIONS
 def load_graphml(path: str) -> None:
     """Loads graph from GraphMl file path into program
