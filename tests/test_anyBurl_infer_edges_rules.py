@@ -1,5 +1,6 @@
 import pyreason as pr
 
+
 def test_anyBurl_rule_1():
     graph_path = './tests/knowledge_graph_test_subset.graphml'
     pr.reset()
@@ -31,6 +32,7 @@ def test_anyBurl_rule_1():
     assert len(dataframes) == 2, 'Pyreason should run exactly 2 fixpoint operations'
     assert len(dataframes[1]) == 1, 'At t=1 there should be only 1 new isConnectedTo atom'
     assert ('Vnukovo_International_Airport', 'Riga_International_Airport') in dataframes[1]['component'].values.tolist() and dataframes[1]['isConnectedTo'].iloc[0] == [1, 1], '(Vnukovo_International_Airport, Riga_International_Airport) should have isConnectedTo bounds [1,1] for t=1 timesteps'
+
 
 def test_anyBurl_rule_2():
     graph_path = './tests/knowledge_graph_test_subset.graphml'
@@ -65,6 +67,7 @@ def test_anyBurl_rule_2():
     assert len(dataframes[1]) == 1, 'At t=1 there should be only 1 new isConnectedTo atom'
     assert ('Riga_International_Airport', 'Vnukovo_International_Airport') in dataframes[1]['component'].values.tolist() and dataframes[1]['isConnectedTo'].iloc[0] == [1, 1], '(Riga_International_Airport, Vnukovo_International_Airport) should have isConnectedTo bounds [1,1] for t=1 timesteps'
 
+
 def test_anyBurl_rule_3():
     graph_path = './tests/knowledge_graph_test_subset.graphml'
     pr.reset()
@@ -97,6 +100,7 @@ def test_anyBurl_rule_3():
     assert len(dataframes) == 2, 'Pyreason should run exactly 1 fixpoint operations'
     assert len(dataframes[1]) == 1, 'At t=1 there should be only 1 new isConnectedTo atom'
     assert ('Vnukovo_International_Airport', 'Yali') in dataframes[1]['component'].values.tolist() and dataframes[1]['isConnectedTo'].iloc[0] == [1, 1], '(Vnukovo_International_Airport, Yali) should have isConnectedTo bounds [1,1] for t=1 timesteps'
+
 
 def test_anyBurl_rule_4():
     graph_path = './tests/knowledge_graph_test_subset.graphml'
