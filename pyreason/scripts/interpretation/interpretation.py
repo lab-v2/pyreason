@@ -1849,14 +1849,14 @@ def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groun
 	# Case 4:
 	# We have seen both variables before
 	else:
-		# # We have already seen these two variables in an edge clause
-		# if (clause_var_1, clause_var_2) in groundings_edges:
-		# 	edge_groundings = groundings_edges[(clause_var_1, clause_var_2)]
-		# # We have seen both these variables but not in an edge clause together
-		# else:
-		for n in groundings[clause_var_1]:
-			es = numba.typed.List([(n, nn) for nn in neighbors[n] if nn in groundings[clause_var_2]])
-			edge_groundings.extend(es)
+		# We have already seen these two variables in an edge clause
+		if (clause_var_1, clause_var_2) in groundings_edges:
+			edge_groundings = groundings_edges[(clause_var_1, clause_var_2)]
+		# We have seen both these variables but not in an edge clause together
+		else:
+			for n in groundings[clause_var_1]:
+				es = numba.typed.List([(n, nn) for nn in neighbors[n] if nn in groundings[clause_var_2]])
+				edge_groundings.extend(es)
 
 	return edge_groundings
 
