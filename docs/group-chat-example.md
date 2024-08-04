@@ -79,10 +79,10 @@ We add the facts in PyReason as below:
 ```python
 import pyreason as pr
 
-pr.add_fact(pr.Fact("seen-fact-zach", "Zach", "Viewed", [1, 1], 0, 0, static=True))
-pr.add_fact(pr.Fact("seen-fact-justin", "Justin", "Viewed", [1, 1], 0, 0, static=True))
-pr.add_fact(pr.Fact("seen-fact-michelle", "Michelle", "Viewed", [1, 1], 1, 1, static=True))
-pr.add_fact(pr.Fact("seen-fact-amy", "Amy", "Viewed", [1, 1], 2, 2, static=True))
+pr.add_fact(pr.Fact("Viewed(Zach)", "seen-fact-zach", 0, 3))
+pr.add_fact(pr.Fact("Viewed(Justin)", "seen-fact-justin", 0, 3))
+pr.add_fact(pr.Fact("Viewed(Michelle)", "seen-fact-michelle", 1, 3))
+pr.add_fact(pr.Fact("Viewed(Amy)", "seen-fact-amy", 2, 3))
 ```
 
 This allows us to specify the component that has an initial condition, the initial condition itself in the form of bounds

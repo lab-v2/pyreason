@@ -32,10 +32,10 @@ def test_custom_thresholds():
         )
     )
 
-    pr.add_fact(pr.Fact("seen-fact-zach", "Zach", "Viewed", [1, 1], 0, 3))
-    pr.add_fact(pr.Fact("seen-fact-justin", "Justin", "Viewed", [1, 1], 0, 3))
-    pr.add_fact(pr.Fact("seen-fact-michelle", "Michelle", "Viewed", [1, 1], 1, 3))
-    pr.add_fact(pr.Fact("seen-fact-amy", "Amy", "Viewed", [1, 1], 2, 3))
+    pr.add_fact(pr.Fact("Viewed(Zach)", "seen-fact-zach", 0, 3))
+    pr.add_fact(pr.Fact("Viewed(Justin)", "seen-fact-justin", 0, 3))
+    pr.add_fact(pr.Fact("Viewed(Michelle)", "seen-fact-michelle", 1, 3))
+    pr.add_fact(pr.Fact("Viewed(Amy)", "seen-fact-amy", 2, 3))
 
     # Run the program for three timesteps to see the diffusion take place
     interpretation = pr.reason(timesteps=3)

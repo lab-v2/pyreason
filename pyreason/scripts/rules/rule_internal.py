@@ -18,6 +18,9 @@ class Rule:
     def get_rule_name(self):
         return self._rule_name
 
+    def set_rule_name(self, rule_name):
+        self._rule_name = rule_name
+
     def get_rule_type(self):
         return self._type
 

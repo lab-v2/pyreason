@@ -9,7 +9,7 @@ class Rule:
     1. It is not possible to have weights for different clauses. Weights are 1 by default with bias 0
     TODO: Add weights as a parameter
     """
-    def __init__(self, rule_text: str, name: str, infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False, custom_thresholds=None):
+    def __init__(self, rule_text: str, name: str = None, infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False, custom_thresholds=None):
         """
         :param rule_text: The rule in text format
         :param name: The name of the rule. This will appear in the rule trace

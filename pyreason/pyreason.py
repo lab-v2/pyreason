@@ -467,6 +467,11 @@ def add_rule(pr_rule: Rule) -> None:
     # Add to collection of rules
     if __rules is None:
         __rules = numba.typed.List.empty_list(rule.rule_type)
+
+    # Generate name for rule if not set
+    if pr_rule.rule.get_rule_name() is None:
+        pr_rule.rule.set_rule_name(f'rule_{len(__rules)}')
+
     __rules.append(pr_rule.rule)
 
 
@@ -495,17 +500,19 @@ def add_fact(pyreason_fact: Fact) -> None:
     """
     global __node_facts, __edge_facts
 
-    if pyreason_fact.type == 'node':
-        f = fact_node.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.label, pyreason_fact.interval, pyreason_fact.t_lower, pyreason_fact.t_upper, pyreason_fact.static)
-        if __node_facts is None:
-            __node_facts = numba.typed.List.empty_list(fact_node.fact_type)
-        __node_facts.append(f)
+    if __node_facts is None:
+        __node_facts = numba.typed.List.empty_list(fact_node.fact_type)
+    if __edge_facts is None:
+        __edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
 
+    if pyreason_fact.type == 'node':
+        if pyreason_fact.fact.get_name() is None:
+            pyreason_fact.fact.set_name(f'fact_{len(__node_facts)+len(__edge_facts)}')
+        __node_facts.append(pyreason_fact.fact)
     else:
-        f = fact_edge.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.label, pyreason_fact.interval, pyreason_fact.t_lower, pyreason_fact.t_upper, pyreason_fact.static)
-        if __edge_facts is None:
-            __edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
-        __edge_facts.append(f)
+        if pyreason_fact.fact.get_name() is None:
+            pyreason_fact.fact.set_name(f'fact_{len(__node_facts)+len(__edge_facts)}')
+        __edge_facts.append(pyreason_fact.fact)
 
 
 def add_annotation_function(function: Callable) -> None:
