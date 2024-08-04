@@ -254,8 +254,12 @@ class Interpretation:
 			# Nodes
 			facts_to_be_applied_node_new.clear()
 			for i in range(len(facts_to_be_applied_node)):
-				if facts_to_be_applied_node[i][0]==t:
+				if facts_to_be_applied_node[i][0] == t:
 					comp, l, bnd, static, graph_attribute = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4], facts_to_be_applied_node[i][5]
+					# If the component is not in the graph, add it
+					if comp not in nodes:
+						_add_node(comp, neighbors, reverse_neighbors, nodes, interpretations_node)
+
 					# Check if bnd is static. Then no need to update, just add to rule trace, check if graph attribute and add ipl complement to rule trace as well
 					if l in interpretations_node[comp].world and interpretations_node[comp].world[l].is_static():
 						# Check if we should even store any of the changes to the rule trace etc.
@@ -318,6 +322,10 @@ class Interpretation:
 			for i in range(len(facts_to_be_applied_edge)):
 				if facts_to_be_applied_edge[i][0]==t:
 					comp, l, bnd, static, graph_attribute = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3], facts_to_be_applied_edge[i][4], facts_to_be_applied_edge[i][5]
+					# If the component is not in the graph, add it
+					if comp not in edges:
+						_add_edge(comp[0], comp[1], neighbors, reverse_neighbors, nodes, edges, label.Label(''), interpretations_node, interpretations_edge)
+
 					# Check if bnd is static. Then no need to update, just add to rule trace, check if graph attribute, and add ipl complement to rule trace as well
 					if l in interpretations_edge[comp].world and interpretations_edge[comp].world[l].is_static():
 						# Inverse of this is: if not save_graph_attributes_to_rule_trace and graph_attribute
@@ -623,13 +631,13 @@ class Interpretation:
 		# This function is useful for pyreason gym, called externally
 		_delete_node(node, self.neighbors, self.reverse_neighbors, self.nodes, self.interpretations_node)
 
-	def get_interpretation_dict(self):
+	def get_dict(self):
 		# This function can be called externally to retrieve a dict of the interpretation values
 		# Only values in the rule trace will be added
 
 		# Initialize interpretations for each time and node and edge
 		interpretations = {}
-		for t in range(len(interpretations)):
+		for t in range(self.time+1):
 			interpretations[t] = {}
 			for node in self.nodes:
 				interpretations[t][node] = InterpretationDict()
@@ -643,7 +651,7 @@ class Interpretation:
 
 			# If canonical, update all following timesteps as well
 			if self. canonical:
-				for t in range(time+1, len(interpretations)):
+				for t in range(time+1, self.time+1):
 					interpretations[t][node][l._value] = (bnd.lower, bnd.upper)
 
 		# Update interpretation edges
@@ -653,7 +661,7 @@ class Interpretation:
 
 			# If canonical, update all following timesteps as well
 			if self. canonical:
-				for t in range(time+1, len(interpretations)):
+				for t in range(time+1, self.time+1):
 					interpretations[t][edge][l._value] = (bnd.lower, bnd.upper)
 
 		return interpretations
@@ -787,6 +795,16 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 		if rule_type == 'node':
 			# Loop through all the head variable groundings and add it to the rules to be applied
 			# Loop through the clauses and add appropriate trace data and annotations
+
+			# If there is no grounding for head_var_1, we treat it as a ground atom and add it to the graph
+			head_var_1_in_nodes = head_var_1 in nodes
+			if allow_ground_atoms and head_var_1_in_nodes:
+				groundings[head_var_1] = numba.typed.List([head_var_1])
+			elif head_var_1 not in groundings:
+				if not head_var_1_in_nodes:
+					_add_node(head_var_1, neighbors, reverse_neighbors, nodes, interpretations_node)
+				groundings[head_var_1] = numba.typed.List([head_var_1])
+
 			for head_grounding in groundings[head_var_1]:
 				qualified_nodes = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
 				qualified_edges = numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type))
@@ -862,6 +880,28 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 		elif rule_type == 'edge':
 			head_var_1 = head_variables[0]
 			head_var_2 = head_variables[1]
+
+			# If there is no grounding for head_var_1 or head_var_2, we treat it as a ground atom and add it to the graph
+			head_var_1_in_nodes = head_var_1 in nodes
+			head_var_2_in_nodes = head_var_2 in nodes
+			if allow_ground_atoms and head_var_1_in_nodes:
+				groundings[head_var_1] = numba.typed.List([head_var_1])
+			if allow_ground_atoms and head_var_2_in_nodes:
+				groundings[head_var_2] = numba.typed.List([head_var_2])
+
+			if head_var_1 not in groundings:
+				if not head_var_1_in_nodes:
+					_add_node(head_var_1, neighbors, reverse_neighbors, nodes, interpretations_node)
+				groundings[head_var_1] = numba.typed.List([head_var_1])
+			if head_var_2 not in groundings:
+				if not head_var_2_in_nodes:
+					_add_node(head_var_2, neighbors, reverse_neighbors, nodes, interpretations_node)
+				groundings[head_var_2] = numba.typed.List([head_var_2])
+
+			# Artificially connect the head variables with an edge if both of them were not in the graph
+			if not head_var_1_in_nodes and not head_var_2_in_nodes:
+				_add_edge(head_var_1, head_var_2, neighbors, reverse_neighbors, nodes, edges, label.Label(''), interpretations_node, interpretations_edge)
+
 			head_var_1_groundings = groundings[head_var_1]
 			head_var_2_groundings = groundings[head_var_2]
 

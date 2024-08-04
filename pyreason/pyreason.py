@@ -5,6 +5,7 @@ import time
 import sys
 import pandas as pd
 import memory_profiler as mp
+import warnings
 from typing import List, Type, Callable, Tuple
 
 from pyreason.scripts.utils.output import Output
@@ -602,7 +603,9 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
 
     # Check variables that HAVE to be set. Exceptions
     if __graph is None:
-        raise Exception('Graph not loaded. Use `load_graph` to load the graphml file')
+        __graph = nx.DiGraph()
+        if settings.verbose:
+            warnings.warn('Graph not loaded. Use `load_graph` to load the graphml file. Using empty graph')
     if __rules is None:
         raise Exception('There are no rules, use `add_rule` or `add_rules_from_file`')
 
