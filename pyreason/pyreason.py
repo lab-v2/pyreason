@@ -41,6 +41,7 @@ class _Settings:
         self.__store_interpretation_changes = True
         self.__parallel_computing = False
         self.__update_mode = 'intersection'
+        self.__allow_ground_atoms = False
 
     @property
     def verbose(self) -> bool:
@@ -166,6 +167,14 @@ class _Settings:
         :return: str
         """
         return self.__update_mode
+
+    @property
+    def allow_ground_atoms(self) -> bool:
+        """Returns whether rules can have ground atoms or not. Default is False
+
+        :return: bool
+        """
+        return self.__allow_ground_atoms
 
     @verbose.setter
     def verbose(self, value: bool) -> None:
@@ -353,6 +362,18 @@ class _Settings:
             raise TypeError('value has to be a str')
         else:
             self.__update_mode = value
+
+    @allow_ground_atoms.setter
+    def allow_ground_atoms(self, value: bool) -> None:
+        """Allow ground atoms to be used in rules when possible. Default is False
+
+        :param value: Whether to allow ground atoms or not
+        :raises TypeError: If not bool raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('value has to be a bool')
+        else:
+            self.__allow_ground_atoms = value
 
 
 # VARIABLES
@@ -628,7 +649,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     annotation_functions = tuple(__annotation_functions)
 
     # Setup logical program
-    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode)
+    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.allow_ground_atoms)
     __program.available_labels_node = __node_labels
     __program.available_labels_edge = __edge_labels
     __program.specific_node_labels = __specific_node_labels
