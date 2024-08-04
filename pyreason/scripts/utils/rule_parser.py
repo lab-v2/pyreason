@@ -33,7 +33,7 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: 
     # 2. replace ) by )) and ] by ]] so that we can split without damaging the string
     # 3. Split with ), and then for each element of list, split with ], and add to new list
     # 4. Then replace ]] with ] and )) with ) in for loop
-    # 5. Add :[1,1] to the end of each element if a bound is not specified
+    # 5. Add :[1,1] or :[0,0] to the end of each element if a bound is not specified
     # 6. Then split each element with :
     # 7. Transform bound strings into pr.intervals
 
@@ -54,7 +54,9 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: 
 
     # 5
     for i in range(len(split_body)):
-        if split_body[i][-1] != ']':
+        if split_body[i][0] == '~':
+            split_body[i] = split_body[i][1:] + ':[0,0]'
+        elif split_body[i][-1] != ']':
             split_body[i] += ':[1,1]'
 
     # 6
@@ -79,7 +81,10 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: 
 
     # This means there is no bound or annotation function specified
     if head[-1] == ')':
-        head += ':[1,1]'
+        if head[0] == '~':
+            head = head[1:] + ':[0,0]'
+        else:
+            head += ':[1,1]'
 
     head, head_bound = head.split(':')
     # Check if we have a bound or annotation function
