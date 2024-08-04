@@ -421,6 +421,14 @@ def reset_rules():
     __rules = None
 
 
+def reset_graph():
+    """
+    Resets graph to none
+    """
+    global __graph
+    __graph = None
+
+
 def reset_settings():
     """
     Resets settings to default
@@ -603,7 +611,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
 
     # Check variables that HAVE to be set. Exceptions
     if __graph is None:
-        __graph = nx.DiGraph()
+        load_graph(nx.DiGraph())
         if settings.verbose:
             warnings.warn('Graph not loaded. Use `load_graph` to load the graphml file. Using empty graph')
     if __rules is None:
