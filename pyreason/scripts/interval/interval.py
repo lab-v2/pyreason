@@ -2,6 +2,7 @@ from numba.experimental import structref
 from numba import njit
 import numpy as np
 
+
 class Interval(structref.StructRefProxy):
     def __new__(cls, l, u, s=False):
         return structref.StructRefProxy.__new__(cls, l, u, s, l, u)

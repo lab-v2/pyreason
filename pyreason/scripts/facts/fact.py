@@ -1,4 +1,5 @@
 import pyreason.scripts.utils.fact_parser as fact_parser
+import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 
 
 class Fact:
@@ -16,4 +17,12 @@ class Fact:
         :param static: If the fact should be active for the entire program. In which case `start_time` and `end_time` will be ignored
         :type static: bool
         """
-        self.fact, self.type = fact_parser.parse_fact(fact_text, name, start_time, end_time, static)
+        pred, component, bound, fact_type = fact_parser.parse_fact(fact_text)
+        self.name = name
+        self.start_time = start_time
+        self.end_time = end_time
+        self.static = static
+        self.pred = label.Label(pred)
+        self.component = component
+        self.bound = bound
+        self.type = fact_type

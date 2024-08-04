@@ -506,13 +506,15 @@ def add_fact(pyreason_fact: Fact) -> None:
         __edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
 
     if pyreason_fact.type == 'node':
-        if pyreason_fact.fact.get_name() is None:
-            pyreason_fact.fact.set_name(f'fact_{len(__node_facts)+len(__edge_facts)}')
-        __node_facts.append(pyreason_fact.fact)
+        if pyreason_fact.name is None:
+            pyreason_fact.name = f'fact_{len(__node_facts)+len(__edge_facts)}'
+        f = fact_node.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.pred, pyreason_fact.bound, pyreason_fact.start_time, pyreason_fact.end_time, pyreason_fact.static)
+        __node_facts.append(f)
     else:
-        if pyreason_fact.fact.get_name() is None:
-            pyreason_fact.fact.set_name(f'fact_{len(__node_facts)+len(__edge_facts)}')
-        __edge_facts.append(pyreason_fact.fact)
+        if pyreason_fact.name is None:
+            pyreason_fact.name = f'fact_{len(__node_facts)+len(__edge_facts)}'
+        f = fact_edge.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.pred, pyreason_fact.bound, pyreason_fact.start_time, pyreason_fact.end_time, pyreason_fact.static)
+        __edge_facts.append(f)
 
 
 def add_annotation_function(function: Callable) -> None:
