@@ -9,7 +9,10 @@ def parse_fact(fact_text):
         pred_comp, bound = f.split(':')
     else:
         pred_comp = f
-        bound = 'True'
+        if pred_comp[0] == '~':
+            bound = 'False'
+        else:
+            bound = 'True'
 
     # Check if bound is a boolean or a list of floats
     bound = bound.lower()
