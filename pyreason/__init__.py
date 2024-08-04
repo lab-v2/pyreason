@@ -20,7 +20,7 @@ if not cache_status['initialized']:
     settings.verbose = False
     load_graphml(graph_path)
     add_rule(Rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule'))
-    add_fact(Fact('popular-fact', 'Mary', 'popular', [1, 1], 0, 2))
+    add_fact(Fact('popular(Mary)', 'popular_fact', 0, 2))
     reason(timesteps=2)
 
     reset()
