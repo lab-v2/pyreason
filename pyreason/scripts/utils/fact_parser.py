@@ -11,6 +11,7 @@ def parse_fact(fact_text):
         pred_comp = f
         if pred_comp[0] == '~':
             bound = 'False'
+            pred_comp = pred_comp[1:]
         else:
             bound = 'True'
 
