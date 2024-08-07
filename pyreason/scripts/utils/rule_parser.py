@@ -69,6 +69,7 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
         body_clauses.append(clause)
         body_bounds.append(bound)
 
+    # Check if there are custom thresholds for the rule such as forall in string form
     for i, b in enumerate(body_clauses.copy()):
         if 'forall(' in b:
             if not custom_thresholds:
