@@ -1,12 +1,14 @@
 import numba
 import numpy as np
+from typing import Union
 
 import pyreason.scripts.numba_wrapper.numba_types.rule_type as rule
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
+from pyreason.scripts.threshold.threshold import Threshold
 
 
-def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False) -> rule.Rule:
+def parse_rule(rule_text: str, name: str, custom_thresholds: Union[list, dict], infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False) -> rule.Rule:
     # First remove all spaces from line
     r = rule_text.replace(' ', '')
 
@@ -66,6 +68,13 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: 
         clause, bound = b.split(':')
         body_clauses.append(clause)
         body_bounds.append(bound)
+
+    for i, b in enumerate(body_clauses.copy()):
+        if 'forall(' in b:
+            if not custom_thresholds:
+                custom_thresholds = {}
+            custom_thresholds[i] = Threshold("greater_equal", ("percent", "total"), 100)
+            body_clauses[i] = b[:-1].replace('forall(', '')
 
     # 7
     for i in range(len(body_bounds)):
@@ -141,18 +150,25 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: 
     # gather count of clauses for threshold validation
     num_clauses = len(body_clauses)
 
-    if custom_thresholds and (len(custom_thresholds) != num_clauses):
-        raise Exception('The length of custom thresholds {} is not equal to number of clauses {}'
-                        .format(len(custom_thresholds), num_clauses))
-    
+    if isinstance(custom_thresholds, list):
+        if len(custom_thresholds) != num_clauses:
+            raise Exception(f'The length of custom thresholds {len(custom_thresholds)} is not equal to number of clauses {num_clauses}')
+        for threshold in custom_thresholds:
+            thresholds.append(threshold.to_tuple())
+    elif isinstance(custom_thresholds, dict):
+        if max(custom_thresholds.keys()) >= num_clauses:
+            raise Exception(f'The max clause index in the custom thresholds map {max(custom_thresholds.keys())} is greater than number of clauses {num_clauses}')
+        for i in range(num_clauses):
+            if i in custom_thresholds:
+                thresholds.append(custom_thresholds[i].to_tuple())
+            else:
+                thresholds.append(('greater_equal', ('number', 'total'), 1.0))
+
     # If no custom thresholds provided, use defaults
     # otherwise loop through user-defined thresholds and convert to numba compatible format
-    if not custom_thresholds:
+    elif not custom_thresholds:
         for _ in range(num_clauses):
             thresholds.append(('greater_equal', ('number', 'total'), 1.0))
-    else:  
-        for threshold in custom_thresholds:  
-            thresholds.append(threshold.to_tuple())
 
     # # Loop though clauses
     for body_clause, predicate, variables, bounds in zip(body_clauses, body_predicates, body_variables, body_bounds):
