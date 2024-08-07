@@ -19,6 +19,4 @@ class Rule:
         :param custom_thresholds: A list of custom thresholds for the rule. If not specified, the default thresholds for ANY are used. It can be a list of
                size #of clauses or a map of clause index to threshold
         """
-        if custom_thresholds is None:
-            custom_thresholds = []
         self.rule = rule_parser.parse_rule(rule_text, name, custom_thresholds, infer_edges, set_static, immediate_rule)

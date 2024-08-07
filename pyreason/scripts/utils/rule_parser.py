@@ -8,7 +8,7 @@ import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 from pyreason.scripts.threshold.threshold import Threshold
 
 
-def parse_rule(rule_text: str, name: str, custom_thresholds: Union[list, dict], infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False) -> rule.Rule:
+def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, dict], infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False) -> rule.Rule:
     # First remove all spaces from line
     r = rule_text.replace(' ', '')
 
