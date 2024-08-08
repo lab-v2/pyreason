@@ -794,8 +794,8 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 			# Check satisfaction of those nodes wrt the threshold
 			# Only check satisfaction if the default threshold is used. This saves us from grounding the rest of the rule
 			# It doesn't make sense to check any other thresholds because the head could be grounded with multiple nodes/edges
-			if thresholds[i][1][0] == 'number' and thresholds[i][1][1] == 'total' and thresholds[i][2] == 1.0:
-				satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, grounding, qualified_groundings, clause_label, thresholds[i]) and satisfaction
+			# if thresholds[i][1][0] == 'number' and thresholds[i][1][1] == 'total' and thresholds[i][2] == 1.0:
+			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, grounding, qualified_groundings, clause_label, thresholds[i]) and satisfaction
 
 		# This is an edge clause
 		elif clause_type == 'edge':
@@ -814,8 +814,8 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 			# Check satisfaction of those edges wrt the threshold
 			# Only check satisfaction if the default threshold is used. This saves us from grounding the rest of the rule
 			# It doesn't make sense to check any other thresholds because the head could be grounded with multiple nodes/edges
-			if thresholds[i][1][0] == 'number' and thresholds[i][1][1] == 'total' and thresholds[i][2] == 1.0:
-				satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, grounding, qualified_groundings, clause_label, thresholds[i]) and satisfaction
+			# if thresholds[i][1][0] == 'number' and thresholds[i][1][1] == 'total' and thresholds[i][2] == 1.0:
+			satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, grounding, qualified_groundings, clause_label, thresholds[i]) and satisfaction
 
 			# Update the groundings
 			groundings[clause_var_1] = numba.typed.List.empty_list(node_type)
