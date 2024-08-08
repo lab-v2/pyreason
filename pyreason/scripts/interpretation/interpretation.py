@@ -2409,7 +2409,9 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		if updated:
 			ip_update_cnt = 0
 			for p1, p2 in ipl:
-				if p1==l:
+				if p1 == l:
+					if p2 not in world.world:
+						world.world[p2] = interval.closed(0, 1)
 					if atom_trace:
 						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p2], f'IPL: {l.get_value()}')
 					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
@@ -2420,7 +2422,9 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 					updated_bnds.append(world.world[p2])
 					if store_interpretation_changes:
 						rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, p2, interval.closed(lower, upper)))
-				if p2==l:
+				if p2 == l:
+					if p1 not in world.world:
+						world.world[p1] = interval.closed(0, 1)
 					if atom_trace:
 						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p1], f'IPL: {l.get_value()}')
 					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
@@ -2498,7 +2502,9 @@ def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		if updated:
 			ip_update_cnt = 0
 			for p1, p2 in ipl:
-				if p1==l:
+				if p1 == l:
+					if p2 not in world.world:
+						world.world[p2] = interval.closed(0, 1)
 					if atom_trace:
 						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p2], f'IPL: {l.get_value()}')
 					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
@@ -2509,7 +2515,9 @@ def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 					updated_bnds.append(world.world[p2])
 					if store_interpretation_changes:
 						rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, p2, interval.closed(lower, upper)))
-				if p2==l:
+				if p2 == l:
+					if p1 not in world.world:
+						world.world[p1] = interval.closed(0, 1)
 					if atom_trace:
 						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p1], f'IPL: {l.get_value()}')
 					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)

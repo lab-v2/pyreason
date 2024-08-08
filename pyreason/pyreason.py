@@ -489,6 +489,18 @@ def load_inconsistent_predicate_list(path: str) -> None:
     __ipl = yaml_parser.parse_ipl(path)
 
 
+def add_inconsistent_predicate(pred1: str, pred2: str) -> None:
+    """Add an inconsistent predicate pair to the IPL
+
+    :param pred1: First predicate in the inconsistent pair
+    :param pred2: Second predicate in the inconsistent pair
+    """
+    global __ipl
+    if __ipl is None:
+        __ipl = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, label.label_type)))
+    __ipl.append((label.Label(pred1), label.Label(pred2)))
+
+
 def add_rule(pr_rule: Rule) -> None:
     """Add a rule to pyreason from text format. This format is not as modular as the YAML format.
     """
