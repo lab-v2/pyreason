@@ -678,9 +678,9 @@ class Interpretation:
 
 		if ':' in query:
 			pred_comp, bounds = query.split(':')
-			bounds.replace('[', '').replace(']', '')
+			bounds = bounds.replace('[', '').replace(']', '')
 			l, u = bounds.split(',')
-			l, u = str_to_float(l), str_to_float(u)
+			l, u = float(l), float(u)
 		else:
 			if query[0] == '~':
 				pred_comp = query[1:]
