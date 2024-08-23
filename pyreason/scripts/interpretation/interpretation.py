@@ -679,7 +679,7 @@ class Interpretation:
 		if ':' in query:
 			pred_comp, bounds = query.split(':')
 			l, u = bounds.split(',')
-			l, u = float(l), float(u)
+			l, u = str_to_float(l), str_to_float(u)
 		else:
 			if query[0] == '~':
 				pred_comp = query[1:]
