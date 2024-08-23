@@ -678,6 +678,7 @@ class Interpretation:
 
 		if ':' in query:
 			pred_comp, bounds = query.split(':')
+			bounds.replace('[', '').replace(']', '')
 			l, u = bounds.split(',')
 			l, u = str_to_float(l), str_to_float(u)
 		else:
