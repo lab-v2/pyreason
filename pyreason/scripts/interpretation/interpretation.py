@@ -909,7 +909,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 							else:
 								for qn in groundings[clause_var_1]:
 									a.append(interpretations_node[qn].world[clause_label])
-								annotations.append(a)
+							annotations.append(a)
 
 					elif clause_type == 'edge':
 						clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
@@ -1067,7 +1067,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 							else:
 								for qn in temp_groundings[clause_var_1]:
 									a.append(interpretations_node[qn].world[clause_label])
-								annotations.append(a)
+							annotations.append(a)
 
 					elif clause_type == 'edge':
 						clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
