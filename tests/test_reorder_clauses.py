@@ -1,6 +1,5 @@
 # Test if the simple hello world program works
 import pyreason as pr
-import faulthandler
 
 
 def test_reorder_clauses():
@@ -23,7 +22,6 @@ def test_reorder_clauses():
     pr.add_fact(pr.Fact('popular(Mary)', 'popular_fact', 0, 2))
 
     # Run the program for two timesteps to see the diffusion take place
-    faulthandler.enable()
     interpretation = pr.reason(timesteps=2)
 
     # Display the changes in the interpretation for each timestep
