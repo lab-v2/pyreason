@@ -43,7 +43,10 @@ class Rule:
         return self._bnd
 
     def get_thresholds(self):
-        return self._thresholds 
+        return self._thresholds
+
+    def set_thresholds(self, thresholds):
+        self._thresholds = thresholds
 
     def get_annotation_function(self):
         return self._ann_fn
