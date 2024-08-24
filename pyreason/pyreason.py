@@ -22,11 +22,32 @@ from pyreason.scripts.threshold.threshold import Threshold
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
+from pyreason.scripts.utils.reorder_clauses import reorder_clauses
 
 
 # USER VARIABLES
 class _Settings:
     def __init__(self):
+        self.__verbose = None
+        self.__output_to_file = None
+        self.__output_file_name = None
+        self.__graph_attribute_parsing = None
+        self.__abort_on_inconsistency = None
+        self.__memory_profile = None
+        self.__reverse_digraph = None
+        self.__atom_trace = None
+        self.__save_graph_attributes_to_trace = None
+        self.__canonical = None
+        self.__inconsistency_check = None
+        self.__static_graph_facts = None
+        self.__store_interpretation_changes = None
+        self.__parallel_computing = None
+        self.__update_mode = None
+        self.__allow_ground_rules = None
+        self.__optimize_rules = None
+        self.reset()
+
+    def reset(self):
         self.__verbose = True
         self.__output_to_file = False
         self.__output_file_name = 'pyreason_output'
@@ -43,6 +64,7 @@ class _Settings:
         self.__parallel_computing = False
         self.__update_mode = 'intersection'
         self.__allow_ground_rules = False
+        self.__optimize_rules = True
 
     @property
     def verbose(self) -> bool:
@@ -176,6 +198,14 @@ class _Settings:
         :return: bool
         """
         return self.__allow_ground_rules
+
+    @property
+    def optimize_rules(self) -> bool:
+        """Returns whether rules will be optimized by moving clauses around. Default is True
+
+        :return: bool
+        """
+        return self.__optimize_rules
 
     @verbose.setter
     def verbose(self, value: bool) -> None:
@@ -376,10 +406,23 @@ class _Settings:
         else:
             self.__allow_ground_rules = value
 
+    @optimize_rules.setter
+    def optimize_rules(self, value: bool) -> None:
+        """Whether to optimize rules by moving clauses around. Default is True
+
+        :param value: Whether to optimize rules or not
+        :raises TypeError: If not bool raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('value has to be a bool')
+        else:
+            self.__optimize_rules = value
+
 
 # VARIABLES
 __graph = None
 __rules = None
+__clause_maps = None
 __node_facts = None
 __edge_facts = None
 __ipl = None
@@ -434,7 +477,7 @@ def reset_settings():
     Resets settings to default
     """
     global settings
-    settings = _Settings()
+    settings.reset()
 
 
 # FUNCTIONS
@@ -613,7 +656,7 @@ def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_t
 
 def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     # Globals
-    global __graph, __rules, __node_facts, __edge_facts, __ipl, __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels, __graphml_parser
+    global __graph, __rules, __clause_maps, __node_facts, __edge_facts, __ipl, __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels, __graphml_parser
     global settings, __timestamp, __program
 
     # Assert variables are of correct type
@@ -671,6 +714,15 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     # Convert list of annotation functions into tuple to be numba compatible
     annotation_functions = tuple(__annotation_functions)
 
+    # Optimize rules by moving clauses around
+    __clause_maps = {r.get_rule_name(): {i: i for i in range(len(r.get_clauses()))} for r in __rules}
+    if settings.optimize_rules:
+        __rules_copy = __rules.copy()
+        __rules = numba.typed.List.empty_list(rule.rule_type)
+        for i, r in enumerate(__rules_copy):
+            r, __clause_maps[r.get_rule_name()] = reorder_clauses(r)
+            __rules.append(r)
+
     # Setup logical program
     __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.allow_ground_rules)
     __program.available_labels_node = __node_labels
@@ -712,11 +764,11 @@ def save_rule_trace(interpretation, folder: str='./'):
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
     :param folder: the folder in which to save the result, defaults to './'
     """
-    global __timestamp, settings
+    global __timestamp, __clause_maps, settings
 
     assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to save rule trace'
 
-    output = Output(__timestamp)
+    output = Output(__timestamp, __clause_maps)
     output.save_rule_trace(interpretation, folder)
 
 
@@ -728,11 +780,11 @@ def get_rule_trace(interpretation) -> Tuple[pd.DataFrame, pd.DataFrame]:
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
     :returns two pandas dataframes (nodes, edges) representing the changes that occurred during reasoning
     """
-    global __timestamp, settings
+    global __timestamp, __clause_maps, settings
 
     assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to save rule trace'
 
-    output = Output(__timestamp)
+    output = Output(__timestamp, __clause_maps)
     return output.get_rule_trace(interpretation)
 
 

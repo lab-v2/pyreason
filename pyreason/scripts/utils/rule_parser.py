@@ -3,6 +3,7 @@ import numpy as np
 from typing import Union
 
 import pyreason.scripts.numba_wrapper.numba_types.rule_type as rule
+# import pyreason.scripts.rules.rule_internal as rule
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 from pyreason.scripts.threshold.threshold import Threshold

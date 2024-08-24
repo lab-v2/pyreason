@@ -144,6 +144,13 @@ def get_clauses(rule):
     return getter
 
 
+@overload_method(RuleType, "set_clauses")
+def set_clauses(rule):
+    def setter(rule, clauses):
+        rule.clauses = clauses
+    return setter
+
+
 @overload_method(RuleType, "get_bnd")
 def get_bnd(rule):
     def impl(rule):

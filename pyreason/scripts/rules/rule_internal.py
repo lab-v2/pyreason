@@ -33,8 +33,11 @@ class Rule:
     def get_delta(self):
         return self._delta
 
-    def get_neigh_criteria(self):
+    def get_clauses(self):
         return self._clauses
+
+    def set_clauses(self, clauses):
+        self._clauses = clauses
     
     def get_bnd(self):
         return self._bnd
