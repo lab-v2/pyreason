@@ -13,18 +13,13 @@ def reorder_clauses(rule):
     reordered_clauses_map = {}
 
     for index, clause in enumerate(rule.get_clauses()):
-        print(clause)
         if clause[0] == 'node':
             node_clauses.append((index, clause))
         else:
             edge_clauses.append((index, clause))
-    print('ordered clauses')
     for new_index, (original_index, clause) in enumerate(node_clauses + edge_clauses):
-        print(clause)
         reordered_clauses.append(clause)
         reordered_clauses_map[new_index] = original_index
-
-    print()
 
     rule.set_clauses(reordered_clauses)
     return rule, reordered_clauses_map
