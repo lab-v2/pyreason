@@ -26,4 +26,5 @@ def reorder_clauses(rule):
         reordered_clauses_map[new_index] = original_index
 
     rule.set_clauses(reordered_clauses)
+    rule.set_thresholds(reordered_thresholds)
     return rule, reordered_clauses_map
