@@ -14,7 +14,7 @@ with open(cache_status_path) as file:
     cache_status = yaml.safe_load(file)
 
 if not cache_status['initialized']:
-    print('Imported PyReason for the first time. Initializing ... this will take a minute')
+    print('Imported PyReason for the first time. Initializing caches for faster runtimes ... this will take a minute')
     graph_path = os.path.join(package_path, 'examples', 'hello-world', 'friends_graph.graphml')
 
     settings.verbose = False
@@ -25,6 +25,8 @@ if not cache_status['initialized']:
 
     reset()
     reset_rules()
+    print('PyReason initialized!')
+    print()
 
     # Update cache status
     cache_status['initialized'] = True
