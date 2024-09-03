@@ -55,7 +55,7 @@ class Interpretation:
 	specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(node_type))
 	specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(edge_type))
 
-	def __init__(self, graph, ipl, annotation_functions, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_atoms):
+	def __init__(self, graph, ipl, annotation_functions, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules):
 		self.graph = graph
 		self.ipl = ipl
 		self.annotation_functions = annotation_functions
@@ -66,7 +66,7 @@ class Interpretation:
 		self.inconsistency_check = inconsistency_check
 		self.store_interpretation_changes = store_interpretation_changes
 		self.update_mode = update_mode
-		self.allow_ground_atoms = allow_ground_atoms
+		self.allow_ground_rules = allow_ground_rules
 
 		# For reasoning and reasoning again (contains previous time and previous fp operation cnt)
 		self.time = 0
@@ -205,7 +205,7 @@ class Interpretation:
 		return max_time
 
 	def _start_fp(self, rules, max_facts_time, verbose, again):
-		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.canonical, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, self.allow_ground_atoms, max_facts_time, self.annotation_functions, self._convergence_mode, self._convergence_delta, verbose, again)
+		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.canonical, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, self.allow_ground_rules, max_facts_time, self.annotation_functions, self._convergence_mode, self._convergence_delta, verbose, again)
 		self.time = t - 1
 		# If we need to reason again, store the next timestep to start from
 		self.prev_reasoning_data[0] = t
@@ -215,14 +215,15 @@ class Interpretation:
 
 	@staticmethod
 	@numba.njit(cache=True, parallel=True)
-	def reason(interpretations_node, interpretations_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_atoms, max_facts_time, annotation_functions, convergence_mode, convergence_delta, verbose, again):
+	def reason(interpretations_node, interpretations_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules, max_facts_time, annotation_functions, convergence_mode, convergence_delta, verbose, again):
 		t = prev_reasoning_data[0]
 		fp_cnt = prev_reasoning_data[1]
 		max_rules_time = 0
 		timestep_loop = True
 		facts_to_be_applied_node_new = numba.typed.List.empty_list(facts_to_be_applied_node_type)
 		facts_to_be_applied_edge_new = numba.typed.List.empty_list(facts_to_be_applied_edge_type)
-		rules_to_remove_idx = numba.typed.List.empty_list(numba.types.int64)
+		rules_to_remove_idx = set()
+		rules_to_remove_idx.add(-1)
 		while timestep_loop:
 			if t==tmax:
 				timestep_loop = False
@@ -253,12 +254,14 @@ class Interpretation:
 			# Start by applying facts
 			# Nodes
 			facts_to_be_applied_node_new.clear()
+			nodes_set = set(nodes)
 			for i in range(len(facts_to_be_applied_node)):
 				if facts_to_be_applied_node[i][0] == t:
 					comp, l, bnd, static, graph_attribute = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4], facts_to_be_applied_node[i][5]
 					# If the component is not in the graph, add it
-					if comp not in nodes:
+					if comp not in nodes_set:
 						_add_node(comp, neighbors, reverse_neighbors, nodes, interpretations_node)
+						nodes_set.add(comp)
 
 					# Check if bnd is static. Then no need to update, just add to rule trace, check if graph attribute and add ipl complement to rule trace as well
 					if l in interpretations_node[comp].world and interpretations_node[comp].world[l].is_static():
@@ -319,12 +322,14 @@ class Interpretation:
 
 			# Edges
 			facts_to_be_applied_edge_new.clear()
+			edges_set = set(edges)
 			for i in range(len(facts_to_be_applied_edge)):
 				if facts_to_be_applied_edge[i][0]==t:
 					comp, l, bnd, static, graph_attribute = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3], facts_to_be_applied_edge[i][4], facts_to_be_applied_edge[i][5]
 					# If the component is not in the graph, add it
-					if comp not in edges:
+					if comp not in edges_set:
 						_add_edge(comp[0], comp[1], neighbors, reverse_neighbors, nodes, edges, label.Label(''), interpretations_node, interpretations_edge)
+						edges_set.add(comp)
 
 					# Check if bnd is static. Then no need to update, just add to rule trace, check if graph attribute, and add ipl complement to rule trace as well
 					if l in interpretations_edge[comp].world and interpretations_edge[comp].world[l].is_static():
@@ -418,7 +423,7 @@ class Interpretation:
 									changes_cnt += changes
 
 						# Delete rules that have been applied from list by adding index to list
-						rules_to_remove_idx.append(idx)
+						rules_to_remove_idx.add(idx)
 
 				# Remove from rules to be applied and edges to be applied lists after coming out from loop
 				rules_to_be_applied_node[:] = numba.typed.List([rules_to_be_applied_node[i] for i in range(len(rules_to_be_applied_node)) if i not in rules_to_remove_idx])
@@ -491,7 +496,7 @@ class Interpretation:
 										changes_cnt += changes
 
 						# Delete rules that have been applied from list by adding the index to list
-						rules_to_remove_idx.append(idx)
+						rules_to_remove_idx.add(idx)
 
 				# Remove from rules to be applied and edges to be applied lists after coming out from loop
 				rules_to_be_applied_edge[:] = numba.typed.List([rules_to_be_applied_edge[i] for i in range(len(rules_to_be_applied_edge)) if i not in rules_to_remove_idx])
@@ -520,7 +525,7 @@ class Interpretation:
 						# Only go through if the rule can be applied within the given timesteps, or we're running until convergence
 						delta_t = rule.get_delta()
 						if t + delta_t <= tmax or tmax == -1 or again:
-							applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_atoms)
+							applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules)
 
 							# Loop through applicable rules and add them to the rules to be applied for later or next fp operation
 							for applicable_rule in applicable_node_rules:
@@ -666,9 +671,73 @@ class Interpretation:
 
 		return interpretations
 
+	def query(self, query, return_bool=True):
+		"""
+		This function is used to query the graph after reasoning
+		:param query: The query string of for `pred(node)` or `pred(edge)` or `pred(node) : [l, u]`
+		:param return_bool: If True, returns boolean of query, else the bounds associated with it
+		:return: bool, or bounds
+		"""
+		# Parse the query
+		query = query.replace(' ', '')
+
+		if ':' in query:
+			pred_comp, bounds = query.split(':')
+			bounds = bounds.replace('[', '').replace(']', '')
+			l, u = bounds.split(',')
+			l, u = float(l), float(u)
+		else:
+			if query[0] == '~':
+				pred_comp = query[1:]
+				l, u = 0, 0
+			else:
+				pred_comp = query
+				l, u = 1, 1
+
+		bnd = interval.closed(l, u)
+
+		# Split predicate and component
+		idx = pred_comp.find('(')
+		pred = label.Label(pred_comp[:idx])
+		component = pred_comp[idx + 1:-1]
+
+		if ',' in component:
+			component = tuple(component.split(','))
+			comp_type = 'edge'
+		else:
+			comp_type = 'node'
+
+		# Check if the component exists
+		if comp_type == 'node':
+			if component not in self.nodes:
+				return False if return_bool else (0, 0)
+		else:
+			if component not in self.edges:
+				return False if return_bool else (0, 0)
+
+		# Check if the predicate exists
+		if comp_type == 'node':
+			if pred not in self.interpretations_node[component].world:
+				return False if return_bool else (0, 0)
+		else:
+			if pred not in self.interpretations_edge[component].world:
+				return False if return_bool else (0, 0)
+
+		# Check if the bounds are satisfied
+		if comp_type == 'node':
+			if self.interpretations_node[component].world[pred] in bnd:
+				return True if return_bool else (self.interpretations_node[component].world[pred].lower, self.interpretations_node[component].world[pred].upper)
+			else:
+				return False if return_bool else (0, 0)
+		else:
+			if self.interpretations_edge[component].world[pred] in bnd:
+				return True if return_bool else (self.interpretations_edge[component].world[pred].lower, self.interpretations_edge[component].world[pred].upper)
+			else:
+				return False if return_bool else (0, 0)
+
 
 @numba.njit(cache=True)
-def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_atoms):
+def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules):
 	# Extract rule params
 	rule_type = rule.get_type()
 	head_variables = rule.get_head_variables()
@@ -699,6 +768,9 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 	dependency_graph_neighbors = numba.typed.Dict.empty(key_type=node_type, value_type=list_of_nodes)
 	dependency_graph_reverse_neighbors = numba.typed.Dict.empty(key_type=node_type, value_type=list_of_nodes)
 
+	nodes_set = set(nodes)
+	edges_set = set(edges)
+
 	satisfaction = True
 	for i, clause in enumerate(clauses):
 		# Unpack clause variables
@@ -714,7 +786,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 
 			# Get subset of nodes that can be used to ground the variable
 			# If we allow ground atoms, we can use the nodes directly
-			if allow_ground_atoms and clause_var_1 in nodes:
+			if allow_ground_rules and clause_var_1 in nodes_set:
 				grounding = numba.typed.List([clause_var_1])
 			else:
 				grounding = get_rule_node_clause_grounding(clause_var_1, groundings, nodes)
@@ -722,13 +794,17 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 			# Narrow subset based on predicate
 			qualified_groundings = get_qualified_node_groundings(interpretations_node, grounding, clause_label, clause_bnd)
 			groundings[clause_var_1] = qualified_groundings
+			qualified_groundings_set = set(qualified_groundings)
 			for c1, c2 in groundings_edges:
 				if c1 == clause_var_1:
-					groundings_edges[(c1, c2)] = numba.typed.List([e for e in groundings_edges[(c1, c2)] if e[0] in qualified_groundings])
+					groundings_edges[(c1, c2)] = numba.typed.List([e for e in groundings_edges[(c1, c2)] if e[0] in qualified_groundings_set])
 				if c2 == clause_var_1:
-					groundings_edges[(c1, c2)] = numba.typed.List([e for e in groundings_edges[(c1, c2)] if e[1] in qualified_groundings])
+					groundings_edges[(c1, c2)] = numba.typed.List([e for e in groundings_edges[(c1, c2)] if e[1] in qualified_groundings_set])
 
 			# Check satisfaction of those nodes wrt the threshold
+			# Only check satisfaction if the default threshold is used. This saves us from grounding the rest of the rule
+			# It doesn't make sense to check any other thresholds because the head could be grounded with multiple nodes/edges
+			# if thresholds[i][1][0] == 'number' and thresholds[i][1][1] == 'total' and thresholds[i][2] == 1.0:
 			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, grounding, qualified_groundings, clause_label, thresholds[i]) and satisfaction
 
 		# This is an edge clause
@@ -737,7 +813,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 
 			# Get subset of edges that can be used to ground the variables
 			# If we allow ground atoms, we can use the nodes directly
-			if allow_ground_atoms and (clause_var_1, clause_var_2) in edges:
+			if allow_ground_rules and (clause_var_1, clause_var_2) in edges_set:
 				grounding = numba.typed.List([(clause_var_1, clause_var_2)])
 			else:
 				grounding = get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, nodes)
@@ -746,16 +822,23 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 			qualified_groundings = get_qualified_edge_groundings(interpretations_edge, grounding, clause_label, clause_bnd)
 
 			# Check satisfaction of those edges wrt the threshold
+			# Only check satisfaction if the default threshold is used. This saves us from grounding the rest of the rule
+			# It doesn't make sense to check any other thresholds because the head could be grounded with multiple nodes/edges
+			# if thresholds[i][1][0] == 'number' and thresholds[i][1][1] == 'total' and thresholds[i][2] == 1.0:
 			satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, grounding, qualified_groundings, clause_label, thresholds[i]) and satisfaction
 
 			# Update the groundings
 			groundings[clause_var_1] = numba.typed.List.empty_list(node_type)
 			groundings[clause_var_2] = numba.typed.List.empty_list(node_type)
+			groundings_clause_1_set = set(groundings[clause_var_1])
+			groundings_clause_2_set = set(groundings[clause_var_2])
 			for e in qualified_groundings:
-				if e[0] not in groundings[clause_var_1]:
+				if e[0] not in groundings_clause_1_set:
 					groundings[clause_var_1].append(e[0])
-				if e[1] not in groundings[clause_var_2]:
+					groundings_clause_1_set.add(e[0])
+				if e[1] not in groundings_clause_2_set:
 					groundings[clause_var_2].append(e[1])
+					groundings_clause_2_set.add(e[1])
 
 			# Update the edge groundings (to use later for grounding other clauses with the same variables)
 			groundings_edges[(clause_var_1, clause_var_2)] = qualified_groundings
@@ -798,11 +881,12 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 
 			# If there is no grounding for head_var_1, we treat it as a ground atom and add it to the graph
 			head_var_1_in_nodes = head_var_1 in nodes
-			if allow_ground_atoms and head_var_1_in_nodes:
+			add_head_var_node_to_graph = False
+			if allow_ground_rules and head_var_1_in_nodes:
 				groundings[head_var_1] = numba.typed.List([head_var_1])
 			elif head_var_1 not in groundings:
 				if not head_var_1_in_nodes:
-					_add_node(head_var_1, neighbors, reverse_neighbors, nodes, interpretations_node)
+					add_head_var_node_to_graph = True
 				groundings[head_var_1] = numba.typed.List([head_var_1])
 
 			for head_grounding in groundings[head_var_1]:
@@ -839,7 +923,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 							else:
 								for qn in groundings[clause_var_1]:
 									a.append(interpretations_node[qn].world[clause_label])
-								annotations.append(a)
+							annotations.append(a)
 
 					elif clause_type == 'edge':
 						clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
@@ -874,6 +958,10 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 						# Comparison clause (we do not handle for now)
 						pass
 
+				# Now that we're sure that the rule is satisfied, we add the head to the graph if needed (only for ground rules)
+				if add_head_var_node_to_graph:
+					_add_node(head_var_1, neighbors, reverse_neighbors, nodes, interpretations_node)
+
 				# For each grounding add a rule to be applied
 				applicable_rules_node.append((head_grounding, annotations, qualified_nodes, qualified_edges, edges_to_be_added))
 
@@ -884,23 +972,26 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 			# If there is no grounding for head_var_1 or head_var_2, we treat it as a ground atom and add it to the graph
 			head_var_1_in_nodes = head_var_1 in nodes
 			head_var_2_in_nodes = head_var_2 in nodes
-			if allow_ground_atoms and head_var_1_in_nodes:
+			add_head_var_1_node_to_graph = False
+			add_head_var_2_node_to_graph = False
+			add_head_edge_to_graph = False
+			if allow_ground_rules and head_var_1_in_nodes:
 				groundings[head_var_1] = numba.typed.List([head_var_1])
-			if allow_ground_atoms and head_var_2_in_nodes:
+			if allow_ground_rules and head_var_2_in_nodes:
 				groundings[head_var_2] = numba.typed.List([head_var_2])
 
 			if head_var_1 not in groundings:
 				if not head_var_1_in_nodes:
-					_add_node(head_var_1, neighbors, reverse_neighbors, nodes, interpretations_node)
+					add_head_var_1_node_to_graph = True
 				groundings[head_var_1] = numba.typed.List([head_var_1])
 			if head_var_2 not in groundings:
 				if not head_var_2_in_nodes:
-					_add_node(head_var_2, neighbors, reverse_neighbors, nodes, interpretations_node)
+					add_head_var_2_node_to_graph = True
 				groundings[head_var_2] = numba.typed.List([head_var_2])
 
 			# Artificially connect the head variables with an edge if both of them were not in the graph
 			if not head_var_1_in_nodes and not head_var_2_in_nodes:
-				_add_edge(head_var_1, head_var_2, neighbors, reverse_neighbors, nodes, edges, label.Label(''), interpretations_node, interpretations_edge)
+				add_head_edge_to_graph = True
 
 			head_var_1_groundings = groundings[head_var_1]
 			head_var_2_groundings = groundings[head_var_2]
@@ -917,12 +1008,11 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 					if infer_edges:
 						valid_edge_groundings.append((g1, g2))
 					else:
-						if (g1, g2) in edges:
+						if (g1, g2) in edges_set:
 							valid_edge_groundings.append((g1, g2))
 			
 			# Loop through the head variable groundings
 			for valid_e in valid_edge_groundings:
-				satisfaction = True
 				head_var_1_grounding, head_var_2_grounding = valid_e[0], valid_e[1]
 				qualified_nodes = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
 				qualified_edges = numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type))
@@ -991,7 +1081,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 							else:
 								for qn in temp_groundings[clause_var_1]:
 									a.append(interpretations_node[qn].world[clause_label])
-								annotations.append(a)
+							annotations.append(a)
 
 					elif clause_type == 'edge':
 						clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
@@ -1054,6 +1144,14 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 								for qe in temp_groundings_edges[(clause_var_1, clause_var_2)]:
 									a.append(interpretations_edge[qe].world[clause_label])
 							annotations.append(a)
+
+				# Now that we're sure that the rule is satisfied, we add the head to the graph if needed (only for ground rules)
+				if add_head_var_1_node_to_graph and head_var_1_grounding == head_var_1:
+					_add_node(head_var_1, neighbors, reverse_neighbors, nodes, interpretations_node)
+				if add_head_var_2_node_to_graph and head_var_2_grounding == head_var_2:
+					_add_node(head_var_2, neighbors, reverse_neighbors, nodes, interpretations_node)
+				if add_head_edge_to_graph and (head_var_1, head_var_2) == (head_var_1_grounding, head_var_2_grounding):
+					_add_edge(head_var_1, head_var_2, neighbors, reverse_neighbors, nodes, edges, label.Label(''), interpretations_node, interpretations_edge)
 
 				# For each grounding combination add a rule to be applied
 				# Only if all the clauses have valid groundings
@@ -1601,9 +1699,11 @@ def refine_groundings(clause_variables, groundings, groundings_edges, dependency
 
 					# Update the edge groundings and node groundings
 					qualified_groundings = numba.typed.List([edge for edge in old_edge_groundings if edge[0] in new_node_groundings])
+					groundings_neighbor_set = set(groundings[neighbor])
 					for e in qualified_groundings:
-						if e[1] not in groundings[neighbor]:
+						if e[1] not in groundings_neighbor_set:
 							groundings[neighbor].append(e[1])
+							groundings_neighbor_set.add(e[1])
 					groundings_edges[(refined_variable, neighbor)] = qualified_groundings
 
 					# Add the neighbor to the list of refined variables so that we can refine for all its neighbors
@@ -1621,9 +1721,11 @@ def refine_groundings(clause_variables, groundings, groundings_edges, dependency
 
 					# Update the edge groundings and node groundings
 					qualified_groundings = numba.typed.List([edge for edge in old_edge_groundings if edge[1] in new_node_groundings])
+					groundings_reverse_neighbor_set = set(groundings[reverse_neighbor])
 					for e in qualified_groundings:
-						if e[0] not in groundings[reverse_neighbor]:
+						if e[0] not in groundings_reverse_neighbor_set:
 							groundings[reverse_neighbor].append(e[0])
+							groundings_reverse_neighbor_set.add(e[0])
 					groundings_edges[(reverse_neighbor, refined_variable)] = qualified_groundings
 
 					# Add the neighbor to the list of refined variables so that we can refine for all its neighbors
@@ -1903,8 +2005,9 @@ def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groun
 			edge_groundings = groundings_edges[(clause_var_1, clause_var_2)]
 		# We have seen both these variables but not in an edge clause together
 		else:
+			groundings_clause_var_2_set = set(groundings[clause_var_2])
 			for n in groundings[clause_var_1]:
-				es = numba.typed.List([(n, nn) for nn in neighbors[n] if nn in groundings[clause_var_2]])
+				es = numba.typed.List([(n, nn) for nn in neighbors[n] if nn in groundings_clause_var_2_set])
 				edge_groundings.extend(es)
 
 	return edge_groundings
@@ -2325,7 +2428,9 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		if updated:
 			ip_update_cnt = 0
 			for p1, p2 in ipl:
-				if p1==l:
+				if p1 == l:
+					if p2 not in world.world:
+						world.world[p2] = interval.closed(0, 1)
 					if atom_trace:
 						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p2], f'IPL: {l.get_value()}')
 					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
@@ -2336,7 +2441,9 @@ def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 					updated_bnds.append(world.world[p2])
 					if store_interpretation_changes:
 						rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, p2, interval.closed(lower, upper)))
-				if p2==l:
+				if p2 == l:
+					if p1 not in world.world:
+						world.world[p1] = interval.closed(0, 1)
 					if atom_trace:
 						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p1], f'IPL: {l.get_value()}')
 					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
@@ -2414,7 +2521,9 @@ def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 		if updated:
 			ip_update_cnt = 0
 			for p1, p2 in ipl:
-				if p1==l:
+				if p1 == l:
+					if p2 not in world.world:
+						world.world[p2] = interval.closed(0, 1)
 					if atom_trace:
 						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p2], f'IPL: {l.get_value()}')
 					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
@@ -2425,7 +2534,9 @@ def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, stat
 					updated_bnds.append(world.world[p2])
 					if store_interpretation_changes:
 						rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, p2, interval.closed(lower, upper)))
-				if p2==l:
+				if p2 == l:
+					if p1 not in world.world:
+						world.world[p1] = interval.closed(0, 1)
 					if atom_trace:
 						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p1], f'IPL: {l.get_value()}')
 					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
