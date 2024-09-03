@@ -8,6 +8,9 @@ os.environ['NUMBA_CACHE_DIR'] = cache_path
 
 from pyreason.pyreason import *
 import yaml
+from importlib.metadata import version
+
+__version__ = version('pyreason')
 
 
 with open(cache_status_path) as file:
