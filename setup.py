@@ -35,6 +35,8 @@ setup(
         'memory_profiler',
         'pytest'
     ],
+    use_scm_version=True,
+    setup_requires=['setuptools_scm'],
     packages=find_packages(),
     include_package_data=True
 )
