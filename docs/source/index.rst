@@ -12,14 +12,23 @@ Welcome to PyReason Docs!
 
 Introduction
 ------------
-Welcome to the documentation for **PyReason**, a powerful tool for Reasoning over Graphs. This documentation will guide you through the installation, usage and API.
+Welcome to the documentation for **PyReason**, a powerful, optimized Python tool for Reasoning over Graphs. PyReason supports a variety of Logics such as Propositional, First Order, Annotated. This documentation will guide you through the installation, usage and API.
 
 .. toctree::
-   :caption: Tutorials
    :maxdepth: 2
-   :glob:
+   :caption: Contents:
 
-   ./tutorials/*
+   about
+   installation
+   user_guide/index
+   api_reference/index
+   tutorials/index
+   license
+
+
+Getting Help
+------------
+If you encounter any issues or have questions, feel free to check our Github, or contact one of the authors (`dyuman.aditya@asu.edu`, `kmukher2@asu.edu`).
 
 Indices and tables
 ==================
