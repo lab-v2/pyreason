@@ -3,7 +3,8 @@ About PyReason
 
 **PyReason** is a modern Python-based software framework designed for open-world temporal logic reasoning using generalized annotated logic. It addresses the growing needs of neuro-symbolic reasoning frameworks that incorporate differentiable logics and temporal extensions, allowing inference over finite periods with open-world capabilities. PyReason is particularly suited for reasoning over graphical structures such as knowledge graphs, social networks, and biological networks, offering fully explainable inference processes.
 
-### Key Capabilities
+Key Capabilities
+--------------
 
 1. **Graph-Based Reasoning**: PyReason supports direct reasoning over knowledge graphs, a popular representation of symbolic data. Unlike black-box frameworks, PyReason provides full explainability of the reasoning process.
 
@@ -21,7 +22,8 @@ About PyReason
 
 8. **Integration and Extensibility**: PyReason is implemented in Python and supports integration with other tools and frameworks, making it easy to extend and adapt for specific needs. It can work with popular graph formats like GraphML and is compatible with tools like NetworkX and Neo4j.
 
-### Use Cases
+Use Cases
+--------------
 
 - **Knowledge Graph Reasoning**: PyReason can be used to perform logical inferences over knowledge graphs, aiding in tasks like knowledge completion, entity classification, and relationship extraction.
 
