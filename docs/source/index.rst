@@ -3,8 +3,16 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Pyreason's documentation!
+Welcome to PyReason Docs!
 ====================================
+
+.. image:: _static/pyreason_logo.jpg
+   :alt: PyReason Logo
+   :align: center
+
+Introduction
+------------
+Welcome to the documentation for **PyReason**, a powerful tool for Reasoning over Graphs. This documentation will guide you through the installation, usage and API.
 
 .. toctree::
    :caption: Tutorials
