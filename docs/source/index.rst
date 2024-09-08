@@ -15,7 +15,7 @@ Introduction
 Welcome to the documentation for **PyReason**, a powerful, optimized Python tool for Reasoning over Graphs. PyReason supports a variety of Logics such as Propositional, First Order, Annotated. This documentation will guide you through the installation, usage and API.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    about
