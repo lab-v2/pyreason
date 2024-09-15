@@ -44,7 +44,6 @@ class _Settings:
         self.__parallel_computing = None
         self.__update_mode = None
         self.__allow_ground_rules = None
-        self.__optimize_rules = None
         self.reset()
 
     def reset(self):
@@ -64,7 +63,6 @@ class _Settings:
         self.__parallel_computing = False
         self.__update_mode = 'intersection'
         self.__allow_ground_rules = False
-        self.__optimize_rules = True
 
     @property
     def verbose(self) -> bool:
@@ -198,14 +196,6 @@ class _Settings:
         :return: bool
         """
         return self.__allow_ground_rules
-
-    @property
-    def optimize_rules(self) -> bool:
-        """Returns whether rules will be optimized by moving clauses around. Default is True
-
-        :return: bool
-        """
-        return self.__optimize_rules
 
     @verbose.setter
     def verbose(self, value: bool) -> None:
@@ -405,18 +395,6 @@ class _Settings:
             raise TypeError('value has to be a bool')
         else:
             self.__allow_ground_rules = value
-
-    @optimize_rules.setter
-    def optimize_rules(self, value: bool) -> None:
-        """Whether to optimize rules by moving clauses around. Default is True
-
-        :param value: Whether to optimize rules or not
-        :raises TypeError: If not bool raise error
-        """
-        if not isinstance(value, bool):
-            raise TypeError('value has to be a bool')
-        else:
-            self.__optimize_rules = value
 
 
 # VARIABLES
@@ -714,9 +692,11 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     # Convert list of annotation functions into tuple to be numba compatible
     annotation_functions = tuple(__annotation_functions)
 
-    # Optimize rules by moving clauses around
+    # Optimize rules by moving clauses around, only if there are more edges than nodes in the graph
     __clause_maps = {r.get_rule_name(): {i: i for i in range(len(r.get_clauses()))} for r in __rules}
-    if settings.optimize_rules:
+    if len(__graph.edges) > len(__graph.nodes):
+        if settings.verbose:
+            print('Optimizing rules by moving node clauses ahead of edge clauses')
         __rules_copy = __rules.copy()
         __rules = numba.typed.List.empty_list(rule.rule_type)
         for i, r in enumerate(__rules_copy):

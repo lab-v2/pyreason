@@ -14,7 +14,6 @@ def test_reorder_clauses():
     # Modify pyreason settings to make verbose
     pr.settings.verbose = True     # Print info to screen
     pr.settings.atom_trace = True  # Print atom trace
-    pr.settings.optimize_rules = True  # Disable rule optimization for debugging
 
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
