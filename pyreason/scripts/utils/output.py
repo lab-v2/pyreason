@@ -4,8 +4,9 @@ import pandas as pd
 
 
 class Output:
-    def __init__(self, timestamp):
+    def __init__(self, timestamp, clause_map=None):
         self.timestamp = timestamp
+        self.clause_map = clause_map
         self.rule_trace_node = None
         self.rule_trace_edge = None
 
@@ -80,6 +81,14 @@ class Output:
         # Store the trace in a DataFrame
         self.rule_trace_edge = pd.DataFrame(data, columns=header_edge)
 
+        # Now do the reordering
+        if self.clause_map is not None:
+            offset = 7
+            columns_to_reorder_node = header_node[offset:]
+            columns_to_reorder_edge = header_edge[offset:]
+            self.rule_trace_node = self.rule_trace_node.apply(self._reorder_row, axis=1, map_dict=self.clause_map, columns_to_reorder=columns_to_reorder_node)
+            self.rule_trace_edge = self.rule_trace_edge.apply(self._reorder_row, axis=1, map_dict=self.clause_map, columns_to_reorder=columns_to_reorder_edge)
+
     def save_rule_trace(self, interpretation, folder='./'):
         if self.rule_trace_node is None and self.rule_trace_edge is None:
             self._parse_internal_rule_trace(interpretation)
@@ -94,3 +103,14 @@ class Output:
             self._parse_internal_rule_trace(interpretation)
 
         return self.rule_trace_node, self.rule_trace_edge
+
+    @staticmethod
+    def _reorder_row(row, map_dict, columns_to_reorder):
+        if row['Occurred Due To'] in map_dict:
+            original_values = row[columns_to_reorder].values
+            new_values = [None] * len(columns_to_reorder)
+            for orig_pos, target_pos in map_dict[row['Occurred Due To']].items():
+                new_values[target_pos] = original_values[orig_pos]
+            for i, col in enumerate(columns_to_reorder):
+                row[col] = new_values[i]
+        return row

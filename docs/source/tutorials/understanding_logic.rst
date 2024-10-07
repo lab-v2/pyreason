@@ -50,4 +50,4 @@ Inconsistent predicate list
   The first rule states that the grass is wet if it rained, while the second rule states that the grass is not wet if it rained.
   The fact f1 states that it rained, which is consistent with the first rule, but inconsistent with the second rule.
 
-.. |rule_image| image:: Rule_image.png
+.. |rule_image| image:: rule_image.png

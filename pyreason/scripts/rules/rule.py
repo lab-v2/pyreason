@@ -9,14 +9,14 @@ class Rule:
     1. It is not possible to have weights for different clauses. Weights are 1 by default with bias 0
     TODO: Add weights as a parameter
     """
-    def __init__(self, rule_text: str, name: str, infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False, custom_thresholds=None):
+    def __init__(self, rule_text: str, name: str = None, infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False, custom_thresholds=None):
         """
         :param rule_text: The rule in text format
         :param name: The name of the rule. This will appear in the rule trace
         :param infer_edges: Whether to infer new edges after edge rule fires
         :param set_static: Whether to set the atom in the head as static if the rule fires. The bounds will no longer change
         :param immediate_rule: Whether the rule is immediate. Immediate rules check for more applicable rules immediately after being applied
+        :param custom_thresholds: A list of custom thresholds for the rule. If not specified, the default thresholds for ANY are used. It can be a list of
+               size #of clauses or a map of clause index to threshold
         """
-        if custom_thresholds is None:
-            custom_thresholds = []
         self.rule = rule_parser.parse_rule(rule_text, name, custom_thresholds, infer_edges, set_static, immediate_rule)
