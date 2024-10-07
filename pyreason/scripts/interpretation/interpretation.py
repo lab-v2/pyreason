@@ -1,3 +1,5 @@
+from networkx.classes import edges
+
 import pyreason.scripts.numba_wrapper.numba_types.world_type as world
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
@@ -818,7 +820,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges,
 			if allow_ground_rules and (clause_var_1, clause_var_2) in edges_set:
 				grounding = numba.typed.List([(clause_var_1, clause_var_2)])
 			else:
-				grounding = get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, nodes)
+				grounding = get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, nodes, edges)
 
 			# Narrow subset based on predicate (save the edges that are qualified to use for finding future groundings faster)
 			qualified_groundings = get_qualified_edge_groundings(interpretations_edge, grounding, clause_label, clause_bnd)
@@ -1973,7 +1975,7 @@ def get_rule_node_clause_grounding(clause_var_1, groundings, nodes):
 
 
 @numba.njit(cache=True)
-def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, nodes):
+def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, nodes, edges):
 	# There are 4 cases for predicate(Y,Z):
 	# 1. Both predicate variables Y and Z have not been encountered before
 	# 2. The source variable Y has not been encountered before but the target variable Z has
@@ -1984,9 +1986,7 @@ def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groun
 	# Case 1:
 	# We replace Y by all nodes and Z by the neighbors of each of these nodes
 	if clause_var_1 not in groundings and clause_var_2 not in groundings:
-		for n in nodes:
-			es = numba.typed.List([(n, nn) for nn in neighbors[n]])
-			edge_groundings.extend(es)
+		edge_groundings = numba.typed.List(edges)
 
 	# Case 2:
 	# We replace Y by the sources of Z
