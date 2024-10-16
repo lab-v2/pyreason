@@ -11,3 +11,10 @@ Contents
     :glob:
 
     *
+    annotation_functions
+    inconsistent_predicate_list
+    pyreason_facts
+    pyreason_graph
+    pyreason_rules
+    pyreason_settings
+
