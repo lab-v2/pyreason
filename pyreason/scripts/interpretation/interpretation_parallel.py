@@ -807,7 +807,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 			if allow_ground_rules and clause_var_1 in nodes_set:
 				grounding = numba.typed.List([clause_var_1])
 			else:
-				grounding = get_rule_node_clause_grounding(clause_var_1, groundings, predicate_map_node, clause_label)
+				grounding = get_rule_node_clause_grounding(clause_var_1, groundings, predicate_map_node, clause_label, nodes)
 
 			# Narrow subset based on predicate
 			qualified_groundings = get_qualified_node_groundings(interpretations_node, grounding, clause_label, clause_bnd)
@@ -834,7 +834,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 			if allow_ground_rules and (clause_var_1, clause_var_2) in edges_set:
 				grounding = numba.typed.List([(clause_var_1, clause_var_2)])
 			else:
-				grounding = get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, predicate_map_edge, clause_label)
+				grounding = get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, predicate_map_edge, clause_label, edges)
 
 			# Narrow subset based on predicate (save the edges that are qualified to use for finding future groundings faster)
 			qualified_groundings = get_qualified_edge_groundings(interpretations_edge, grounding, clause_label, clause_bnd)
@@ -1982,14 +1982,17 @@ def check_edge_clause_satisfaction(interpretations_edge, subsets, subset_source,
 
 
 @numba.njit(cache=True)
-def get_rule_node_clause_grounding(clause_var_1, groundings, predicate_map, l):
+def get_rule_node_clause_grounding(clause_var_1, groundings, predicate_map, l, nodes):
 	# The groundings for a node clause can be either a previous grounding or all possible nodes
-	grounding = predicate_map[l] if clause_var_1 not in groundings else groundings[clause_var_1]
+	if l in predicate_map:
+		grounding = predicate_map[l] if clause_var_1 not in groundings else groundings[clause_var_1]
+	else:
+		grounding = nodes if clause_var_1 not in groundings else groundings[clause_var_1]
 	return grounding
 
 
 @numba.njit(cache=True)
-def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, predicate_map, l):
+def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, predicate_map, l, edges):
 	# There are 4 cases for predicate(Y,Z):
 	# 1. Both predicate variables Y and Z have not been encountered before
 	# 2. The source variable Y has not been encountered before but the target variable Z has
@@ -2000,7 +2003,10 @@ def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groun
 	# Case 1:
 	# We replace Y by all nodes and Z by the neighbors of each of these nodes
 	if clause_var_1 not in groundings and clause_var_2 not in groundings:
-		edge_groundings = predicate_map[l]
+		if l in predicate_map:
+			edge_groundings = predicate_map[l]
+		else:
+			edge_groundings = edges
 
 	# Case 2:
 	# We replace Y by the sources of Z
