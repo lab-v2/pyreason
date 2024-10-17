@@ -2767,10 +2767,12 @@ def resolve_inconsistency_node(interpretations, comp, na, ipl, t_cnt, fp_cnt, id
 	world = interpretations[comp]
 	if store_interpretation_changes:
 		rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, na[0], interval.closed(0,1)))
-		if mode == 'fact' or mode == 'graph-attribute-fact':
+		if mode == 'fact' or mode == 'graph-attribute-fact' and atom_trace:
 			name = facts_to_be_applied_trace[idx]
-		elif mode == 'rule':
+		elif mode == 'rule' and atom_trace:
 			name = rules_to_be_applied_trace[idx][2]
+		else:
+			name = '-'
 		if atom_trace:
 			_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[na[0]], f'Inconsistency due to {name}')
 	# Resolve inconsistency and set static
@@ -2800,10 +2802,12 @@ def resolve_inconsistency_edge(interpretations, comp, na, ipl, t_cnt, fp_cnt, id
 	w = interpretations[comp]
 	if store_interpretation_changes:
 		rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, na[0], interval.closed(0,1)))
-		if mode == 'fact' or mode == 'graph-attribute-fact':
+		if mode == 'fact' or mode == 'graph-attribute-fact' and atom_trace:
 			name = facts_to_be_applied_trace[idx]
-		elif mode == 'rule':
+		elif mode == 'rule' and atom_trace:
 			name = rules_to_be_applied_trace[idx][2]
+		else:
+			name = '-'
 		if atom_trace:
 			_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), w.world[na[0]], f'Inconsistency due to {name}')
 	# Resolve inconsistency and set static
