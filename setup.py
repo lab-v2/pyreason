@@ -4,11 +4,11 @@ from setuptools import setup, find_packages
 from pathlib import Path
 
 this_directory = Path(__file__).parent
-long_description = (this_directory / "README.md").read_text()
+long_description = (this_directory / "README.md").read_text(encoding='UTF-8')
 
 setup(
     name='pyreason',
-    version='2.3.0',
+    version='3.0.0',
     author='Dyuman Aditya',
     author_email='dyuman.aditya@gmail.com',
     description='An explainable inference software supporting annotated, real valued, graph based and temporal logic',
@@ -35,6 +35,8 @@ setup(
         'memory_profiler',
         'pytest'
     ],
+    use_scm_version=True,
+    setup_requires=['setuptools_scm'],
     packages=find_packages(),
     include_package_data=True
 )
