@@ -1,6 +1,6 @@
 PyReason Graphs
-==============
-**PyReason Graphs ** 
+===============
+ 
 PyReason supports direct reasoning over knowledge graphs. PyReason graphs have full explainability of the reasoning process. Graphs serve as the knowledge base for PyReason, allowing users to create visual representations based on rules, relationships, and connections. 
 
 Methods for Creating Graphs
@@ -120,7 +120,7 @@ Using `GraphMl <https://en.wikipedia.org/wiki/Directed_graph>`_, you can read a 
            </edge>
        </graph>
    </graphml>
-   
+
 Then load the graph using the following:
 
 .. code:: python
