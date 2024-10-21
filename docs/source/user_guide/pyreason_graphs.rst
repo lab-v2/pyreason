@@ -1,18 +1,32 @@
 PyReason Graphs
 ==============
-**PyReason Graphs ** (Brief Intro)
-PyReason supports direct reasoning over knowledge graphs. PyReason graphs have full explainability of the reasoning process. (add more)
+**PyReason Graphs ** 
+PyReason supports direct reasoning over knowledge graphs. PyReason graphs have full explainability of the reasoning process. Graphs serve as the knowledge base for PyReason, allowing users to create visual representations based on rules, relationships, and connections. 
 
--Notes: go more indepth about use cases of Graphs, connection to Nuero symbolic reasoning, other pyreason logic concepts etc.
-
-Methods for Loading Graphs
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-In PyReason there are two Methods for loading graphs: Networkx and GraphMl 
+Methods for Creating Graphs
+---------------------------
+In PyReason there are two ways to create graphs: Networkx and GraphMl
+Networkx allows you to manually add nodes and edges, whereas GraphMl reads in a directed graph from a file.
 
 
 Networkx Example
-^^^^^^^^^^^^^^^^
-You can also build a graph using Networkx.
+----------------
+Using Networkx, you can create a ** `directed <https://en.wikipedia.org/wiki/Directed_graph>`_ ** graph object. Users can add and remove nodes and edges from the graph.
+
+Read more about Networkx `here <https://networkx.org/documentation/stable/reference/classes/digraph.html>`_.
+
+The following graph represents a network of people and the pets that
+they own.
+
+1. Mary is friends with Justin
+2. Mary is friends with John
+3. Justin is friends with John
+
+And
+
+1. Mary owns a cat
+2. Justin owns a cat and a dog
+3. John owns a dog
 
 .. code:: python
     import networkx as nx
@@ -38,52 +52,86 @@ You can also build a graph using Networkx.
     g.add_edge('Justin', 'Dog', owns=1)
     g.add_edge('John', 'Dog', owns=1)
    
+After the graph has been created, it can be loaded with:
+
+.. code:: python
+
+  import pyreason as pr
+  pr.load_graph(graph: nx.DiGraph)
+
+
+Additional Considerations:
+--------------------------
+Attributes to Bounds:
+
+In Networkx, each graph, node, and edge can hold key/value attribute pairs in an associated attribute dictionary (the keys must be hashable).
+
+In PyReason, these attributes get transformed into "bounds". The attribute value in Networkx, is translated into the lower bound in PyReason. 
+
+.. code:: python
+  import networkx as nx
+  g = nx.DiGraph()
+  g.add_node("some_node", attribute1=1, attribute2="0,0")
+
+When the graph is loaded, "some_node" is given the attribute1: [1,1], and attribute2 : [0,0]. 
+
+If the attribute is a simple value, it is treated as both the lower and upper bound in PyReason. If a specific pair of bounds is required (e.g., for coordinates or ranges), the value should be provided as a string in a specific format.
+
 
 
 GraphMl Example
-^^^^^^^^^^^^^^^
-Using GraphMl, you can also read in from a file.
+---------------
+Using `GraphMl <https://en.wikipedia.org/wiki/Directed_graph>`_, you can read a graph in from a file.
 
 .. code:: xml
-<?xml version='1.0' encoding='utf-8'?>
-<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
-  <key id="owns" for="edge" attr.name="owns" attr.type="long" />
-  <key id="Friends" for="edge" attr.name="Friends" attr.type="long" />
-  <graph edgedefault="directed">
-    <node id="John" />
-    <node id="Mary" />
-    <node id="Justin" />
-    <node id="Dog" />
-    <node id="Cat" />
-    <edge source="John" target="Mary">
-      <data key="Friends">1</data>
-    </edge>
-    <edge source="John" target="Justin">
-      <data key="Friends">1</data>
-    </edge>
-    <edge source="John" target="Dog">
-      <data key="owns">1</data>
-    </edge>
-    <edge source="Mary" target="Cat">
-      <data key="owns">1</data>
-    </edge>
-    <edge source="Justin" target="Mary">
-      <data key="Friends">1</data>
-    </edge>
-    <edge source="Justin" target="Cat">
-      <data key="owns">1</data>
-    </edge>
-    <edge source="Justin" target="Dog">
-      <data key="owns">1</data>
-    </edge>
-  </graph>
-</graphml>
 
+   <?xml version='1.0' encoding='utf-8'?>
+   <graphml
+       xmlns="http://graphml.graphdrawing.org/xmlns"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+       <key id="owns" for="edge" attr.name="owns" attr.type="long" />
+       <key id="Friends" for="edge" attr.name="Friends" attr.type="long" />
+       <graph edgedefault="directed">
+           <node id="John" />
+           <node id="Mary" />
+           <node id="Justin" />
+           <node id="Dog" />
+           <node id="Cat" />
+           <edge source="John" target="Mary">
+               <data key="Friends">1</data>
+           </edge>
+           <edge source="John" target="Justin">
+               <data key="Friends">1</data>
+           </edge>
+           <edge source="John" target="Dog">
+               <data key="owns">1</data>
+           </edge>
+           <edge source="Mary" target="Cat">
+               <data key="owns">1</data>
+           </edge>
+           <edge source="Justin" target="Mary">
+               <data key="Friends">1</data>
+           </edge>
+           <edge source="Justin" target="Cat">
+               <data key="owns">1</data>
+           </edge>
+           <edge source="Justin" target="Dog">
+               <data key="owns">1</data>
+           </edge>
+       </graph>
+   </graphml>
+   
 Then load the graph using the following:
 
 .. code:: python
 
-   import pyreason as pr
-   pr.load_graphml('path_to_file')
+  import pyreason as pr
+  pr.load_graphml('path_to_file')
 
-?? Add image output of graph possibly?
+Graph Output:
+
+.. code:: python
+
+.. figure:: basic_graph.png
+   :alt: image
+
