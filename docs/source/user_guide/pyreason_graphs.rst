@@ -81,7 +81,7 @@ If the attribute is a simple value, it is treated as both the lower and upper bo
 
 GraphMl Example
 ---------------
-Using `GraphMl <https://en.wikipedia.org/wiki/Directed_graph>`_, you can read a graph in from a file.
+Using `GraphMl <https://en.wikipedia.org/wiki/GraphML>`_, you can read a graph in from a file.
 
 .. code:: xml
 
