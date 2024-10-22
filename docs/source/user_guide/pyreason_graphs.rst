@@ -11,7 +11,7 @@ Networkx allows you to manually add nodes and edges, whereas GraphMl reads in a 
 
 Networkx Example
 ----------------
-Using Networkx, you can create a ** `directed <https://en.wikipedia.org/wiki/Directed_graph>`_ ** graph object. Users can add and remove nodes and edges from the graph.
+Using Networkx, you can create a **`directed <https://en.wikipedia.org/wiki/Directed_graph>`_** graph object. Users can add and remove nodes and edges from the graph.
 
 Read more about Networkx `here <https://networkx.org/documentation/stable/reference/classes/digraph.html>`_.
 
@@ -132,6 +132,6 @@ Graph Output:
 
 .. code:: python
 
-.. figure:: basic_graph.png
+.. figure:: docs/source/tutorials/basic_graph.png
    :alt: image
 
