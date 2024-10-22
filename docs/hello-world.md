@@ -88,7 +88,7 @@ We add a fact in PyReason like so:
 ```python
 import pyreason as pr
 
-pr.add_fact(pr.Fact(name='popular-fact', component='Mary', attribute='popular', bound=[1, 1], start_time=0, end_time=2))
+pr.add_fact(pr.Fact(fact_text='popular(Mary) : true', name='popular_fact', start_time=0, end_time=2))
 ```
 
 This allows us to specify the component that has an initial condition, the initial condition itself in the form of bounds

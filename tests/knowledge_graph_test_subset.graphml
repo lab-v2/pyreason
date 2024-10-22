@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+<key id="isConnectedTo" for="edge" attr.name="isConnectedTo" attr.type="long" />
+<key id="Amsterdam_Airport_Schiphol" for="node" attr.name="Amsterdam_Airport_Schiphol" attr.type="long" />
+<key id="Riga_International_Airport" for="node" attr.name="Riga_International_Airport" attr.type="long" />
+<key id="Chișinău_International_Airport" for="node" attr.name="Chișinău_International_Airport" attr.type="long" />
+<key id="Düsseldorf_Airport" for="node" attr.name="Düsseldorf_Airport" attr.type="long" />
+<key id="Dubrovnik_Airport" for="node" attr.name="Dubrovnik_Airport" attr.type="long" />
+<key id="Athens_International_Airport" for="node" attr.name="Athens_International_Airport" attr.type="long" />
+<key id="Yali" for="node" attr.name="Yali" attr.type="long" />
+<key id="Vnukovo_International_Airport" for="node" attr.name="Vnukovo_International_Airport" attr.type="long" />
+<key id="Hévíz-Balaton_Airport" for="node" attr.name="Hévíz-Balaton_Airport" attr.type="long" />
+<key id="Pobedilovo_Airport" for="node" attr.name="Pobedilovo_Airport" attr.type="long" />
+<graph id="G" edgedefault="directed">
+<node id="Amsterdam_Airport_Schiphol">
+       <data key="Amsterdam_Airport_Schiphol">1</data>
+    </node>
+    <node id="Riga_International_Airport">
+       <data key="Riga_International_Airport">1</data>
+    </node>
+    <node id="Chișinău_International_Airport">
+       <data key="Chișinău_International_Airport">1</data>
+    </node>
+    <node id="Yali">
+       <data key="Yali">1</data>
+    </node>
+    <node id="Düsseldorf_Airport">
+       <data key="Düsseldorf_Airport">1</data>
+    </node>
+    <node id="Pobedilovo_Airport">
+       <data key="Pobedilovo_Airport">1</data>
+    </node>
+    <node id="Dubrovnik_Airport">
+       <data key="Dubrovnik_Airport">1</data>
+    </node>
+    <node id="Hévíz-Balaton_Airport">
+       <data key="Hévíz-Balaton_Airport">1</data>
+    </node>
+    <node id="Athens_International_Airport">
+       <data key="Athens_International_Airport">1</data>
+    </node>
+    <node id="Vnukovo_International_Airport">
+       <data key="Vnukovo_International_Airport">1</data>
+    </node>
+    <edge source="Pobedilovo_Airport" target="Vnukovo_International_Airport">
+        <data key="isConnectedTo">1</data>
+    </edge>
+    <edge source="Vnukovo_International_Airport" target="Hévíz-Balaton_Airport">
+        <data key="isConnectedTo">1</data>
+    </edge>
+    <edge source="Düsseldorf_Airport" target="Dubrovnik_Airport">
+        <data key="isConnectedTo">1</data>
+    </edge>
+    <edge source="Dubrovnik_Airport" target="Athens_International_Airport">
+        <data key="isConnectedTo">1</data>
+    </edge>
+   <edge source="Riga_International_Airport" target="Amsterdam_Airport_Schiphol">
+        <data key="isConnectedTo">1</data>
+    </edge>
+    <edge source="Riga_International_Airport" target="Düsseldorf_Airport">
+        <data key="isConnectedTo">1</data>
+    </edge>
+    <edge source="Chișinău_International_Airport" target="Riga_International_Airport">
+        <data key="isConnectedTo">1</data>
+    </edge>
+    <edge source="Amsterdam_Airport_Schiphol" target="Yali">
+    <data key="isConnectedTo">1</data>
+    </edge>
+
+</graph>
+</graphml>

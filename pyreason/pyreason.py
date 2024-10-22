@@ -5,6 +5,7 @@ import time
 import sys
 import pandas as pd
 import memory_profiler as mp
+import warnings
 from typing import List, Type, Callable, Tuple
 
 from pyreason.scripts.utils.output import Output
@@ -21,11 +22,31 @@ from pyreason.scripts.threshold.threshold import Threshold
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
+from pyreason.scripts.utils.reorder_clauses import reorder_clauses
 
 
 # USER VARIABLES
 class _Settings:
     def __init__(self):
+        self.__verbose = None
+        self.__output_to_file = None
+        self.__output_file_name = None
+        self.__graph_attribute_parsing = None
+        self.__abort_on_inconsistency = None
+        self.__memory_profile = None
+        self.__reverse_digraph = None
+        self.__atom_trace = None
+        self.__save_graph_attributes_to_trace = None
+        self.__canonical = None
+        self.__inconsistency_check = None
+        self.__static_graph_facts = None
+        self.__store_interpretation_changes = None
+        self.__parallel_computing = None
+        self.__update_mode = None
+        self.__allow_ground_rules = None
+        self.reset()
+
+    def reset(self):
         self.__verbose = True
         self.__output_to_file = False
         self.__output_file_name = 'pyreason_output'
@@ -41,6 +62,7 @@ class _Settings:
         self.__store_interpretation_changes = True
         self.__parallel_computing = False
         self.__update_mode = 'intersection'
+        self.__allow_ground_rules = False
 
     @property
     def verbose(self) -> bool:
@@ -166,6 +188,14 @@ class _Settings:
         :return: str
         """
         return self.__update_mode
+
+    @property
+    def allow_ground_rules(self) -> bool:
+        """Returns whether rules can have ground atoms or not. Default is False
+
+        :return: bool
+        """
+        return self.__allow_ground_rules
 
     @verbose.setter
     def verbose(self, value: bool) -> None:
@@ -354,10 +384,23 @@ class _Settings:
         else:
             self.__update_mode = value
 
+    @allow_ground_rules.setter
+    def allow_ground_rules(self, value: bool) -> None:
+        """Allow ground atoms to be used in rules when possible. Default is False
+
+        :param value: Whether to allow ground atoms or not
+        :raises TypeError: If not bool raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('value has to be a bool')
+        else:
+            self.__allow_ground_rules = value
+
 
 # VARIABLES
 __graph = None
 __rules = None
+__clause_maps = None
 __node_facts = None
 __edge_facts = None
 __ipl = None
@@ -397,6 +440,22 @@ def reset_rules():
     """
     global __rules
     __rules = None
+
+
+def reset_graph():
+    """
+    Resets graph to none
+    """
+    global __graph
+    __graph = None
+
+
+def reset_settings():
+    """
+    Resets settings to default
+    """
+    global settings
+    settings.reset()
 
 
 # FUNCTIONS
@@ -451,6 +510,18 @@ def load_inconsistent_predicate_list(path: str) -> None:
     __ipl = yaml_parser.parse_ipl(path)
 
 
+def add_inconsistent_predicate(pred1: str, pred2: str) -> None:
+    """Add an inconsistent predicate pair to the IPL
+
+    :param pred1: First predicate in the inconsistent pair
+    :param pred2: Second predicate in the inconsistent pair
+    """
+    global __ipl
+    if __ipl is None:
+        __ipl = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, label.label_type)))
+    __ipl.append((label.Label(pred1), label.Label(pred2)))
+
+
 def add_rule(pr_rule: Rule) -> None:
     """Add a rule to pyreason from text format. This format is not as modular as the YAML format.
     """
@@ -459,6 +530,11 @@ def add_rule(pr_rule: Rule) -> None:
     # Add to collection of rules
     if __rules is None:
         __rules = numba.typed.List.empty_list(rule.rule_type)
+
+    # Generate name for rule if not set
+    if pr_rule.rule.get_rule_name() is None:
+        pr_rule.rule.set_rule_name(f'rule_{len(__rules)}')
+
     __rules.append(pr_rule.rule)
 
 
@@ -487,16 +563,20 @@ def add_fact(pyreason_fact: Fact) -> None:
     """
     global __node_facts, __edge_facts
 
-    if pyreason_fact.type == 'node':
-        f = fact_node.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.label, pyreason_fact.interval, pyreason_fact.t_lower, pyreason_fact.t_upper, pyreason_fact.static)
-        if __node_facts is None:
-            __node_facts = numba.typed.List.empty_list(fact_node.fact_type)
-        __node_facts.append(f)
+    if __node_facts is None:
+        __node_facts = numba.typed.List.empty_list(fact_node.fact_type)
+    if __edge_facts is None:
+        __edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
 
+    if pyreason_fact.type == 'node':
+        if pyreason_fact.name is None:
+            pyreason_fact.name = f'fact_{len(__node_facts)+len(__edge_facts)}'
+        f = fact_node.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.pred, pyreason_fact.bound, pyreason_fact.start_time, pyreason_fact.end_time, pyreason_fact.static)
+        __node_facts.append(f)
     else:
-        f = fact_edge.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.label, pyreason_fact.interval, pyreason_fact.t_lower, pyreason_fact.t_upper, pyreason_fact.static)
-        if __edge_facts is None:
-            __edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
+        if pyreason_fact.name is None:
+            pyreason_fact.name = f'fact_{len(__node_facts)+len(__edge_facts)}'
+        f = fact_edge.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.pred, pyreason_fact.bound, pyreason_fact.start_time, pyreason_fact.end_time, pyreason_fact.static)
         __edge_facts.append(f)
 
 
@@ -554,7 +634,7 @@ def reason(timesteps: int=-1, convergence_threshold: int=-1, convergence_bound_t
 
 def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     # Globals
-    global __graph, __rules, __node_facts, __edge_facts, __ipl, __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels, __graphml_parser
+    global __graph, __rules, __clause_maps, __node_facts, __edge_facts, __ipl, __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels, __graphml_parser
     global settings, __timestamp, __program
 
     # Assert variables are of correct type
@@ -564,7 +644,9 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
 
     # Check variables that HAVE to be set. Exceptions
     if __graph is None:
-        raise Exception('Graph not loaded. Use `load_graph` to load the graphml file')
+        load_graph(nx.DiGraph())
+        if settings.verbose:
+            warnings.warn('Graph not loaded. Use `load_graph` to load the graphml file. Using empty graph')
     if __rules is None:
         raise Exception('There are no rules, use `add_rule` or `add_rules_from_file`')
 
@@ -610,8 +692,19 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
     # Convert list of annotation functions into tuple to be numba compatible
     annotation_functions = tuple(__annotation_functions)
 
+    # Optimize rules by moving clauses around, only if there are more edges than nodes in the graph
+    __clause_maps = {r.get_rule_name(): {i: i for i in range(len(r.get_clauses()))} for r in __rules}
+    if len(__graph.edges) > len(__graph.nodes):
+        if settings.verbose:
+            print('Optimizing rules by moving node clauses ahead of edge clauses')
+        __rules_copy = __rules.copy()
+        __rules = numba.typed.List.empty_list(rule.rule_type)
+        for i, r in enumerate(__rules_copy):
+            r, __clause_maps[r.get_rule_name()] = reorder_clauses(r)
+            __rules.append(r)
+
     # Setup logical program
-    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode)
+    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.allow_ground_rules)
     __program.available_labels_node = __node_labels
     __program.available_labels_edge = __edge_labels
     __program.specific_node_labels = __specific_node_labels
@@ -651,11 +744,11 @@ def save_rule_trace(interpretation, folder: str='./'):
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
     :param folder: the folder in which to save the result, defaults to './'
     """
-    global __timestamp, settings
+    global __timestamp, __clause_maps, settings
 
     assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to save rule trace'
 
-    output = Output(__timestamp)
+    output = Output(__timestamp, __clause_maps)
     output.save_rule_trace(interpretation, folder)
 
 
@@ -667,11 +760,11 @@ def get_rule_trace(interpretation) -> Tuple[pd.DataFrame, pd.DataFrame]:
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
     :returns two pandas dataframes (nodes, edges) representing the changes that occurred during reasoning
     """
-    global __timestamp, settings
+    global __timestamp, __clause_maps, settings
 
     assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to save rule trace'
 
-    output = Output(__timestamp)
+    output = Output(__timestamp, __clause_maps)
     return output.get_rule_trace(interpretation)
 
 
