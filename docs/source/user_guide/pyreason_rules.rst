@@ -8,7 +8,7 @@ PyReason Rules
    change in the graph if the body is true.
 
 How to Create Rules
-===================
+-------------------
 
 In PyReason, rules are used to create relationships between different elements in the graph. These relationships can be used to infer new facts or make decisions based on existing graph data. 
 
@@ -47,7 +47,7 @@ Important Notes on Rule Formating:
 
 
 More Examples
-=============
+-------------
 
 Refering to our :ref:`pyreason_graphs.rst` example, we want to create a rule to determine popularity. The rule will state that if a person has a friend who is popular *and* has the same pet as they do, then they are popular.
 
