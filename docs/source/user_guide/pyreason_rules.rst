@@ -55,13 +55,15 @@ More Examples
 
 Refering to our :ref:`pyreason_graphs.rst` example, we want to create a rule to determine popularity. The rule will state that if a person has a friend who is popular *and* has the same pet as they do, then they are popular.
 
-.. code:: text
+    .. code:: text
 
-    popular(x) : [1,1] <-1 popular(y) : [1,1] , Friends(x,y) : [1,1] , owns(y,z) : [1,1] , owns(x,z) : [1,1]
+        popular(x) : [1,1] <-1 popular(y) : [1,1] , Friends(x,y) : [1,1] , owns(y,z) : [1,1] , owns(x,z) : [1,1]
 
 The rule is read as follows: 
 - **Head**: `popular(x) : [1,1]`
+
 - **Body**: `popular(y) : [1,1], Friends(x,y) : [1,1], owns(y,z) : [1,1], owns(x,z) : [1,1]`
+
 - The **head** and **body** are separated by an arrow (`<-1`), and the rule is applied after `1` timestep.
 
 
@@ -71,10 +73,10 @@ The rule is read as follows:
 
 To add the rule directly, we must specify the rule and a name for it. Here we will use "popular_rule".
 
-.. code:: python
+    .. code:: python
 
-   import pyreason as pr
-   pr.add_rule(pr.Rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule'))
+        import pyreason as pr
+        pr.add_rule(pr.Rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule'))
 
 The name helps understand which rules fired during reasoning later on.
 
@@ -82,15 +84,15 @@ The name helps understand which rules fired during reasoning later on.
 
 To add the rule from a text file, ensure the file is in .txt format, and contains the rule in the format shown above.
 
-.. code:: text
+    .. code:: text
 
-   popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)
+        popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)
 
 Now we can load the rule from the file using the following code:
 
-.. code:: python
+    .. code:: python
 
-   import pyreason as pr
-   pr.add_rules_from_file('rules.txt')
+        import pyreason as pr
+        pr.add_rules_from_file('rules.txt')
 
 
