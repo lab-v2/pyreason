@@ -3,15 +3,15 @@ User Guide
 
 In this section we demonstrate the functionality of the `pyreason` library and how to use it.
 
-Contents:
+Contents!:
 ---------
 
 .. toctree::
-    :caption: Contents!:
+    :caption: Contents:
     :maxdepth: 2
     :glob:
 
-    ./user_guide/*
+    ./*
 
 
 
