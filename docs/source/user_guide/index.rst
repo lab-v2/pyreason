@@ -3,8 +3,6 @@ User Guide
 
 In this section we demonstrate the functionality of the `pyreason` library and how to use it.
 
-Contents!:
----------
 
 .. toctree::
     :caption: Contents:
