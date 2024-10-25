@@ -69,11 +69,13 @@ In Networkx, each graph, node, and edge can hold key/value attribute pairs in an
 In PyReason, these attributes get transformed into "bounds". The attribute value in Networkx, is translated into the lower bound in PyReason. 
 
 .. code:: python
-  import networkx as nx
-  g = nx.DiGraph()
-  g.add_node("some_node", attribute1=1, attribute2="0,0")
 
-When the graph is loaded, "some_node" is given the attribute1: [1,1], and attribute2 : [0,0]. 
+    import networkx as nx
+    g = nx.DiGraph()
+    g.add_node("some_node", attribute1=1, attribute2="0,0")
+
+
+When the graph is loaded: "some_node" is given the attribute1: [1,1], and attribute2 : [0,0]. 
 
 If the attribute is a simple value, it is treated as both the lower and upper bound in PyReason. If a specific pair of bounds is required (e.g., for coordinates or ranges), the value should be provided as a string in a specific format.
 
