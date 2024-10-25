@@ -5,15 +5,15 @@ PyReason supports direct reasoning over knowledge graphs. PyReason graphs have f
 
 Methods for Creating Graphs
 ---------------------------
-In PyReason there are two ways to create graphs: Networkx and GraphMl
-Networkx allows you to manually add nodes and edges, whereas GraphMl reads in a directed graph from a file.
+In PyReason there are two ways to create graphs: NetworkX and GraphML
+NetworkX allows you to manually add nodes and edges, whereas GraphML reads in a directed graph from a file.
 
 
-Networkx Example
+NetworkX Example
 ----------------
-Using Networkx, you can create a **`directed <https://en.wikipedia.org/wiki/Directed_graph>`_** graph object. Users can add and remove nodes and edges from the graph.
+Using NetworkX, you can create a **`directed <https://en.wikipedia.org/wiki/Directed_graph>`_** graph object. Users can add and remove nodes and edges from the graph.
 
-Read more about Networkx `here <https://networkx.org/documentation/stable/reference/classes/digraph.html>`_.
+Read more about NetworkX `here <https://networkx.org/documentation/stable/reference/classes/digraph.html>`_.
 
 The following graph represents a network of people and the pets that
 they own.
@@ -79,9 +79,9 @@ If the attribute is a simple value, it is treated as both the lower and upper bo
 
 
 
-GraphMl Example
+GraphML Example
 ---------------
-Using `GraphMl <https://en.wikipedia.org/wiki/GraphML>`_, you can read a graph in from a file.
+Using `GraphML <https://en.wikipedia.org/wiki/GraphML>`_, you can read a graph in from a file.
 
 .. code:: xml
 
