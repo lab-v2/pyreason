@@ -60,6 +60,7 @@ Refering to our :ref:`pyreason_graphs.rst` example, we want to create a rule to 
         popular(x) : [1,1] <-1 popular(y) : [1,1] , Friends(x,y) : [1,1] , owns(y,z) : [1,1] , owns(x,z) : [1,1]
 
 The rule is read as follows: 
+
 - **Head**: `popular(x) : [1,1]`
 
 - **Body**: `popular(y) : [1,1], Friends(x,y) : [1,1], owns(y,z) : [1,1], owns(x,z) : [1,1]`
