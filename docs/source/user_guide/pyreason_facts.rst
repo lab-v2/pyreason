@@ -38,11 +38,15 @@ Fact parameters
 ~~~~~~~~~~~~~~~
 To create a new **Fact** object in PyReason, use the `Fact` class with the following parameters:
 
-1. *fact_text:* The fact in text format 
+1. *fact_text (str):* The fact in text format 
     i. example:   
     .. code:: text
 
         `'pred(x,y) : [0.2, 1]'` or `'pred(x,y) : True'` 
+2. *name* The name of the fact. This will appear in the trace so that you know when it was applied
+type: str
+3. *start_time:* The timestep at which this fact becomes active
+4. 
 
 
         :param fact_text: The fact in text format. Example: `'pred(x,y) : [0.2, 1]'` or `'pred(x,y) : True'`
