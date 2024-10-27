@@ -1,5 +1,5 @@
-Fact
-~~~~
+Facts
+-----
 
 -  A fact is a statement that is true in the graph. It is a basic unit
    of knowledge that is used to derive new information.
@@ -34,5 +34,5 @@ Then add the fact the Pyreason with the following command:
 .. code:: python
 
    import pyreason as pr
-   pr.add_fact(pr.Fact(name='fact1', component='', attribute='popular', bound=[1, 1], start_time=0, end_time=2))
+   pr.add_fact(pr.Fact(name='fact1', component='Mary', attribute='popular', bound=[1, 1], start_time=0, end_time=2))
 
