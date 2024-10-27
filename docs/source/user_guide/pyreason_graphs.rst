@@ -30,28 +30,28 @@ And
 
 .. code:: python
 
-   import networkx as nx
+  import networkx as nx
 
    # ================================ CREATE GRAPH====================================
    # Create a Directed graph
-   g = nx.DiGraph()
+  g = nx.DiGraph()
 
    # Add the nodes
-   g.add_nodes_from(['John', 'Mary', 'Justin'])
-   g.add_nodes_from(['Dog', 'Cat'])
+  g.add_nodes_from(['John', 'Mary', 'Justin'])
+  g.add_nodes_from(['Dog', 'Cat'])
 
    # Add the edges and their attributes. When an attribute = x which is <= 1, the annotation
    # associated with it will be [x,1]. NOTE: These attributes are immutable
    # Friend edges
-   g.add_edge('Justin', 'Mary', Friends=1)
-   g.add_edge('John', 'Mary', Friends=1)
-   g.add_edge('John', 'Justin', Friends=1)
+  g.add_edge('Justin', 'Mary', Friends=1)
+  g.add_edge('John', 'Mary', Friends=1)
+  g.add_edge('John', 'Justin', Friends=1)
 
    # Pet edges
-   g.add_edge('Mary', 'Cat', owns=1)
-   g.add_edge('Justin', 'Cat', owns=1)
-   g.add_edge('Justin', 'Dog', owns=1)
-   g.add_edge('John', 'Dog', owns=1)
+  g.add_edge('Mary', 'Cat', owns=1)
+  g.add_edge('Justin', 'Cat', owns=1)
+  g.add_edge('Justin', 'Dog', owns=1)
+  g.add_edge('John', 'Dog', owns=1)
    
 After the graph has been created, it can be loaded with:
 
