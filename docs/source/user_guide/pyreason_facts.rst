@@ -7,34 +7,7 @@ Fact
    reasoning.
 
 
-Adding a Fact
-~~~~~~~~~~~~~
-In the graph we have created, suppose we want to set `Mary` to be
-`popular` initially.
-
-.. code:: python
-
-   import pyreason as pr
-   pr.add_fact(pr.Fact(name='popular-fact', component='Mary', attribute='popular', bound=[1, 1], start_time=0, end_time=2))
-
-The fact indicates that `Mary` is `popular` at time `0` and will
-remain so until time `2`.
-
-
-In the graph we have created, suppose we want to set `Mary` to be
-`popular` initially.
-
-We add a fact to our graph with the following code: 
-
-.. code:: python
-
-   import pyreason as pr
-   pr.add_fact(pr.Fact(name='popular-fact', component='Mary', attribute='popular', bound=[1, 1], start_time=0, end_time=2))
-
-The fact indicates that `Mary` is `popular` at time `0` and will
-remain so until time `2`.
-
-Fact parameters *add asumptions maybe???
+Fact Parameters *add asumptions maybe???
 ~~~~~~~~~~~~~~~
 To create a new **Fact** object in PyReason, use the `Fact` class with the following parameters:
 
@@ -49,4 +22,17 @@ To create a new **Fact** object in PyReason, use the `Fact` class with the follo
 4. **end_time (int):** The last timestep this fact is active
 5. **static (bool):** If the fact should be active for the entire program. In which case `start_time` and `end_time` will be ignored
 
+
+Fact Parsing
+~~~~~~~~~~~~
+Fact parser takes in fact_text as input and then reads fact
+
+**add info about fact parser function!**
+
+
+Then add the fact the Pyreason with the following command:
+.. code:: python
+
+   import pyreason as pr
+   pr.add_fact(pr.Fact(name='fact1', component='', attribute='popular', bound=[1, 1], start_time=0, end_time=2))
 
