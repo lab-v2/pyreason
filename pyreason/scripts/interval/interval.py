@@ -80,6 +80,9 @@ class Interval(structref.StructRefProxy):
     def __repr__(self):
         return f'[{self.lower},{self.upper}]'
 
+    def __hash__(self):
+        return hash((self.lower, self.upper))
+
     def __contains__(self, item):
         if self.lower <= item.lower and self.upper >= item.upper:
             return True

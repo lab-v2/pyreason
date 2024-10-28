@@ -33,4 +33,4 @@ def test_annotation_function():
         print(df)
         print()
 
-    assert interpretation.query('union_probability(A, B) : [0.21, 1]'), 'Union probability should be 0.21'
+    assert interpretation.query(pr.Query('union_probability(A, B) : [0.21, 1]')), 'Union probability should be 0.21'

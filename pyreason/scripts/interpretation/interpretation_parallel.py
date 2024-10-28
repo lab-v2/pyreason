@@ -1,4 +1,4 @@
-from networkx.classes import edges
+from typing import Union, Tuple
 
 import pyreason.scripts.numba_wrapper.numba_types.world_type as world
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
@@ -689,41 +689,18 @@ class Interpretation:
 
 		return interpretations
 
-	def query(self, query, return_bool=True):
+	def query(self, query, return_bool=True) -> Union[bool, Tuple[float, float]]:
 		"""
 		This function is used to query the graph after reasoning
-		:param query: The query string of for `pred(node)` or `pred(edge)` or `pred(node) : [l, u]`
+		:param query: A PyReason query object
 		:param return_bool: If True, returns boolean of query, else the bounds associated with it
 		:return: bool, or bounds
 		"""
-		# Parse the query
-		query = query.replace(' ', '')
 
-		if ':' in query:
-			pred_comp, bounds = query.split(':')
-			bounds = bounds.replace('[', '').replace(']', '')
-			l, u = bounds.split(',')
-			l, u = float(l), float(u)
-		else:
-			if query[0] == '~':
-				pred_comp = query[1:]
-				l, u = 0, 0
-			else:
-				pred_comp = query
-				l, u = 1, 1
-
-		bnd = interval.closed(l, u)
-
-		# Split predicate and component
-		idx = pred_comp.find('(')
-		pred = label.Label(pred_comp[:idx])
-		component = pred_comp[idx + 1:-1]
-
-		if ',' in component:
-			component = tuple(component.split(','))
-			comp_type = 'edge'
-		else:
-			comp_type = 'node'
+		comp_type = query.get_component_type()
+		component = query.get_component()
+		pred = query.get_predicate()
+		bnd = query.get_bounds()
 
 		# Check if the component exists
 		if comp_type == 'node':
