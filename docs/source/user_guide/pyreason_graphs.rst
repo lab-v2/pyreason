@@ -1,16 +1,17 @@
 PyReason Graphs
 ===============
 
-PyReason supports direct reasoning over knowledge graphs. PyReason graphs have full explainability of the reasoning process. Graphs serve as the knowledge base for PyReason, allowing users to create visual representations based on rules, relationships, and connections. 
+PyReason supports direct reasoning over knowledge graphs. PyReason graphs have full explainability of the reasoning process. Graphs serve as the knowledge base for PyReason, with initial conditions and attributes. 
+PyReason uses rules to create new relationships or change attribute relationships in a graph. Pyreason reasons on an inputed graph and evolves the graph over time.
 
-Methods for Creating Graphs
----------------------------
+How to Load a Graph in RyReason
+-------------------------------
 In PyReason there are two ways to create graphs: NetworkX and GraphML
 NetworkX allows you to manually add nodes and edges, whereas GraphML reads in a directed graph from a file.
 
 
 NetworkX Example
-----------------
+~~~~~~~~~~~~~~~~
 Using NetworkX, you can create a `directed <https://en.wikipedia.org/wiki/Directed_graph>`_  graph object. Users can add and remove nodes and edges from the graph.
 
 Read more about NetworkX `here <https://networkx.org/documentation/stable/reference/classes/digraph.html>`_.
@@ -61,33 +62,9 @@ After the graph has been created, it can be loaded with:
   pr.load_graph(graph: nx.DiGraph)
 
 
-Additional Considerations:
---------------------------
-Attributes to Bounds:
-
-In Networkx, each graph, node, and edge can hold key/value attribute pairs in an associated attribute dictionary (the keys must be hashable).
-
-In PyReason, these attributes get transformed into "bounds". The attribute value in Networkx, is translated into the lower bound in PyReason. 
-
-.. code:: python
-
-    import networkx as nx
-    g = nx.DiGraph()
-    g.add_node("some_node", attribute1=1, attribute2="0,0")
-
-
-When the graph is loaded: 
-
-  .. code:: text
-
-    "some_node" is given the attribute1: [1,1], and attribute2 :[0,0]. 
-
-If the attribute is a simple value, it is treated as both the lower and upper bound in PyReason. If a specific pair of bounds is required (e.g., for coordinates or ranges), the value should be provided as a string in a specific format.
-
-
 
 GraphML Example
----------------
+~~~~~~~~~~~~~~~~
 Using `GraphML <https://en.wikipedia.org/wiki/GraphML>`_, you can read a graph in from a file.
 
 .. code:: xml
@@ -135,11 +112,34 @@ Then load the graph using the following:
   import pyreason as pr
   pr.load_graphml('path_to_file')
 
-Graph Output:
 
-.. image:: basic_graph.png
-   :alt: A description of the image
-   :width: 600px  # Optional: specify the width
-   :align: center  # Optional: center the image
+Initial Conditions
+------------------
+PyReason uses graph attributes (assigned to nodes or edges), to convert to *static facts*. *Static facts* do not change over time.
+Once the graph is loaded, all attributes will remain the same until the end of the section of PyReason using the graph. 
 
 
+
+Additional Considerations
+--------------------------
+Attributes to Bounds:
+
+In Pyreason graphs, each node, and edge can hold key/value attribute pairs in an associated attribute dictionary (the keys must be hashable).
+
+These attributes get transformed into "bounds". Bounds are between 0 (false) and 1 (true).  The attribute value in Networkx, is translated into the lower bound in PyReason. 
+
+When an attribiute is set to 0, the assumed upper bound is 1 which create [0,1], an inconsistant predicate. To avoid this, and make the bounds [0,0] set the attributes with a string.
+.. code:: python
+
+    import networkx as nx
+    g = nx.DiGraph()
+    g.add_node("some_node", attribute1=1, attribute2="0,0")
+
+
+When the graph is loaded: 
+
+  .. code:: text
+
+    "some_node" is given the attribute1: [1,1], and attribute2 :[0,0]. 
+
+If the attribute is a simple value, it is treated as both the lower and upper bound in PyReason. If a specific pair of bounds is required (e.g., for coordinates or ranges), the value should be provided as a string in a specific format.
