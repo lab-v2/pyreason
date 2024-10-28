@@ -137,7 +137,7 @@ Then load the graph using the following:
 
 Graph Output:
 
-.. image:: docs/source/tutorials/basic_graph.png
+.. image:: basic_graph.png
    :alt: A description of the image
    :width: 600px  # Optional: specify the width
    :align: center  # Optional: center the image
