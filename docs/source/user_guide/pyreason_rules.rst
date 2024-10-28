@@ -49,10 +49,9 @@ Important Notes on Rule Formating:
 4. You can include multiple clauses in the rule by using the `<-timestep body1, body2, body3`.
 
 
-More Examples
--------------
-
-Refering to our :ref:`pyreason_graphs.rst` example, we want to create a rule to determine popularity. The rule will state that if a person has a friend who is popular *and* has the same pet as they do, then they are popular.
+Rule Structure
+--------------
+Example rule in PyReason with correct formatting:
 
     .. code:: text
 
@@ -77,7 +76,7 @@ The rule is read as follows:
 
 
 Adding A Rule to PyReason
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 1. Add the rule directly
 
 To add the rule directly, we must specify the rule and a name for it. Here we will use "popular_rule".
