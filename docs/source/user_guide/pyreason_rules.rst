@@ -27,7 +27,7 @@ To create a new **Rule** object in PyReason, use the `Rule` class with the follo
    
    - If set to **True**, it will connect unconnected nodes and fire.
    
-   - If set to **False**, it will fire **only** for rules that are already connected.
+   - If set to **False**, it will fire **only** for nodes that are already connected.
 
 4. **set_static (bool)**: Indicates whether the atom in the head should be set as static after the rule is applied. This means the bounds of that atom will no longer change.
 
@@ -101,3 +101,19 @@ Now we can load the rule from the file using the following code:
         pr.add_rules_from_file('rules.txt')
 
 
+Rule Parsing
+~~~~~~~~~~~~
+Rule parser take in rule_text, name, custom_thresholds, infer_edges, set_static, and immediate_rule as input and reads the rule as follows:
+
+1. Extract *delta_t* of rule if it exists, else, set it to 0
+2. Add :[1,1] or :[0,0] to the end of each element if a bound is not specified
+3. Check if there are custom thresholds for the rule such as forall in string form
+4. Transform bound strings into pr.intervals
+5. Find the target predicate, bounds, and annotation function if any.
+6. Assign type of rule  
+
+    i. if one head variable -> 'node' type
+    
+    ii. else, 'edge' type
+
+7. 
