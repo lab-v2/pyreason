@@ -23,12 +23,17 @@ Rule Parameters
 To create a new **Rule** object in PyReason, use the `Rule` class with the following parameters:
 
 1. **rule_text (str) **: The rule in textual format (the actual rule logic).
+
 2. **name (str) **: A name for the rule. This name will appear in the rule trace.
+
 3. **infer_edges (bool) **: A boolean indicating whether new edges should be inferred when the rule is applied.
     i. If set *True*, will connect unconnected nodes and fire. 
     ii. If set *False* will fire **only** for rules already connected
+
 4. **set_static (bool) **: A boolean indicating whether the atom in the head should be set as static after the rule is applied. This means the bounds of that atom will no longer change.
+
 5. **immediate_rule (bool) **: A boolean indicating whether the rule is immediate. Immediate rules check for more applicable rules immediately after being applied.
+
 6. **custom_thresholds (list) **: A list or map of custom thresholds for the rule. If not specified, default thresholds for ANY are used. This can be a list of thresholds, or a map of clause index to threshold.
 
 
@@ -54,11 +59,13 @@ Refering to our :ref:`pyreason_graphs.rst` example, we want to create a rule to 
 The rule is read as follows: 
 
 - **Head**: 
-  .. code:: text
+
+.. code:: text
     `head(x) : [1,1]`
 
 - **Body**: 
-  .. code:: text
+
+.. code:: text
     `head(y) : [1,1], body1(x,y) : [1,1], body2(y,z) : [1,1], body3(x,z) : [1,1]`
 
 - The **head** and **body** are separated by an arrow (`<-1`), and the rule is applied after `1` timestep.
