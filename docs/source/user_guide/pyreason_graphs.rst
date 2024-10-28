@@ -128,7 +128,8 @@ In Pyreason graphs, each node, and edge can hold key/value attribute pairs in an
 
 These attributes get transformed into "bounds". Bounds are between 0 (false) and 1 (true).  The attribute value in Networkx, is translated into the lower bound in PyReason. 
 
-When an attribiute is set to 0, the assumed upper bound is 1 which create [0,1], an inconsistant predicate. To avoid this, and make the bounds [0,0] set the attributes with a string.
+When an attribiute is set to 0, the assumed upper bound is 1 which creates [0,1], an inconsistant predicate. To avoid this, and make the bounds [0,0] set the attributes with a string.
+
 .. code:: python
 
     import networkx as nx
