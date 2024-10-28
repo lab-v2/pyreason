@@ -115,19 +115,22 @@ Rule parser take in rule_text, name, custom_thresholds, infer_edges, set_static,
 5. Find the target predicate, bounds, and annotation function if any.
 6. Assign type of rule  
 
-    i. if one head variable -> 'node' type
+    - if one head variable -> 'node' type
 
-    ii. else, 'edge' type
+    - else, 'edge' type
 
 7. Get the variables in the body, if there's an operator in the body then discard anything that comes after the operator, but keep the variables
-8. Create array of *thresholds* to keep track of for each neighbor criterion. 
-    i. Form [(comparison, (number/percent, total/available), thresh)]
+8. Create array of *thresholds* to keep track of for each neighbor criterion.
+
+    - Form [(comparison, (number/percent, total/available), thresh)]
+
 9. Create array to store clauses for nodes: 
-    i. node/edge, [subset]/[subset1, subset2], label, interval, operator
-    ii. The length clauses array should be equal to custom_thresholds
+
+    - node/edge, [subset]/[subset1, subset2], label, interval, operator
+    - The length clauses array should be equal to custom_thresholds
+
 10. Add edges between head variables if necessary
 11. Returns Rule Object
-    i. 
     
     .. code:: python
 
