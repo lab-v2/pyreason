@@ -1,11 +1,9 @@
 Facts
 -----
-
 -  A fact is a statement that is true in the graph. It is a basic unit
    of knowledge that is used to derive new information.
 -  Facts are used to initialize the graph and are the starting point for
    reasoning.
-
 
 Fact Parameters 
 ~~~~~~~~~~~~~~~
@@ -31,7 +29,7 @@ Fact parser takes in fact_text as input and then reads it as follows:
 - Check if bound is a boolean or a list of floats
 - Split the predicate and component
 - Check if the component is a node or edge fact
-- The parser then returns the predicate, compound, bound, and fact type
+- The parser then returns the *predicate*, *compound*, *bound*, and *fact type*
 
 
 Then add the fact the Pyreason with the following command:
@@ -39,5 +37,5 @@ Then add the fact the Pyreason with the following command:
 .. code:: python
 
    import pyreason as pr
-   pr.add_fact(pr.Fact(name='fact1', component='Mary', attribute='popular', bound=[1, 1], start_time=0, end_time=2))
+   pr.add_fact(pr.Fact(name='fact1', component='node/edge name', attribute='attribute name', bound=[1, 1], start_time=0, end_time=2))
 
