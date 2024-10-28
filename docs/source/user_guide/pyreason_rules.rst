@@ -5,9 +5,6 @@ PyReason Rules
    conclusion if the premises are true. Rules are foundational to
    logical systems, facilitating the inference process. 
 
-.. figure:: docs/source/tutorials/rule_image.png
-   :alt: image
-
 -  Every rule has a head and a body. The head determines what will
    change in the graph if the body is true.
 
@@ -36,7 +33,6 @@ To create a new **Rule** object in PyReason, use the `Rule` class with the follo
 5. **immediate_rule (bool)**: Indicates whether the rule is immediate. Immediate rules check for more applicable rules immediately after being applied.
 
 6. **custom_thresholds (list)**: A list or map of custom thresholds for the rule. If not specified, default thresholds for **ANY** are used. This can be either a list of thresholds or a map of clause index to threshold.
-
 
 
 
