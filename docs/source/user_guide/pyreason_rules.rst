@@ -11,8 +11,8 @@ PyReason Rules
 -  Every rule has a head and a body. The head determines what will
    change in the graph if the body is true.
 
-How to Create Rules
--------------------
+Creating a New Rule Object
+--------------------------
 
 In PyReason, rules are used to create relationships between different elements in the graph. These relationships can be used to infer new facts or make decisions based on existing graph data. 
 
@@ -20,21 +20,22 @@ In PyReason, rules are used to create relationships between different elements i
 Rule Parameters
 ~~~~~~~~~~~~~~~
 
+
 To create a new **Rule** object in PyReason, use the `Rule` class with the following parameters:
 
-1. **rule_text (str) **: The rule in textual format (the actual rule logic).
+1. **rule_text (str)**: The rule in textual format (the actual rule logic).
 
-2. **name (str) **: A name for the rule. This name will appear in the rule trace.
+2. **name (str)**: A name for the rule, which will appear in the rule trace.
 
-3. **infer_edges (bool) **: A boolean indicating whether new edges should be inferred when the rule is applied.
-    i. If set *True*, will connect unconnected nodes and fire. 
-    ii. If set *False* will fire **only** for rules already connected
+3. **infer_edges (bool)**: Indicates whether new edges should be inferred when the rule is applied:
+   - If set to **True**, it will connect unconnected nodes and fire.
+   - If set to **False**, it will fire **only** for rules that are already connected.
 
-4. **set_static (bool) **: A boolean indicating whether the atom in the head should be set as static after the rule is applied. This means the bounds of that atom will no longer change.
+4. **set_static (bool)**: Indicates whether the atom in the head should be set as static after the rule is applied. This means the bounds of that atom will no longer change.
 
-5. **immediate_rule (bool) **: A boolean indicating whether the rule is immediate. Immediate rules check for more applicable rules immediately after being applied.
+5. **immediate_rule (bool)**: Indicates whether the rule is immediate. Immediate rules check for more applicable rules immediately after being applied.
 
-6. **custom_thresholds (list) **: A list or map of custom thresholds for the rule. If not specified, default thresholds for ANY are used. This can be a list of thresholds, or a map of clause index to threshold.
+6. **custom_thresholds (list)**: A list or map of custom thresholds for the rule. If not specified, default thresholds for **ANY** are used. This can be either a list of thresholds or a map of clause index to threshold.
 
 
 
