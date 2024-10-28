@@ -129,6 +129,7 @@ Rule parser take in rule_text, name, custom_thresholds, infer_edges, set_static,
 10. Add edges between head variables if necessary
 11. Returns Rule Object
     i. 
+    
     .. code:: python
 
         rule = rule.Rule(name, rule_type, target, head_variables, numba.types.uint16(t), clauses, target_bound, thresholds, ann_fn, weights, edges, set_static, immediate_rule)
