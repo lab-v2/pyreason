@@ -58,15 +58,18 @@ Refering to our :ref:`pyreason_graphs.rst` example, we want to create a rule to 
 
 The rule is read as follows: 
 
-- **Head**: 
+**Head**:
 
-    .. code:: text
-        `head(x) : [1,1]`
+.. code:: text
 
-- **Body**: 
+    head(x) : [1,1]
 
-    .. code:: text
-        `head(y) : [1,1], body1(x,y) : [1,1], body2(y,z) : [1,1], body3(x,z) : [1,1]`
+**Body**:
+
+.. code:: text
+
+    head(y) : [1,1], body1(x,y) : [1,1], body2(y,z) : [1,1], body3(x,z) : [1,1]
+
 
 - The **head** and **body** are separated by an arrow (`<-1`), and the rule is applied after `1` timestep.
 
