@@ -7,7 +7,7 @@ Facts
    reasoning.
 
 
-Fact Parameters *add asumptions maybe???
+Fact Parameters 
 ~~~~~~~~~~~~~~~
 To create a new **Fact** object in PyReason, use the `Fact` class with the following parameters:
 
@@ -25,12 +25,17 @@ To create a new **Fact** object in PyReason, use the `Fact` class with the follo
 
 Fact Parsing
 ~~~~~~~~~~~~
-Fact parser takes in fact_text as input and then reads fact
+Fact parser takes in fact_text as input and then reads it as follows:
 
-**add info about fact parser function!**
+- Separates into predicate-component and bound. If there is no bound, assume it's true
+- Check if bound is a boolean or a list of floats
+- Split the predicate and component
+- Check if the component is a node or edge fact
+- The parser then returns the predicate, compound, bound, and fact type
 
 
 Then add the fact the Pyreason with the following command:
+
 .. code:: python
 
    import pyreason as pr
