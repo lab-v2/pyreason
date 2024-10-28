@@ -17,7 +17,6 @@ In PyReason, rules are used to create relationships between different elements i
 Rule Parameters
 ~~~~~~~~~~~~~~~
 
-
 To create a new **Rule** object in PyReason, use the `Rule` class with the following parameters:
 
 1. **rule_text (str)**: The rule in textual format (the actual rule logic).
@@ -25,7 +24,9 @@ To create a new **Rule** object in PyReason, use the `Rule` class with the follo
 2. **name (str)**: A name for the rule, which will appear in the rule trace.
 
 3. **infer_edges (bool)**: Indicates whether new edges should be inferred when the rule is applied:
+   
    - If set to **True**, it will connect unconnected nodes and fire.
+   
    - If set to **False**, it will fire **only** for rules that are already connected.
 
 4. **set_static (bool)**: Indicates whether the atom in the head should be set as static after the rule is applied. This means the bounds of that atom will no longer change.
