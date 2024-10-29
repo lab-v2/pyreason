@@ -1,12 +1,6 @@
 PyReason Rules
 ==============
--  A rule is a statement that establishes a relationship between
-   premises and a conclusion, allowing for the derivation of the
-   conclusion if the premises are true. Rules are foundational to
-   logical systems, facilitating the inference process. 
-
--  Every rule has a head and a body. The head determines what will
-   change in the graph if the body is true.
+-  This section outlines Rule creation and implementation. See `here <https://pyreason--60.org.readthedocs.build/en/60/key_concepts/key_concepts.html#rule>`_ for more information on Rules in PyReason.
 
 Creating a New Rule Object
 --------------------------
