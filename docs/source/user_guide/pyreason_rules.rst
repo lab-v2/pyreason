@@ -19,27 +19,33 @@ Rule Parameters
 
 To create a new **Rule** object in PyReason, use the `Rule` class with the following parameters:
 
-1. **rule_text** (str): The rule in textual format. It should define a head and body using the syntax 
+1. **rule_text** (str): 
+   The rule in textual format. It should define a head and body using the syntax 
 
-    `head <- body`, where the body can include predicates and optional bounds.
+   `head <- body`, where the body can include predicates and optional bounds.
 
-2. **name** (str): A name for the rule, which will appear in the rule trace.
+2. **name** (str): 
+   A name for the rule, which will appear in the rule trace.
 
-3. **infer_edges** (bool, optional): Indicates whether new edges should be inferred when the rule is applied:
+3. **infer_edges** (bool, optional): 
+   Indicates whether new edges should be inferred when the rule is applied:
    
    - If set to **True**, it will connect unconnected nodes and fire.
-   
    - Else, set to **False**, it will fire **only** for nodes that are already connected (Default).
 
-4. **set_static** (bool, optional): Indicates whether the atom in the head should be set as static after the rule is applied. This means the bounds of that atom will no longer change.
+4. **set_static** (bool, optional): 
+   Indicates whether the atom in the head should be set as static after the rule is applied. This means the bounds of that atom will no longer change.
 
-5. **immediate_rule** (bool, optional):  Indicates whether the rule is immediate. Immediate rules check for more applicable rules immediately after being applied.
+5. **immediate_rule** (bool, optional): 
+   Indicates whether the rule is immediate. Immediate rules check for more applicable rules immediately after being applied.
 
-6. **custom_thresholds** (Union[None, list, dict]): A list or dictionary of custom thresholds for the rule. If not specified, 
-    default thresholds for ANY will be used. It can either be:
+6. **custom_thresholds** (Union[None, list, dict]): 
+   A list or dictionary of custom thresholds for the rule. If not specified, 
+   default thresholds for ANY will be used. It can either be:
 
-    - A list corresponding to each clause.
-    - A dictionary mapping clause indices to specific thresholds.
+   - A list corresponding to each clause.
+   - A dictionary mapping clause indices to specific thresholds.
+
     
 
 
@@ -124,8 +130,8 @@ Rule parser take in rule_text, name, custom_thresholds, infer_edges, set_static,
 7. Get the variables in the body, if there's an operator in the body then discard anything that comes after the operator, but keep the variables
 8. Create array of *thresholds* to keep track of for each neighbor criterion.
 
-    - Form:
     .. code:: text
+
         thresholds = [(comparison, (number/percent, total/available), thresh)]
 
 9. Create array to store clauses for nodes: 
@@ -133,7 +139,7 @@ Rule parser take in rule_text, name, custom_thresholds, infer_edges, set_static,
     .. code:: text
 
         clauses = node/edge, [subset]/[subset1, subset2], label, interval, operator
-        
+
     - The length clauses array should be equal to custom_thresholds
 
 10. Add edges between head variables if necessary
