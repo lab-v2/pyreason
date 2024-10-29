@@ -7,7 +7,7 @@ Rule
 -  A rule is a statement that establishes a relationship between
    premises and a conclusion, allowing for the derivation of the
    conclusion if the premises are true. Rules are foundational to
-   logical systems, facilitating the inference process. 
+   logical systems, facilitating the inference process.  
 
 
 .. image:: rule_image.png
@@ -19,8 +19,8 @@ Rule
 Fact
 ~~~~
 
--  A fact is a statement that is true in the graph. It is a basic unit
-   of knowledge that is used to derive new information.
+-  A fact is a statement that is used to store information in the graph. It is a basic unit
+   of knowledge that is used to derive new information. It can be thought of as an initial condition before reasoning.
 -  Facts are used to initialize the graph and are the starting point for
    reasoning.
 
