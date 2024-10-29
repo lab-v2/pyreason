@@ -1,7 +1,7 @@
-Facts
+PyReason Facts
 -----
--  A fact is a statement that is true in the graph. It is a basic unit
-   of knowledge that is used to derive new information.
+-  A fact is a statement that is used to store information in the graph. It is a basic unit
+   of knowledge that is used to derive new information. It can be thought of as an initial condition before reasoning.
 -  Facts are used to initialize the graph and are the starting point for
    reasoning.
 
@@ -13,7 +13,7 @@ To create a new **Fact** object in PyReason, use the `Fact` class with the follo
    
 .. code:: text
 
-    `'pred(x,y) : [0.2, 1]'` or `'pred(x,y) : True'` 
+    'pred(x,y) : [0.2, 1]' or 'pred(x,y) : True'
 
 2. **name (str):** The name of the fact. This will appear in the trace so that you know when it was applied
 3. **start_time (int):** The timestep at which this fact becomes active
