@@ -8,6 +8,12 @@ Rule
    premises and a conclusion, allowing for the derivation of the
    conclusion if the premises are true. Rules are foundational to
    logical systems, facilitating the inference process. |rule_image|
+   This is some text.
+
+.. image:: rule_image.png
+   :alt: A description of the image
+   :align: center
+
 -  Every rule has a head and a body. The head determines what will
    change in the graph if the body is true.
 
