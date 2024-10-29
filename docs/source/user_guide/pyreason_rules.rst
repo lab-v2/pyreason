@@ -134,7 +134,7 @@ Rule parser take in rule_text, name, custom_thresholds, infer_edges, set_static,
 
         thresholds = [(comparison, (number/percent, total/available), thresh)]
 
-9. Create array to store clauses for nodes: 
+9. Create array to store clauses for nodes or edges: 
 
     .. code:: text
 
