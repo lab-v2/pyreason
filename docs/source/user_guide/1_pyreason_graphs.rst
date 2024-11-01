@@ -7,8 +7,8 @@ These initial conditions are used along with :ref:`PyReason rules <pyreason_rule
 How to Load a Graph in RyReason
 -------------------------------
 In PyReason there are two ways to load graphs:
-1. Using a NetworkX `DiGraph <https://networkx.org/documentation/stable/reference/classes/digraph.html>`_ object
-2. Using a `GraphML <https://networkx.org/documentation/stable/reference/readwrite/graphml.html>`_ file which is an encoding of a directed graph
+#. Using a NetworkX `DiGraph <https://networkx.org/documentation/stable/reference/classes/digraph.html>`_ object
+#. Using a `GraphML <https://networkx.org/documentation/stable/reference/readwrite/graphml.html>`_ file which is an encoding of a directed graph
 NetworkX allows you to manually add nodes and edges, whereas GraphML reads in a directed graph from a file.
 
 
@@ -20,46 +20,46 @@ Read more about NetworkX `here <https://networkx.org/>`_.
 
 Given a network of people and their pets, we can create a graph using NetworkX.
 
-1. Mary is friends with Justin
-2. Mary is friends with John
-3. Justin is friends with John
+#. Mary is friends with Justin
+#. Mary is friends with John
+#. Justin is friends with John
 
 And
 
-1. Mary owns a cat
-2. Justin owns a cat and a dog
-3. John owns a dog
+#. Mary owns a cat
+#. Justin owns a cat and a dog
+#. John owns a dog
 
 .. code:: python
 
-import networkx as nx
+    import networkx as nx
 
-# Create a NetowrkX Directed graph object
-g = nx.DiGraph()
+    # Create a NetowrkX Directed graph object
+    g = nx.DiGraph()
 
-# Add the people as nodes
-g.add_nodes_from(['John', 'Mary', 'Justin'])
-g.add_nodes_from(['Dog', 'Cat'])
+    # Add the people as nodes
+    g.add_nodes_from(['John', 'Mary', 'Justin'])
+    g.add_nodes_from(['Dog', 'Cat'])
 
-# Add the edges and their attributes. When an attribute = x which is <= 1, the annotation
-# associated with it will be [x,1]. NOTE: These attributes are immutable unless specified otherwise in pyreason settings
-# Friend edges
-g.add_edge('Justin', 'Mary', Friends=1)
-g.add_edge('John', 'Mary', Friends=1)
-g.add_edge('John', 'Justin', Friends=1)
+    # Add the edges and their attributes. When an attribute = x which is <= 1, the annotation
+    # associated with it will be [x,1]. NOTE: These attributes are immutable unless specified otherwise in pyreason settings
+    # Friend edges
+    g.add_edge('Justin', 'Mary', Friends=1)
+    g.add_edge('John', 'Mary', Friends=1)
+    g.add_edge('John', 'Justin', Friends=1)
 
-# Pet edges
-g.add_edge('Mary', 'Cat', owns=1)
-g.add_edge('Justin', 'Cat', owns=1)
-g.add_edge('Justin', 'Dog', owns=1)
-g.add_edge('John', 'Dog', owns=1)
+    # Pet edges
+    g.add_edge('Mary', 'Cat', owns=1)
+    g.add_edge('Justin', 'Cat', owns=1)
+    g.add_edge('Justin', 'Dog', owns=1)
+    g.add_edge('John', 'Dog', owns=1)
    
 After the graph has been created, in the same file, the DiGraph object can be loaded with:
 
 .. code:: python
 
-import pyreason as pr
-pr.load_graph(graph)
+    import pyreason as pr
+    pr.load_graph(graph)
 
 
 
@@ -69,48 +69,48 @@ Using `GraphML <https://en.wikipedia.org/wiki/GraphML>`_, you can read a graph i
 
 .. code:: xml
 
-<?xml version='1.0' encoding='utf-8'?>
-<graphml
-   xmlns="http://graphml.graphdrawing.org/xmlns"
-   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
-   <key id="owns" for="edge" attr.name="owns" attr.type="long" />
-   <key id="Friends" for="edge" attr.name="Friends" attr.type="long" />
-   <graph edgedefault="directed">
-       <node id="John" />
-       <node id="Mary" />
-       <node id="Justin" />
-       <node id="Dog" />
-       <node id="Cat" />
-       <edge source="John" target="Mary">
-           <data key="Friends">1</data>
-       </edge>
-       <edge source="John" target="Justin">
-           <data key="Friends">1</data>
-       </edge>
-       <edge source="John" target="Dog">
-           <data key="owns">1</data>
-       </edge>
-       <edge source="Mary" target="Cat">
-           <data key="owns">1</data>
-       </edge>
-       <edge source="Justin" target="Mary">
-           <data key="Friends">1</data>
-       </edge>
-       <edge source="Justin" target="Cat">
-           <data key="owns">1</data>
-       </edge>
-       <edge source="Justin" target="Dog">
-           <data key="owns">1</data>
-       </edge>
-   </graph>
-</graphml>
+    <?xml version='1.0' encoding='utf-8'?>
+    <graphml
+       xmlns="http://graphml.graphdrawing.org/xmlns"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+       <key id="owns" for="edge" attr.name="owns" attr.type="long" />
+       <key id="Friends" for="edge" attr.name="Friends" attr.type="long" />
+       <graph edgedefault="directed">
+           <node id="John" />
+           <node id="Mary" />
+           <node id="Justin" />
+           <node id="Dog" />
+           <node id="Cat" />
+           <edge source="John" target="Mary">
+               <data key="Friends">1</data>
+           </edge>
+           <edge source="John" target="Justin">
+               <data key="Friends">1</data>
+           </edge>
+           <edge source="John" target="Dog">
+               <data key="owns">1</data>
+           </edge>
+           <edge source="Mary" target="Cat">
+               <data key="owns">1</data>
+           </edge>
+           <edge source="Justin" target="Mary">
+               <data key="Friends">1</data>
+           </edge>
+           <edge source="Justin" target="Cat">
+               <data key="owns">1</data>
+           </edge>
+           <edge source="Justin" target="Dog">
+               <data key="owns">1</data>
+           </edge>
+       </graph>
+    </graphml>
 
 Then load the graph using the following:
 
 .. code:: python
 
-import pyreason as pr
-pr.load_graphml('path_to_file')
+    import pyreason as pr
+    pr.load_graphml('path_to_file')
 
 
 Initial Conditions
@@ -139,8 +139,8 @@ lower bound keeping the upper bound as 1. To do this, we can set the attribute a
 
 When the graph is loaded: 
 
-  .. code:: text
+.. code:: text
 
-    "some_node" is given the attribute1: [1,1], and attribute2 :[0,0]. 
+    "some_node" is given the attribute1: [1,1], and attribute2 :[0,0].
 
 If the attribute is set equal to a single value, the assumed upper bound is 1. If a specific pair of bounds is required (e.g., for coordinates or ranges), the value should be provided as a string in a specific format.
