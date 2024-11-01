@@ -7,14 +7,18 @@ These initial conditions are used along with :ref:`PyReason rules <pyreason_rule
 How to Load a Graph in RyReason
 -------------------------------
 In PyReason there are two ways to load graphs:
-#. Using a NetworkX `DiGraph <https://networkx.org/documentation/stable/reference/classes/digraph.html>`_ object
-#. Using a `GraphML <https://networkx.org/documentation/stable/reference/readwrite/graphml.html>`_ file which is an encoding of a directed graph
+
+
+1. Using a NetworkX `DiGraph <https://networkx.org/documentation/stable/reference/classes/digraph.html>`_ object
+2. Using a `GraphML <https://networkx.org/documentation/stable/reference/readwrite/graphml.html>`_ file which is an encoding of a directed graph
+
+
 NetworkX allows you to manually add nodes and edges, whereas GraphML reads in a directed graph from a file.
 
 
 NetworkX Example
 ~~~~~~~~~~~~~~~~
-Using NetworkX, you can create a `directed graph<https://en.wikipedia.org/wiki/Directed_graph>`_ object. Users can add and remove nodes and edges from the graph.
+Using NetworkX, you can create a `directed graph <https://en.wikipedia.org/wiki/Directed_graph>`_ object. Users can add and remove nodes and edges from the graph.
 
 Read more about NetworkX `here <https://networkx.org/>`_.
 
