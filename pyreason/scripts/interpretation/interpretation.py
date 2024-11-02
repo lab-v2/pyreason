@@ -7,6 +7,10 @@ from pyreason.scripts.interpretation.interpretation_dict import InterpretationDi
 
 import numba
 from numba import objmode, prange
+from numba import cuda
+import numpy as np
+
+from pyreason.scripts.interval.interval_gpu import IntervalGPU
 
 
 # Types for the dictionaries
@@ -57,7 +61,7 @@ class Interpretation:
 	specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(node_type))
 	specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(edge_type))
 
-	def __init__(self, graph, ipl, annotation_functions, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules):
+	def __init__(self, graph, ipl, annotation_functions, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules, use_gpu):
 		self.graph = graph
 		self.ipl = ipl
 		self.annotation_functions = annotation_functions
@@ -69,6 +73,7 @@ class Interpretation:
 		self.store_interpretation_changes = store_interpretation_changes
 		self.update_mode = update_mode
 		self.allow_ground_rules = allow_ground_rules
+		self.use_gpu = use_gpu
 
 		# For reasoning and reasoning again (contains previous time and previous fp operation cnt)
 		self.time = 0
@@ -110,7 +115,9 @@ class Interpretation:
 
 		self.interpretations_node, self.predicate_map_node = self._init_interpretations_node(self.nodes, self.available_labels_node, self.specific_node_labels)
 		self.interpretations_edge, self.predicate_map_edge = self._init_interpretations_edge(self.edges, self.available_labels_edge, self.specific_edge_labels)
-
+		# print(self.interpretations_node, self.predicate_map_node)
+		# print(self.interpretations_edge, self.predicate_map_edge)
+		# print('sdvdsv')
 		# Setup graph neighbors and reverse neighbors
 		self.neighbors = numba.typed.Dict.empty(key_type=node_type, value_type=numba.types.ListType(node_type))
 		for n in self.graph.nodes():
@@ -221,7 +228,7 @@ class Interpretation:
 		return max_time
 
 	def _start_fp(self, rules, max_facts_time, verbose, again):
-		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.predicate_map_node, self.predicate_map_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.canonical, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, self.allow_ground_rules, max_facts_time, self.annotation_functions, self._convergence_mode, self._convergence_delta, verbose, again)
+		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.predicate_map_node, self.predicate_map_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.canonical, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, self.allow_ground_rules, max_facts_time, self.annotation_functions, self._convergence_mode, self._convergence_delta, verbose, again, self.use_gpu)
 		self.time = t - 1
 		# If we need to reason again, store the next timestep to start from
 		self.prev_reasoning_data[0] = t
@@ -231,7 +238,7 @@ class Interpretation:
 
 	@staticmethod
 	@numba.njit(cache=True, parallel=False)
-	def reason(interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules, max_facts_time, annotation_functions, convergence_mode, convergence_delta, verbose, again):
+	def reason(interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules, max_facts_time, annotation_functions, convergence_mode, convergence_delta, verbose, again, use_gpu):
 		t = prev_reasoning_data[0]
 		fp_cnt = prev_reasoning_data[1]
 		max_rules_time = 0
@@ -240,7 +247,17 @@ class Interpretation:
 		facts_to_be_applied_edge_new = numba.typed.List.empty_list(facts_to_be_applied_edge_type)
 		rules_to_remove_idx = set()
 		rules_to_remove_idx.add(-1)
+
+
 		while timestep_loop:
+			# with numba.objmode():
+			# 	print("t:", t)
+			# 	print('fp_cnt', fp_cnt)
+			# 	print("max_rules_time", max_rules_time)
+			# 	print("facts_to_be_applied_node_new", facts_to_be_applied_node_new)
+			# 	print("facts_to_be_applied_edge_new", facts_to_be_applied_edge_new)
+			# 	print("rules_to_remove_idx", rules_to_remove_idx)
+
 			if t==tmax:
 				timestep_loop = False
 			if verbose:
@@ -266,7 +283,14 @@ class Interpretation:
 			changes_cnt = 0
 			bound_delta = 0
 			update = False
-
+			# with numba.objmode():
+			# 	print('Before facts added')
+			# 	for fact in facts_to_be_applied_node:
+			# 		print(fact.__str__())
+			# 	for fact in facts_to_be_applied_edge:
+			# 		print(fact.__str__())
+			# 	print(interpretations_node, predicate_map_node)
+			# 	print(interpretations_edge, predicate_map_edge)
 			# Start by applying facts
 			# Nodes
 			facts_to_be_applied_node_new.clear()
@@ -402,6 +426,16 @@ class Interpretation:
 			facts_to_be_applied_edge[:] = facts_to_be_applied_edge_new.copy()
 			facts_to_be_applied_edge_new.clear()
 
+
+			# with numba.objmode():
+			# 	print('After facts added')
+			# 	for fact in facts_to_be_applied_node:
+			# 		print(fact.__str__())
+			# 	for fact in facts_to_be_applied_edge:
+			# 		print(fact.__str__())
+			# 	print(interpretations_node, predicate_map_node)
+			# 	print(interpretations_edge, predicate_map_edge)
+
 			in_loop = True
 			while in_loop:
 				# This will become true only if delta_t = 0 for some rule, otherwise we go to the next timestep
@@ -411,6 +445,8 @@ class Interpretation:
 				# Nodes
 				rules_to_remove_idx.clear()
 				for idx, i in enumerate(rules_to_be_applied_node):
+					# with numba.objmode():
+					# 	print(f'Rule idx {idx}: {i}')
 					if i[0] == t:
 						comp, l, bnd, immediate, set_static = i[1], i[2], i[3], i[4], i[5]
 						# Check for inconsistencies
@@ -543,7 +579,7 @@ class Interpretation:
 						# Only go through if the rule can be applied within the given timesteps, or we're running until convergence
 						delta_t = rule.get_delta()
 						if t + delta_t <= tmax or tmax == -1 or again:
-							applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules)
+							applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, use_gpu)
 
 							# Loop through applicable rules and add them to the rules to be applied for later or next fp operation
 							for applicable_rule in applicable_node_rules:
@@ -755,7 +791,11 @@ class Interpretation:
 
 
 @numba.njit(cache=True)
-def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules):
+def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, use_gpu):
+
+
+
+
 	# Extract rule params
 	rule_type = rule.get_type()
 	head_variables = rule.get_head_variables()
@@ -763,6 +803,25 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 	thresholds = rule.get_thresholds()
 	ann_fn = rule.get_annotation_function()
 	rule_edges = rule.get_edges()
+
+	# with numba.objmode():
+	# 	print('Rule type: ', rule_type)
+	# 	print('Head variables: ', head_variables)
+	# 	print('Clauses: ', clauses)
+	# 	print('Thresholds: ', thresholds)
+	# 	print('Annotation function: ', ann_fn)
+	# 	print('rule Edges: ', rule_edges)
+	#
+	# 	print(f'Interpretation node:: {interpretations_node}')
+	# 	print(f'Interpretation edge: {interpretations_edge}')
+	# 	print('Predicate map node: ', predicate_map_node)
+	# 	print(f'Predicate map edge: {predicate_map_edge}')
+	# 	print(f'nodes:: {nodes}')
+	# 	print(f'edges:: {edges}')
+	# 	print(f'neighbors:: {neighbors}')
+	# 	print(f'reverse neighbors:: {reverse_neighbors}')
+	# 	print(f'Atom trace:: {atom_trace}')
+	# 	print(f'Allow ground rules:: {allow_ground_rules}')
 
 	if rule_type == 'node':
 		head_var_1 = head_variables[0]
@@ -808,11 +867,19 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 				grounding = numba.typed.List([clause_var_1])
 			else:
 				grounding = get_rule_node_clause_grounding(clause_var_1, groundings, predicate_map_node, clause_label, nodes)
+				# with numba.objmode():
+				# 	print(grounding)
 
 			# Narrow subset based on predicate
-			qualified_groundings = get_qualified_node_groundings(interpretations_node, grounding, clause_label, clause_bnd)
+			if use_gpu:
+				qualified_groundings = get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_label, clause_bnd)
+			else:
+				qualified_groundings = get_qualified_node_groundings_cpu(interpretations_node, grounding, clause_label, clause_bnd)
 			groundings[clause_var_1] = qualified_groundings
 			qualified_groundings_set = set(qualified_groundings)
+			# with numba.objmode():
+			# 	print(f'Groundings in clause type node:: {groundings}')
+			# 	print(f'Goundings edges in clause type node:: {groundings_edges}')
 			for c1, c2 in groundings_edges:
 				if c1 == clause_var_1:
 					groundings_edges[(c1, c2)] = numba.typed.List([e for e in groundings_edges[(c1, c2)] if e[0] in qualified_groundings_set])
@@ -838,7 +905,9 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 
 			# Narrow subset based on predicate (save the edges that are qualified to use for finding future groundings faster)
 			qualified_groundings = get_qualified_edge_groundings(interpretations_edge, grounding, clause_label, clause_bnd)
-
+			# with numba.objmode():
+			# 	print(f'Groundings in clause type edge:: {groundings}')
+			# 	print(f'Goundings edges in clause type edge:: {groundings_edges}')
 			# Check satisfaction of those edges wrt the threshold
 			# Only check satisfaction if the default threshold is used. This saves us from grounding the rest of the rule
 			# It doesn't make sense to check any other thresholds because the head could be grounded with multiple nodes/edges
@@ -1921,12 +1990,14 @@ def refine_subsets_edge_rule(interpretations_edge, clauses, i, subsets, target_e
 @numba.njit(cache=True)
 def check_node_grounding_threshold_satisfaction(interpretations_node, grounding, qualified_grounding, clause_label, threshold):
 	threshold_quantifier_type = threshold[1][1]
+	# with numba.objmode():
+	# 	print(threshold_quantifier_type)
 	if threshold_quantifier_type == 'total':
 		neigh_len = len(grounding)
 
 	# Available is all neighbors that have a particular label with bound inside [0,1]
 	elif threshold_quantifier_type == 'available':
-		neigh_len = len(get_qualified_node_groundings(interpretations_node, grounding, clause_label, interval.closed(0, 1)))
+		neigh_len = len(get_qualified_node_groundings_cpu(interpretations_node, grounding, clause_label, interval.closed(0, 1)))
 
 	qualified_neigh_len = len(qualified_grounding)
 	satisfaction = _satisfies_threshold(neigh_len, qualified_neigh_len, threshold)
@@ -2221,10 +2292,41 @@ def get_edge_rule_edge_clause_subset(clause_var_1, clause_var_2, target_edge, su
 			subset_target[i] = numba.typed.List.empty_list(node_type)
 
 	return subset_source, subset_target
+@cuda.jit
+def get_qualified_node_groundings_gpu_kernel(nodes, bounds, clause_l, clause_bnd, results):
+	idx = cuda.grid(1)
 
+	if idx < nodes.size:
+		if bounds[idx].l <= clause_bnd.l and bounds[idx].u <= clause_bnd[idx].u:
+			results[idx] = nodes[idx]
+		else:
+			results[idx] = -1  # Use -1 to mark unqualified nodes
+
+
+def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l, clause_bnd):
+	# Preprocess grounding and interpretations_node for GPU
+	nodes = np.array(grounding)
+	bounds = np.array([convert_to_gpu_interval(interpretations_node[n]) for n in grounding])
+	results = np.full(nodes.size, -1, dtype=np.int32)
+
+	# Transfer data to GPU memory
+	d_nodes = cuda.to_device(nodes)
+	d_bounds = cuda.to_device(bounds)
+	d_results = cuda.to_device(results)
+
+	# Define kernel launch parameters
+	threads_per_block = 256
+	blocks_per_grid = (nodes.size + (threads_per_block - 1)) // threads_per_block
+
+	# Launch the GPU kernel
+	get_qualified_node_groundings_gpu_kernel[blocks_per_grid, threads_per_block](d_nodes, d_bounds, clause_l, clause_bnd, d_results)
+
+	# Copy results back to CPU and filter out unqualified nodes
+	results = d_results.copy_to_host()
+	return [node for node in results if node != -1]
 
 @numba.njit(cache=True)
-def get_qualified_node_groundings(interpretations_node, grounding, clause_l, clause_bnd):
+def get_qualified_node_groundings_cpu(interpretations_node, grounding, clause_l, clause_bnd):
 	# Filter the grounding by the predicate and bound of the clause
 	qualified_groundings = numba.typed.List.empty_list(node_type)
 	for n in grounding:
@@ -2232,6 +2334,77 @@ def get_qualified_node_groundings(interpretations_node, grounding, clause_l, cla
 			qualified_groundings.append(n)
 
 	return qualified_groundings
+
+
+# def preprocess_interpretations(interpretations_node, grounding):
+# 	# Create a mapping of each unique string node to a unique integer
+# 	unique_nodes = list(set(grounding))
+# 	node_to_id = {node: i for i, node in enumerate(unique_nodes)}
+# 	id_to_node = {i: node for node, i in node_to_id.items()}  # Reverse mapping for later use
+#
+# 	# Convert grounding list and interpretation dictionary to arrays
+# 	nodes = np.array([node_to_id[n] for n in grounding], dtype=np.int32)  # Integer IDs for nodes
+# 	bounds = np.array([interpretations_node[n] for n in grounding], dtype=np.float32)  # Assuming float bounds
+#
+# 	return nodes, bounds, id_to_node  # Return id_to_node for later decoding
+# @cuda.jit
+# def get_qualified_node_groundings_gpu_kernel(nodes, bounds, clause_l, clause_bnd, results):
+# 	idx = cuda.grid(1)  # Get the global thread index
+# 	if idx < nodes.size:
+# 		# Apply the predicate and bound check here; adjust as necessary
+# 		if bounds[idx] >= clause_bnd:  # Example condition; update to your actual condition
+# 			results[idx] = nodes[idx]  # Store qualified node's integer ID
+# 		else:
+# 			results[idx] = -1  # Use -1 as a marker for unqualified nodes
+#
+# @cuda.jit
+# def get_qualified_node_groundings_gpu(nodes, bounds, clause_l, clause_bnd, results):
+# 	idx = cuda.grid(1)  # Get global thread index
+# 	if idx < nodes.size:
+# 		# Apply the predicate and bound check here; adjust as necessary
+# 		if bounds[idx] >= clause_bnd:  # Example condition
+# 			results[idx] = nodes[idx]  # Store qualified node
+# 		else:
+# 			results[idx] = -1  # Use -1 as a marker for unqualified nodes
+#
+# @numba.njit(cache=True)
+# def get_qualified_node_groundings(interpretations_node, grounding, clause_l, clause_bnd, use_gpu=False):
+# 	if use_gpu:
+# 		# Preprocess data for GPU
+# 		nodes, bounds = preprocess_interpretations(interpretations_node, grounding)
+#
+# 		# Allocate result array for GPU
+# 		results = np.full(nodes.size, -1, dtype=np.int32)  # -1 indicates unqualified nodes
+#
+# 		# Transfer data to GPU
+# 		d_nodes = cuda.to_device(nodes)
+# 		d_bounds = cuda.to_device(bounds)
+# 		d_results = cuda.to_device(results)
+#
+# 		# Configure GPU kernel launch parameters
+# 		threads_per_block = 256
+# 		blocks_per_grid = (nodes.size + (threads_per_block - 1)) // threads_per_block
+#
+# 		# Launch the GPU kernel
+# 		get_qualified_node_groundings_gpu[blocks_per_grid, threads_per_block](d_nodes, d_bounds, clause_l, clause_bnd,
+# 																			  d_results)
+#
+# 		# Copy results back to CPU and filter out unqualified nodes
+# 		results = d_results.copy_to_host()
+# 		return [nodes[i] for i in range(nodes.size) if results[i] != -1]
+# 	else:
+# 		# Fall back to the original CPU implementation if CUDA is not available
+# 		return get_qualified_node_groundings_cpu(interpretations_node, grounding, clause_l, clause_bnd)
+#
+# @numba.njit(cache=True)
+# def get_qualified_node_groundings_cpu(interpretations_node, grounding, clause_l, clause_bnd):
+# 	# Filter the grounding by the predicate and bound of the clause
+# 	qualified_groundings = numba.typed.List.empty_list(node_type)
+# 	for n in grounding:
+# 		if is_satisfied_node(interpretations_node, n, (clause_l, clause_bnd)):
+# 			qualified_groundings.append(n)
+#
+# 	return qualified_groundings
 
 
 @numba.njit(cache=True)
@@ -2631,16 +2804,86 @@ def are_satisfied_node(interpretations, comp, nas):
 	return result
 
 
+# Wrapper function to select between GPU and CPU functions
+# def is_satisfied_wrapper(world, comp, na):
+# 	# Check if GPU is available
+#
+# 	if cuda.is_available():
+# 		# Use the GPU-based method
+# 		print('CUDA available')
+# 		return False
+# 		# result = world.check_single_bound_on_gpu(na[0], na[1])
+# 		# return result
+# 	else:
+# 		print('CUDA na')
+# 		# Use the CPU-based method
+# 		result = world.is_satisfied(na[0], na[1])
+# 		return result
+# @cuda.jit
+# def is_satisfied_gpu(label_lower, label_upper, rule_lower, rule_upper, result):
+# 	"""Check if the bounds of `label` are within the bounds of `rule` on the GPU."""
+# 	# Only one thread is needed since we're handling a single comparison
+# 	if label_lower <= rule_lower and label_upper <= rule_upper:
+# 		result[0] = True
+# 	else:
+# 		result[0] = False
+@numba.njit(cache=True)
+def convert_to_gpu_interval(interval_structref):
+	"""Convert a structref-based Interval to a GPU-compatible Interval."""
+	return IntervalGPU(
+		l=interval_structref.get_lower(),
+		u=interval_structref.get_upper(),
+		s=interval_structref.get_static()
+	)
+
+
+# # Corrected `check_single_bound_on_gpu`
+# def check_single_bound_on_gpu(world, label, rule_bound):
+# 	# Ensure label exists in world
+# 	if label not in world:
+# 		raise KeyError(f"Label '{label}' not found in world dictionary.")
+#
+# 	rule_bnd = convert_to_gpu_interval(rule_bound)
+# 	label_bnd = convert_to_gpu_interval(world[label])
+#
+# 	# Prepare result array to store a single boolean value
+# 	result = np.zeros(1, dtype=np.bool_)
+#
+# 	# Transfer each attribute if using CUDA kernels with simple values
+# 	d_label_lower = cuda.to_device(np.array([label_bnd.l]))
+# 	d_label_upper = cuda.to_device(np.array([label_bnd.u]))
+# 	d_rule_lower = cuda.to_device(np.array([rule_bnd.l]))
+# 	d_rule_upper = cuda.to_device(np.array([rule_bnd.u]))
+# 	d_result = cuda.to_device(result)
+#
+# 	# Launch kernel with one thread (single check)
+# 	is_satisfied_gpu[1, 1](d_label_lower[0], d_label_upper[0], d_rule_lower[0], d_rule_upper[0], d_result)
+#
+# 	# Copy result back to host
+# 	return d_result.copy_to_host()[0]
 @numba.njit(cache=True)
 def is_satisfied_node(interpretations, comp, na):
 	result = False
+	# with numba.objmode():
+	# 	print(f'comp: {comp}')
+	# 	print(f'LAbel: {na[0]}, Bounds: {na[1]}')
 	if not (na[0] is None or na[1] is None):
 		# This is to prevent a key error in case the label is a specific label
 		try:
 			world = interpretations[comp]
+			# result = check_single_bound_on_gpu(world, na[0], na[1])
+			# result = world.check_single_bound_on_gpu(na[0], na[1])
 			result = world.is_satisfied(na[0], na[1])
+
 		except:
 			result = False
+		# with numba.objmode():
+		# 	print(f'comp: {comp}')
+		# 	print(f'LAbel: {na[0]}, Bounds: {na[1]}')
+		# 	print(f'Result: {result}')
+		# 	print(f'World: {world.get_bound(na[0])}')
+		# 	print(f'Type of label: {type(na[0])}')
+		# 	print(f'Type of bound: {type(na[1])}')
 	else:
 		result = True
 	return result
@@ -2661,6 +2904,7 @@ def is_satisfied_node_comparison(interpretations, comp, na):
 				world_l_str = world_l.value
 				if l_str in world_l_str and world_l_str[len(l_str)+1:].replace('.', '').replace('-', '').isdigit():
 					# The label is contained in the world
+					# result = world.check_single_bound_on_gpu(world_l, na[1])
 					result = world.is_satisfied(world_l, na[1])
 					# Find the suffix number
 					number = str_to_float(world_l_str[len(l_str)+1:])
@@ -2688,6 +2932,8 @@ def is_satisfied_edge(interpretations, comp, na):
 		# This is to prevent a key error in case the label is a specific label
 		try:
 			world = interpretations[comp]
+			# result = is_satisfied_wrapper(world, comp, na)
+			# result = world.check_single_bound_on_gpu(world, na[0], na[1])
 			result = world.is_satisfied(na[0], na[1])
 		except:
 			result = False
@@ -2711,6 +2957,7 @@ def is_satisfied_edge_comparison(interpretations, comp, na):
 				world_l_str = world_l.value
 				if l_str in world_l_str and world_l_str[len(l_str)+1:].replace('.', '').replace('-', '').isdigit():
 					# The label is contained in the world
+					# result = world.check_single_bound_on_gpu(world_l, na[1])
 					result = world.is_satisfied(world_l, na[1])
 					# Find the suffix number
 					number = str_to_float(world_l_str[len(l_str)+1:])

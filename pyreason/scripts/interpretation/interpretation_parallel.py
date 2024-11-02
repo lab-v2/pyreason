@@ -111,6 +111,7 @@ class Interpretation:
 		self.interpretations_node, self.predicate_map_node = self._init_interpretations_node(self.nodes, self.available_labels_node, self.specific_node_labels)
 		self.interpretations_edge, self.predicate_map_edge = self._init_interpretations_edge(self.edges, self.available_labels_edge, self.specific_edge_labels)
 
+
 		# Setup graph neighbors and reverse neighbors
 		self.neighbors = numba.typed.Dict.empty(key_type=node_type, value_type=numba.types.ListType(node_type))
 		for n in self.graph.nodes():

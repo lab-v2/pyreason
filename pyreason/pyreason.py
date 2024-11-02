@@ -24,6 +24,8 @@ import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 from pyreason.scripts.utils.reorder_clauses import reorder_clauses
 
+from numba import cuda
+
 
 # USER VARIABLES
 class _Settings:
@@ -44,6 +46,7 @@ class _Settings:
         self.__parallel_computing = None
         self.__update_mode = None
         self.__allow_ground_rules = None
+        self.__use_gpu = cuda.is_available()
         self.reset()
 
     def reset(self):
@@ -63,7 +66,10 @@ class _Settings:
         self.__parallel_computing = False
         self.__update_mode = 'intersection'
         self.__allow_ground_rules = False
-
+        self.__use_gpu = cuda.is_available()
+    @property
+    def use_gpu(self) -> bool:
+        return self.__use_gpu
     @property
     def verbose(self) -> bool:
         """Returns whether verbose mode is on or not. Default is True
@@ -472,6 +478,16 @@ def load_graphml(path: str) -> None:
     # Graph attribute parsing
     if settings.graph_attribute_parsing:
         __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels = __graphml_parser.parse_graph_attributes(settings.static_graph_facts)
+        # print(__non_fluent_graph_facts_node.__str__())
+        # print(__non_fluent_graph_facts_edge.__str__())
+        # Convert __specific_graph_node_labels to a Python dictionary and print
+        node_labels_dict = {str(k): list(v) for k, v in __specific_graph_node_labels.items()}
+        # print("Node Labels:", node_labels_dict)
+
+        # Convert __specific_graph_edge_labels to a Python dictionary and print
+        edge_labels_dict = {str(k): [(str(x), str(y)) for x, y in v] for k, v in __specific_graph_edge_labels.items()}
+        # print("Edge Labels:", edge_labels_dict)
+
     else:
         __non_fluent_graph_facts_node = numba.typed.List.empty_list(fact_node.fact_type)
         __non_fluent_graph_facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
@@ -578,6 +594,8 @@ def add_fact(pyreason_fact: Fact) -> None:
             pyreason_fact.name = f'fact_{len(__node_facts)+len(__edge_facts)}'
         f = fact_edge.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.pred, pyreason_fact.bound, pyreason_fact.start_time, pyreason_fact.end_time, pyreason_fact.static)
         __edge_facts.append(f)
+    # for fact in __node_facts:
+    #     print(fact.__str__())
 
 
 def add_annotation_function(function: Callable) -> None:
@@ -704,7 +722,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold):
             __rules.append(r)
 
     # Setup logical program
-    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.allow_ground_rules)
+    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.allow_ground_rules, settings.use_gpu)
     __program.available_labels_node = __node_labels
     __program.available_labels_edge = __edge_labels
     __program.specific_node_labels = __specific_node_labels
