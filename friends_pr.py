@@ -33,10 +33,10 @@ def hello_world():
         print(f'TIMESTEP - {t}')
         print(df)
         print()
-    dataframes = pr.filter_and_sort_edges(interpretation, ['owns'])
-    for t, df in enumerate(dataframes):
-        print(f'TIMESTEP - {t}')
-        print(df)
-        print()
+        dataframes = pr.filter_and_sort_edges(interpretation, ['owns'])
+        for t, df in enumerate(dataframes):
+            print(f'TIMESTEP - {t}')
+            print(df)
+            print()
 
 hello_world()
