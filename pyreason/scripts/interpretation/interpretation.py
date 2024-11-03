@@ -2302,19 +2302,19 @@ def process_bounds_on_cpu(interpretations_node, grounding, clause_l):
 	bounds_flat = np.array([val for b in bounds for val in b], dtype=np.float32)  # Flattened array
 	return bounds_flat
 @cuda.jit
-def get_qualified_node_groundings_gpu_kernel(bounds_flat, clause_l, clause_bnd, results, grounding_length):
+def get_qualified_node_groundings_gpu_kernel(bounds_flat, clause_bnd, results, grounding_length):
 	idx = cuda.grid(1)
 	if idx < grounding_length:
-		# Access elements in the flattened array
-		l = bounds_flat[idx * 3]     # l
-		u = bounds_flat[idx * 3 + 1] # u
-		# s = bounds_flat[idx * 3 + 2] # s (if needed)
+		# Access flattened interval data
+		l = bounds_flat[idx * 3]     # Lower bound
+		u = bounds_flat[idx * 3 + 1] # Upper bound
 
-		# Apply the condition
-		if l <= clause_bnd.l and u <= clause_bnd.u:
+		# Compare with the clause bounds
+		if l <= clause_bnd[0] and u <= clause_bnd[1]:  # Accessing l and u from clause_bnd
 			results[idx] = idx
 		else:
 			results[idx] = -1
+
 #
 # Main function to process grounding on the GPU
 @numba.njit(cache=True)
@@ -2322,6 +2322,7 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 	# Process bounds on CPU with @njit function
 	bounds_flat = process_bounds_on_cpu(interpretations_node, grounding, clause_l)
 	grounding_length = len(grounding)
+	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float32)
 	results = np.full(grounding_length, -1, dtype=np.int32)  # Initialize the results array
 
 	# Define kernel launch parameters
@@ -2330,7 +2331,7 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 
 	# Launch the GPU kernel (Numba will handle data transfer automatically)
 	with numba.objmode():
-		get_qualified_node_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat, clause_l, clause_bnd, results, grounding_length)
+		get_qualified_node_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat, clause_bnd_flat, results, grounding_length)
 
 	# Filter out unqualified nodes after kernel execution
 	qualified_groundings = numba.typed.List.empty_list(numba.types.unicode_type)
