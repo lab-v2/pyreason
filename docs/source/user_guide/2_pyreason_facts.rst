@@ -18,3 +18,12 @@ To create a new **Fact** object in PyReason, use the `Fact` class with the follo
 5. **static (bool):** If the fact should be active for the entire program. In which case `start_time` and `end_time` will be ignored
 
 
+Fact Example 
+~~~~~~~~~~~~
+
+To add a fact in PyReason, use the command:
+
+.. code:: python
+    
+   import pyreason as pr
+   pr.add_fact(pr.Fact(name='fact1', component='node/edge name', attribute='attribute name', bound=[1, 1], start_time=0, end_time=2))
