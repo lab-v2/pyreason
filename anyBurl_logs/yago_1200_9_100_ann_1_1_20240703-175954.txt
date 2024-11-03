@@ -1,0 +1,9 @@
+Importing pyreason now...
+Pyreason import done!
+Time:6.716 sec, Memory:76.023 MB.
+Output file=anyBurl_subrules/subrule_yago_1200_9_100_ann_1_1_20240703-175954.txt
+Running PyReason now...
+Rule count: 1
+parallel_computing: True
+Preparation time: 114.63 sec; Preparation memory: 2280.187 MB.
+Starting inference...

@@ -1,0 +1,1 @@
+playsFor(X,x_0):[0.95,1] <-1 isAffiliatedTo(X,x_0):[0.1,1], Notts_County_F.C.(x_0)
