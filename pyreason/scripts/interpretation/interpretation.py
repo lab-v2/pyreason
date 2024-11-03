@@ -906,7 +906,10 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 				grounding = get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, predicate_map_edge, clause_label, edges)
 
 			# Narrow subset based on predicate (save the edges that are qualified to use for finding future groundings faster)
-			qualified_groundings = get_qualified_edge_groundings(interpretations_edge, grounding, clause_label, clause_bnd)
+			if not use_gpu:
+				qualified_groundings = get_qualified_edge_groundings_cpu(interpretations_edge, grounding, clause_label, clause_bnd)
+			else:
+				qualified_groundings = get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_label, clause_bnd)
 			# with numba.objmode():
 			# 	print(f'Groundings in clause type edge:: {groundings}')
 			# 	print(f'Goundings edges in clause type edge:: {groundings_edges}')
@@ -2014,7 +2017,7 @@ def check_edge_grounding_threshold_satisfaction(interpretations_edge, grounding,
 
 	# Available is all neighbors that have a particular label with bound inside [0,1]
 	elif threshold_quantifier_type == 'available':
-		neigh_len = len(get_qualified_edge_groundings(interpretations_edge, grounding, clause_label, interval.closed(0, 1)))
+		neigh_len = len(get_qualified_edge_groundings_cpu(interpretations_edge, grounding, clause_label, interval.closed(0, 1)))
 
 	qualified_neigh_len = len(qualified_grounding)
 	satisfaction = _satisfies_threshold(neigh_len, qualified_neigh_len, threshold)
@@ -2296,13 +2299,13 @@ def get_edge_rule_edge_clause_subset(clause_var_1, clause_var_2, target_edge, su
 	return subset_source, subset_target
 # Define the Numba-compatible CPU function
 @numba.njit(cache=True)
-def process_bounds_on_cpu(interpretations_node, grounding, clause_l):
+def process_bounds_on_cpu(interpretations, grounding, clause_l):
 	# Prepare bounds as flattened array for compatibility with GPU
-	bounds = [(interpretations_node[node].world[clause_l].l, interpretations_node[node].world[clause_l].u) for node in grounding]
+	bounds = [(interpretations[comp].world[clause_l].l, interpretations[comp].world[clause_l].u) for comp in grounding]
 	bounds_flat = np.array([val for b in bounds for val in b], dtype=np.float32)  # Flattened array
 	return bounds_flat
 @cuda.jit
-def get_qualified_node_groundings_gpu_kernel(bounds_flat, clause_bnd, results, grounding_length):
+def get_qualified_groundings_gpu_kernel(bounds_flat, clause_bnd, results, grounding_length):
 	idx = cuda.grid(1)
 	if idx < grounding_length:
 		# Access flattened interval data
@@ -2335,15 +2338,46 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 		bounds_flat_device = cuda.to_device(bounds_flat)
 		clause_bnd_flat_device = cuda.to_device(clause_bnd_flat)
 		results_device = cuda.device_array(grounding_length, dtype=np.int32)  # Allocate results array on device
-		get_qualified_node_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat_device, clause_bnd_flat_device, results_device, grounding_length)
+		get_qualified_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat_device, clause_bnd_flat_device, results_device, grounding_length)
 
 	# Filter out unqualified nodes after kernel execution
-	qualified_groundings = numba.typed.List.empty_list(numba.types.unicode_type)
+	qualified_groundings = numba.typed.List.empty_list(node_type)
 	for i in range(grounding_length):
 		if results[i] != -1:
 			qualified_groundings.append(grounding[i])
 
 	return qualified_groundings
+
+#
+# Main function to process grounding on the GPU
+@numba.njit(cache=True)
+def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l, clause_bnd):
+	# Process bounds on CPU with @njit function
+	bounds_flat = process_bounds_on_cpu(interpretations_edge, grounding, clause_l)
+	grounding_length = len(grounding)
+	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float32)
+	results = np.full(grounding_length, -1, dtype=np.int32)  # Initialize the results array
+
+	# Define kernel launch parameters
+	threads_per_block = 256
+	blocks_per_grid = (grounding_length + (threads_per_block - 1)) // threads_per_block
+
+	# Launch the GPU kernel (Numba will handle data transfer automatically)
+	with numba.objmode():
+		# Transfer data to the GPU
+		bounds_flat_device = cuda.to_device(bounds_flat)
+		clause_bnd_flat_device = cuda.to_device(clause_bnd_flat)
+		results_device = cuda.device_array(grounding_length, dtype=np.int32)  # Allocate results array on device
+		get_qualified_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat_device, clause_bnd_flat_device, results_device, grounding_length)
+
+	# Filter out unqualified nodes after kernel execution
+	qualified_groundings = numba.typed.List.empty_list(edge_type)
+	for i in range(grounding_length):
+		if results[i] != -1:
+			qualified_groundings.append(grounding[i])
+
+	return qualified_groundings
+
 
 @numba.njit(cache=True)
 def get_qualified_node_groundings_cpu(interpretations_node, grounding, clause_l, clause_bnd):
@@ -2357,7 +2391,7 @@ def get_qualified_node_groundings_cpu(interpretations_node, grounding, clause_l,
 
 
 @numba.njit(cache=True)
-def get_qualified_edge_groundings(interpretations_edge, grounding, clause_l, clause_bnd):
+def get_qualified_edge_groundings_cpu(interpretations_edge, grounding, clause_l, clause_bnd):
 	# Filter the grounding by the predicate and bound of the clause
 	qualified_groundings = numba.typed.List.empty_list(edge_type)
 	for e in grounding:
