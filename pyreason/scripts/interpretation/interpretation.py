@@ -2312,7 +2312,20 @@ def process_edge_bounds_on_cpu(interpretations, grounding, clause_l):
 	bounds_flat = np.array([val for b in bounds for val in b], dtype=np.float32)  # Flattened array
 	return bounds_flat
 @cuda.jit
-def get_qualified_groundings_gpu_kernel(bounds_flat, clause_bnd, results, grounding_length):
+def get_qualified_node_groundings_gpu_kernel(bounds_flat, clause_bnd, results, grounding_length):
+	idx = cuda.grid(1)
+	if idx < grounding_length:
+		# Access flattened interval data
+		l = bounds_flat[idx * 3]     # Lower bound
+		u = bounds_flat[idx * 3 + 1] # Upper bound
+
+		# Compare with the clause bounds
+		if l <= clause_bnd[0] and u <= clause_bnd[1]:  # Accessing l and u from clause_bnd
+			results[idx] = idx
+		else:
+			results[idx] = -1
+@cuda.jit
+def get_qualified_edge_groundings_gpu_kernel(bounds_flat, clause_bnd, results, grounding_length):
 	idx = cuda.grid(1)
 	if idx < grounding_length:
 		# Access flattened interval data
@@ -2345,7 +2358,7 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 		# bounds_flat_device = cuda.to_device(bounds_flat)
 		# clause_bnd_flat_device = cuda.to_device(clause_bnd_flat)
 		# results_device = cuda.device_array(grounding_length, dtype=np.int32)  # Allocate results array on device
-		get_qualified_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat, clause_bnd_flat, results, grounding_length)
+		get_qualified_node_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat, clause_bnd_flat, results, grounding_length)
 
 	# Filter out unqualified nodes after kernel execution
 	qualified_groundings = numba.typed.List.empty_list(node_type)
@@ -2375,7 +2388,7 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 		# bounds_flat_device = cuda.to_device(bounds_flat)
 		# clause_bnd_flat_device = cuda.to_device(clause_bnd_flat)
 		# results_device = cuda.device_array(grounding_length, dtype=np.int32)  # Allocate results array on device
-		get_qualified_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat, clause_bnd_flat, results, grounding_length)
+		get_qualified_edge_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat, clause_bnd_flat, results, grounding_length)
 
 	# Filter out unqualified nodes after kernel execution
 	qualified_groundings = numba.typed.List.empty_list(edge_type)
