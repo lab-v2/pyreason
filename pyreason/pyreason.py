@@ -203,7 +203,16 @@ class _Settings:
         :return: bool
         """
         return self.__allow_ground_rules
-
+    @use_gpu.setter
+    def use_gpu(self, value: bool) -> None:
+        """Set whether to use GPU. Default is False
+        :param value: use_gpu or not
+        :raise TypeError: If not boolean, raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('valuehas to be bool')
+        else:
+            self.__use_gpu = value
     @verbose.setter
     def verbose(self, value: bool) -> None:
         """Set verbose mode. Default is True
