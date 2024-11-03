@@ -2301,7 +2301,7 @@ def get_edge_rule_edge_clause_subset(clause_var_1, clause_var_2, target_edge, su
 @numba.njit(cache=True)
 def process_node_bounds_on_cpu(interpretations, grounding, clause_l):
 	# Prepare bounds as flattened array for compatibility with GPU
-	bounds = [(interpretations[node].world[clause_l].l, interpretations[node].world[clause_l].u) for node in grounding]
+	bounds = [(interpretations[node].world[clause_l].l, interpretations[node].world[clause_l].u) for node in grounding if clause_l is not None and node in interpretations and clause_l in interpretations[node].world]
 	bounds_flat = np.array([val for b in bounds for val in b], dtype=np.float32)  # Flattened array
 	return bounds_flat
 # Define the Numba-compatible CPU function
