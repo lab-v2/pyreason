@@ -906,10 +906,10 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 				grounding = get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, predicate_map_edge, clause_label, edges)
 
 			# Narrow subset based on predicate (save the edges that are qualified to use for finding future groundings faster)
-			if not use_gpu:
-				qualified_groundings = get_qualified_edge_groundings_cpu(interpretations_edge, grounding, clause_label, clause_bnd)
-			else:
-				qualified_groundings = get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_label, clause_bnd)
+			# if not use_gpu:
+			qualified_groundings = get_qualified_edge_groundings_cpu(interpretations_edge, grounding, clause_label, clause_bnd)
+			# else:
+			# 	qualified_groundings = get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_label, clause_bnd)
 			# with numba.objmode():
 			# 	print(f'Groundings in clause type edge:: {groundings}')
 			# 	print(f'Goundings edges in clause type edge:: {groundings_edges}')
