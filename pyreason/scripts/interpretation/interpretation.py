@@ -2299,9 +2299,16 @@ def get_edge_rule_edge_clause_subset(clause_var_1, clause_var_2, target_edge, su
 	return subset_source, subset_target
 # Define the Numba-compatible CPU function
 @numba.njit(cache=True)
-def process_bounds_on_cpu(interpretations, grounding, clause_l):
+def process_node_bounds_on_cpu(interpretations, grounding, clause_l):
 	# Prepare bounds as flattened array for compatibility with GPU
-	bounds = [(interpretations[comp].world[clause_l].l, interpretations[comp].world[clause_l].u) for comp in grounding]
+	bounds = [(interpretations[node].world[clause_l].l, interpretations[node].world[clause_l].u) for node in grounding]
+	bounds_flat = np.array([val for b in bounds for val in b], dtype=np.float32)  # Flattened array
+	return bounds_flat
+# Define the Numba-compatible CPU function
+@numba.njit(cache=True)
+def process_edge_bounds_on_cpu(interpretations, grounding, clause_l):
+	# Prepare bounds as flattened array for compatibility with GPU
+	bounds = [(interpretations[edge].world[clause_l].l, interpretations[edge].world[clause_l].u) for edge in grounding]
 	bounds_flat = np.array([val for b in bounds for val in b], dtype=np.float32)  # Flattened array
 	return bounds_flat
 @cuda.jit
@@ -2323,7 +2330,7 @@ def get_qualified_groundings_gpu_kernel(bounds_flat, clause_bnd, results, ground
 @numba.njit(cache=True)
 def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l, clause_bnd):
 	# Process bounds on CPU with @njit function
-	bounds_flat = process_bounds_on_cpu(interpretations_node, grounding, clause_l)
+	bounds_flat = process_node_bounds_on_cpu(interpretations_node, grounding, clause_l)
 	grounding_length = len(grounding)
 	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float32)
 	results = np.full(grounding_length, -1, dtype=np.int32)  # Initialize the results array
@@ -2353,7 +2360,7 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 @numba.njit(cache=True)
 def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l, clause_bnd):
 	# Process bounds on CPU with @njit function
-	bounds_flat = process_bounds_on_cpu(interpretations_edge, grounding, clause_l)
+	bounds_flat = process_edge_bounds_on_cpu(interpretations_edge, grounding, clause_l)
 	grounding_length = len(grounding)
 	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float32)
 	results = np.full(grounding_length, -1, dtype=np.int32)  # Initialize the results array
