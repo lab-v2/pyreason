@@ -5,7 +5,7 @@ PyReason Settings
                         
 +------------------------------+------------------+-------------------------------------------------------+
 | Setting                      | Default          | Description                                           |
-+------------------------------+------------------+-------------------------------------------------------+
++==============================+==================+=======================================================+
 | verbose                      | True             | Returns whether verbose mode is on                    |
 +------------------------------+------------------+-------------------------------------------------------+
 | output to file               | False            | Returns whether output is going to be printed to file |
@@ -30,7 +30,7 @@ PyReason Settings
 +------------------------------+------------------+-------------------------------------------------------+
 | static graph facts           | True             | Returns whether to make graph facts static.           |
 +------------------------------+------------------+-------------------------------------------------------+
-| store interpretation changes   | True            | Returns whether to track changes in the interpretation.|
+| store interpretation changes   | True             | Returns whether to track changes in the interpretation.|
 +------------------------------+------------------+-------------------------------------------------------+
 | parallel computing            | False            | Returns whether to use multiple CPU cores for inference. |
 +------------------------------+------------------+-------------------------------------------------------+
