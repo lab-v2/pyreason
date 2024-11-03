@@ -104,43 +104,6 @@ Now we can load the rule from the file using the following code:
         pr.add_rules_from_file('rules.txt')
 
 
-Rule Parsing
-~~~~~~~~~~~~
-Rule parser take in rule_text, name, custom_thresholds, infer_edges, set_static, and immediate_rule as input and reads the rule as follows:
-
-1. Extract *delta_t* of rule if it exists, else, set it to 0
-2. Add :[1,1] or :[0,0] to the end of each element if a bound is not specified
-3. Check if there are custom thresholds for the rule such as forall in string form
-4. Transform bound strings into pr.intervals
-5. Find the target predicate, bounds, and annotation function if any.
-6. Assign type of rule  
-
-    - if one head variable -> 'node' type
-
-    - else, 'edge' type
-
-7. Get the variables in the body, if there's an operator in the body then discard anything that comes after the operator, but keep the variables
-8. Create array of *thresholds* to keep track of for each neighbor criterion.
-
-    .. code:: text
-
-        thresholds = [(comparison, (number/percent, total/available), thresh)]
-
-9. Create array to store clauses for nodes or edges: 
-
-    .. code:: text
-
-        clauses = node/edge, [subset]/[subset1, subset2], label, interval, operator
-
-    - The length clauses array should be equal to custom_thresholds
-
-10. Add edges between head variables if necessary
-11. Returns Rule Object
-    
-    .. code:: python
-
-        rule = rule.Rule(name, rule_type, target, head_variables, numba.types.uint16(t), clauses, target_bound, thresholds, ann_fn, weights, edges, set_static, immediate_rule)
-        return rule
 
 
 
