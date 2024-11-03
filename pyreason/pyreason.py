@@ -46,8 +46,7 @@ class _Settings:
         self.__parallel_computing = None
         self.__update_mode = None
         self.__allow_ground_rules = None
-        self.__use_gpu = cuda.is_available()
-        print(cuda.is_available())
+        self.__use_gpu = None
         self.reset()
 
     def reset(self):
@@ -67,7 +66,7 @@ class _Settings:
         self.__parallel_computing = False
         self.__update_mode = 'intersection'
         self.__allow_ground_rules = False
-        self.__use_gpu = cuda.is_available()
+        self.__use_gpu = False
 
     @property
     def use_gpu(self) -> bool:

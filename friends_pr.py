@@ -14,6 +14,7 @@ def hello_world():
 
     # Modify pyreason settings to make verbose
     pr.settings.verbose = True     # Print info to screen
+    pr.settings.use_gpu = True
     # pr.settings.optimize_rules = False  # Disable rule optimization for debugging
 
     # Load all the files into pyreason
