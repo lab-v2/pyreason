@@ -2325,8 +2325,6 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float32)
 	results = np.full(grounding_length, -1, dtype=np.int32)  # Initialize the results array
 
-
-
 	# Define kernel launch parameters
 	threads_per_block = 256
 	blocks_per_grid = (grounding_length + (threads_per_block - 1)) // threads_per_block
@@ -2347,81 +2345,6 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 
 	return qualified_groundings
 
-
-
-
-#
-# @numba.njit(cache=True)
-# def get_qualified_node_groundings_cpu(interpretations_node, grounding, clause_l, clause_bnd):
-# 	# Filter the grounding by the predicate and bound of the clause
-# 	qualified_groundings = numba.typed.List.empty_list(node_type)
-# 	for n in grounding:
-# 		if is_satisfied_node(interpretations_node, n, (clause_l, clause_bnd)):
-# 			qualified_groundings.append(n)
-#
-# 	return qualified_groundings
-
-
-# def preprocess_interpretations(interpretations_node, grounding):
-# 	# Create a mapping of each unique string node to a unique integer
-# 	unique_nodes = list(set(grounding))
-# 	node_to_id = {node: i for i, node in enumerate(unique_nodes)}
-# 	id_to_node = {i: node for node, i in node_to_id.items()}  # Reverse mapping for later use
-#
-# 	# Convert grounding list and interpretation dictionary to arrays
-# 	nodes = np.array([node_to_id[n] for n in grounding], dtype=np.int32)  # Integer IDs for nodes
-# 	bounds = np.array([interpretations_node[n] for n in grounding], dtype=np.float32)  # Assuming float bounds
-#
-# 	return nodes, bounds, id_to_node  # Return id_to_node for later decoding
-# @cuda.jit
-# def get_qualified_node_groundings_gpu_kernel(nodes, bounds, clause_l, clause_bnd, results):
-# 	idx = cuda.grid(1)  # Get the global thread index
-# 	if idx < nodes.size:
-# 		# Apply the predicate and bound check here; adjust as necessary
-# 		if bounds[idx] >= clause_bnd:  # Example condition; update to your actual condition
-# 			results[idx] = nodes[idx]  # Store qualified node's integer ID
-# 		else:
-# 			results[idx] = -1  # Use -1 as a marker for unqualified nodes
-#
-# @cuda.jit
-# def get_qualified_node_groundings_gpu(nodes, bounds, clause_l, clause_bnd, results):
-# 	idx = cuda.grid(1)  # Get global thread index
-# 	if idx < nodes.size:
-# 		# Apply the predicate and bound check here; adjust as necessary
-# 		if bounds[idx] >= clause_bnd:  # Example condition
-# 			results[idx] = nodes[idx]  # Store qualified node
-# 		else:
-# 			results[idx] = -1  # Use -1 as a marker for unqualified nodes
-#
-# @numba.njit(cache=True)
-# def get_qualified_node_groundings(interpretations_node, grounding, clause_l, clause_bnd, use_gpu=False):
-# 	if use_gpu:
-# 		# Preprocess data for GPU
-# 		nodes, bounds = preprocess_interpretations(interpretations_node, grounding)
-#
-# 		# Allocate result array for GPU
-# 		results = np.full(nodes.size, -1, dtype=np.int32)  # -1 indicates unqualified nodes
-#
-# 		# Transfer data to GPU
-# 		d_nodes = cuda.to_device(nodes)
-# 		d_bounds = cuda.to_device(bounds)
-# 		d_results = cuda.to_device(results)
-#
-# 		# Configure GPU kernel launch parameters
-# 		threads_per_block = 256
-# 		blocks_per_grid = (nodes.size + (threads_per_block - 1)) // threads_per_block
-#
-# 		# Launch the GPU kernel
-# 		get_qualified_node_groundings_gpu[blocks_per_grid, threads_per_block](d_nodes, d_bounds, clause_l, clause_bnd,
-# 																			  d_results)
-#
-# 		# Copy results back to CPU and filter out unqualified nodes
-# 		results = d_results.copy_to_host()
-# 		return [nodes[i] for i in range(nodes.size) if results[i] != -1]
-# 	else:
-# 		# Fall back to the original CPU implementation if CUDA is not available
-# 		return get_qualified_node_groundings_cpu(interpretations_node, grounding, clause_l, clause_bnd)
-#
 @numba.njit(cache=True)
 def get_qualified_node_groundings_cpu(interpretations_node, grounding, clause_l, clause_bnd):
 	# Filter the grounding by the predicate and bound of the clause
@@ -2830,63 +2753,6 @@ def are_satisfied_node(interpretations, comp, nas):
 	return result
 
 
-# Wrapper function to select between GPU and CPU functions
-# def is_satisfied_wrapper(world, comp, na):
-# 	# Check if GPU is available
-#
-# 	if cuda.is_available():
-# 		# Use the GPU-based method
-# 		print('CUDA available')
-# 		return False
-# 		# result = world.check_single_bound_on_gpu(na[0], na[1])
-# 		# return result
-# 	else:
-# 		print('CUDA na')
-# 		# Use the CPU-based method
-# 		result = world.is_satisfied(na[0], na[1])
-# 		return result
-# @cuda.jit
-# def is_satisfied_gpu(label_lower, label_upper, rule_lower, rule_upper, result):
-# 	"""Check if the bounds of `label` are within the bounds of `rule` on the GPU."""
-# 	# Only one thread is needed since we're handling a single comparison
-# 	if label_lower <= rule_lower and label_upper <= rule_upper:
-# 		result[0] = True
-# 	else:
-# 		result[0] = False
-# @numba.njit(cache=True)
-# def convert_to_gpu_interval(interval):
-#     """Convert an IntervalGPU instance to a Numba-compatible structured array for CUDA compatibility."""
-#     gpu_interval = np.empty(1, dtype=interval_gpu_dtype)[0]  # Create a single structured element
-#     gpu_interval['l'] = interval.l
-#     gpu_interval['u'] = interval.u
-#     gpu_interval['s'] = interval.s
-#     return gpu_interval
-
-
-# # Corrected `check_single_bound_on_gpu`
-# def check_single_bound_on_gpu(world, label, rule_bound):
-# 	# Ensure label exists in world
-# 	if label not in world:
-# 		raise KeyError(f"Label '{label}' not found in world dictionary.")
-#
-# 	rule_bnd = convert_to_gpu_interval(rule_bound)
-# 	label_bnd = convert_to_gpu_interval(world[label])
-#
-# 	# Prepare result array to store a single boolean value
-# 	result = np.zeros(1, dtype=np.bool_)
-#
-# 	# Transfer each attribute if using CUDA kernels with simple values
-# 	d_label_lower = cuda.to_device(np.array([label_bnd.l]))
-# 	d_label_upper = cuda.to_device(np.array([label_bnd.u]))
-# 	d_rule_lower = cuda.to_device(np.array([rule_bnd.l]))
-# 	d_rule_upper = cuda.to_device(np.array([rule_bnd.u]))
-# 	d_result = cuda.to_device(result)
-#
-# 	# Launch kernel with one thread (single check)
-# 	is_satisfied_gpu[1, 1](d_label_lower[0], d_label_upper[0], d_rule_lower[0], d_rule_upper[0], d_result)
-#
-# 	# Copy result back to host
-# 	return d_result.copy_to_host()[0]
 @numba.njit(cache=True)
 def is_satisfied_node(interpretations, comp, na):
 	result = False
