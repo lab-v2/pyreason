@@ -2308,7 +2308,7 @@ def process_node_bounds_on_cpu(interpretations, grounding, clause_l):
 @numba.njit(cache=True)
 def process_edge_bounds_on_cpu(interpretations, grounding, clause_l):
 	# Prepare bounds as flattened array for compatibility with GPU
-	bounds = [(interpretations[edge].world[clause_l].l, interpretations[edge].world[clause_l].u) for edge in grounding]
+	bounds = [(interpretations[edge].world[clause_l].l, interpretations[edge].world[clause_l].u) for edge in grounding if not (clause_l is None)]
 	bounds_flat = np.array([val for b in bounds for val in b], dtype=np.float32)  # Flattened array
 	return bounds_flat
 @cuda.jit
