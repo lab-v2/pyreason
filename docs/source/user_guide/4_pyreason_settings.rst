@@ -1,12 +1,12 @@
 
 PyReason Settings
 =================
+*short description of what setting is and does
++-----------------+------------------+------------------------------------+
+| Setting         | Default          | Description                        |
++-----------------+------------------+------------------------------------+
+| verbose         | True             | Returns whether verbose mode is on  |
++-----------------+------------------+------------------------------------+
+| output to file  | False            | Returns whether output is going to be printed to file |
++-----------------+------------------+------------------------------------+
 
-
-
-+---------+------------------+------------+
-| Setting | Default          |Description |
-+---------+------------------+------------+
-| Row 1   | Data 1.1         | Data 1.2   |
-| Row 2   | Data 2.1         | Data 2.2   |
-+---------+------------------+------------+
