@@ -1,4 +1,4 @@
-PyReason Facts
+Facts
 -----
 -  This section outlines Fact creation and implementation. See `here <https://pyreason--60.org.readthedocs.build/en/60/key_concepts/key_concepts.html#fact>`_ for more information on Facts in PyReason.
 

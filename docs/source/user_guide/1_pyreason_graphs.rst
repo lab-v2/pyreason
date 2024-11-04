@@ -1,4 +1,4 @@
-PyReason Graphs
+Graphs
 ===============
 PyReason reasons over knowledge graphs. Graphs serve as a knowledge base with initial conditions given to nodes and edges.
 These initial conditions are used along with :ref:`PyReason rules <pyreason_rules>` that we'll see later on to infer new relations or attributes.
@@ -131,8 +131,9 @@ Bounds are between 0 (false) and 1 (true).  The attribute value of the key/value
 
 For example in the graph above, the attribute "Friends" is set to 1. This is translated into the lower bound of the interval ``[1,1]``.
 
-Creating False bounds ``[0,0]`` is a little tricky since the value of a NetworkX attribute cannot be a list, and PyReason only modifies the
-lower bound keeping the upper bound as 1. To do this, we can set the attribute as a string as seen below:
+.. note::
+    Creating False bounds ``[0,0]`` is a little tricky since the value of a NetworkX attribute cannot be a list, and PyReason only modifies the
+    lower bound keeping the upper bound as 1. To do this, we can set the attribute as a string as seen below.
 
 .. code:: python
 

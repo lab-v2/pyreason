@@ -1,5 +1,5 @@
 
-PyReason Settings
+Settings
 =================
 PyReason setting intialize the starting conditions for any PyReason functionality.
                         

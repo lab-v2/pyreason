@@ -1,6 +1,6 @@
 .. _pyreason_rules:
 
-PyReason Rules
+Rules
 ==============
 -  This section outlines Rule creation and implementation. See `here <https://pyreason--60.org.readthedocs.build/en/60/key_concepts/key_concepts.html#rule>`_ for more information on Rules in PyReason.
 
