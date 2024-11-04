@@ -11,4 +11,4 @@ Contents
     :caption: Contents:
     :glob:
 
-   ./*
+   ./basic_tutorial.rst
