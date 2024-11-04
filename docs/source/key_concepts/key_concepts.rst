@@ -1,6 +1,7 @@
 Understanding Key Concepts
 ==========================
 
+.. _rule:
 Rule
 ~~~~
 
