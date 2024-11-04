@@ -4,7 +4,7 @@ License
 This repository is licensed under `BSD-2-Clause <https://github.com/lab-v2/pyreason/blob/main/LICENSE.md>`_.
 
 Trademark Permission
-====================
+--------------------
 .. |logo| image:: _static/pyreason_logo.jpg
    :width: 50
 
