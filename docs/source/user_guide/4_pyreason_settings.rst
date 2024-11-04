@@ -26,37 +26,37 @@ To reset all settings to their default values, use the following code:
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
 | Setting                       | Default          | Description                                                                              |
 +===============================+==================+==========================================================================================+
-| verbose                       | True             | Returns whether verbose mode is on                                                       |
+| verbose                       | True             | Whether verbose mode is on                                                       |
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
-| output to file                | False            | Returns whether output is going to be printed to file                                    |
+| output to file                | False            | Whether output is going to be printed to file                                    |
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
-| output file name              | 'pyreason_output'| Returns the name the file output will be saved as.                                       |
+| output file name              | 'pyreason_output'| The name the file output will be saved as.                                       |
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
-| graph attribute parsing       | True             | Returns whether graph will be parsed for attributes.                                     |
+| graph attribute parsing       | True             | Whether graph will be parsed for attributes.                                     |
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
-| abort on inconsistency        | False            | Returns whether program will abort on encountering an inconsistency.                     |
+| abort on inconsistency        | False            | Whether program will abort on encountering an inconsistency.                     |
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
-| memory profile                | False            | Returns whether the program will profile maximum memory usage.                           |
+| memory profile                | False            | Whether the program will profile maximum memory usage.                           |
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
-| reverse digraph               | False            | Returns whether the graph will be reversed.                                              |
+| reverse digraph               | False            | Whether the graph will be reversed.                                              |
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
-| atom trace                    | False            | Returns whether to keep track of all atoms responsible for firing rules.                 |
+| atom trace                    | False            | Whether to keep track of all atoms responsible for firing rules.                 |
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
-| save graph attributes to trace| False            | Returns whether to save graph attribute facts to the rule trace.                         |
+| save graph attributes to trace| False            | Whether to save graph attribute facts to the rule trace.                         |
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
-| canonical                     | False            | Returns whether the interpretation is canonical.                                         |
+| canonical                     | False            | Whether the interpretation is canonical.                                         |
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
-| inconsistency check           | True             | Returns whether to check for inconsistencies in the interpretation.                      |
+| inconsistency check           | True             | Whether to check for inconsistencies in the interpretation.                      |
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
-| static graph facts            | True             | Returns whether to make graph facts static.                                              |
+| static graph facts            | True             | Whether to make graph facts static.                                              |
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
-| store interpretation changes  | True             | Returns whether to track changes in the interpretation.                                  |
+| store interpretation changes  | True             | Whether to track changes in the interpretation.                                  |
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
-| parallel computing            | False            | Returns whether to use multiple CPU cores for inference.                                 |
+| parallel computing            | False            | Whether to use multiple CPU cores for inference.                                 |
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
-| update mode                   | 'intersection'   | Returns the mode for updating interpretations. Options are 'intersection' or 'override'. |
+| update mode                   | 'intersection'   | The mode for updating interpretations. Options are 'intersection' or 'override'. |
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
-| allow ground rules            | False            | Returns whether rules can have ground atoms.                                             |
+| allow ground rules            | False            | Whether rules can have ground atoms.                                             |
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
 
 
