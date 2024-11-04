@@ -2302,7 +2302,7 @@ def get_edge_rule_edge_clause_subset(clause_var_1, clause_var_2, target_edge, su
 def process_node_bounds_on_cpu(interpretations, grounding, clause_l):
 	# Prepare bounds as flattened array for compatibility with GPU
 	bounds = [(interpretations[node].world[clause_l].l, interpretations[node].world[clause_l].u) for node in grounding if clause_l is not None and node in interpretations and clause_l in interpretations[node].world]
-	bounds_flat = np.array([val for b in bounds for val in b], dtype=np.float64)  # Flattened array
+	bounds_flat = np.array([val for b in bounds for val in b], dtype=np.float32)  # Flattened array
 	# bounds_flat = np.array([val for b in bounds for val in b])  # Flattened array
 	return bounds_flat
 # Define the Numba-compatible CPU function
@@ -2310,7 +2310,7 @@ def process_node_bounds_on_cpu(interpretations, grounding, clause_l):
 def process_edge_bounds_on_cpu(interpretations, grounding, clause_l):
 	# Prepare bounds as flattened array for compatibility with GPU
 	bounds = [(interpretations[edge].world[clause_l].l, interpretations[edge].world[clause_l].u) for edge in grounding if clause_l is not None and edge in interpretations and clause_l in interpretations[edge].world]
-	bounds_flat = np.array([val for b in bounds for val in b], dtype=np.float64)  # Flattened array
+	bounds_flat = np.array([val for b in bounds for val in b], dtype=np.float32)  # Flattened array
 	# bounds_flat = np.array([val for b in bounds for val in b])  # Flattened array
 	# with numba.objmode():
 	# 	print(f'Bounds list edge: {bounds}')
@@ -2350,7 +2350,7 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 	# Process bounds on CPU with @njit function
 	bounds_flat = process_node_bounds_on_cpu(interpretations_node, grounding, clause_l)
 	grounding_length = len(grounding)
-	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float64)
+	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float32)
 	results = np.full(grounding_length, 0, dtype=np.int32)  # Initialize the results array
 	# clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u])
 	# results = np.full(grounding_length, 0)  # Initialize the results array
@@ -2368,6 +2368,7 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 		get_qualified_node_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat, clause_bnd_flat, results, grounding_length)
 		cuda.synchronize()
 
+
 	# Filter out unqualified nodes after kernel execution
 	qualified_groundings = numba.typed.List.empty_list(node_type)
 	for i in range(grounding_length):
@@ -2384,7 +2385,7 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 	# Process bounds on CPU with @njit function
 	bounds_flat = process_edge_bounds_on_cpu(interpretations_edge, grounding, clause_l)
 	grounding_length = len(grounding)
-	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float64)
+	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float32)
 	results = np.full(grounding_length, 0, dtype=np.int32)  # Initialize the results array
 	# clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u])
 	# results = np.full(grounding_length, 0)  # Initialize the results array
