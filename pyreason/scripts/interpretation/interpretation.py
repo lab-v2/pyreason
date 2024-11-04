@@ -2368,7 +2368,7 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 		# results_device = cuda.device_array(grounding_length, dtype=np.int32)  # Allocate results array on device
 		get_qualified_node_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat, clause_bnd_flat, results, grounding_length)
 
-		cuda.synchronize()
+		# cuda.synchronize()
 
 
 	# Filter out unqualified nodes after kernel execution
@@ -2376,7 +2376,7 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 	for i in range(grounding_length):
 		if results[i] == 1:
 			qualified_groundings.append(grounding[i])
-	del bounds_flat, clause_bnd_flat, results
+	results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
 	# with numba.objmode():
 	# 	print('Node groundings qualified', qualified_groundings)
 	return qualified_groundings
@@ -2406,14 +2406,14 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 		# results_device = cuda.device_array(grounding_length, dtype=np.int32)  # Allocate results array on device
 		get_qualified_edge_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat, clause_bnd_flat, results, grounding_length)
 
-		cuda.synchronize()
+		# cuda.synchronize()
 
 	# Filter out unqualified nodes after kernel execution
 	qualified_groundings = numba.typed.List.empty_list(edge_type)
 	for i in range(grounding_length):
 		if results[i] == 1:
 			qualified_groundings.append(grounding[i])
-	del bounds_flat, clause_bnd_flat, results
+	results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
 	# with numba.objmode():
 	# 	print('edge groundings qualified', qualified_groundings)
 	return qualified_groundings
