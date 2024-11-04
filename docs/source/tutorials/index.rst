@@ -12,3 +12,4 @@ Contents
     :glob:
 
    ./basic_tutorial.rst
+   ./advanced_tutorial.rst
