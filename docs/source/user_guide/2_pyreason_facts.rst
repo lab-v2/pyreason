@@ -8,7 +8,7 @@ To create a new **Fact** object in PyReason, use the `Fact` class with the follo
 
 1. ``fact_text`` **(str):** The fact in text format
    
-.. code:: text
+.. code-block:: text
 
     'pred(x,y) : [0.2, 1]' or 'pred(x,y) : True'
 
@@ -23,7 +23,7 @@ Fact Example
 
 To add a fact in PyReason, use the command:
 
-.. code:: python
+.. code-block:: python
     
    import pyreason as pr
    pr.add_fact(pr.Fact(name='fact1', component='node/edge name', attribute='attribute name', bound=[1, 1], start_time=0, end_time=2))

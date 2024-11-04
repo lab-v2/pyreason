@@ -34,7 +34,7 @@ And
 #. Justin owns a cat and a dog
 #. John owns a dog
 
-.. code:: python
+.. code-block:: python
 
     import networkx as nx
 
@@ -60,7 +60,7 @@ And
    
 After the graph has been created, in the same file, the DiGraph object can be loaded with:
 
-.. code:: python
+.. code-block:: python
 
     import pyreason as pr
     pr.load_graph(graph)
@@ -71,7 +71,7 @@ GraphML Example
 ~~~~~~~~~~~~~~~~
 Using `GraphML <https://en.wikipedia.org/wiki/GraphML>`_, you can read a graph in from a file. Below is the file format for the graph that we made above:
 
-.. code:: xml
+.. code-block:: xml
 
     <?xml version='1.0' encoding='utf-8'?>
     <graphml
@@ -111,7 +111,7 @@ Using `GraphML <https://en.wikipedia.org/wiki/GraphML>`_, you can read a graph i
 
 Then load the graph using the following:
 
-.. code:: python
+.. code-block:: python
 
     import pyreason as pr
     pr.load_graphml('path_to_file')
@@ -135,7 +135,7 @@ For example in the graph above, the attribute "Friends" is set to 1. This is tra
     Creating False bounds ``[0,0]`` is a little tricky since the value of a NetworkX attribute cannot be a list, and PyReason only modifies the
     lower bound keeping the upper bound as 1. To do this, we can set the attribute as a string as seen below.
 
-.. code:: python
+.. code-block:: python
 
     import networkx as nx
     g = nx.DiGraph()
@@ -144,7 +144,7 @@ For example in the graph above, the attribute "Friends" is set to 1. This is tra
 
 When the graph is loaded: 
 
-.. code:: text
+.. code-block:: text
 
     "some_node" is given the attribute1: [1,1], and attribute2 :[0,0].
 
