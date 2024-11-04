@@ -1,8 +1,28 @@
 
 Settings
 =================
-PyReason setting intialize the starting conditions for any PyReason functionality.
-                        
+In this section, we detail the settings that can be used to configure PyReason. These settings can be used to control the behavior of the reasoning process.
+
+Settings can be accessed using the following code:
+
+.. code-block:: python
+
+    import pyreason as pr
+    pr.settings.setting_name = value
+
+Where ``setting_name`` is the name of the setting you want to change, and ``value`` is the value you want to set it to.
+Below is a table of all the settings that can be changed in PyReason using the code above.
+
+.. note::
+    All settings need to be modified **before** the reasoning process begins, otherwise they will not take effect.
+
+To reset all settings to their default values, use the following code:
+
+.. code-block:: python
+    import pyreason as pr
+    pr.reset_settings()
+
+
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
 | Setting                       | Default          | Description                                                                              |
 +===============================+==================+==========================================================================================+
