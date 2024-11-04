@@ -2393,7 +2393,7 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 	# results = np.full(grounding_length, 0)  # Initialize the results array
 
 	# Define kernel launch parameters
-	threads_per_block = 256
+	threads_per_block = 32
 	blocks_per_grid = (grounding_length + (threads_per_block - 1)) // threads_per_block
 
 	# Launch the GPU kernel (Numba will handle data transfer automatically)
