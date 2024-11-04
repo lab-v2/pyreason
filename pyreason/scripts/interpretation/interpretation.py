@@ -2310,6 +2310,9 @@ def process_edge_bounds_on_cpu(interpretations, grounding, clause_l):
 	# Prepare bounds as flattened array for compatibility with GPU
 	bounds = [(interpretations[edge].world[clause_l].l, interpretations[edge].world[clause_l].u) for edge in grounding if clause_l is not None and edge in interpretations and clause_l in interpretations[edge].world]
 	bounds_flat = np.array([val for b in bounds for val in b], dtype=np.float64)  # Flattened array
+	with numba.objmode():
+		print(f'Bounds list edge: {bounds}')
+		print(f'Bounds flat edge: {bounds_flat}')
 	return bounds_flat
 @cuda.jit
 def get_qualified_node_groundings_gpu_kernel(bounds_flat, clause_bnd, results, grounding_length):
@@ -2321,9 +2324,9 @@ def get_qualified_node_groundings_gpu_kernel(bounds_flat, clause_bnd, results, g
 
 		# Compare with the clause bounds
 		if l <= clause_bnd[0] and u <= clause_bnd[1]:  # Accessing l and u from clause_bnd
-			results[idx] = idx
+			results[idx] = 1
 		else:
-			results[idx] = -1
+			results[idx] = 0
 @cuda.jit
 def get_qualified_edge_groundings_gpu_kernel(bounds_flat, clause_bnd, results, grounding_length):
 	idx = cuda.grid(1)
@@ -2334,9 +2337,9 @@ def get_qualified_edge_groundings_gpu_kernel(bounds_flat, clause_bnd, results, g
 
 		# Compare with the clause bounds
 		if l <= clause_bnd[0] and u <= clause_bnd[1]:  # Accessing l and u from clause_bnd
-			results[idx] = idx
+			results[idx] = 1
 		else:
-			results[idx] = -1
+			results[idx] = 0
 
 #
 # Main function to process grounding on the GPU
@@ -2346,7 +2349,7 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 	bounds_flat = process_node_bounds_on_cpu(interpretations_node, grounding, clause_l)
 	grounding_length = len(grounding)
 	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float64)
-	results = np.full(grounding_length, -1, dtype=np.int32)  # Initialize the results array
+	results = np.full(grounding_length, 0, dtype=np.int32)  # Initialize the results array
 
 	# Define kernel launch parameters
 	threads_per_block = 256
@@ -2365,7 +2368,8 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 	for i in range(grounding_length):
 		if results[i] != -1:
 			qualified_groundings.append(grounding[i])
-
+	with numba.objmode():
+		print('Node groundings qualified', qualified_groundings)
 	return qualified_groundings
 
 #
@@ -2395,7 +2399,8 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 	for i in range(grounding_length):
 		if results[i] != -1:
 			qualified_groundings.append(grounding[i])
-
+	with numba.objmode():
+		print('edge groundings qualified', qualified_groundings)
 	return qualified_groundings
 
 
