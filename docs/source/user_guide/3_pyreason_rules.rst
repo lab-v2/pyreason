@@ -15,24 +15,24 @@ Rule Parameters
 
 To create a new **Rule** object in PyReason, use the ``Rule`` class with the following parameters:
 
-1. ``rule_text`` **(str)**:
+#. ``rule_text`` **(str)**:
    The rule in textual format. It should define a head and body using the syntax 
 
-   ``head <- body``, where the body can include predicates and optional bounds. See more on PyReason rule format `here <rule_formatting>`.
+   ``head <- body``, where the body can include predicates and optional bounds. See more on PyReason rule format :ref:`here <rule_formatting>`.
 
-2. ``name`` **(str, optional)**:
+#. ``name`` **(str, optional)**:
    A name for the rule, which will appear in the explainable rule trace.
 
-3. ``infer_edges`` **(bool, optional)**:
+#. ``infer_edges`` **(bool, optional)**:
    Indicates whether new edges should be inferred between the head variables when the rule is applied:
    
-   - If set to **True**, the rule will connect unconnected nodes when the body is satisfied.
-   - Else, set to **False**, the rule will **only** apply for nodes that are already connected, i.e edges already present in the graph (Default).
+   * If set to **True**, the rule will connect unconnected nodes when the body is satisfied.
+   * Else, set to **False**, the rule will **only** apply for nodes that are already connected, i.e edges already present in the graph (Default).
 
-4. ``set_static`` **(bool, optional)**:
+#. ``set_static`` **(bool, optional)**:
    Indicates whether the atom in the head should be set as static after the rule is applied. This means the bounds of that atom will no longer change for the duration of the program.
 
-5. ``custom_thresholds`` **(None, list, or dict, optional)**:
+#. ``custom_thresholds`` **(None, list, or dict, optional)**:
    A list or dictionary of custom thresholds for the rule.
    If not specified, default thresholds for ANY will be used. It can either be:
 
