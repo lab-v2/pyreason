@@ -25,9 +25,13 @@ A fact is a statement that is used to store information in the graph. It is a ba
 of knowledge that is used to derive new information. It can be thought of as an initial condition before reasoning.
 Facts are used to initialize the graph and are the starting point for reasoning.
 
-Annotated atom / function
+Annotated atom
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-An annotated atom or function in logic, refers to an atomic formula (or a simple predicate) that is augmented with additional information, such as a certainty factor, a probability, or other annotations that provide context or constraints.
+An annotated atom or function in logic, refers to an atomic formula (or a simple predicate) that is augmented with additional
+information, such as a certainty factor, a probability, or other annotations that provide context or constraints.
+
+In PyReason, an annotated atom is represented as a predicate with a bound, which is a list of two values that represent the lower and upper bounds of the predicate.
+For example, a predicate ``pred(x,y) : [0.2, 1]`` means that the predicate ``pred(x,y)`` is true with a certainty between 0.2 and 1.
 
 Interpretation
 ~~~~~~~~~~~~~~
