@@ -138,6 +138,7 @@ Only specifically structured annotation functions are allowed. The function has 
 
 
 .. code-block:: python
+
     import numba
     import numpy as np
 
@@ -159,7 +160,6 @@ Only specifically structured annotation functions are allowed. The function has 
         a = sum_lower_bounds / num_atoms
         b = sum_upper_bounds / num_atoms
         return a, b
-    
 
 
 This annotation function calculates the average of the bounds of all grounded atoms in the rule. The function is decorated
