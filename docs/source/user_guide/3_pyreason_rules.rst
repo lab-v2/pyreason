@@ -54,29 +54,29 @@ Rule Structure
 --------------
 Example rule in PyReason with correct formatting:
 
-    .. code:: text
+.. code-block:: text
 
-        head(x) : [1,1] <-1 clause1(y) : [1,1] , clause2(x,y) : [1,1] , clause3(y,z) : [1,1] , clause4(x,z) : [1,1]
+    head(x) : [1,1] <-1 clause1(y) : [1,1] , clause2(x,y) : [1,1] , clause3(y,z) : [1,1] , clause4(x,z) : [1,1]
 
 which is equivalent to:
 
-    .. code:: text
+.. code-block:: text
 
-        head(x) <-1 clause1(y), clause2(x,y), clause3(y,z), clause4(x,z)
+    head(x) <-1 clause1(y), clause2(x,y), clause3(y,z), clause4(x,z)
 
 The rule is read as follows: 
 
 **Head**:
 
-    .. code:: text
+.. code-block:: text
 
-        head(x) : [1,1]
+    head(x) : [1,1]
 
 **Body**:
 
-    .. code:: text
+.. code-block:: text
 
-        clause1(x,y) : [1,1], clause2(y,z) : [1,1], clause3(x,z) : [1,1]
+    clause1(x,y) : [1,1], clause2(y,z) : [1,1], clause3(x,z) : [1,1]
 
 
 The **head** and **body** are separated by an arrow (``<-``), and the rule is applied to the head after ``1`` timestep if the body conditions are met.
@@ -89,10 +89,10 @@ Add the rule directly
 
 To add the rule directly, we must specify the rule and (optionally) a name for it.
 
-    .. code:: python
+.. code-block:: python
 
-        import pyreason as pr
-        pr.add_rule(pr.Rule('head(x) <-1 body1(y), body2(x,y), body3(y,z), body4(x,z)', 'rule_name'))
+    import pyreason as pr
+    pr.add_rule(pr.Rule('head(x) <-1 body1(y), body2(x,y), body3(y,z), body4(x,z)', 'rule_name'))
 
 The name helps understand which rules fired during reasoning later on.
 
@@ -102,7 +102,7 @@ Add the rule from a .txt file
 To add the rule from a text file, ensure the file is in .txt format, and contains the rule in the format shown above. This
 allows for multiple rules to be added at once, with each rule on a new line. Comments can be added to the file using the ``#`` symbol, and will be ignored by PyReason.
 
-    .. code:: text
+    .. code-block:: text
 
         head1(x) <-1 body(y), body2(x,y), body3(y,z), body4(x,z)
         head2(x) <-1 body(y), body2(x,y), body3(y,z), body4(x,z)
@@ -110,7 +110,7 @@ allows for multiple rules to be added at once, with each rule on a new line. Com
 
 Now we can load the rules from the file using the following code:
 
-    .. code:: python
+    .. code-block:: python
 
         import pyreason as pr
         pr.add_rules_from_file('rules.txt')
