@@ -1,7 +1,7 @@
 
 PyReason Settings
 =================
-
+PyReason setting intialize the starting conditions for any PyReason functionality.
                         
 +-------------------------------+------------------+------------------------------------------------------------------------------------------+
 | Setting                       | Default          | Description                                                                              |
