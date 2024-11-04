@@ -69,4 +69,7 @@ For example, consider the following example of two predicates that are inconsist
     sick and healthy
 
 In this case, the predicates "sick" and "healthy" are inconsistent with each other because they cannot both be true at the same time.
-We can model this in PyReason such that when one predicate is true, the other becomes false automatically. See :ref:`here <inconsistent_predicate_list>` for more information.
+We can model this in PyReason such that when one predicate is has a certain bound ``[l, u]``, the other predicate is given
+a bound ``[1-u, 1-l]`` automatically. See :ref:`here <inconsistent_predicate_list>` for more information.
+
+In this case, if "sick" is true with a bound ``[1, 1]``, then "healthy" is automatically set to ``[0, 0]``.
