@@ -2351,13 +2351,13 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 	bounds_flat = process_node_bounds_on_cpu(interpretations_node, grounding, clause_l)
 	grounding_length = len(grounding)
 	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float32)
-	results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
-	# results = np.full(grounding_length, 0, dtype=np.int32)  # Initialize the results array
+	# results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
+	results = np.full(grounding_length, 0, dtype=np.int32)  # Initialize the results array
 	# clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u])
 	# results = np.full(grounding_length, 0)  # Initialize the results array
 
 	# Define kernel launch parameters
-	threads_per_block = 32
+	threads_per_block = 256
 	blocks_per_grid = (grounding_length + (threads_per_block - 1)) // threads_per_block
 
 	# Launch the GPU kernel (Numba will handle data transfer automatically)
@@ -2376,7 +2376,7 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 	for i in range(grounding_length):
 		if results[i] == 1:
 			qualified_groundings.append(grounding[i])
-	results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
+	# results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
 	# with numba.objmode():
 	# 	print('Node groundings qualified', qualified_groundings)
 	return qualified_groundings
@@ -2389,13 +2389,13 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 	bounds_flat = process_edge_bounds_on_cpu(interpretations_edge, grounding, clause_l)
 	grounding_length = len(grounding)
 	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float32)
-	results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
-	# results = np.full(grounding_length, 0, dtype=np.int32)  # Initialize the results array
+	# results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
+	results = np.full(grounding_length, 0, dtype=np.int32)  # Initialize the results array
 	# clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u])
 	# results = np.full(grounding_length, 0)  # Initialize the results array
 
 	# Define kernel launch parameters
-	threads_per_block = 32
+	threads_per_block = 256
 	blocks_per_grid = (grounding_length + (threads_per_block - 1)) // threads_per_block
 
 	# Launch the GPU kernel (Numba will handle data transfer automatically)
@@ -2413,7 +2413,7 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 	for i in range(grounding_length):
 		if results[i] == 1:
 			qualified_groundings.append(grounding[i])
-	results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
+	# results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
 	# with numba.objmode():
 	# 	print('edge groundings qualified', qualified_groundings)
 	return qualified_groundings
