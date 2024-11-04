@@ -2363,13 +2363,13 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 	# Launch the GPU kernel (Numba will handle data transfer automatically)
 	with numba.objmode():
 		# Transfer data to the GPU
-		bounds_flat_device = cuda.to_device(bounds_flat)
-		clause_bnd_flat_device = cuda.to_device(clause_bnd_flat)
-		results_device = cuda.device_array(grounding_length, dtype=np.int32)  # Allocate results array on device
-		get_qualified_node_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat_device, clause_bnd_flat_device, results_device, grounding_length)
+		# bounds_flat_device = cuda.to_device(bounds_flat)
+		# clause_bnd_flat_device = cuda.to_device(clause_bnd_flat)
+		# results_device = cuda.device_array(grounding_length, dtype=np.int32)  # Allocate results array on device
+		get_qualified_node_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat, clause_bnd_flat, results, grounding_length)
 
 		# Copy results back to host
-		results = results_device.copy_to_host()
+		# results = results_device.copy_to_host()
 		# cuda.synchronize()
 
 
@@ -2403,13 +2403,13 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 	# Launch the GPU kernel (Numba will handle data transfer automatically)
 	with numba.objmode():
 		# Transfer data to the GPU
-		bounds_flat_device = cuda.to_device(bounds_flat)
-		clause_bnd_flat_device = cuda.to_device(clause_bnd_flat)
-		results_device = cuda.device_array(grounding_length, dtype=np.int32)  # Allocate results array on device
-		get_qualified_edge_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat_device, clause_bnd_flat_device, results_device, grounding_length)
+		# bounds_flat_device = cuda.to_device(bounds_flat)
+		# clause_bnd_flat_device = cuda.to_device(clause_bnd_flat)
+		# results_device = cuda.device_array(grounding_length, dtype=np.int32)  # Allocate results array on device
+		get_qualified_edge_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat, clause_bnd_flat, results, grounding_length)
 
 		# Copy results back to host
-		results = results_device.copy_to_host()
+		# results = results_device.copy_to_host()
 		# cuda.synchronize()
 
 	# Filter out unqualified nodes after kernel execution
