@@ -2321,8 +2321,8 @@ def get_qualified_node_groundings_gpu_kernel(bounds_flat, clause_bnd, results, g
 	idx = cuda.grid(1)
 	if idx < grounding_length:
 		# Access flattened interval data
-		l = bounds_flat[idx * 3]     # Lower bound
-		u = bounds_flat[idx * 3 + 1] # Upper bound
+		l = bounds_flat[idx * 2]     # Lower bound
+		u = bounds_flat[idx * 2 + 1] # Upper bound
 
 		# Compare with the clause bounds
 		if l >= clause_bnd[0] and u <= clause_bnd[1]:  # Accessing l and u from clause_bnd
@@ -2334,8 +2334,8 @@ def get_qualified_edge_groundings_gpu_kernel(bounds_flat, clause_bnd, results, g
 	idx = cuda.grid(1)
 	if idx < grounding_length:
 		# Access flattened interval data
-		l = bounds_flat[idx * 3]     # Lower bound
-		u = bounds_flat[idx * 3 + 1] # Upper bound
+		l = bounds_flat[idx * 2]     # Lower bound
+		u = bounds_flat[idx * 2 + 1] # Upper bound
 
 		# Compare with the clause bounds
 		if l >= clause_bnd[0] and u <= clause_bnd[1]:  # Accessing l and u from clause_bnd
