@@ -16,6 +16,7 @@ Rule
 -  Every rule has a head and a body. The head determines what will
    change in the graph if the body is true.
 
+.. _fact:
 Fact
 ~~~~
 
