@@ -2,7 +2,7 @@ PyReason Custom Threshold Example
 =================================
 
 In this tutorial, we will look at how to run PyReason with Custom Thresholds. 
-Custom Thresholds are parameters in the :ref:`Rule Parameters <pyreason_rules>`. 
+Custom Thresholds are parameters in the :ref:`Rule Class <pyreason_rules>`. 
 
 Graph
 ------------
