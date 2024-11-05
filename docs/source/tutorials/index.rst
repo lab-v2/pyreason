@@ -14,3 +14,4 @@ Contents
    ./basic_tutorial.rst
    ./advanced_tutorial.rst
    ./custom_thresholds.rst
+   ./infer_edges.rst
