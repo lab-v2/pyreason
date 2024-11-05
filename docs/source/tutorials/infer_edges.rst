@@ -162,7 +162,8 @@ More Examples of Infer Edges
 
 Below are three more examples of methods that turn infer_edges to *True* when creating a rule and there expected outputs.
 
-1. 
+A first example 
+
 .. code:: python
     
     def test_anyBurl_rule_2():
@@ -203,6 +204,7 @@ Below are three more examples of methods that turn infer_edges to *True* when cr
 Expected Output:
 
 .. code:: text
+
     Timestep: 0
     Timestep: 1
 
@@ -223,7 +225,8 @@ Expected Output:
                                             component isConnectedTo
     0  (Riga_International_Airport, Vnukovo_Internati...    [1.0, 1.0]
 
-2. 
+A second example
+
 .. code:: python
 
     def test_anyBurl_rule_3():
@@ -263,6 +266,7 @@ Expected Output:
 Expected Output:
 
 .. code:: text
+
     Timestep: 0
     Timestep: 1
 
@@ -283,7 +287,8 @@ Expected Output:
                                 component isConnectedTo
     0  (Vnukovo_International_Airport, Yali)    [1.0, 1.0]
 
-3. 
+A thrd example: 
+
 .. code:: python
 
     def test_anyBurl_rule_4():
@@ -323,6 +328,7 @@ Expected Output:
 Expected Output:
 
 .. code:: text
+
     Timestep: 0
     Timestep: 1
 
