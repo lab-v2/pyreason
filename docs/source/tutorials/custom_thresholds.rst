@@ -1,12 +1,14 @@
 PyReason Custom Threshold Example
 =================================
-In this tutorial, we will look at how to run PyReason with Custom Thresholds. Custom Thresholds are parameters in the <Rule https://pyreason--60.org.readthedocs.build/en/60/user_guide/3_pyreason_rules.html#rule-parameters>.\ class 
 
+In this tutorial, we will look at how to run PyReason with Custom Thresholds. 
+Custom Thresholds are parameters in the :class:`Rule` class 
+(`https://pyreason--60.org.readthedocs.build/en/60/user_guide/3_pyreason_rules.html#rule-parameters`_).
 
 Graph
 ------------
 
-First we load in the GraphML, this graph has friends and text messages.
+First, we load in the GraphML. This graph has friends and text messages.
 
 .. code:: xml
 
@@ -41,7 +43,6 @@ We then initialize and load the graph using the following code:
     import pyreason as pr
     from pyreason import Threshold
 
-
     def test_custom_thresholds():
         # Reset PyReason
         pr.reset()
@@ -57,7 +58,7 @@ We then initialize and load the graph using the following code:
         # Load all the files into pyreason
         pr.load_graphml(graph_path)
 
-Add in the custom thresholds. In this graph the custom_thresholds ensure that in order for the rules to be fired, specific criteria must be met. 
+Add in the custom thresholds. In this graph, the custom_thresholds ensure that in order for the rules to be fired, specific criteria must be met. 
 
     - The first threshold means that a rule is only fired if the number of views is greater than or equal to 1.
     - The second threshold requires that the percentage of views is greater than or equal to 100%.
@@ -69,7 +70,6 @@ Add in the custom thresholds. In this graph the custom_thresholds ensure that in
         Threshold("greater_equal", ("number", "total"), 1),
         Threshold("greater_equal", ("percent", "total"), 100),
     ]
-
 
 Next, add the Rules and Facts:
 
@@ -88,10 +88,9 @@ Next, add the Rules and Facts:
     pr.add_fact(pr.Fact("Viewed(Michelle)", "seen-fact-michelle", 1, 3))
     pr.add_fact(pr.Fact("Viewed(Amy)", "seen-fact-amy", 2, 3))
 
-Run the program
+Run the program:
 
 .. code:: python
-
 
     # Run the program for three timesteps to see the diffusion take place
     interpretation = pr.reason(timesteps=3)
@@ -118,11 +117,11 @@ Run the program
         1,
     ], "TextMessage should have ViewedByAll bounds [1,1] for t=2 timesteps"
 
-
 The intended output is:
 
 .. code:: text
-   Timestep: 0
+
+    Timestep: 0
     Timestep: 1
     Timestep: 2
     Timestep: 3
@@ -146,4 +145,3 @@ The intended output is:
     TIMESTEP - 3
         component ViewedByAll
     0  TextMessage  [1.0, 1.0]
-    
