@@ -70,7 +70,7 @@ Add in the custom thresholds. In this graph, the custom_thresholds ensure that i
         Threshold("greater_equal", ("percent", "total"), 100),
     ]
 
-Next, add the Rules and Facts:
+Next, add the Rules and Facts. The custom_thresholods are passed as parameters to the new Rule. The Facts indicate at what timestep each user will view the message. 
 
 .. code:: python
 
@@ -116,6 +116,7 @@ Run the program:
         1,
     ], "TextMessage should have ViewedByAll bounds [1,1] for t=2 timesteps"
 
+After the first 2 timesteps TextMessage has been ViewedByAll bounds [1,1]. Before, not every member of the group chat has viewd the message and therefore, due to the custom thresholds, the rule will not fire. 
 The intended output is:
 
 .. code:: text
