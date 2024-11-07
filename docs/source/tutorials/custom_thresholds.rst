@@ -4,36 +4,45 @@ PyReason Custom Threshold Example
 In this tutorial, we will look at how to run PyReason with Custom Thresholds. 
 Custom Thresholds are parameters in the :ref:`Rule Class <pyreason_rules>`. 
 
+The following graph represents a network of People and a Text Message in their group chat.
+.. image:: ../media/group_chat_graph.png
+
+
 Graph
 ------------
 
 First, we load in the GraphML. This graph has friends and text messages.
 
-.. code:: xml
+.. code:: python
 
-    <?xml version='1.0' encoding='utf-8'?>
-    <graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
-    <key id="d0" for="edge" attr.name="HaveAccess" attr.type="long" />
-    <graph edgedefault="directed">
-        <node id="TextMessage" />
-        <node id="Zach" />
-        <node id="Justin" />
-        <node id="Michelle" />
-        <node id="Amy" />
-        <edge source="Zach" target="TextMessage">
-        <data key="d0">1</data>
-        </edge>
-        <edge source="Justin" target="TextMessage">
-        <data key="d0">1</data>
-        </edge>
-        <edge source="Michelle" target="TextMessage">
-        <data key="d0">1</data>
-        </edge>
-        <edge source="Amy" target="TextMessage">
-        <data key="d0">1</data>
-        </edge>
-    </graph>
-    </graphml>
+   
+    import networkx as nx
+
+    # Create an empty graph
+    G = nx.Graph()
+
+    # Add nodes
+    nodes = ["TextMessage", "Zach", "Justin", "Michelle", "Amy"]
+    G.add_nodes_from(nodes)
+
+    # Add edges with attribute 'HaveAccess'
+    edges = [
+        ("Zach", "TextMessage", {"HaveAccess": 1}),
+        ("Justin", "TextMessage", {"HaveAccess": 1}),
+        ("Michelle", "TextMessage", {"HaveAccess": 1}),
+        ("Amy", "TextMessage", {"HaveAccess": 1})
+    ]
+    G.add_edges_from(edges)
+
+Rules and Custom Thresholds
+---------------------------
+Considering that we only want a text message to be considered viewed by all if it has been viewed by everyone that can view it, we define the rule as follows:
+
+..code :: text
+    ViewedByAll(x) <- HaveAccess(x,y), Viewed(y)
+
+The ``head`` of the rule is ``ViewedByAll(x)`` and the body is ``HaveAccess(x,y), Viewed(y)``. The head and body are separated by an arrow which means the rule will start evaluating from
+timestep 0.
 
 We then initialize and load the graph using the following code:
 
