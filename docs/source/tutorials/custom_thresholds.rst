@@ -5,7 +5,9 @@ In this tutorial, we will look at how to run PyReason with Custom Thresholds.
 Custom Thresholds are parameters in the :ref:`Rule Class <pyreason_rules>`. 
 
 The following graph represents a network of People and a Text Message in their group chat.
-.. image:: ../media/group_chat_graph.png
+
+.. image:: _static/group_chat_graph.png
+   :align: center
 
 
 Graph
