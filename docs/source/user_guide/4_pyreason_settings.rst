@@ -1,6 +1,6 @@
 
 Settings
-=================
+==========
 In this section, we detail the settings that can be used to configure PyReason. These settings can be used to control the behavior of the reasoning process.
 
 Settings can be accessed using the following code:
