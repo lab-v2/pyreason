@@ -54,7 +54,8 @@ Considering that we only want a text message to be considered viewed by all if i
 The ``head`` of the rule is ``ViewedByAll(x)`` and the body is ``HaveAccess(x,y), Viewed(y)``. The head and body are separated by an arrow which means the rule will start evaluating from
 timestep 0.
 
-We add the rule into pyreason with:
+Next, add in the custom thresholds. In this graph, the custom_thresholds ensure that in order for the rules to be fired, specific criteria must be met. 
+
 
 .. code:: python
 
@@ -69,21 +70,14 @@ We add the rule into pyreason with:
         Threshold("greater_equal", ("percent", "total"), 100),
     ]
 
+The ``user_defined_thresholds`` are a list of custom thresholds of the format: (quantifier, quantifier_type, thresh) where:
+- quantifier can be greater_equal, greater, less_equal, less, equal
+- quantifier_type is a tuple where the first element can be either number or percent and the second element can be either total or available
+- thresh represents the numerical threshold value to compare against
 
-Add in the custom thresholds. In this graph, the custom_thresholds ensure that in order for the rules to be fired, specific criteria must be met. 
+We add the rule into pyreason with:
 
-    - The first threshold means that a rule is only fired if the number of views is greater than or equal to 1.
-    - The second threshold requires that the percentage of views is greater than or equal to 100%.
-
-.. code:: python
-
-    # add custom thresholds
-    user_defined_thresholds = [
-        Threshold("greater_equal", ("number", "total"), 1),
-        Threshold("greater_equal", ("percent", "total"), 100),
-    ]
-
-Next, add the Rule, with the custom_thresholods are passed as parameters to the new Rule.  ``viewed_by_all_rule`` is the name of the rule. This helps to understand which rule/s are fired during reasoning later on.
+Next, add the Rule, with the ``user_defined_thresholds`` passed as parameters to the new Rule.  ``viewed_by_all_rule`` is the name of the rule. This helps to understand which rule/s are fired during reasoning later on.
 
 
 .. code:: python
@@ -96,14 +90,13 @@ Next, add the Rule, with the custom_thresholods are passed as parameters to the 
         )
     )
 
-The ``user_defined_thresholds`` are a list of custom thresholds of the format: (quantifier, quantifier_type, thresh) where:
-- quantifier can be greater_equal, greater, less_equal, less, equal
-- quantifier_type is a tuple where the first element can be either number or percent and the second element can be either total or available
-- thresh represents the numerical threshold value to compare against
-
 The custom thresholds are created corresponding to the two clauses ``(HaveAccess(x,y)`` and ``Viewed(y))`` as below:
 - ('greater_equal', ('number', 'total'), 1) (there needs to be at least one person who has access to TextMessage for the first clause to be satisfied)
 - ('greater_equal', ('percent', 'total'), 100) (100% of people who have access to TextMessage need to view the message for second clause to be satisfied)
+
+Facts 
+-----
+
 
 
     pr.add_fact(pr.Fact("Viewed(Zach)", "seen-fact-zach", 0, 3))
