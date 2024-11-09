@@ -6,7 +6,7 @@ Custom Thresholds are parameters in the :ref:`Rule Class <pyreason_rules>`.
 
 The following graph represents a network of People and a Text Message in their group chat.
 
-.. image:: ./group_chat_graph.png
+.. image:: ../media/group_chat_graph.png
    :align: center
 
 
@@ -167,4 +167,4 @@ After running the python file, the expected output is:
 1. For timestep 0, we set ``Zach -> Viewed: [1,1]`` and ``Justin -> Viewed: [1,1]`` in the facts
 2. For timestep 1, Michelle views the TextMessage as stated in facts ``Michelle -> Viewed: [1,1]``.
 3. For timestep 2, since Amy has just viewed the TextMessage, therefore ``Amy -> Viewed: [1,1]``. As per the rule,
-since all the people have viewed the TextMessage, the message is marked as ``ViewedByAll``.
+   since all the people have viewed the TextMessage, the message is marked as ``ViewedByAll``.
