@@ -68,7 +68,7 @@ There is only one fact we are going to use.
 
 .. code-block:: python
 
-    pr.add_fact(pr.Fact(name='popular-fact', component='customer_0', attribute='popular', 0, 5))
+    pr.add_fact(pr.Fact(name='popular-fact', fact_text='popular(customer_0)', 0, 5))
 
 Running Pyreason
 ----------------
