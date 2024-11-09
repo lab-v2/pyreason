@@ -6,7 +6,7 @@ Custom Thresholds are parameters in the :ref:`Rule Class <pyreason_rules>`.
 
 The following graph represents a network of People and a Text Message in their group chat.
 
-.. image:: ../../media/group_chat_graph.png
+.. image:: ../../../media/group_chat_graph.png
    :align: center
 
 
