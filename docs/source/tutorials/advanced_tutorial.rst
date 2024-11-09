@@ -68,8 +68,7 @@ There is only one fact we are going to use.
 
 .. code-block:: python
 
-    pr.add_fact(pr.Fact(name='popular-fact', component='customer_0', attribute='popular', bound=[1, 1], start_time=0, end_time=5))
-
+    pr.add_fact(pr.Fact(name='popular-fact', component='customer_0', attribute='popular', 0, 5))
 
 Running Pyreason
 ----------------
@@ -86,5 +85,7 @@ We now run the PyReason with the graph and the rules.
     df1 = pr.filter_and_sort_nodes(interpretation, ['trendy', 'cool_car', 'cool_pet', 'popular'])
     df2 = pr.filter_and_sort_edges(interpretation, ['car_friend', 'same_color_car'])
 
+Expected Output
+---------------
 .. note::
-    The complete code for this example is on github at advanced_graph.py
+    The complete code and excpected outputs can be found for this example is on github at advanced_graph.py
