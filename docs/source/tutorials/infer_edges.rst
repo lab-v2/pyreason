@@ -116,7 +116,7 @@ Next, add the Rule and set infer_edges to *True*
 
 This will should connect exactly one new relationship between A and Y. The Rule states that if there is a connection from Y to B, and B is Amsterdam Airport Schiphol, and A is Vnukovo International Airport, then infer that there is a connection from A to Y."
 
-Therefore the output of the graph after running 1 timestep should be a new connection [1,1] between Vnukovo_International_Airport (A) and Riga_International_Airport(B).
+Therefore the output of the graph after running 1 timestep should be a new connection [1,1] between Vnukovo_International_Airport (A) and Riga_International_Airport(Y).
 
 Run the program with assertions for testing purposes:
 
