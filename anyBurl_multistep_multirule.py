@@ -42,7 +42,7 @@ else:
 if args.rulefile:
     RULEFILE = str(args.rulefile)
 else:
-    RULEFILE = 'yago_1200_9_100_16ann_new' #Has 1775 rules
+    RULEFILE = 'yago_1200_9_100_16ann' #Has 1775 rules
 
 if args.graph:
     GRAPH = str(args.graph)
