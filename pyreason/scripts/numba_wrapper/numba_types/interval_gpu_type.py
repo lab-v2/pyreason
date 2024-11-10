@@ -8,15 +8,12 @@ class IntervalGPUType(types.Type):
     def __init__(self):
         super().__init__(name="IntervalGPU")
 
-# Create a single instance of IntervalGPUType
 interval_gpu_type = IntervalGPUType()
 
-# Associate IntervalGPU class with interval_gpu_type
 @typeof_impl.register(IntervalGPU)
 def typeof_interval(val, c):
     return interval_gpu_type
 
-# Type the constructor
 @type_callable(IntervalGPU)
 def type_interval_gpu(context):
     def typer(lo, hi):
@@ -24,7 +21,6 @@ def type_interval_gpu(context):
             return interval_gpu_type
     return typer
 
-# Register a data model for IntervalGPU
 @register_model(IntervalGPUType)
 class IntervalGPUModel(models.StructModel):
     def __init__(self, dmm, fe_type):
@@ -34,6 +30,5 @@ class IntervalGPUModel(models.StructModel):
         ]
         super().__init__(dmm, fe_type, members)
 
-# Enable attribute access
 make_attribute_wrapper(IntervalGPUType, 'l', 'l')
 make_attribute_wrapper(IntervalGPUType, 'u', 'u')

@@ -42,7 +42,7 @@ else:
 if args.rulefile:
     RULEFILE = str(args.rulefile)
 else:
-    RULEFILE = 'yago_1200_9_100_16ann' #Has 1775 rules
+    RULEFILE = 'yago_1200_9_100_16ann_new' #Has 1775 rules
 
 if args.graph:
     GRAPH = str(args.graph)
@@ -84,7 +84,6 @@ def run_pyreason(train_graphml_file='', subset_rules_file=''):
     # Pyreason settings and reset rules.
     pr.reset()
     pr.reset_rules()
-    pr.reset_settings()
 
     pr.settings.verbose = True
     pr.settings.atom_trace = False
@@ -105,6 +104,7 @@ def run_pyreason(train_graphml_file='', subset_rules_file=''):
     # Load all the files into pyreason
     pr.load_graphml(train_graphml_file)
     pr.add_rules_from_file(subset_rules_file, infer_edges=True)
+    # pr.add_rule(pr.Rule('playsFor(X,x_0):[0.95822454308094,1] <-1 isAffiliatedTo(X,x_0):[0.1,1], Southend_United_F.C.(x_0)', 'x_rule', infer_edges = True))
 
     # end_time = time.time()
     # mem = round(tracemalloc.get_traced_memory()[1]/(10**6), 3)
@@ -138,6 +138,8 @@ def run_pyreason(train_graphml_file='', subset_rules_file=''):
     # trace_save_time = end_time - start_time
     # mem = round(tracemalloc.get_traced_memory()[1]/(10**6), 3)
     # tracemalloc.stop()
+
+
     return True
 
 def main():
