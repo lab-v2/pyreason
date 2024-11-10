@@ -43,7 +43,6 @@ isAffiliatedTo(X,x_0):[0.971830985915493,1] <-1 playsFor(X,x_0):[0.1,1], Brøndb
 isConnectedTo(x_0,Y):[0.9140625,1] <-1 isConnectedTo(Y,x_0):[0.1,1], Brussels_Airport(x_0)
 hasGender(X,x_0):[0.9659863945578231,1] <-1 hasWonPrize(X,A):[0.1,1], hasWonPrize(x_1,A):[0.1,1], male(x_0), Max_Immelmann(x_1)
 hasGender(X,x_0):[0.9290123456790124,1] <-1 hasWonPrize(X,A):[0.1,1], hasWonPrize(x_1,A):[0.1,1], male(x_0), Israel_Gelfand(x_1)
-hasGender(X,x_0):[0.9304635761589404,1] <-1 hasWonPrize(X,A):[0.1,1], hasWonPrize(x_1,A):[0.1,1], male(x_0), Johnnie_Johnson_(RAF_officer)(x_1)
 hasGender(X,x_0):[0.9119496855345912,1] <-1 hasWonPrize(X,A):[0.1,1], hasWonPrize(x_1,A):[0.1,1], male(x_0), Har_Gobind_Khorana(x_1)
 hasGender(X,x_0):[0.9645776566757494,1] <-1 hasWonPrize(X,A):[0.1,1], hasWonPrize(x_1,A):[0.1,1], male(x_0), Pierre_Clostermann(x_1)
 hasGender(X,x_0):[0.9612756264236902,1] <-1 hasWonPrize(X,A):[0.1,1], hasWonPrize(x_1,A):[0.1,1], male(x_0), Bruce_K._Holloway(x_1)
