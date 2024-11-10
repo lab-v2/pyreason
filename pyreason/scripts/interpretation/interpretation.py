@@ -10,7 +10,8 @@ from numba import objmode, prange
 from numba import cuda
 import numpy as np
 
-from pyreason.scripts.interval.interval_gpu import IntervalGPU
+# from pyreason.scripts.interval.interval_gpu import IntervalGPU
+# import pyreason.scripts.numba_wrapper.numba_types.interval_gpu_type
 
 
 # Types for the dictionaries
@@ -2298,124 +2299,252 @@ def get_edge_rule_edge_clause_subset(clause_var_1, clause_var_2, target_edge, su
 
 	return subset_source, subset_target
 # Define the Numba-compatible CPU function
+# @numba.njit(cache=True)
+# def process_node_bounds_on_cpu(interpretations, grounding, clause_l):
+# 	# Prepare bounds as flattened array for compatibility with GPU
+# 	bounds = [(interpretations[node].world[clause_l].l, interpretations[node].world[clause_l].u) for node in grounding if clause_l is not None and node in interpretations and clause_l in interpretations[node].world]
+# 	bounds_flat = np.array([val for b in bounds for val in b], dtype=np.float32)  # Flattened array
+# 	return bounds_flat
+# # Define the Numba-compatible CPU function
+# @numba.njit(cache=True)
+# def process_edge_bounds_on_cpu(interpretations, grounding, clause_l):
+# 	# Prepare bounds as flattened array for compatibility with GPU
+# 	bounds = [(interpretations[edge].world[clause_l].l, interpretations[edge].world[clause_l].u) for edge in grounding if clause_l is not None and edge in interpretations and clause_l in interpretations[edge].world]
+# 	bounds_flat = np.array([val for b in bounds for val in b], dtype=np.float32)  # Flattened array
+# 	return bounds_flat
+# @cuda.jit
+# def get_qualified_node_groundings_gpu_kernel(bounds_flat, clause_bnd, results, grounding_length):
+# 	idx = cuda.grid(1)
+# 	if idx < grounding_length:
+# 		# Access flattened interval data
+# 		l = bounds_flat[idx * 2]     # Lower bound
+# 		u = bounds_flat[idx * 2 + 1] # Upper bound
+#
+# 		# Compare with the clause bounds
+# 		if l >= clause_bnd[0] and u <= clause_bnd[1]:  # Accessing l and u from clause_bnd
+# 			results[idx] = 1
+# 		else:
+# 			results[idx] = 0
+# @cuda.jit
+# def get_qualified_edge_groundings_gpu_kernel(bounds_flat, clause_bnd, results, grounding_length):
+# 	idx = cuda.grid(1)
+# 	if idx < grounding_length:
+# 		# Access flattened interval data
+# 		l = bounds_flat[idx * 2]     # Lower bound
+# 		u = bounds_flat[idx * 2 + 1] # Upper bound
+#
+# 		# Compare with the clause bounds
+# 		if l >= clause_bnd[0] and u <= clause_bnd[1]:  # Accessing l and u from clause_bnd
+# 			results[idx] = 1
+# 		else:
+# 			results[idx] = 0
+
 @numba.njit(cache=True)
 def process_node_bounds_on_cpu(interpretations, grounding, clause_l):
-	# Prepare bounds as flattened array for compatibility with GPU
-	bounds = [(interpretations[node].world[clause_l].l, interpretations[node].world[clause_l].u) for node in grounding if clause_l is not None and node in interpretations and clause_l in interpretations[node].world]
-	bounds_flat = np.array([val for b in bounds for val in b], dtype=np.float32)  # Flattened array
-	return bounds_flat
-# Define the Numba-compatible CPU function
+	# Initialize arrays for each attribute
+	l_array = []
+	u_array = []
+
+	for node in grounding:
+		if clause_l is not None and node in interpretations and clause_l in interpretations[node].world:
+			interval_data = interpretations[node].world[clause_l]
+			l_array.append(interval_data.l)
+			u_array.append(interval_data.u)
+
+	# Convert lists to numpy arrays
+	return (
+		np.array(l_array, dtype=np.float32),
+		np.array(u_array, dtype=np.float32)
+	)
+
+
 @numba.njit(cache=True)
 def process_edge_bounds_on_cpu(interpretations, grounding, clause_l):
-	# Prepare bounds as flattened array for compatibility with GPU
-	bounds = [(interpretations[edge].world[clause_l].l, interpretations[edge].world[clause_l].u) for edge in grounding if clause_l is not None and edge in interpretations and clause_l in interpretations[edge].world]
-	bounds_flat = np.array([val for b in bounds for val in b], dtype=np.float32)  # Flattened array
-	return bounds_flat
+	# Initialize arrays for each attribute
+	l_array = []
+	u_array = []
+
+	for edge in grounding:
+		if clause_l is not None and edge in interpretations and clause_l in interpretations[edge].world:
+			interval_data = interpretations[edge].world[clause_l]
+			l_array.append(interval_data.l)
+			u_array.append(interval_data.u)
+
+	# Convert lists to numpy arrays
+	return (
+		np.array(l_array, dtype=np.float32),
+		np.array(u_array, dtype=np.float32)
+	)
+
+
 @cuda.jit
-def get_qualified_node_groundings_gpu_kernel(bounds_flat, clause_bnd, results, grounding_length):
+def get_qualified_node_groundings_gpu_kernel(l_array, u_array, clause_bnd, results, grounding_length):
 	idx = cuda.grid(1)
 	if idx < grounding_length:
-		# Access flattened interval data
-		l = bounds_flat[idx * 2]     # Lower bound
-		u = bounds_flat[idx * 2 + 1] # Upper bound
+		l = l_array[idx]
+		u = u_array[idx]
 
-		# Compare with the clause bounds
-		if l >= clause_bnd[0] and u <= clause_bnd[1]:  # Accessing l and u from clause_bnd
+		if l >= clause_bnd[0] and u <= clause_bnd[1]:
 			results[idx] = 1
 		else:
 			results[idx] = 0
+
+
 @cuda.jit
-def get_qualified_edge_groundings_gpu_kernel(bounds_flat, clause_bnd, results, grounding_length):
+def get_qualified_edge_groundings_gpu_kernel(l_array, u_array, clause_bnd, results, grounding_length):
 	idx = cuda.grid(1)
 	if idx < grounding_length:
-		# Access flattened interval data
-		l = bounds_flat[idx * 2]     # Lower bound
-		u = bounds_flat[idx * 2 + 1] # Upper bound
+		l = l_array[idx]
+		u = u_array[idx]
 
-		# Compare with the clause bounds
-		if l >= clause_bnd[0] and u <= clause_bnd[1]:  # Accessing l and u from clause_bnd
+		if l >= clause_bnd[0] and u <= clause_bnd[1]:
 			results[idx] = 1
 		else:
 			results[idx] = 0
 
-#
-# Main function to process grounding on the GPU
+
 @numba.njit(cache=True)
 def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l, clause_bnd):
-	# Process bounds on CPU with @njit function
-	bounds_flat = process_node_bounds_on_cpu(interpretations_node, grounding, clause_l)
-	grounding_length = len(grounding)
+	# Process bounds on CPU with IntervalGPU objects
+	l_array, u_array = process_node_bounds_on_cpu(interpretations_node, grounding, clause_l)
+	grounding_length = len(l_array)
 	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float32)
-	# results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
-	results = np.full(grounding_length, 0, dtype=np.int32)  # Initialize the results array
-	# clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u])
-	# results = np.full(grounding_length, 0)  # Initialize the results array
+	results = np.zeros(grounding_length, dtype=np.int32)
+
+	# Transfer bounds and results to device using the helper function
+	# intervals_device = transfer_to_device(bounds_array)
+	# results_device = transfer_to_device(results)
 
 	# Define kernel launch parameters
 	threads_per_block = 256
 	blocks_per_grid = (grounding_length + (threads_per_block - 1)) // threads_per_block
 
-	# Launch the GPU kernel (Numba will handle data transfer automatically)
+	# Launch the GPU kernel
 	with numba.objmode():
-		# Transfer data to the GPU
-		# bounds_flat_device = cuda.to_device(bounds_flat)
-		# clause_bnd_flat_device = cuda.to_device(clause_bnd_flat)
-		# results_device = cuda.device_array(grounding_length, dtype=np.int32)  # Allocate results array on device
-		get_qualified_node_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat, clause_bnd_flat, results, grounding_length)
-
-		# Copy results back to host
-		# results = results_device.copy_to_host()
-		# cuda.synchronize()
-
+		get_qualified_node_groundings_gpu_kernel[blocks_per_grid, threads_per_block](
+			l_array, u_array, clause_bnd_flat, results, grounding_length
+		)
+		# results = results_device.copy_to_host()  # Copy results back to host
 
 	# Filter out unqualified nodes after kernel execution
 	qualified_groundings = numba.typed.List.empty_list(node_type)
 	for i in range(grounding_length):
 		if results[i] == 1:
 			qualified_groundings.append(grounding[i])
-	# results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
-	# with numba.objmode():
-	# 	print('Node groundings qualified', qualified_groundings)
+
 	return qualified_groundings
 
-#
-# Main function to process grounding on the GPU
+
 @numba.njit(cache=True)
 def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l, clause_bnd):
-	# Process bounds on CPU with @njit function
-	bounds_flat = process_edge_bounds_on_cpu(interpretations_edge, grounding, clause_l)
-	grounding_length = len(grounding)
+	# Process bounds on CPU with IntervalGPU objects
+	l_array, u_array = process_edge_bounds_on_cpu(interpretations_edge, grounding, clause_l)
+	grounding_length = len(l_array)
 	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float32)
-	# results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
-	results = np.full(grounding_length, 0, dtype=np.int32)  # Initialize the results array
-	# clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u])
-	# results = np.full(grounding_length, 0)  # Initialize the results array
+	results = np.zeros(grounding_length, dtype=np.int32)
+
+	# Transfer bounds and results to device using the helper function
+	# intervals_device = transfer_to_device(bounds_array)
+	# results_device = transfer_to_device(results)
 
 	# Define kernel launch parameters
 	threads_per_block = 256
 	blocks_per_grid = (grounding_length + (threads_per_block - 1)) // threads_per_block
 
-	# Launch the GPU kernel (Numba will handle data transfer automatically)
+	# Launch the GPU kernel
 	with numba.objmode():
-		# Transfer data to the GPU
-		# bounds_flat_device = cuda.to_device(bounds_flat)
-		# clause_bnd_flat_device = cuda.to_device(clause_bnd_flat)
-		# results_device = cuda.device_array(grounding_length, dtype=np.int32)  # Allocate results array on device
-		get_qualified_edge_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat, clause_bnd_flat, results, grounding_length)
-
-		# Copy results back to host
-		# results = results_device.copy_to_host()
-		# cuda.synchronize()
+		get_qualified_edge_groundings_gpu_kernel[blocks_per_grid, threads_per_block](
+			l_array, u_array, clause_bnd_flat, results, grounding_length
+		)
+	# results = results_device.copy_to_host()  # Copy results back to host
 
 	# Filter out unqualified nodes after kernel execution
 	qualified_groundings = numba.typed.List.empty_list(edge_type)
 	for i in range(grounding_length):
 		if results[i] == 1:
 			qualified_groundings.append(grounding[i])
-	# results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
-	# with numba.objmode():
-	# 	print('edge groundings qualified', qualified_groundings)
+
 	return qualified_groundings
+
+
+# #
+# # Main function to process grounding on the GPU
+# @numba.njit(cache=True)
+# def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l, clause_bnd):
+# 	# Process bounds on CPU with @njit function
+# 	bounds_flat = process_node_bounds_on_cpu(interpretations_node, grounding, clause_l)
+# 	grounding_length = len(grounding)
+# 	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float32)
+# 	# results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
+# 	results = np.full(grounding_length, 0, dtype=np.int32)  # Initialize the results array
+# 	# clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u])
+# 	# results = np.full(grounding_length, 0)  # Initialize the results array
+#
+# 	# Define kernel launch parameters
+# 	threads_per_block = 256
+# 	blocks_per_grid = (grounding_length + (threads_per_block - 1)) // threads_per_block
+#
+# 	# Launch the GPU kernel (Numba will handle data transfer automatically)
+# 	with numba.objmode():
+# 		# Transfer data to the GPU
+# 		# bounds_flat_device = cuda.to_device(bounds_flat)
+# 		# clause_bnd_flat_device = cuda.to_device(clause_bnd_flat)
+# 		# results_device = cuda.device_array(grounding_length, dtype=np.int32)  # Allocate results array on device
+# 		get_qualified_node_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat, clause_bnd_flat, results, grounding_length)
+#
+# 		# Copy results back to host
+# 		# results = results_device.copy_to_host()
+# 		# cuda.synchronize()
+#
+#
+# 	# Filter out unqualified nodes after kernel execution
+# 	qualified_groundings = numba.typed.List.empty_list(node_type)
+# 	for i in range(grounding_length):
+# 		if results[i] == 1:
+# 			qualified_groundings.append(grounding[i])
+# 	# results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
+# 	# with numba.objmode():
+# 	# 	print('Node groundings qualified', qualified_groundings)
+# 	return qualified_groundings
+#
+# #
+# # Main function to process grounding on the GPU
+# @numba.njit(cache=True)
+# def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l, clause_bnd):
+# 	# Process bounds on CPU with @njit function
+# 	bounds_flat = process_edge_bounds_on_cpu(interpretations_edge, grounding, clause_l)
+# 	grounding_length = len(grounding)
+# 	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float32)
+# 	# results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
+# 	results = np.full(grounding_length, 0, dtype=np.int32)  # Initialize the results array
+# 	# clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u])
+# 	# results = np.full(grounding_length, 0)  # Initialize the results array
+#
+# 	# Define kernel launch parameters
+# 	threads_per_block = 256
+# 	blocks_per_grid = (grounding_length + (threads_per_block - 1)) // threads_per_block
+#
+# 	# Launch the GPU kernel (Numba will handle data transfer automatically)
+# 	with numba.objmode():
+# 		# Transfer data to the GPU
+# 		# bounds_flat_device = cuda.to_device(bounds_flat)
+# 		# clause_bnd_flat_device = cuda.to_device(clause_bnd_flat)
+# 		# results_device = cuda.device_array(grounding_length, dtype=np.int32)  # Allocate results array on device
+# 		get_qualified_edge_groundings_gpu_kernel[blocks_per_grid, threads_per_block](bounds_flat, clause_bnd_flat, results, grounding_length)
+#
+# 		# Copy results back to host
+# 		# results = results_device.copy_to_host()
+# 		# cuda.synchronize()
+#
+# 	# Filter out unqualified nodes after kernel execution
+# 	qualified_groundings = numba.typed.List.empty_list(edge_type)
+# 	for i in range(grounding_length):
+# 		if results[i] == 1:
+# 			qualified_groundings.append(grounding[i])
+# 	# results = np.zeros(grounding_length, dtype=np.int32)  # Initialize results array with zeros
+# 	# with numba.objmode():
+# 	# 	print('edge groundings qualified', qualified_groundings)
+# 	return qualified_groundings
 
 
 @numba.njit(cache=True)
