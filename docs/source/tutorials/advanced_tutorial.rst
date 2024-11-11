@@ -64,11 +64,11 @@ Facts
 
 We now add the facts to the graph.
 There is only one fact we are going to use.
-1. customer_0 is popular from time 0 to 5.
+1. customer_0 is popular from time 0 to 20.
 
 .. code-block:: python
 
-    pr.add_fact(pr.Fact(name='popular-fact', fact_text='popular(customer_0)', 0, 5))
+    pr.add_fact(pr.Fact(name='popular-fact', fact_text='popular(customer_0)', 0, 20))
 
 Running Pyreason
 ----------------
