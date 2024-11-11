@@ -134,10 +134,10 @@ pr.add_rule(pr.Rule('cool_pet(x)<-1 owns_pet(x,y),Pet_2(y)', 'cool_pet_rule'))
 pr.add_rule(pr.Rule('trendy(x) <- cool_car(x) , cool_pet(x)', 'trendy_rule'))
 
 pr.add_rule(
-    pr.Rule("car_friend(x,y) <- owns_car(x,z), owns_car(y,z) , c_id(x) != c_id(y) ", "car_friend_rule",infer_edges=True))
+    pr.Rule("car_friend(x,y) <- owns_car(x,z), owns_car(y,z)", "car_friend_rule"))
 pr.add_rule(
-    pr.Rule("same_color_car(x, y) <- owns_car(x, c1) , owns_car(y, c2),  car_color_id(x,c1) == car_color_id(y,c2) , c_id(x) != c_id(y)",
-            "same_car_color_rule"))
+    pr.Rule("same_color_car(x, y) <- owns_car(x, c1) , owns_car(y, c2)","same_car_color_rule"))
+
 
 # Add a fact about 'customer_0' being popular
 pr.add_fact(pr.Fact('popular-fact', 'popular(customer_0)', 0, 20))

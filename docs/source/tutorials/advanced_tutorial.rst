@@ -56,8 +56,8 @@ The above rules are based on nodes. Now let us add some more rules based on the 
 
 .. code-block:: python
 
-    pr.add_rule(pr.Rule("car_friend(x,y) <- owns_car(x,z), owns_car(y,z) , c_id(x) != c_id(y) ", "car_friend_rule"))
-    pr.add_rule(pr.Rule("same_color_car(x, y) <- owns_car(x, c1) , owns_car(y, c2),  car_color_id(x,c1) == car_color_id(y,c2) , c_id(x) != c_id(y)","same_car_color_rule"))
+    pr.add_rule(pr.Rule("car_friend(x,y) <- owns_car(x,z), owns_car(y,z)", "car_friend_rule"))
+    pr.add_rule(pr.Rule("same_color_car(x, y) <- owns_car(x, c1) , owns_car(y, c2)","same_car_color_rule"))
 
 Facts
 -------
@@ -73,14 +73,14 @@ There is only one fact we are going to use.
 Running Pyreason
 ----------------
 
-We now run the PyReason with the graph and the rules.
+We now run the PyReason interpretation with the graph and the rules.
 
 .. code-block:: python
 
     interpretation = pr.reason(timesteps=6)
     # pr.save_rule_trace(interpretation)
 
-    interpretations_dict = interpretation.get_interpretation_dict()
+    interpretations_dict = interpretation.get_dict()
 
     df1 = pr.filter_and_sort_nodes(interpretation, ['trendy', 'cool_car', 'cool_pet', 'popular'])
     df2 = pr.filter_and_sort_edges(interpretation, ['car_friend', 'same_color_car'])
