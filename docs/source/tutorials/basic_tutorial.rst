@@ -106,7 +106,7 @@ We then load the graph from the file using the following code:
 .. code:: python
 
    import pyreason as pr
-   pr.load_graphml('path_to_file')
+   pr.load_graph(g)
 
 .. figure:: basic_graph.png
    :alt: image
