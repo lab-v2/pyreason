@@ -1,6 +1,7 @@
 # Test if the simple hello world program works
 import pyreason as pr
 import faulthandler
+import networkx as nx
 
 
 # Reset PyReason
@@ -8,15 +9,35 @@ pr.reset()
 pr.reset_rules()
 pr.reset_settings()
 
-# Modify the paths based on where you've stored the files we made above
-graph_path = './tests/friends_graph.graphml'
+
+# ================================ CREATE GRAPH====================================
+# Create a Directed graph
+g = nx.DiGraph()
+
+# Add the nodes
+g.add_nodes_from(['John', 'Mary', 'Justin'])
+g.add_nodes_from(['Dog', 'Cat'])
+
+# Add the edges and their attributes. When an attribute = x which is <= 1, the annotation
+# associated with it will be [x,1]. NOTE: These attributes are immutable
+# Friend edges
+g.add_edge('Justin', 'Mary', Friends=1)
+g.add_edge('John', 'Mary', Friends=1)
+g.add_edge('John', 'Justin', Friends=1)
+
+# Pet edges
+g.add_edge('Mary', 'Cat', owns=1)
+g.add_edge('Justin', 'Cat', owns=1)
+g.add_edge('Justin', 'Dog', owns=1)
+g.add_edge('John', 'Dog', owns=1)
+
 
 # Modify pyreason settings to make verbose
 pr.settings.verbose = True     # Print info to screen
 # pr.settings.optimize_rules = False  # Disable rule optimization for debugging
 
 # Load all the files into pyreason
-pr.load_graphml(graph_path)
+pr.load_graph(g)
 pr.add_rule(pr.Rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule'))
 pr.add_fact(pr.Fact('popular(Mary)', 'popular_fact', 0, 2))
 
