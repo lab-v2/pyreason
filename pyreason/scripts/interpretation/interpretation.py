@@ -2502,9 +2502,23 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 
 	# Launch the GPU kernel
 	with numba.objmode():
+		# CUDA events for timing
+		start_event = cuda.event()
+		end_event = cuda.event()
+
+		# Start timing
+		start_event.record()
 		get_qualified_node_groundings_gpu_kernel[blocks_per_grid, threads_per_block](
 			l_array, u_array, clause_bnd_flat, results, grounding_length
 		)
+		# Stop timing
+		end_event.record()
+		end_event.synchronize()  # Wait for kernel completion
+
+		# Compute elapsed time in milliseconds
+		elapsed_time = cuda.event_elapsed_time(start_event, end_event)
+		print('Node grounding time:')
+		print(elapsed_time)
 		# results = results_device.copy_to_host()  # Copy results back to host
 
 	# Filter out unqualified nodes after kernel execution
@@ -2534,9 +2548,24 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 
 	# Launch the GPU kernel
 	with numba.objmode():
+		# CUDA events for timing
+		start_event = cuda.event()
+		end_event = cuda.event()
+
+		# Start timing
+		start_event.record()
 		get_qualified_edge_groundings_gpu_kernel[blocks_per_grid, threads_per_block](
 			l_array, u_array, clause_bnd_flat, results, grounding_length
 		)
+		# Stop timing
+		end_event.record()
+		end_event.synchronize()  # Wait for kernel completion
+
+		# Compute elapsed time in milliseconds
+		elapsed_time = cuda.event_elapsed_time(start_event, end_event)
+		print('Edge grounding time:')
+		print(elapsed_time)
+
 	# results = results_device.copy_to_host()  # Copy results back to host
 
 	# Filter out unqualified nodes after kernel execution
