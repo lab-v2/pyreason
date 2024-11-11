@@ -108,6 +108,9 @@ We then initialize and load the graph using the following code:
         # Load all the files into pyreason
         pr.load_graphml(graph_path)
 
+Rules
+------------
+
 Next, add the Rule and set infer_edges to *True*
 
 .. code:: python
