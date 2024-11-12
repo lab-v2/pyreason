@@ -1,25 +1,40 @@
 # Test if the simple program works with thresholds defined
 import pyreason as pr
 from pyreason import Threshold
+import networkx as nx
 
 # Reset PyReason
 pr.reset()
 pr.reset_rules()
 
-# Modify the paths based on where you've stored the files we made above
-graph_path = "./tests/group_chat_graph.graphml"
+
+# Create an empty graph
+G = nx.DiGraph()
+
+# Add nodes
+nodes = ["TextMessage", "Zach", "Justin", "Michelle", "Amy"]
+G.add_nodes_from(nodes)
+
+# Add edges with attribute 'HaveAccess'
+G.add_edge("Zach", "TextMessage", HaveAccess=1)
+G.add_edge("Justin", "TextMessage", HaveAccess=1)
+G.add_edge("Michelle", "TextMessage", HaveAccess=1)
+G.add_edge("Amy", "TextMessage", HaveAccess=1)
+
+
 
 # Modify pyreason settings to make verbose
 pr.reset_settings()
 pr.settings.verbose = True  # Print info to screen
 
-# Load all the files into pyreason
-pr.load_graphml(graph_path)
+#load the graph
+pr.load_graph(G)
 
 # add custom thresholds
 user_defined_thresholds = [
     Threshold("greater_equal", ("number", "total"), 1),
     Threshold("greater_equal", ("percent", "total"), 100),
+
 ]
 
 pr.add_rule(
