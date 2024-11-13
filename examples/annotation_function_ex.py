@@ -51,28 +51,20 @@ def average_annotation_function():
 
 #average_annotation_function()
 
-import pyreason as pr
-import numba
-import numpy as np
+
 
 @numba.njit
 def lin_comb_ann_fn(annotations, weights):
     sum_lower_comb = 0
     sum_upper_comb = 0
     num_atoms = 0
-    constant =2
-    print("annotations",annotations)
-    print("weights",weights)
+    constant = .2
     # Iterate over the clauses in the rule
     for clause in annotations:
-        print("clause", clause)
         for atom in clause:
-            print("atom", atom)
             # Apply the weights to the lower and upper bounds
             sum_lower_comb += constant * atom.lower 
-            print("lower",sum_lower_comb)
             sum_upper_comb += constant * atom.upper 
-            print("upper",sum_upper_comb)
             num_atoms += 1
 
     # Return the weighted linear combination of the lower and upper bounds
