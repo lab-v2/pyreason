@@ -2,6 +2,8 @@
 import pyreason as pr
 import numba
 import numpy as np
+import networkx as nx
+
 
 
 
@@ -9,7 +11,8 @@ import numpy as np
 def avg_ann_fn(annotations, weights):
     # annotations contains the bounds of the atoms that were used to ground the rule. It is a nested list that contains a list for each clause
     # You can access for example the first grounded atom's bound by doing: annotations[0][0].lower or annotations[0][0].upper
-
+    print("annotation", annotations)
+    print("weights", weights)
     # We want the normalised sum of the bounds of the grounded atoms
     sum_upper_bounds = 0
     sum_lower_bounds = 0
@@ -53,15 +56,22 @@ def average_annotation_function():
 
 
 
+
+
+
 @numba.njit
 def lin_comb_ann_fn(annotations, weights):
     sum_lower_comb = 0
     sum_upper_comb = 0
     num_atoms = 0
     constant = .2
+    print("annotation",annotations)
+    print("weights", weights)
     # Iterate over the clauses in the rule
     for clause in annotations:
+        print("clause", clause)
         for atom in clause:
+            print("atom", atom)
             # Apply the weights to the lower and upper bounds
             sum_lower_comb += constant * atom.lower 
             sum_upper_comb += constant * atom.upper 
@@ -73,16 +83,19 @@ def lin_comb_ann_fn(annotations, weights):
 
 # Function to run the test
 def linear_combination_annotation_function():
+
     # Reset PyReason before starting the test
     pr.reset()
     pr.reset_rules()
 
-    # Allow ground rules (non-abstract)
     pr.settings.allow_ground_rules = True
 
+    # Modify pyreason settings to make verbose
+    #pr.settings.verbose = True 
+
     # Add facts (P(A) and P(B) with bounds)
-    pr.add_fact(pr.Fact('P(A) : [.3, .1]'))
-    pr.add_fact(pr.Fact('P(B) : [.2, .2]'))
+    pr.add_fact(pr.Fact('P(A) : [.3, 1]'))
+    pr.add_fact(pr.Fact('P(B) : [.2, 1]'))
     
     #constant = 2
 
@@ -109,4 +122,5 @@ def linear_combination_annotation_function():
     assert interpretation.query('linear_combination_function(A, B) : [0.21000000000000002, 1.0]'), 'Linear combination function should be [0.105, 1]'
 
 # Run the test function
+#average_annotation_function()
 linear_combination_annotation_function()
