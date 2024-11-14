@@ -2663,7 +2663,7 @@ def get_qualified_edge_groundings_cpu(interpretations_edge, grounding, clause_l,
 		elapsed_time = end_time - start_time
 		print(start_time)
 		print(end_time)
-		print('Within the method satisfaction for edge clause CPU:')
+		print('Within the method satisfaction for edge clause CPU (complete for loop that calls is_satisfied_edge() for each grounding!):')
 		print(elapsed_time)
 	return qualified_groundings
 
