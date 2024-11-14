@@ -2561,7 +2561,7 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 	entire_start_time = 0.0
 	entire_end_time= 0.0
 	entire_elapsed_time = 0.0
-	with numba.objmode(start_time_gpu_method='float64'):
+	with numba.objmode(start_time_gpu_method='float64', entire_start_time='float64'):
 		print(start_time_gpu_method)
 		start_time_gpu_method = time.time()
 		entire_start_time = time.time()
