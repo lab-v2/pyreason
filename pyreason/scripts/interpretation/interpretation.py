@@ -912,14 +912,11 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 			elapsed_time = 0.0
 			if not use_gpu:
 				with numba.objmode(start_time='float64'):
-					print(start_time)
 					start_time = time.time()
 				qualified_groundings = get_qualified_edge_groundings_cpu(interpretations_edge, grounding, clause_label, clause_bnd)
 				with numba.objmode():
 					end_time = time.time()
 					elapsed_time = end_time - start_time
-					print(start_time)
-					print(end_time)
 					print('Entire qualified grounding method for edge clause CPU:')
 					print(elapsed_time)
 			else:
@@ -929,8 +926,6 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 				with numba.objmode():
 					end_time = time.time()
 					elapsed_time = end_time - start_time
-					print(start_time)
-					print(end_time)
 					print('Entire qualified grounding method for edge clause CPU+GPU:')
 					print(elapsed_time)
 
@@ -2562,7 +2557,6 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 	entire_end_time= 0.0
 	entire_elapsed_time = 0.0
 	with numba.objmode(start_time_gpu_method='float64', entire_start_time='float64'):
-		print(start_time_gpu_method)
 		start_time_gpu_method = time.time()
 		entire_start_time = time.time()
 
@@ -2582,8 +2576,6 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 	with numba.objmode():
 		end_time_gpu_method = time.time()
 		elapsed_time_gpu_method = end_time_gpu_method - start_time_gpu_method
-		print(start_time_gpu_method)
-		print(end_time_gpu_method)
 		print('Time in seconds before launching gpu kernel:')
 		print(elapsed_time_gpu_method)
 	# Launch the GPU kernel
@@ -2611,7 +2603,6 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 	end_time_gpu_method = 0.0
 	elapsed_time_gpu_method = 0.0
 	with numba.objmode(start_time_gpu_method='float64'):
-		print(start_time_gpu_method)
 		start_time_gpu_method = time.time()
 	# Filter out unqualified nodes after kernel execution
 	qualified_groundings = numba.typed.List.empty_list(edge_type)
@@ -2623,12 +2614,10 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 		entire_end_time = time.time()
 		elapsed_time_gpu_method = end_time_gpu_method - start_time_gpu_method
 		entire_elapsed_time = entire_end_time - entire_start_time
-		print(start_time_gpu_method)
-		print(end_time_gpu_method)
 		print('Time in seconds after launching gpu kernel:')
 		print(elapsed_time_gpu_method)
 
-		print('Entire elapsed time in seconds for CPU+GPU satisfaction:')
+		print('Entire elapsed time in seconds for CPU+GPU satisfaction (The entire method):')
 		print(entire_elapsed_time)
 	return qualified_groundings
 
@@ -2650,7 +2639,6 @@ def get_qualified_edge_groundings_cpu(interpretations_edge, grounding, clause_l,
 	end_time = 0.0
 	elapsed_time = 0.0
 	with numba.objmode(start_time='float64'):
-		print(start_time)
 		start_time = time.time()
 
 	# Filter the grounding by the predicate and bound of the clause
@@ -2661,8 +2649,6 @@ def get_qualified_edge_groundings_cpu(interpretations_edge, grounding, clause_l,
 	with numba.objmode():
 		end_time = time.time()
 		elapsed_time = end_time - start_time
-		print(start_time)
-		print(end_time)
 		print('Within the method satisfaction for edge clause CPU (complete for loop that calls is_satisfied_edge() for each grounding!):')
 		print(elapsed_time)
 	return qualified_groundings
