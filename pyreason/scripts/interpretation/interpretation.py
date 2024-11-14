@@ -2646,12 +2646,25 @@ def get_qualified_node_groundings_cpu(interpretations_node, grounding, clause_l,
 
 @numba.njit(cache=True)
 def get_qualified_edge_groundings_cpu(interpretations_edge, grounding, clause_l, clause_bnd):
+	start_time = 0.0
+	end_time = 0.0
+	elapsed_time = 0.0
+	with numba.objmode(start_time='float64'):
+		print(start_time)
+		start_time = time.time()
+
 	# Filter the grounding by the predicate and bound of the clause
 	qualified_groundings = numba.typed.List.empty_list(edge_type)
 	for e in grounding:
 		if is_satisfied_edge(interpretations_edge, e, (clause_l, clause_bnd)):
 			qualified_groundings.append(e)
-
+	with numba.objmode():
+		end_time = time.time()
+		elapsed_time = end_time - start_time
+		print(start_time)
+		print(end_time)
+		print('Within the method satisfaction for edge clause CPU:')
+		print(elapsed_time)
 	return qualified_groundings
 
 
