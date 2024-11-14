@@ -2558,9 +2558,13 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 	start_time_gpu_method = 0.0
 	end_time_gpu_method = 0.0
 	elapsed_time_gpu_method = 0.0
+	entire_start_time = 0.0
+	entire_end_time= 0.0
+	entire_elapsed_time = 0.0
 	with numba.objmode(start_time_gpu_method='float64'):
 		print(start_time_gpu_method)
 		start_time_gpu_method = time.time()
+		entire_start_time = time.time()
 
 	# Process bounds on CPU with IntervalGPU objects
 	l_array, u_array = process_edge_bounds_on_cpu(interpretations_edge, grounding, clause_l)
@@ -2616,11 +2620,16 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 			qualified_groundings.append(grounding[i])
 	with numba.objmode():
 		end_time_gpu_method = time.time()
+		entire_end_time = time.time()
 		elapsed_time_gpu_method = end_time_gpu_method - start_time_gpu_method
+		entire_elapsed_time = entire_end_time - entire_start_time
 		print(start_time_gpu_method)
 		print(end_time_gpu_method)
 		print('Time in seconds after launching gpu kernel:')
 		print(elapsed_time_gpu_method)
+
+		print('Entire elapsed time in seconds for CPU+GPU satisfaction:')
+		print(entire_elapsed_time)
 	return qualified_groundings
 
 
