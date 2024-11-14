@@ -12,7 +12,7 @@ import numpy as np
 
 # from pyreason.scripts.interval.interval_gpu import IntervalGPU
 # import pyreason.scripts.numba_wrapper.numba_types.interval_gpu_type
-
+import time
 
 # Types for the dictionaries
 node_type = numba.types.string
@@ -907,10 +907,33 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 				grounding = get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, predicate_map_edge, clause_label, edges)
 
 			# Narrow subset based on predicate (save the edges that are qualified to use for finding future groundings faster)
+			start_time = 0.0
+			end_time = 0.0
+			elapsed_time = 0.0
 			if not use_gpu:
+				with numba.objmode(start_time='float64'):
+					print(start_time)
+					start_time = time.time()
 				qualified_groundings = get_qualified_edge_groundings_cpu(interpretations_edge, grounding, clause_label, clause_bnd)
+				with numba.objmode():
+					end_time = time.time()
+					elapsed_time = end_time - start_time
+					print(start_time)
+					print(end_time)
+					print('Entire qualified grounding method for edge clause CPU:')
+					print(elapsed_time)
 			else:
+				with numba.objmode(start_time='float64'):
+					start_time = time.time()
 				qualified_groundings = get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_label, clause_bnd)
+				with numba.objmode():
+					end_time = time.time()
+					elapsed_time = end_time - start_time
+					print(start_time)
+					print(end_time)
+					print('Entire qualified grounding method for edge clause CPU+GPU:')
+					print(elapsed_time)
+
 			# with numba.objmode():
 			# 	print(f'Groundings in clause type edge:: {groundings}')
 			# 	print(f'Goundings edges in clause type edge:: {groundings_edges}')
@@ -2532,6 +2555,13 @@ def get_qualified_node_groundings_gpu(interpretations_node, grounding, clause_l,
 
 @numba.njit(cache=True)
 def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l, clause_bnd):
+	start_time_gpu_method = 0.0
+	end_time_gpu_method = 0.0
+	elapsed_time_gpu_method = 0.0
+	with numba.objmode(start_time_gpu_method='float64'):
+		print(start_time_gpu_method)
+		start_time_gpu_method = time.time()
+
 	# Process bounds on CPU with IntervalGPU objects
 	l_array, u_array = process_edge_bounds_on_cpu(interpretations_edge, grounding, clause_l)
 	grounding_length = len(l_array)
@@ -2545,7 +2575,13 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 	# Define kernel launch parameters
 	threads_per_block = 256
 	blocks_per_grid = (grounding_length + (threads_per_block - 1)) // threads_per_block
-
+	with numba.objmode():
+		end_time_gpu_method = time.time()
+		elapsed_time_gpu_method = end_time_gpu_method - start_time_gpu_method
+		print(start_time_gpu_method)
+		print(end_time_gpu_method)
+		print('Time in seconds before launching gpu kernel:')
+		print(elapsed_time_gpu_method)
 	# Launch the GPU kernel
 	with numba.objmode():
 		# CUDA events for timing
@@ -2563,17 +2599,28 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 
 		# Compute elapsed time in milliseconds
 		elapsed_time = cuda.event_elapsed_time(start_event, end_event)
-		print('Edge grounding time:')
+		print('Edge grounding time Kernel time GPU in millisseconds:')
 		print(elapsed_time)
 
 	# results = results_device.copy_to_host()  # Copy results back to host
-
+	start_time_gpu_method = 0.0
+	end_time_gpu_method = 0.0
+	elapsed_time_gpu_method = 0.0
+	with numba.objmode(start_time_gpu_method='float64'):
+		print(start_time_gpu_method)
+		start_time_gpu_method = time.time()
 	# Filter out unqualified nodes after kernel execution
 	qualified_groundings = numba.typed.List.empty_list(edge_type)
 	for i in range(grounding_length):
 		if results[i] == 1:
 			qualified_groundings.append(grounding[i])
-
+	with numba.objmode():
+		end_time_gpu_method = time.time()
+		elapsed_time_gpu_method = end_time_gpu_method - start_time_gpu_method
+		print(start_time_gpu_method)
+		print(end_time_gpu_method)
+		print('Time in seconds after launching gpu kernel:')
+		print(elapsed_time_gpu_method)
 	return qualified_groundings
 
 

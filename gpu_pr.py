@@ -24,13 +24,13 @@ def hello_world():
 
     # Modify pyreason settings to make verbose
     pr.settings.verbose = True     # Print info to screen
-    pr.settings.use_gpu = False
+    pr.settings.use_gpu = True
     # pr.settings.optimize_rules = False  # Disable rule optimization for debugging
 
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
     # pr.add_rule(pr.Rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule'))
-    pr.add_rule(pr.Rule('head(X) <-1 attr1(X,Y)', 'popular_rule', infer_edges=True))
+    pr.add_rule(pr.Rule('head(Y) <-1 attr1(X,Y)', 'popular_rule', infer_edges=True))
 
     # Run the program for two timesteps to see the diffusion take place
     start_time = time.time()  # Assuming you have imported the time module
@@ -41,6 +41,7 @@ def hello_world():
     mem = round(tracemalloc.get_traced_memory()[1] / (10 ** 6), 3)
     tracemalloc.stop()
     write_to_log(f"Reasoning time: {round(reason_time / 60, 2)} min, Reasoning memory: {mem} MB.")
+    print(f"Reasoning time: {round(reason_time / 60, 2)} min, Reasoning memory: {mem} MB.")
 
     # Display the changes in the interpretation for each timestep
     dataframes = pr.filter_and_sort_nodes(interpretation, ['head'])
