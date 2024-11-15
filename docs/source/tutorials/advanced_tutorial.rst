@@ -4,6 +4,9 @@ Running Pyreason with an advanced graph
 In this tutorial, we will look at how to run PyReason with a more
 complex graph.
 
+.. note:: 
+   Find the full, excecutable code `here <examples/advanced_tutorial_ex.py>`_
+
 Graph
 ------------
 
@@ -64,11 +67,11 @@ Facts
 
 We now add the facts to the graph.
 There is only one fact we are going to use.
-1. customer_0 is popular from time 0 to 20.
+1. customer_0 is popular from time 0 to 5.
 
 .. code-block:: python
 
-    pr.add_fact(pr.Fact(name='popular-fact', fact_text='popular(customer_0)', 0, 20))
+    pr.add_fact(pr.Fact(name='popular-fact', fact_text='popular(customer_0)', 0, 5))
 
 Running Pyreason
 ----------------
@@ -87,5 +90,7 @@ We now run the PyReason interpretation with the graph and the rules.
 
 Expected Output
 ---------------
-.. note::
-    The complete code and excpected outputs can be found for this example is on github at advanced_graph.py
+
+.. code:: text
+    shortend output
+    
