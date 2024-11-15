@@ -10,8 +10,8 @@ complex graph.
 Graph
 ------------
 
-We use a larger graph for this example. In this example , we have customers , cars , pets and their relationships.
-We first have customer details followed by car details , pet details , travel details .
+We use a larger graph for this example. In this example , we have ``customers`` , ``cars`` , ``pets`` and their relationships.
+We first have ``customer_details`` followed by ``car_details`` , ``pet_details`` , ``travel_details`` .
 
 .. literalinclude:: advanced_graph.py
    :language: python
