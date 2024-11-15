@@ -147,14 +147,22 @@ interpretation = pr.reason(timesteps=10)
 
 # Get the interpretation and display it
 interpretations_dict = interpretation.get_dict()
-pprint(interpretations_dict)
 
-# Filter and sort nodes based on specific attributes
-df1 = pr.filter_and_sort_nodes(interpretation, ['trendy', 'cool_car', 'cool_pet', 'popular'])
+# Open a file to write the output
+with open('output.txt', 'w') as f:
+    # Write the interpretation dict to the file
+    f.write("Interpretations:\n")
+    pprint(interpretations_dict, stream=f)  # Using pprint to format the output nicely
+    
+    # Filter and sort nodes based on specific attributes
+    df1 = pr.filter_and_sort_nodes(interpretation, ['trendy', 'cool_car', 'cool_pet', 'popular'])
 
-# Filter and sort edges based on specific relationships
-df2 = pr.filter_and_sort_edges(interpretation, ['car_friend', 'same_color_car'])
+    # Filter and sort edges based on specific relationships
+    df2 = pr.filter_and_sort_edges(interpretation, ['car_friend', 'same_color_car'])
 
-# Display filtered node and edge data
-print(df1)
-print(df2)
+    # Write filtered node and edge data to the file
+    f.write("\nFiltered Nodes:\n")
+    f.write(str(df1))  # Convert the DataFrame or list to string for writing
+
+    f.write("\nFiltered Edges:\n")
+    f.write(str(df2))  # Convert the DataFrame or list to string for writing

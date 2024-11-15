@@ -42,8 +42,8 @@ Rules
 The below are the rules we want to add:
 
 1. A customer is popular if he is friends with a popular customer.
-2. A customer has a cool car if he owns a car and the car is of type Car_4.
-3. A customer has a cool pet if he owns a pet and the pet is of type Pet_2.
+2. A customer has a cool car if he owns a car and the car is of type ``Car_4``.
+3. A customer has a cool pet if he owns a pet and the pet is of type ``Pet_2``.
 4. A customer is trendy if he has a cool car and a cool pet.
 
 .. code-block:: python
@@ -67,7 +67,7 @@ Facts
 
 We now add the facts to the graph.
 There is only one fact we are going to use.
-1. customer_0 is popular from time 0 to 5.
+1. ``customer_0`` is popular from time ``0`` to ``5``.
 
 .. code-block:: python
 
@@ -90,7 +90,75 @@ We now run the PyReason interpretation with the graph and the rules.
 
 Expected Output
 ---------------
+Below is the expected output at timestep ``0``
+
+.. note::
+   Find the full expected output `here <examples/advanced_output.txt>`_
+
 
 .. code:: text
     shortend output
-    
+
+   Interpretations:
+   {0: {'Car_0': {},
+      'Car_1': {},
+      'Car_10': {},
+      'Car_11': {},
+      'Car_2': {},
+      'Car_3': {},
+      'Car_4': {},
+      'Car_5': {},
+      'Car_6': {},
+      'Car_7': {},
+      'Car_8': {},
+      'Car_9': {},
+      'Pet_0': {},
+      'Pet_1': {},
+      'Pet_2': {},
+      'Pet_3': {},
+      'Pet_4': {},
+      'customer_0': {},
+      'customer_1': {},
+      'customer_2': {},
+      'customer_3': {},
+      'customer_4': {},
+      'customer_5': {},
+      'customer_6': {},
+      'popular-fac': {'popular-fac': (1.0, 1.0)},
+      ('customer_0', 'Car_2'): {},
+      ('customer_0', 'Car_7'): {},
+      ('customer_0', 'Pet_0'): {},
+      ('customer_0', 'Pet_4'): {},
+      ('customer_0', 'customer_1'): {'same_color_car': (1.0, 1.0)},
+      ('customer_0', 'customer_2'): {'same_color_car': (1.0, 1.0)},
+      ('customer_1', 'Car_0'): {},
+      ('customer_1', 'Car_8'): {},
+      ('customer_1', 'Pet_1'): {},
+      ('customer_2', 'Car_1'): {},
+      ('customer_2', 'Car_11'): {},
+      ('customer_2', 'Car_3'): {},
+      ('customer_2', 'Pet_0'): {},
+      ('customer_2', 'Pet_1'): {},
+      ('customer_2', 'customer_1'): {'same_color_car': (1.0, 1.0)},
+      ('customer_3', 'Car_0'): {},
+      ('customer_3', 'Car_10'): {},
+      ('customer_3', 'Car_3'): {},
+      ('customer_3', 'Pet_2'): {},
+      ('customer_3', 'customer_1'): {'car_friend': (1.0, 1.0),
+                                       'same_color_car': (1.0, 1.0)},
+      ('customer_3', 'customer_4'): {'same_color_car': (1.0, 1.0)},
+      ('customer_4', 'Car_4'): {},
+      ('customer_4', 'Car_9'): {},
+      ('customer_4', 'Pet_2'): {},
+      ('customer_4', 'customer_0'): {'same_color_car': (1.0, 1.0)},
+      ('customer_4', 'customer_5'): {'same_color_car': (1.0, 1.0)},
+      ('customer_5', 'Car_2'): {},
+      ('customer_5', 'Car_5'): {},
+      ('customer_5', 'Pet_3'): {},
+      ('customer_5', 'customer_3'): {'same_color_car': (1.0, 1.0)},
+      ('customer_5', 'customer_6'): {'same_color_car': (1.0, 1.0)},
+      ('customer_6', 'Car_4'): {},
+      ('customer_6', 'Car_6'): {},
+      ('customer_6', 'Pet_4'): {},
+      ('customer_6', 'customer_0'): {'same_color_car': (1.0, 1.0)}},
+      
