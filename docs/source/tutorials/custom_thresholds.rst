@@ -52,8 +52,8 @@ Rules
 
 Considering that we only want a text message to be considered viewed by all if it has been viewed by everyone that can view it, we define the rule as follows:
 
-.. text:: 
-    
+.. code-block:: text 
+
     ViewedByAll(x) <- HaveAccess(x,y), Viewed(y)
 
 The ``head`` of the rule is ``ViewedByAll(x)`` and the body is ``HaveAccess(x,y), Viewed(y)``. The head and body are separated by an arrow which means the rule will start evaluating from
