@@ -4,6 +4,9 @@ PyReason Custom Threshold Example
 In this tutorial, we will look at how to run PyReason with Custom Thresholds. 
 Custom Thresholds are parameters in the :ref:`Rule Class <pyreason_rules>`. 
 
+.. note::
+    Find the full, excecutable code `here <examples/custom_thresholds_ex.py>`_
+
 The following graph represents a network of People and a Text Message in their group chat.
 
 .. image:: ../../../media/group_chat_graph.png
@@ -13,7 +16,7 @@ The following graph represents a network of People and a Text Message in their g
 Graph
 ------------
 
-First, we load in the GraphML. This graph has friends and text messages.
+First, we create the graph using Networkx. This graph has nodes ``Zach``, ``Justin``, ``Michelle``, ``Amy``, and ``TextMessages``.
 
 .. code:: python
 
@@ -41,7 +44,7 @@ Then intialze and load the graph into PyReason with:
 .. code:: python
 
     import pyreason as pr
-    pr.load_graph(graph)
+    pr.load_graph(G)
 
 
 Rules 
@@ -103,12 +106,12 @@ Facts
 The facts determine the initial conditions of elements in the graph. They can be specified from the graph attributes but in that
 case they will be immutable later on. Adding PyReason facts gives us more flexibility.
 
-In our case we want one person to view the TextMessage in a particular interval of timestep.
+In our case we want one person to view the ``TextMessage`` in a particular interval of timestep.
 For example, we create facts stating:
-    - Zach and Justin view the TextMessage from at timestep 0
-    - Michelle views the TextMessage at timestep 1
-    - Amy views the TextMessage at timestep 2
-    - 3 is the last timestep the rule is active for all.
+    - ``Zach`` and ``Justin`` view the ``TextMessage`` from at timestep ``0``
+    - ``Michelle`` views the ``TextMessage`` at timestep ``1``
+    - ``Amy`` views the ``TextMessage`` at timestep ``2``
+    - ``3`` is the last timestep the rule is active for all.
 
 
 .. code:: python
