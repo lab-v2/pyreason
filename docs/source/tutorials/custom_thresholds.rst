@@ -56,7 +56,7 @@ Considering that we only want a text message to be considered viewed by all if i
     ViewedByAll(x) <- HaveAccess(x,y), Viewed(y)
 
 The ``head`` of the rule is ``ViewedByAll(x)`` and the body is ``HaveAccess(x,y), Viewed(y)``. The head and body are separated by an arrow which means the rule will start evaluating from
-timestep 0.
+timestep ``0``.
 
 Next, add in the custom thresholds. In this graph, the custom_thresholds ensure that in order for the rules to be fired, specific criteria must be met. 
 
@@ -81,8 +81,8 @@ The ``user_defined_thresholds`` are a list of custom thresholds of the format: (
     - thresh represents the numerical threshold value to compare against
 
 The custom thresholds are created corresponding to the two clauses ``(HaveAccess(x,y)`` and ``Viewed(y))`` as below:
-    - ('greater_equal', ('number', 'total'), 1) (there needs to be at least one person who has access to TextMessage for the first clause to be satisfied)
-    - ('greater_equal', ('percent', 'total'), 100) (100% of people who have access to TextMessage need to view the message for second clause to be satisfied)
+    - ('greater_equal', ('number', 'total'), 1) (there needs to be at least one person who has access to ``TextMessage`` for the first clause to be satisfied)
+    - ('greater_equal', ('percent', 'total'), 100) (100% of people who have access to ``TextMessage`` need to view the message for second clause to be satisfied)
 
 
 
@@ -125,7 +125,6 @@ This allows us to specify components that have an intial condition.
 
 Running PyReason 
 ----------------
-Find the full code for this example here **ADD LINK TO EX**
 
 To run the reasoning in the file: 
 
@@ -169,6 +168,6 @@ After running the python file, the expected output is:
 
 
 1. For timestep 0, we set ``Zach -> Viewed: [1,1]`` and ``Justin -> Viewed: [1,1]`` in the facts
-2. For timestep 1, Michelle views the TextMessage as stated in facts ``Michelle -> Viewed: [1,1]``.
-3. For timestep 2, since Amy has just viewed the TextMessage, therefore ``Amy -> Viewed: [1,1]``. As per the rule,
-   since all the people have viewed the TextMessage, the message is marked as ``ViewedByAll``.
+2. For timestep 1, ``Michelle`` views the TextMessage as stated in facts ``Michelle -> Viewed: [1,1]``.
+3. For timestep 2, since ``Amy`` has just viewed the ``TextMessage``, therefore ``Amy -> Viewed: [1,1]``. As per the rule,
+   since all the people have viewed the ``TextMessage``, the message is marked as ``ViewedByAll``.
