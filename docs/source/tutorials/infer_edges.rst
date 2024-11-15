@@ -1,10 +1,13 @@
-PyReason Infer Edges Example
+PyReason Infer Edges 
 ============================
 
 In this tutorial, we will look at how to run PyReason with infer edges. 
 infer edges is a parameter in the :ref:`Rule Class <pyreason_rules>`. 
 
-The following graph represents a network of People and a Text Message in their group chat.
+.. note::
+    Find the full, excecutable code `here <examples/infer_edges_ex.py>`_
+
+The following graph represents a network of People and a Text Messages in their group chat.
 .. image:: ../media/group_chat_graph.png
 
 Graph
