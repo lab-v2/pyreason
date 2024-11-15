@@ -7,8 +7,12 @@ infer edges is a parameter in the :ref:`Rule Class <pyreason_rules>`.
 .. note::
     Find the full, excecutable code `here <examples/infer_edges_ex.py>`_
 
-The following graph represents a network of People and a Text Messages in their group chat.
-.. image:: ../media/group_chat_graph.png
+The following graph represents a network of airports and flight connections.
+
+.. image:: ../../../media/group_chat_graph.png
+   :align: center
+
+
 
 Graph
 ------------
@@ -52,6 +56,7 @@ First, we create the graph in Networkx. This graph has airports and flight conne
 
     G.add_edges_from(edges)
 
+We can also load the graph from a GraphML `fie <tests/knowledge_graph_test_subset.graphml>`_ 
 
 We then initialize and load the graph using the following code:
 
@@ -77,36 +82,41 @@ We then initialize and load the graph using the following code:
 Rules
 ------------
 
-Next, add the Rule and set infer_edges to *True*
+Next, add the Rule and set ``infer_edges`` to ``True``
 
 .. code:: python
 
     pr.add_rule(pr.Rule('isConnectedTo(A, Y) <-1  isConnectedTo(Y, B), Amsterdam_Airport_Schiphol(B), Vnukovo_International_Airport(A)', 'connected_rule_1', infer_edges=True))
 
-This will should connect exactly one new relationship between A and Y. The Rule states that if there is a connection from Y to B, and B is Amsterdam Airport Schiphol, and A is Vnukovo International Airport, then infer that there is a connection from A to Y."
+This will should connect exactly one new relationship between A and Y. The Rule states that if there is a connection from Y to B, and B is ``Amsterdam Airport Schiphol``, and A is ``Vnukovo International Airport``, then infer that there is a connection from A to Y."
 
-Therefore the output of the graph after running 1 timestep should be a new connection [1,1] between Vnukovo_International_Airport (A) and Riga_International_Airport(Y).
+Therefore the output of the graph after running 1 timestep should be a new connection [1,1] between ``Vnukovo_International_Airport`` (A) and ``Riga_International_Airport`` (Y).
 
-Run the program with assertions for testing purposes:
+Facts 
+-----
+This example does not havea any facts. All initial conditions are set when the graph is created
+
+
+Running PyReason 
+----------------
+
+Run the program for ``1`` timesteps.
 
 .. code:: python
-    # Run the program for two timesteps to see the diffusion take place
+
+    # Run the program for one timesteps to see the diffusion take place
+
     interpretation = pr.reason(timesteps=1)
-    # pr.save_rule_trace(interpretation)
 
-    # Display the changes in the interpretation for each timestep
-    dataframes = pr.filter_and_sort_edges(interpretation, ['isConnectedTo'])
-    for t, df in enumerate(dataframes):
-        print(f'TIMESTEP - {t}')
-        print(df)
-        print()
-    assert len(dataframes) == 2, 'Pyreason should run exactly 1 fixpoint operations'
-    assert len(dataframes[1]) == 1, 'At t=1 there should be only 1 new isConnectedTo atom'
-    assert ('Vnukovo_International_Airport', 'Yali') in dataframes[1]['component'].values.tolist() and dataframes[1]['isConnectedTo'].iloc[0] == [1, 1], '(Vnukovo_International_Airport, Yali) should have isConnectedTo bounds [1,1] for t=1 timesteps'
 
-The expected output after running will list at timestep 0 the inital connections and timestep 1 the added connectioned due to the infer_edges parameter. 
+Expected output
+---------------
+After running the python file, the expected output is:
+   
+The expected output after running will list at timestep 0 the inital connections and timestep 1 the added connection due to the ``infer_edges`` parameter. 
 
 .. code:: text
+
     Timestep: 0
     Timestep: 1
 
@@ -128,6 +138,11 @@ The expected output after running will list at timestep 0 the inital connections
     0  (Vnukovo_International_Airport, Riga_Internati...    [1.0, 1.0]
 
 
+
+The graph after running shows a new connection between ``Vnukovo_International_Airport``  and ``Riga_International_Airport``, because during the reasoning process an edges between them was infered. 
+
+.. image:: ../../../media/group_chat_graph.png
+   :align: center
 
 
 
