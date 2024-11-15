@@ -54,7 +54,7 @@ The below are the rules we want to add:
     pr.add_rule(pr.Rule('trendy(x) <- cool_car(x) , cool_pet(x)', 'trendy_rule'))
 The above rules are based on nodes. Now let us add some more rules based on the edges.
 
-1. Two customers are car_friends if they own the same car.
+1. Two customers are ``car_friends`` if they own the same car.
 2. Two customers are friends if they own the same color car.
 
 .. code-block:: python
@@ -94,7 +94,6 @@ Below is the expected output at timestep ``0``
 
 .. note::
    Find the full expected output `here <examples/advanced_output.txt>`_
-
 
 .. code:: text
     shortend output
