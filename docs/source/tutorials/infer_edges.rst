@@ -8,8 +8,10 @@ infer edges is a parameter in the :ref:`Rule Class <pyreason_rules>`.
 .. note::
     Find the full, excecutable code `here <examples/infer_edges_ex.py>`_
 
-The following graph represents a network of People and a Text Message in their group chat.
-.. image:: ../media/infer_edges1.png
+The following graph represents a network of airports and connections.
+
+.. image:: ../../../media/infer_edges1.png
+   :align: center
 
 Graph
 ------------
