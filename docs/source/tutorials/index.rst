@@ -15,3 +15,4 @@ Contents
    ./advanced_tutorial.rst
    ./custom_thresholds.rst
    ./infer_edges.rst
+   ./annotation_function.rst
