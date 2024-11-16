@@ -11,6 +11,7 @@ Examples
     :caption: Examples:
     :glob:
 
-   ./basic_example.rst
-
+    ./basic_example.rst
+    ./advanced_example.rst
+    ./custom_threshold_example.rst
    
