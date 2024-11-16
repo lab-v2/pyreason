@@ -9,10 +9,13 @@ Read more about annotation functions `here <https://pyreason--60.org.readthedocs
     Find the full, excecutable code `here <examples/annotation_function_ex.py>`_
 
 
+Average Annotation Function Example
+------------------------------------
+This example takes the average of the lower and higher bounds of the nodes in the graph.
 
 Graph
 ------------
-
+For this example the graph will only have 2 nodes, and will be added as facts.
 
 
 
