@@ -6,7 +6,7 @@ demonstrates some of the capabilities of the software. If this is your
 first time looking at the software, you’re in the right place.
 
 .. note:: 
-   Find the full, excecutable code `Link Text <../../../examples/hello_world_ex.py>`_
+   Find the full, excecutable code `Link Text <../../../examples/basic_t.rst>`_
 
 The following graph represents a network of people and the pets that
 they own.
