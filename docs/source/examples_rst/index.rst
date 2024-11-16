@@ -11,6 +11,6 @@ Examples
     :caption: Examples:
     :glob:
 
-   ./basic_tutorial.rst
+   ./basic_example.rst
 
    

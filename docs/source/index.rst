@@ -25,7 +25,7 @@ Welcome to the documentation for **PyReason**, a powerful, optimized Python tool
    api_reference/index
    tutorials/index
    license
-   examples/index
+   examples_rst/index
 
 .. _python_files_folder: ./../examples  # Commented out link to folder
 
