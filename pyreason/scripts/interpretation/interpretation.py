@@ -2463,11 +2463,20 @@ def process_edge_bounds_on_cpu(interpretations, grounding, clause_l):
 	l_array = []
 	u_array = []
 
+	# for edge in grounding:
+	# 	if clause_l is not None and edge in interpretations and clause_l in interpretations[edge].world:
+	# 		interval_data = interpretations[edge].world[clause_l]
+	# 		l_array.append(interval_data.l)
+	# 		u_array.append(interval_data.u)
 	for edge in grounding:
-		if clause_l is not None and edge in interpretations and clause_l in interpretations[edge].world:
-			interval_data = interpretations[edge].world[clause_l]
-			l_array.append(interval_data.l)
-			u_array.append(interval_data.u)
+		try:
+			w = interpretations[edge]
+			bnd = w.world[clause_l]
+			l_array.append(bnd.l)
+			u_array.append(bnd.u)
+		except:
+			l_array.append(0.0)
+			u_array.append(1.0)
 
 	# Convert lists to numpy arrays
 	return (
