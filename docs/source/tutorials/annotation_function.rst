@@ -6,7 +6,7 @@ Read more about annotation functions `here <https://pyreason--60.org.readthedocs
 
 
 .. note::
-    Find the full, excecutable code `here <examples/annotation_function_ex.py>`_
+    Find the full, excecutable code `here <https://pyreason--60.org.readthedocs.build/en/60/examples_rst/annotation_function_example.html#annotation-function-example>`_
 
 
 Average Annotation Function Example
