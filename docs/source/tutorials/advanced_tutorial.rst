@@ -93,7 +93,7 @@ Expected Output
 Below is the expected output at timestep ``0``
 
 .. note::
-   Find the full expected output `here <examples/advanced_output.txt>`_
+   Find the full expected output `here <../../../examples/advanced_output.txt>`_
 
 .. code:: text
    
