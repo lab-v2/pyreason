@@ -6,7 +6,7 @@ demonstrates some of the capabilities of the software. If this is your
 first time looking at the software, you’re in the right place.
 
 .. note:: 
-   Find the full, excecutable code `Link Text </examples/basic_tutorial.rst>`_
+   Find the full, excecutable code `here <https://pyreason--60.org.readthedocs.build/en/60/examples_rst/basic_example.html#basic-example>`_
 
 The following graph represents a network of people and the pets that
 they own.
