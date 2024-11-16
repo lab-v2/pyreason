@@ -2579,31 +2579,32 @@ def get_qualified_edge_groundings_gpu(interpretations_edge, grounding, clause_l,
 		start_time_gpu_method = time.time()
 		entire_start_time = time.time()
 
-	# Process bounds on CPU with IntervalGPU objects
-	start_time_edg_grounding = 0.0
-	end_time_edg_grounding = 0.0
-	elapsed_time_edg_grounding = 0.0
-	with numba.objmode(start_time_edg_grounding='float64'):
-		start_time_edg_grounding = time.time()
-	l_array, u_array = process_edge_bounds_on_cpu(interpretations_edge, grounding, clause_l)
-	with numba.objmode():
-		end_time_edg_grounding = time.time()
-		elapsed_time_edg_grounding = end_time_edg_grounding - start_time_edg_grounding
-		print('Non-dummy method:')
-		print(elapsed_time_edg_grounding)
-
-	start_time_dummy_grounding = 0.0
-	end_time_dummy_grounding = 0.0
-	elapsed_time_dummy_grounding = 0.0
-	with numba.objmode(start_time_dummy_grounding='float64'):
-		start_time_dummy_grounding = time.time()
-	dummy_g = process_dummy_loop_on_cpu(interpretations_edge, grounding, clause_l)
-	with numba.objmode():
-		end_time_dummy_grounding = time.time()
-		elapsed_time_dummy_grounding = end_time_dummy_grounding - start_time_dummy_grounding
-		print('Dummy method:')
-		print(elapsed_time_dummy_grounding)
+	# # Process bounds on CPU with IntervalGPU objects
+	# start_time_edg_grounding = 0.0
+	# end_time_edg_grounding = 0.0
+	# elapsed_time_edg_grounding = 0.0
+	# with numba.objmode(start_time_edg_grounding='float64'):
+	# 	start_time_edg_grounding = time.time()
 	# l_array, u_array = process_edge_bounds_on_cpu(interpretations_edge, grounding, clause_l)
+	# with numba.objmode():
+	# 	end_time_edg_grounding = time.time()
+	# 	elapsed_time_edg_grounding = end_time_edg_grounding - start_time_edg_grounding
+	# 	print('Non-dummy method:')
+	# 	print(elapsed_time_edg_grounding)
+
+	# start_time_dummy_grounding = 0.0
+	# end_time_dummy_grounding = 0.0
+	# elapsed_time_dummy_grounding = 0.0
+	# with numba.objmode(start_time_dummy_grounding='float64'):
+	# 	start_time_dummy_grounding = time.time()
+	# dummy_g = process_dummy_loop_on_cpu(interpretations_edge, grounding, clause_l)
+	# with numba.objmode():
+	# 	end_time_dummy_grounding = time.time()
+	# 	elapsed_time_dummy_grounding = end_time_dummy_grounding - start_time_dummy_grounding
+	# 	print('Dummy method:')
+	# 	print(elapsed_time_dummy_grounding)
+
+	l_array, u_array = process_edge_bounds_on_cpu(interpretations_edge, grounding, clause_l)
 	grounding_length = len(l_array)
 	clause_bnd_flat = np.array([clause_bnd.l, clause_bnd.u], dtype=np.float32)
 	results = np.zeros(grounding_length, dtype=np.int32)
