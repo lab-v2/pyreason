@@ -5,7 +5,13 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath('../pyreason/pyreason'))
+#sys.path.insert(0, os.path.abspath('../..'))
+# Dynamically get the absolute path to the pyreason directory
+# This will work regardless of where the project is located on the user's machine
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+# Add the pyreason/pyreason directory to the sys.path
+sys.path.insert(0, os.path.join(project_root, 'pyreason', 'pyreason'))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -23,7 +29,9 @@ extensions = ['sphinx.ext.autodoc', 'sphinx_rtd_theme', 'sphinx.ext.autosummary'
               'sphinx.ext.viewcode', 'sphinx.ext.napoleon', 'autoapi.extension']
 
 autosummary_generate = True
-autoapi_dirs = ['../pyreason/pyreason']
+#autoapi_dirs = ['../..']
+autoapi_dirs = [os.path.join(project_root, 'pyreason', 'pyreason')]
+
 autoapi_template_dir = '_templates/autoapi'
 
 autoapi_options = [
