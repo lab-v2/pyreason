@@ -44,6 +44,9 @@ autoapi_options = [
     "imported-members",
 ]
 
+autodoc_default_options = {
+    'exclude-members': '*,*class*'  # This excludes classes from documentation
+}
 
 
 templates_path = ['_templates']
