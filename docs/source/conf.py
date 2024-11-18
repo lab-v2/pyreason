@@ -5,7 +5,7 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath('../..'))
+sys.path.insert(0, os.path.abspath('../pyreason/pyreason'))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -23,7 +23,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx_rtd_theme', 'sphinx.ext.autosummary'
               'sphinx.ext.viewcode', 'sphinx.ext.napoleon', 'autoapi.extension']
 
 autosummary_generate = True
-autoapi_dirs = ['../../pyreason']
+autoapi_dirs = ['../pyreason/pyreason']
 autoapi_template_dir = '_templates/autoapi'
 
 autoapi_options = [
