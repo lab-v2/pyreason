@@ -109,8 +109,9 @@ The expected output of this function is
     component            average_function
     0    (A, B)  [0.10500000000000001, 1.0]
 
-Where the lower bound of the head is now the average of the two lower bounds of the grounded atoms (0.01 and 0.2), and the upper bound is now the average of the lower bounds of the grounded atoms (1 and 1).
-
+In this output:
+    - The lower bound of the `avg_ann_fn(A, B)` is computed as `0.105`, based on the weighted combination of the lower bounds of `P(A)` (0.01) and `P(B)` (0.2), averaged together.
+    - The upper bound of the `linear_combination_function(A, B)` is computed as `0.4`, based on the weighted combination of the upper bounds of `P(A)` (1.0) and `P(B)` (1.0), averaged together.
 
 
 
@@ -219,5 +220,5 @@ Below is the expected output from running the `linear_combination_annotation_fun
     0    (A, B)                  [0.1, 0.4]
 
 In this output:
-- The lower bound of the `linear_combination_function(A, B)` is computed as `0.1`, based on the weighted combination of the lower bounds of `P(A)` (0.3) and `P(B)` (0.2), both multiplied by the constant then added together.
-- The upper bound of the `linear_combination_function(A, B)` is computed as `0.4`, based on the weighted combination of the upper bounds of `P(A)` (1) and `P(B)` (1), both multiplied by the constant then added together.
+    - The lower bound of the `linear_combination_function(A, B)` is computed as `0.1`, based on the weighted combination of the lower bounds of `P(A)` (0.3) and `P(B)` (0.2), both multiplied by the constant then added together.
+    - The upper bound of the `linear_combination_function(A, B)` is computed as `0.4`, based on the weighted combination of the upper bounds of `P(A)` (1) and `P(B)` (1), both multiplied by the constant then added together.
