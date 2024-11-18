@@ -36,21 +36,12 @@ autosummary_generate = True
 # Ensure autoapi_dirs points to the folder containing pyreason.py
 autoapi_dirs = [project_root]
 
+
 autoapi_options = [
-    "members",
-    "undoc-members",
-    "show-inheritance",
-    "show-module-summary",
-    "imported-members",
+    "members",               # Include members (functions) only
+    "undoc-members",         # Include undocumented members
+    "show-inheritance",      # Show inheritance for functions and methods
 ]
-
-autodoc_default_options = {
-    'show-inheritance': False,  
-    "imported-members": False,     # Turn off inheritance display (to exclude classes and inheritance)
-    "undoc-members" : False,
-    "show-module-summary": False
-
-}
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'pyreason.examples.rst',
