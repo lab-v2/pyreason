@@ -5,7 +5,13 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath('../..'))
+#sys.path.insert(0, os.path.abspath('../..'))
+#sys.path.insert(0, os.path.abspath('pyreason/pyreason.py'))
+# Calculate the absolute path to the pyreason directory
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'pyreason'))
+
+# Add the pyreason directory to sys.path
+sys.path.insert(0, project_root)
 
 
 # Add the pyreason/pyreason directory to the sys.path
@@ -26,9 +32,9 @@ extensions = ['sphinx.ext.autodoc', 'sphinx_rtd_theme', 'sphinx.ext.autosummary'
               'sphinx.ext.viewcode', 'sphinx.ext.napoleon', 'autoapi.extension']
 
 autosummary_generate = True
-autoapi_dirs = ['../..']
-
-autoapi_template_dir = '_templates/autoapi'
+#autoapi_template_dir = '_templates/autoapi'
+# Ensure autoapi_dirs points to the folder containing pyreason.py
+autoapi_dirs = [project_root]
 
 autoapi_options = [
     "members",
