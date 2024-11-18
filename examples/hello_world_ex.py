@@ -45,12 +45,15 @@ pr.add_fact(pr.Fact('popular(Mary)', 'popular_fact', 0, 2))
 faulthandler.enable()
 interpretation = pr.reason(timesteps=2)
 
+
 # Display the changes in the interpretation for each timestep
 dataframes = pr.filter_and_sort_nodes(interpretation, ['popular'])
 for t, df in enumerate(dataframes):
     print(f'TIMESTEP - {t}')
     print(df)
     print()
+
+
 
 assert len(dataframes[0]) == 1, 'At t=0 there should be one popular person'
 assert len(dataframes[1]) == 2, 'At t=1 there should be two popular people'
