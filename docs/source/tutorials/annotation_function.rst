@@ -11,7 +11,7 @@ Average Annotation Function Example
 This example takes the average of the lower and higher bounds of the nodes in the graph.
 
 .. note::
-    Find the full, excecutable code `here <https://pyreason--60.org.readthedocs.build/en/60/examples_rst/annF_average.html#annotation-function-example>`_
+    Find the full, excecutable code `here <https://pyreason--60.org.readthedocs.build/en/60/examples_rst/annF_average_example.html>`_
 
 Graph
 ^^^^^^^
@@ -120,7 +120,7 @@ Linear Combination Annotation Function
 Now, we will define and use a new annotation function to compute a weighted linear combination of the bounds of grounded atoms in a rule.
 
 .. note::
-    Find the full, excecutable code `here <https://pyreason--60.org.readthedocs.build/en/60/examples_rst/annF_average.html#annotation-function-example>`_
+    Find the full, excecutable code `here <https://pyreason--60.org.readthedocs.build/en/60/examples_rst/annF_linear_combination_example.html>`_
 
 
 The `map_to_unit_interval` Function
