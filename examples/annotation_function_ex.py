@@ -38,6 +38,7 @@ def average_annotation_function():
 
     pr.add_fact(pr.Fact('P(A) : [0.01, 1]'))
     pr.add_fact(pr.Fact('P(B) : [0.2, 1]'))
+
     pr.add_annotation_function(avg_ann_fn)
     pr.add_rule(pr.Rule('average_function(A, B):avg_ann_fn <- P(A):[0, 1], P(B):[0, 1]', infer_edges=True))
 
@@ -128,4 +129,4 @@ def linear_combination_annotation_function():
     assert interpretation.query('linear_combination_function(A, B) : [0.21000000000000002, 1.0]'), 'Linear combination function should be [0.105, 1]'
 
 # Run the test function
-linear_combination_annotation_function()
+#linear_combination_annotation_function()
