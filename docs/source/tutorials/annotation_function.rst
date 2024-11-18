@@ -100,9 +100,9 @@ Expected Output
 ^^^^^^^^^^^^^^^^^^^^^
 The expected output of this function is 
 
-.. code:: python
+.. code:: text
+    
     Timestep: 0
-
     Converged at time: 0
     Fixed Point iterations: 2
     TIMESTEP - 0
