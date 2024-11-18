@@ -133,7 +133,7 @@ Average Annotation Function
 
         # Assert that the linear combination function gives the expected result (adjusted for weights)
         # Example assertion based on weights and bounds; adjust the expected result based on the weights
-        assert interpretation.query('linear_combination_function(A, B) : [0.21000000000000002, 1.0]'), 'Linear combination function should be [0.105, 1]'
+        assert interpretation.query('linear_combination_function(A, B) : [0.1, 0.4]'), 'Linear combination function should be [0.105, 1]'
 
     # Run the test function
     linear_combination_annotation_function()
