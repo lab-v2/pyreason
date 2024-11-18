@@ -45,9 +45,10 @@ autoapi_options = [
 ]
 
 autodoc_default_options = {
-    'exclude-members': '*,*class*'  # This excludes classes from documentation
+    'exclude-members': '*',          # Exclude all members by default
+    'members': '*,*function*',       # Include only functions (this works by specifically naming the functions or methods)
+    'show-inheritance': False       # Turn off inheritance display (to exclude classes and inheritance)
 }
-
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'pyreason.examples.rst',
