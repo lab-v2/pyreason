@@ -13,12 +13,13 @@ Average Annotation Function
     import networkx as nx
 
 
+
+
     @numba.njit
     def avg_ann_fn(annotations, weights):
         # annotations contains the bounds of the atoms that were used to ground the rule. It is a nested list that contains a list for each clause
         # You can access for example the first grounded atom's bound by doing: annotations[0][0].lower or annotations[0][0].upper
-        print("annotation", annotations)
-        print("weights", weights)
+
         # We want the normalised sum of the bounds of the grounded atoms
         sum_upper_bounds = 0
         sum_lower_bounds = 0
@@ -57,23 +58,20 @@ Average Annotation Function
             print()
 
         assert interpretation.query('average_function(A, B) : [0.105, 1]'), 'Average function should be [0.105, 1]'
-    
-    # Run the test function
+
     average_annotation_function()
 
 
-
-Linear Combination Annotation Function
---------------------------------------------
-
-
-.. code:: python
-
-    # Test if annotation functions work
-    import pyreason as pr
-    import numba
-    import numpy as np
-    import networkx as nx
+    @numba.njit
+    def map_to_unit_interval(value, lower, upper):
+        """
+        Map a value from the interval [lower, upper] to the interval [0, 1].
+        The formula is f(t) = c + ((d - c) / (b - a)) * (t - a),
+        where a = lower, b = upper, c = 0, and d = 1.
+        """
+        if upper == lower:
+            return 0  # Avoid division by zero if upper == lower
+        return (value - lower) / (upper - lower)
 
 
     @numba.njit
@@ -81,21 +79,23 @@ Linear Combination Annotation Function
         sum_lower_comb = 0
         sum_upper_comb = 0
         num_atoms = 0
-        constant = .2
-        print("annotation",annotations)
-        print("weights", weights)
+        constant = 0.2
+        
         # Iterate over the clauses in the rule
         for clause in annotations:
-            print("clause", clause)
             for atom in clause:
-                print("atom", atom)
-                # Apply the weights to the lower and upper bounds
-                sum_lower_comb += constant * atom.lower 
-                sum_upper_comb += constant * atom.upper 
+                # Map the atom's lower and upper bounds to the interval [0, 1]
+                mapped_lower = map_to_unit_interval(atom.lower, 0, 1)
+                mapped_upper = map_to_unit_interval(atom.upper, 0, 1)
+
+                # Apply the weights to the lower and upper bounds, and accumulate
+                sum_lower_comb += constant * mapped_lower
+                sum_upper_comb += constant * mapped_upper
                 num_atoms += 1
 
         # Return the weighted linear combination of the lower and upper bounds
         return sum_lower_comb, sum_upper_comb
+
 
 
     # Function to run the test
@@ -107,14 +107,11 @@ Linear Combination Annotation Function
 
         pr.settings.allow_ground_rules = True
 
-        # Modify pyreason settings to make verbose
-        #pr.settings.verbose = True 
 
         # Add facts (P(A) and P(B) with bounds)
         pr.add_fact(pr.Fact('P(A) : [.3, 1]'))
         pr.add_fact(pr.Fact('P(B) : [.2, 1]'))
         
-        #constant = 2
 
         # Register the custom annotation function with PyReason
         pr.add_annotation_function(lin_comb_ann_fn)
