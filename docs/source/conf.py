@@ -45,9 +45,11 @@ autoapi_options = [
 ]
 
 autodoc_default_options = {
-    'exclude-members': '*',          # Exclude all members by default
-    'members': '*,*function*',       # Include only functions (this works by specifically naming the functions or methods)
-    'show-inheritance': False       # Turn off inheritance display (to exclude classes and inheritance)
+    'show-inheritance': False,  
+    "imported-members": False,     # Turn off inheritance display (to exclude classes and inheritance)
+    "undoc-members" : False,
+    "show-module-summary": False
+
 }
 
 templates_path = ['_templates']
