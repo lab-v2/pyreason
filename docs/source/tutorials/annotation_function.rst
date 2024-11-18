@@ -110,8 +110,8 @@ The expected output of this function is
     0    (A, B)  [0.10500000000000001, 1.0]
 
 In this output:
-    - The lower bound of the `avg_ann_fn(A, B)` is computed as `0.105`, based on the weighted combination of the lower bounds of `P(A)` (0.01) and `P(B)` (0.2), averaged together.
-    - The upper bound of the `linear_combination_function(A, B)` is computed as `0.4`, based on the weighted combination of the upper bounds of `P(A)` (1.0) and `P(B)` (1.0), averaged together.
+    - The lower bound of the ``avg_ann_fn(A, B)`` is computed as ``0.105``, based on the weighted combination of the lower bounds of ``P(A)`` (0.01) and ``P(B)`` (0.2), averaged together.
+    - The upper bound of the ``linear_combination_function(A, B)`` is computed as ``0.4``, based on the weighted combination of the upper bounds of ``P(A)`` (1.0) and ``P(B)`` (1.0), averaged together.
 
 
 
@@ -208,7 +208,7 @@ The annotation function will be called when all clauses in the rule have been sa
 
 Expected Output
 ^^^^^^^^^^^^^^^^^^^^^
-Below is the expected output from running the `linear_combination_annotation_function`:
+Below is the expected output from running the ``linear_combination_annotation_function``:
 
 .. code:: text
 
@@ -220,5 +220,5 @@ Below is the expected output from running the `linear_combination_annotation_fun
     0    (A, B)                  [0.1, 0.4]
 
 In this output:
-    - The lower bound of the `linear_combination_function(A, B)` is computed as `0.1`, based on the weighted combination of the lower bounds of `P(A)` (0.3) and `P(B)` (0.2), both multiplied by the constant then added together.
-    - The upper bound of the `linear_combination_function(A, B)` is computed as `0.4`, based on the weighted combination of the upper bounds of `P(A)` (1) and `P(B)` (1), both multiplied by the constant then added together.
+    - The lower bound of the ``linear_combination_function(A, B)`` is computed as ``0.1``, based on the weighted combination of the lower bounds of ``P(A)`` (0.3) and ``P(B)`` (0.2), both multiplied by the constant then added together.
+    - The upper bound of the ``linear_combination_function(A, B)`` is computed as ``0.4``, based on the weighted combination of the upper bounds of ``P(A)`` (1) and ``P(B)`` (1), both multiplied by the constant then added together.
