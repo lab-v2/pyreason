@@ -69,12 +69,11 @@ Next, we add this function in PyReason:
     pr.add_annotation_function(avg_ann_fn)
 
 
-
 Rules
 ^^^^^^^
 After we have created the graph, and added the annotation function, we add the annotation function to a Rule.
 
-Create Rules of the general format when using an annotation function:
+Create Rules of this general format when using an annotation function:
 
 .. code:: text
     
@@ -193,17 +192,30 @@ For simplicity sake, we define the constant at 0.2 within the function, this is 
 
 Running the New Annotation Function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-We now run the new annotation function within the PyReason framework:
+We now add the new annotation function within the PyReason framework:
+
+.. code:: python
+    
+    # Register the custom annotation function with PyReason
+    pr.add_annotation_function(lin_comb_ann_fn)
+
+
+Rules
+^^^^^^^
+After we have created the graph, and added the annotation function, we add the annotation function to a Rule.
+
+Create Rules of this general format when using an annotation function:
 
 .. code:: text
     
     linear_combination_function(A, B):lin_comb_ann_fn <- P(A):[0, 1], P(B):[0, 1]
 
-The annotation function will be called when all clauses in the rule have been satisfied and the head of the rule is to be annotated.
-
 .. code:: python
 
     pr.add_rule(pr.Rule('linear_combination_function(A, B):lin_comb_ann_fn <- P(A):[0, 1], P(B):[0, 1]', infer_edges=True))
+
+The annotation function will be called when all clauses in the rule have been satisfied and the head of the Rule is to be annotated.
+
 
 
 Expected Output
