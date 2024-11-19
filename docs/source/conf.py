@@ -45,7 +45,6 @@ autoapi_options = [
     "members",               # Include all class members (functions)
     "undoc-members",         # Include undocumented members
     "show-inheritance",      # Show inheritance tree for methods/functions
-    "private-members",       # Include private members (e.g., _method)
     "show-children",
 ]
 
