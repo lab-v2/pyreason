@@ -8,7 +8,7 @@ import sys
 #sys.path.insert(0, os.path.abspath('../..'))
 #sys.path.insert(0, os.path.abspath('pyreason/pyreason.py'))
 # Calculate the absolute path to the pyreason directory
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'pyreason'))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'pyreason', 'pyreason2'))
 
 # Add the pyreason directory to sys.path
 sys.path.insert(0, project_root)
