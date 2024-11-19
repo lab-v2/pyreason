@@ -45,12 +45,12 @@ autoapi_options = [
     "members",               # Include all class members (functions)
     "undoc-members",         # Include undocumented members
     "show-inheritance",      # Show inheritance tree for methods/functions
-    "private-members",       # Include private members (e.g., _method)
+   # "private-members",       # Include private members (e.g., _method)
 ]
 
 templates_path = ['_templates']
 
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'pyreason.examples.rst',
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'pyreason.examples.rst','pyreason.scripts/*',
                     'pyreason.scripts.numba_wrapper.numba_types.rst',
                     'pyreason.scripts.numba_wrapper.rst', 'pyreason.scripts.program.rst',
                     'pyreason.scripts.interpretation.rst']

@@ -6,7 +6,7 @@ cache_status_path = os.path.join(package_path, '.cache_status.yaml')
 os.environ['NUMBA_CACHE_DIR'] = cache_path
 
 
-from pyreason.pyreason2.pyreason import *
+from pyreason.pyreason import *
 import yaml
 from importlib.metadata import version
 from pkg_resources import get_distribution, DistributionNotFound
