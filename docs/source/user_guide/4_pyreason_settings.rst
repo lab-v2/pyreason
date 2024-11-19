@@ -19,6 +19,7 @@ Below is a table of all the settings that can be changed in PyReason using the c
 To reset all settings to their default values, use the following code:
 
 .. code-block:: python
+    
     import pyreason as pr
     pr.reset_settings()
 

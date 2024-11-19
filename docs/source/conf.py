@@ -29,7 +29,7 @@ release = '0.1.0'
 
 extensions = ['sphinx.ext.autodoc', 'sphinx_rtd_theme', 'sphinx.ext.autosummary', 'sphinx.ext.doctest',
               'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.mathjax', 'sphinx.ext.ifconfig',
-              'sphinx.ext.viewcode', 'sphinx.ext.napoleon', 'autoapi.extension']
+              'sphinx.ext.viewcode', 'sphinx.ext.napoleon', 'autoapi.extension']  # Just this line
 
 autosummary_generate = True
 #autoapi_template_dir = '_templates/autoapi'

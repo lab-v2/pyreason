@@ -109,6 +109,7 @@ case they will be immutable later on. Adding PyReason facts gives us more flexib
 
 In our case we want one person to view the ``TextMessage`` in a particular interval of timestep.
 For example, we create facts stating:
+    
     - ``Zach`` and ``Justin`` view the ``TextMessage`` from at timestep ``0``
     - ``Michelle`` views the ``TextMessage`` at timestep ``1``
     - ``Amy`` views the ``TextMessage`` at timestep ``2``
