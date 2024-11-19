@@ -168,7 +168,7 @@ with ``@numba.njit`` to ensure that it is compiled to machine code for faster ex
 The function returns two numbers, which are the lower and upper bounds of the annotation for the head of the rule.
 
 Adding an Annotation Function to a PyReason Rule
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use the following to add an annotation function into pyreason so that it can be used by rules
 
