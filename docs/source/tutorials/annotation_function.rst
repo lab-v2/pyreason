@@ -190,8 +190,6 @@ For simplicity sake, we define the constant at 0.2 within the function, this is 
         return sum_lower_comb, sum_upper_comb
 
 
-Running the New Annotation Function
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We now add the new annotation function within the PyReason framework:
 
 .. code:: python
@@ -216,6 +214,13 @@ Create Rules of this general format when using an annotation function:
 
 The annotation function will be called when all clauses in the rule have been satisfied and the head of the Rule is to be annotated.
 
+Running PyReason
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Begin the PyReason reasoning process with the added annotation function with:
+
+.. code:: python
+
+    interpretation = pr.reason(timesteps=1)
 
 
 Expected Output
