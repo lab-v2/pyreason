@@ -35,7 +35,7 @@ autosummary_generate = True
 #autoapi_template_dir = '_templates/autoapi'
 # Ensure autoapi_dirs points to the folder containing pyreason.py
 #autoapi_dirs = [project_root]
-autoapi_dirs = [os.path.join(project_root, 'pyreason')]  # Include only 'pyreason.pyreason'
+autoapi_dirs = [os.path.join(project_root)]  # Include only 'pyreason.pyreason'
 
 
 
