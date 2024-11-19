@@ -38,7 +38,8 @@ autoapi_dirs = [project_root]
 #autoapi_dirs = [os.path.join(project_root)]  # Include only 'pyreason.pyreason'
 #autoapi_dirs = ['../pyreason/pyreason']
 
-
+# Ignore modules in the 'scripts' folder
+autoapi_ignore_modules = ['pyreason.scripts']
 
 
 autoapi_options = [
@@ -50,7 +51,7 @@ autoapi_options = [
 
 templates_path = ['_templates']
 
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'pyreason.examples.rst','pyreason.scripts',
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'pyreason.examples.rst','pyreason.scripts/*',
                     'pyreason.scripts.numba_wrapper.numba_types.rst',
                     'pyreason.scripts.numba_wrapper.rst', 'pyreason.scripts.program.rst',
                     'pyreason.scripts.interpretation.rst']
