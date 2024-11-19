@@ -1,5 +1,5 @@
 API Documentation
 =================
 
-.. autoapi:: pyreason
+.. autoapi:: pyreason.pyreason
    :members:
