@@ -149,7 +149,7 @@ Advanced Example
     pr.add_fact(pr.Fact('popular-fact', 'popular(customer_0)', 0, 5))
 
     # Perform reasoning over 10 timesteps
-    interpretation = pr.reason(timesteps=10)
+    interpretation = pr.reason(timesteps=5)
 
     # Get the interpretation and display it
     interpretations_dict = interpretation.get_dict()

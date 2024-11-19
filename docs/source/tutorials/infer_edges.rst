@@ -10,7 +10,7 @@ infer edges is a parameter in the :ref:`Rule Class <pyreason_rules>`.
 
 The following graph represents a network of airports and connections.
 
-.. image:: ../../../media/infer_edges1.png
+.. image:: ../../../media/infer_edges11.png
    :align: center
 
 Graph
@@ -144,7 +144,7 @@ The expected output after running will list at timestep 0 the inital connections
 
 The graph after running shows a new connection between ``Vnukovo_International_Airport``  and ``Riga_International_Airport``, because during the reasoning process an edges between them was infered. 
 
-.. image:: ../../../media/group_chat_graph.png
+.. image:: ../../../media/infer_edges2.png
    :align: center
 
 
