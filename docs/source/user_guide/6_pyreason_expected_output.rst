@@ -223,21 +223,21 @@ This function saves the trace of the program as two pandas dataframes (one for n
 This includes every change that has occurred to the interpretation. If ``atom_trace`` was set to true,
 this provides full explainability of why interpretations changed.
 
-Advanced Tutorial Example
+Infer Edges Tutorial Example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To see ``save_rule_trace`` in action, we will look at an example usage in PyReason's Advanced Tutorial.
 
 .. note::  
-   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/advanced_tutorial.html#running-pyreason-with-an-advanced-graph>`_.
+   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/infer_edges.html#pyreason-infer-edges>`_.
 
-The tutorial takes in a graph with customers, cars, pets, and their relationships. We first have `customer_details`, followed by `car_details`, `pet_details`, and `travel_details`.
+This tutorial takes a graph with airports and their connections. 
 
 We will only add the ``save_rule_trace`` function after the interpretation:
 
 .. code:: python
 
-    interpretation = pr.reason(timesteps=5)
+    interpretation = pr.reason(timesteps=1)
     pr.save_rule_trace(interpretation, folder='./rule_trace_output')
 
 Expected Output
@@ -250,38 +250,17 @@ The nodes trace will be saved as a CSV file in the specified folder. It will con
 
 .. code:: text
 
-    Time,Fixed-Point-Operation,Node,Label,Old Bound,New Bound,Occurred Due To,Clause-1,Clause-2
-    0,0,popular-fac,popular-fac,"[0.0,1.0]","[1.0,1.0]",popular(customer_0),,
-    1,2,popular-fac,popular-fac,"[0.0,1.0]","[1.0,1.0]",popular(customer_0),,
-    1,2,customer_4,cool_car,"[0.0,1.0]","[1.0,1.0]",cool_car_rule,"[('customer_4', 'Car_4')]",['Car_4']
-    1,2,customer_6,cool_car,"[0.0,1.0]","[1.0,1.0]",cool_car_rule,"[('customer_6', 'Car_4')]",['Car_4']
-    1,2,customer_3,cool_pet,"[0.0,1.0]","[1.0,1.0]",cool_pet_rule,"[('customer_3', 'Pet_2')]",['Pet_2']
-    1,2,customer_4,cool_pet,"[0.0,1.0]","[1.0,1.0]",cool_pet_rule,"[('customer_4', 'Pet_2')]",['Pet_2']
-    1,3,customer_4,trendy,"[0.0,1.0]","[1.0,1.0]",trendy_rule,['customer_4'],['customer_4']
-    2,4,popular-fac,popular-fac,"[0.0,1.0]","[1.0,1.0]",popular(customer_0),,
-    2,4,customer_4,cool_car,"[0.0,1.0]","[1.0,1.0]",cool_car_rule,"[('customer_4', 'Car_4')]",['Car_4']
-    2,4,customer_6,cool_car,"[0.0,1.0]","[1.0,1.0]",cool_car_rule,"[('customer_6', 'Car_4')]",['Car_4']
-    2,4,customer_3,cool_pet,"[0.0,1.0]","[1.0,1.0]",cool_pet_rule,"[('customer_3', 'Pet_2')]",['Pet_2']
-    2,4,customer_4,cool_pet,"[0.0,1.0]","[1.0,1.0]",cool_pet_rule,"[('customer_4', 'Pet_2')]",['Pet_2']
-    2,5,customer_4,trendy,"[0.0,1.0]","[1.0,1.0]",trendy_rule,['customer_4'],['customer_4']
-    3,6,popular-fac,popular-fac,"[0.0,1.0]","[1.0,1.0]",popular(customer_0),,
-    3,6,customer_4,cool_car,"[0.0,1.0]","[1.0,1.0]",cool_car_rule,"[('customer_4', 'Car_4')]",['Car_4']
-    3,6,customer_6,cool_car,"[0.0,1.0]","[1.0,1.0]",cool_car_rule,"[('customer_6', 'Car_4')]",['Car_4']
-    3,6,customer_3,cool_pet,"[0.0,1.0]","[1.0,1.0]",cool_pet_rule,"[('customer_3', 'Pet_2')]",['Pet_2']
-    3,6,customer_4,cool_pet,"[0.0,1.0]","[1.0,1.0]",cool_pet_rule,"[('customer_4', 'Pet_2')]",['Pet_2']
-    3,7,customer_4,trendy,"[0.0,1.0]","[1.0,1.0]",trendy_rule,['customer_4'],['customer_4']
-    4,8,popular-fac,popular-fac,"[0.0,1.0]","[1.0,1.0]",popular(customer_0),,
-    4,8,customer_4,cool_car,"[0.0,1.0]","[1.0,1.0]",cool_car_rule,"[('customer_4', 'Car_4')]",['Car_4']
-    4,8,customer_6,cool_car,"[0.0,1.0]","[1.0,1.0]",cool_car_rule,"[('customer_6', 'Car_4')]",['Car_4']
-    4,8,customer_3,cool_pet,"[0.0,1.0]","[1.0,1.0]",cool_pet_rule,"[('customer_3', 'Pet_2')]",['Pet_2']
-    4,8,customer_4,cool_pet,"[0.0,1.0]","[1.0,1.0]",cool_pet_rule,"[('customer_4', 'Pet_2')]",['Pet_2']
-    4,9,customer_4,trendy,"[0.0,1.0]","[1.0,1.0]",trendy_rule,['customer_4'],['customer_4']
-    5,10,popular-fac,popular-fac,"[0.0,1.0]","[1.0,1.0]",popular(customer_0),,
-    5,10,customer_4,cool_car,"[0.0,1.0]","[1.0,1.0]",cool_car_rule,"[('customer_4', 'Car_4')]",['Car_4']
-    5,10,customer_6,cool_car,"[0.0,1.0]","[1.0,1.0]",cool_car_rule,"[('customer_6', 'Car_4')]",['Car_4']
-    5,10,customer_3,cool_pet,"[0.0,1.0]","[1.0,1.0]",cool_pet_rule,"[('customer_3', 'Pet_2')]",['Pet_2']
-    5,10,customer_4,cool_pet,"[0.0,1.0]","[1.0,1.0]",cool_pet_rule,"[('customer_4', 'Pet_2')]",['Pet_2']
-    5,11,customer_4,trendy,"[0.0,1.0]","[1.0,1.0]",trendy_rule,['customer_4'],['customer_4']
+    Time,Fixed-Point-Operation,Node,Label,Old Bound,New Bound,Occurred Due To
+    0,0,Amsterdam_Airport_Schiphol,Amsterdam_Airport_Schiphol,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+    0,0,Riga_International_Airport,Riga_International_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+    0,0,Chișinău_International_Airport,Chișinău_International_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+    0,0,Yali,Yali,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+    0,0,Düsseldorf_Airport,Düsseldorf_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+    0,0,Pobedilovo_Airport,Pobedilovo_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+    0,0,Dubrovnik_Airport,Dubrovnik_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+    0,0,Hévíz-Balaton_Airport,Hévíz-Balaton_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+    0,0,Athens_International_Airport,Athens_International_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+    0,0,Vnukovo_International_Airport,Vnukovo_International_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
 
 **Saved Edges Trace:**
 
@@ -289,72 +268,14 @@ The edges trace will be saved as another CSV file. It will contain the time, the
 
 .. code:: text
 
-    Time,Fixed-Point-Operation,Edge,Label,Old Bound,New Bound,Occurred Due To,Clause-1,Clause-2
-    0,1,"('customer_3', 'customer_1')",car_friend,"[0.0,1.0]","[1.0,1.0]",car_friend_rule,"[('customer_3', 'Car_0')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    0,1,"('customer_0', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    0,1,"('customer_0', 'customer_2')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]","[('customer_2', 'Car_1'), ('customer_2', 'Car_3'), ('customer_2', 'Car_11')]"
-    0,1,"('customer_2', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_2', 'Car_1'), ('customer_2', 'Car_3'), ('customer_2', 'Car_11')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    0,1,"('customer_3', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    0,1,"('customer_3', 'customer_4')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]","[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]"
-    0,1,"('customer_4', 'customer_0')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]","[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]"
-    0,1,"('customer_4', 'customer_5')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]","[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]"
-    0,1,"('customer_5', 'customer_3')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]","[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]"
-    0,1,"('customer_5', 'customer_6')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]","[('customer_6', 'Car_6'), ('customer_6', 'Car_4')]"
-    0,1,"('customer_6', 'customer_0')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_6', 'Car_6'), ('customer_6', 'Car_4')]","[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]"
-    1,3,"('customer_3', 'customer_1')",car_friend,"[0.0,1.0]","[1.0,1.0]",car_friend_rule,"[('customer_3', 'Car_0')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    1,3,"('customer_0', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    1,3,"('customer_0', 'customer_2')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]","[('customer_2', 'Car_1'), ('customer_2', 'Car_3'), ('customer_2', 'Car_11')]"
-    1,3,"('customer_2', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_2', 'Car_1'), ('customer_2', 'Car_3'), ('customer_2', 'Car_11')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    1,3,"('customer_3', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    1,3,"('customer_3', 'customer_4')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]","[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]"
-    1,3,"('customer_4', 'customer_0')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]","[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]"
-    1,3,"('customer_4', 'customer_5')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]","[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]"
-    1,3,"('customer_5', 'customer_3')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]","[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]"
-    1,3,"('customer_5', 'customer_6')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]","[('customer_6', 'Car_6'), ('customer_6', 'Car_4')]"
-    1,3,"('customer_6', 'customer_0')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_6', 'Car_6'), ('customer_6', 'Car_4')]","[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]"
-    2,5,"('customer_3', 'customer_1')",car_friend,"[0.0,1.0]","[1.0,1.0]",car_friend_rule,"[('customer_3', 'Car_0')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    2,5,"('customer_0', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    2,5,"('customer_0', 'customer_2')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]","[('customer_2', 'Car_1'), ('customer_2', 'Car_3'), ('customer_2', 'Car_11')]"
-    2,5,"('customer_2', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_2', 'Car_1'), ('customer_2', 'Car_3'), ('customer_2', 'Car_11')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    2,5,"('customer_3', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    2,5,"('customer_3', 'customer_4')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]","[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]"
-    2,5,"('customer_4', 'customer_0')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]","[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]"
-    2,5,"('customer_4', 'customer_5')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]","[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]"
-    2,5,"('customer_5', 'customer_3')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]","[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]"
-    2,5,"('customer_5', 'customer_6')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]","[('customer_6', 'Car_6'), ('customer_6', 'Car_4')]"
-    2,5,"('customer_6', 'customer_0')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_6', 'Car_6'), ('customer_6', 'Car_4')]","[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]"
-    3,7,"('customer_3', 'customer_1')",car_friend,"[0.0,1.0]","[1.0,1.0]",car_friend_rule,"[('customer_3', 'Car_0')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    3,7,"('customer_0', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    3,7,"('customer_0', 'customer_2')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]","[('customer_2', 'Car_1'), ('customer_2', 'Car_3'), ('customer_2', 'Car_11')]"
-    3,7,"('customer_2', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_2', 'Car_1'), ('customer_2', 'Car_3'), ('customer_2', 'Car_11')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    3,7,"('customer_3', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    3,7,"('customer_3', 'customer_4')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]","[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]"
-    3,7,"('customer_4', 'customer_0')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]","[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]"
-    3,7,"('customer_4', 'customer_5')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]","[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]"
-    3,7,"('customer_5', 'customer_3')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]","[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]"
-    3,7,"('customer_5', 'customer_6')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]","[('customer_6', 'Car_6'), ('customer_6', 'Car_4')]"
-    3,7,"('customer_6', 'customer_0')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_6', 'Car_6'), ('customer_6', 'Car_4')]","[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]"
-    4,9,"('customer_3', 'customer_1')",car_friend,"[0.0,1.0]","[1.0,1.0]",car_friend_rule,"[('customer_3', 'Car_0')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    4,9,"('customer_0', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    4,9,"('customer_0', 'customer_2')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]","[('customer_2', 'Car_1'), ('customer_2', 'Car_3'), ('customer_2', 'Car_11')]"
-    4,9,"('customer_2', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_2', 'Car_1'), ('customer_2', 'Car_3'), ('customer_2', 'Car_11')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    4,9,"('customer_3', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    4,9,"('customer_3', 'customer_4')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]","[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]"
-    4,9,"('customer_4', 'customer_0')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]","[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]"
-    4,9,"('customer_4', 'customer_5')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]","[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]"
-    4,9,"('customer_5', 'customer_3')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]","[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]"
-    4,9,"('customer_5', 'customer_6')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]","[('customer_6', 'Car_6'), ('customer_6', 'Car_4')]"
-    4,9,"('customer_6', 'customer_0')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_6', 'Car_6'), ('customer_6', 'Car_4')]","[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]"
-    5,11,"('customer_3', 'customer_1')",car_friend,"[0.0,1.0]","[1.0,1.0]",car_friend_rule,"[('customer_3', 'Car_0')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    5,11,"('customer_0', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    5,11,"('customer_0', 'customer_2')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]","[('customer_2', 'Car_1'), ('customer_2', 'Car_3'), ('customer_2', 'Car_11')]"
-    5,11,"('customer_2', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_2', 'Car_1'), ('customer_2', 'Car_3'), ('customer_2', 'Car_11')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    5,11,"('customer_3', 'customer_1')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]","[('customer_1', 'Car_0'), ('customer_1', 'Car_8')]"
-    5,11,"('customer_3', 'customer_4')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]","[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]"
-    5,11,"('customer_4', 'customer_0')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]","[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]"
-    5,11,"('customer_4', 'customer_5')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_4', 'Car_4'), ('customer_4', 'Car_9')]","[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]"
-    5,11,"('customer_5', 'customer_3')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]","[('customer_3', 'Car_3'), ('customer_3', 'Car_0'), ('customer_3', 'Car_10')]"
-    5,11,"('customer_5', 'customer_6')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_5', 'Car_5'), ('customer_5', 'Car_2')]","[('customer_6', 'Car_6'), ('customer_6', 'Car_4')]"
-    5,11,"('customer_6', 'customer_0')",same_color_car,"[0.0,1.0]","[1.0,1.0]",same_car_color_rule,"[('customer_6', 'Car_6'), ('customer_6', 'Car_4')]","[('customer_0', 'Car_2'), ('customer_0', 'Car_7')]"
+    Time,Fixed-Point-Operation,Edge,Label,Old Bound,New Bound,Occurred Due To,Clause-1,Clause-2,Clause-3
+    0,0,"('Amsterdam_Airport_Schiphol', 'Yali')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
+    0,0,"('Riga_International_Airport', 'Amsterdam_Airport_Schiphol')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
+    0,0,"('Riga_International_Airport', 'Düsseldorf_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
+    0,0,"('Chișinău_International_Airport', 'Riga_International_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
+    0,0,"('Düsseldorf_Airport', 'Dubrovnik_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
+    0,0,"('Pobedilovo_Airport', 'Vnukovo_International_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
+    0,0,"('Dubrovnik_Airport', 'Athens_International_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
+    0,0,"('Vnukovo_International_Airport', 'Hévíz-Balaton_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
+    1,1,"('Vnukovo_International_Airport', 'Riga_International_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",connected_rule_1,"[('Riga_International_Airport', 'Amsterdam_Airport_Schiphol')]",['Amsterdam_Airport_Schiphol'],['Vnukovo_International_Airport']
 
----
