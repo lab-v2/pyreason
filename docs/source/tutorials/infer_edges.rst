@@ -87,9 +87,13 @@ Next, add the Rule and set ``infer_edges`` to ``True``
 
     pr.add_rule(pr.Rule('isConnectedTo(A, Y) <-1  isConnectedTo(Y, B), Amsterdam_Airport_Schiphol(B), Vnukovo_International_Airport(A)', 'connected_rule_1', infer_edges=True))
 
-This will should connect exactly one new relationship between A and Y. The Rule states that if there is a connection from Y to B, and B is ``Amsterdam Airport Schiphol``, and A is ``Vnukovo International Airport``, then infer that there is a connection from A to Y."
+This will should connect exactly one new relationship from A to Y. The Rule states that if there is a connection from Y to B, then infer an edge from A to Y.
+    
+    - B is ``Amsterdam Airport Schiphol``
+    - Y is ``Riga_International_Airport``
+    - A is ``Vnukovo_International_Airport``
 
-Therefore the output of the graph after running 1 timestep should be a new connection [1,1] between ``Vnukovo_International_Airport`` (A) and ``Riga_International_Airport`` (Y).
+Therefore the output of the graph after running 1 timestep should be a new connection [1,1] between ``Vnukovo_International_Airport`` (A) to ``Riga_International_Airport`` (Y).
 
 Facts 
 -----
