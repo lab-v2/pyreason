@@ -42,9 +42,12 @@ autoapi_dirs = [project_root]
 
 
 autoapi_options = [
-    "members",               # Include members (functions) only
+    "members",               # Include all class members (functions)
     "undoc-members",         # Include undocumented members
-    "show-inheritance",      # Show inheritance for functions and methods
+    "show-inheritance",      # Show inheritance tree for methods/functions
+    "private-members",       # Include private members (e.g., _method)
+    "special-members",       # Include special methods (e.g., __init__)
+    "show-children",
 ]
 
 templates_path = ['_templates']
