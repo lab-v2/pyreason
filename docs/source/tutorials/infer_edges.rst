@@ -142,7 +142,7 @@ The expected output after running will list at timestep 0 the inital connections
 
 
 
-The graph after running shows a new connection between ``Vnukovo_International_Airport``  and ``Riga_International_Airport``, because during the reasoning process an edges between them was infered. 
+The graph after running shows a new connection from ``Vnukovo_International_Airport``  to ``Riga_International_Airport``, because during the reasoning process an edges between them was infered. 
 
 .. image:: ../../../media/infer_edges2.png
    :align: center
