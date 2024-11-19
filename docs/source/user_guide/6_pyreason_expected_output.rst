@@ -12,6 +12,7 @@ This function filters and sorts the node changes in the interpretation and retur
 Basic Tutorial Example
 ^^^^^^^^^^^^^^^^^^^^^^^^
 To see ``filter_and_sort_nodes`` in action we will look at the example usage in PyReasons Basic Tutorial.
+
 .. note:: 
    Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/basic_tutorial.html#pyreason-basic-tutorial>`_
 
@@ -74,6 +75,7 @@ This function filters and sorts the edge changes in the interpretation and retur
 Infer Edges Example
 ^^^^^^^^^^^^^^^^^^^^^^^^
 To see ``filter_and_sort_edges`` in action, we will look at the example usage in PyReason's Infer Edges Tutorial.
+
 .. note:: 
    Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/infer_edges.html#pyreason-infer-edges>`_.
 
@@ -139,6 +141,7 @@ Advanced Tutorial Example
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 To see ``get_rule_trace`` in action we will look at the example usage in PyReasons Advanced Tutorial.
+
 .. note:: 
    Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/advanced_tutorial.html#running-pyreason-with-an-advanced-graph>`_
 
