@@ -71,7 +71,7 @@ def main(args):
     ipl = yaml_parser.parse_ipl(args.ipl_yaml_path)
 
     # Program comes here
-    program = Program(graph, facts_node, facts_edge, rules, ipl, args.reverse_digraph, args.atom_trace, args.save_graph_attributes_to_trace, args.canonical, args.inconsistency_check)
+    program = Program(graph, facts_node, facts_edge, rules, ipl, args.reverse_digraph, args.atom_trace, args.save_graph_attributes_to_trace, args.canonical, args.inconsistency_check, args.ad_hoc_grounding, args.resolution_levels, args.step_size)
     program.available_labels_node = node_labels
     program.available_labels_edge = edge_labels
     program.specific_node_labels = specific_node_labels

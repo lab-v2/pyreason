@@ -8,7 +8,7 @@ class Program:
 	specific_node_labels = []
 	specific_edge_labels = []
 
-	def __init__(self, graph, facts_node, facts_edge, rules, ipl, annotation_functions, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, parallel_computing, update_mode, allow_ground_rules):
+	def __init__(self, graph, facts_node, facts_edge, rules, ipl, annotation_functions, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, parallel_computing, update_mode, allow_ground_rules, ad_hoc_grounding, resolution_levels, step_size):
 		self._graph = graph
 		self._facts_node = facts_node
 		self._facts_edge = facts_edge
@@ -26,6 +26,10 @@ class Program:
 		self._allow_ground_rules = allow_ground_rules
 		self.interp = None
 
+		self._ad_hoc_grounding = ad_hoc_grounding
+		self._resolution_levels = resolution_levels
+		self._step_size = step_size
+
 	def reason(self, tmax, convergence_threshold, convergence_bound_threshold, verbose=True):
 		self._tmax = tmax
 		# Set up available labels
@@ -38,7 +42,7 @@ class Program:
 		if self._parallel_computing:
 			self.interp = InterpretationParallel(self._graph, self._ipl, self._annotation_functions, self._reverse_graph, self._atom_trace, self._save_graph_attributes_to_rule_trace, self._canonical, self._inconsistency_check, self._store_interpretation_changes, self._update_mode, self._allow_ground_rules)
 		else:
-			self.interp = Interpretation(self._graph, self._ipl, self._annotation_functions, self._reverse_graph, self._atom_trace, self._save_graph_attributes_to_rule_trace, self._canonical, self._inconsistency_check, self._store_interpretation_changes, self._update_mode, self._allow_ground_rules)
+			self.interp = Interpretation(self._graph, self._ipl, self._annotation_functions, self._reverse_graph, self._atom_trace, self._save_graph_attributes_to_rule_trace, self._canonical, self._inconsistency_check, self._store_interpretation_changes, self._update_mode, self._allow_ground_rules, self._ad_hoc_grounding, self._resolution_levels, self._step_size)
 		self.interp.start_fp(self._tmax, self._facts_node, self._facts_edge, self._rules, verbose, convergence_threshold, convergence_bound_threshold)
 
 		return self.interp
