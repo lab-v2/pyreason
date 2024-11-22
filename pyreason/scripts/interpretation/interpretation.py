@@ -2917,10 +2917,11 @@ def resolve_inconsistency_edge(interpretations, comp, na, ipl, t_cnt, fp_cnt, id
 
 @numba.njit(cache=True)
 def _add_node(node, neighbors, reverse_neighbors, nodes, interpretations_node, labels):
-	nodes.append(node)
-	neighbors[node] = numba.typed.List.empty_list(node_type)
-	reverse_neighbors[node] = numba.typed.List.empty_list(node_type)
-	interpretations_node[node] = world.World(labels)
+	if node not in nodes:
+		nodes.append(node)
+		neighbors[node] = numba.typed.List.empty_list(node_type)
+		reverse_neighbors[node] = numba.typed.List.empty_list(node_type)
+		interpretations_node[node] = world.World(labels)
 
 
 @numba.njit(cache=True)
