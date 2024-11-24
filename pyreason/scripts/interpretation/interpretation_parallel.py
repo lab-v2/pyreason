@@ -689,6 +689,25 @@ class Interpretation:
 
 		return interpretations
 
+	def get_num_ground_atoms(self):
+		"""
+		This function returns the number of ground atoms after the reasoning process, for each timestep
+		:return: List: A list of number of ground atoms for each timestep
+		"""
+		num_ga = []
+
+		for t in range(self.time+1):
+			ga_cnt = 0
+			for node in self.nodes:
+				for l in self.interpretations_node[node].world:
+					ga_cnt += 1
+			for edge in self.edges:
+				for l in self.interpretations_edge[edge].world:
+					ga_cnt += 1
+			num_ga.append(ga_cnt)
+
+		return num_ga
+
 	def query(self, query, return_bool=True) -> Union[bool, Tuple[float, float]]:
 		"""
 		This function is used to query the graph after reasoning
