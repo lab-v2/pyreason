@@ -2,7 +2,7 @@ API Documentation
 =================
 
 
-.. autoapi:: pyreason
+.. automodule:: pyreason
    :members:
    :undoc-members:
    :show-inheritance:

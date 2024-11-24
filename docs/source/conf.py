@@ -9,12 +9,9 @@ import sys
 #sys.path.insert(0, os.path.abspath('pyreason/pyreason.py'))
 # Calculate the absolute path to the pyreason directory
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'pyreason'))
-
 # Add the pyreason directory to sys.path
 sys.path.insert(0, project_root)
 
-
-# Add the pyreason/pyreason directory to the sys.path
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -41,7 +38,7 @@ autoapi_dirs = [os.path.join(project_root)]  # Only include the pyreason directo
 #autoapi_dirs = ['../pyreason/pyreason']
 
 # Ignore modules in the 'scripts' folder
-autoapi_ignore_modules = ['pyreason/scripts']
+autoapi_ignore_modules = ['pyreason.scripts']
 
 
 autoapi_options = [
@@ -53,7 +50,7 @@ autoapi_options = [
 
 templates_path = ['_templates']
 
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'pyreason.examples.rst','pyreason.scripts/*', 'pyreason.scripts./*',
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'pyreason.examples.rst','pyreason.scripts/*',
                     'pyreason.scripts.numba_wrapper.numba_types.rst',
                     'pyreason.scripts.numba_wrapper.rst', 'pyreason.scripts.program.rst',
                     'pyreason.scripts.interpretation.rst']
