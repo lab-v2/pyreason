@@ -35,7 +35,7 @@ autosummary_generate = True
 #autoapi_template_dir = '_templates/autoapi'
 # Ensure autoapi_dirs points to the folder containing pyreason.py
 #autoapi_dirs = [project_root]
-autoapi_dirs = [os.path.join(project_root)]  # Only include the pyreason directory (excluding scripts)
+autoapi_dirs = [os.path.join(project_root)]  # Only include the pyreason directory 
 
 #autoapi_dirs = [os.path.join(project_root)]  # Include only 'pyreason.pyreason'
 #autoapi_dirs = ['../pyreason/pyreason']
@@ -53,7 +53,7 @@ autoapi_options = [
 
 templates_path = ['_templates']
 
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'pyreason.examples.rst','pyreason.scripts/*',
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'pyreason.examples.rst','pyreason.scripts/*', 'pyreason.scripts./*',
                     'pyreason.scripts.numba_wrapper.numba_types.rst',
                     'pyreason.scripts.numba_wrapper.rst', 'pyreason.scripts.program.rst',
                     'pyreason.scripts.interpretation.rst']
