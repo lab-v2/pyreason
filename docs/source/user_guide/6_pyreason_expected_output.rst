@@ -318,6 +318,7 @@ Using ``.get_dict()``, the expected output is:
 
 
 .. code:: text 
+
     {0: {'Cat': {},
         'Dog': {},
         'John': {},
@@ -356,4 +357,4 @@ Using ``.get_dict()``, the expected output is:
         ('Mary', 'Cat'): {}}}
 
 
-``interpretation.get_dict()`` first goes through each time step, then the componenets of the graph, and finally the predicates and bounds. 
+``interpretation.get_dict()`` first goes through each time step, then the componenets of the graph(, and finally the predicates and bounds. 
