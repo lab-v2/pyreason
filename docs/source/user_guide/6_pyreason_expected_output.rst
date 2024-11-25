@@ -295,7 +295,7 @@ Click `here <https://github.com/lab-v2/pyreason/blob/docs/examples/csv%20outputs
 
 Reading PyReasons Explainable Trace
 ------------------------------------
-When using the fucntions ``save_rule_trace`` and ``get_rule_trace``, PyReason will output an explainable trace of the reasoning process.
+When using the functions ``save_rule_trace`` and ``get_rule_trace``, PyReason will output an explainable trace of the reasoning process.
 
 In the trace, the columens represent the following:
  - ``time``: the current timestep 
