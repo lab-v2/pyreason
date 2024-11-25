@@ -1,4 +1,4 @@
-PyReason Custom Threshold Example
+PyReason Custom Threshold 
 =================================
 
 In this tutorial, we will look at how to run PyReason with Custom Thresholds. 
