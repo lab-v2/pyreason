@@ -161,6 +161,7 @@ Expected Output
 Using ``get_rule_trace``, the expected output of ``nodes_trace`` and ``edges_trace`` is:
 
 Click `here <https://github.com/lab-v2/pyreason/blob/docs/examples/advacned_rule_trace_nodes_20241119-012153.csv>`_ for the full table.
+
 **Nodes Trace:**
 
 .. code:: text
@@ -199,6 +200,9 @@ Click `here <https://github.com/lab-v2/pyreason/blob/docs/examples/advacned_rule
     30     5                     11   customer_4  ...          trendy_rule           [customer_4]  [customer_4]
 
 **Edges Trace**
+
+Click `here <https://github.com/lab-v2/pyreason/blob/docs/examples/advanced_rule_trace_edges_20241119-012153.csv>`_ for the full table.
+
 
 .. code:: text
 
@@ -249,6 +253,10 @@ Using ``save_rule_trace``, the expected output is:
 
 The nodes trace will be saved as a CSV file in the specified folder. It will contain the time, the fixed-point operation, the node, and the clause information that led to the change in each timestep. Here's an example snippet of how the data will look when saved:
 
+Click `here <https://github.com/lab-v2/pyreason/blob/docs/examples/advanced_rule_trace_edges_20241119-012153.csv>`_ for the full table.
+
+
+
 .. code:: text
 
     Time,Fixed-Point-Operation,Node,Label,Old Bound,New Bound,Occurred Due To
@@ -268,6 +276,9 @@ The nodes trace will be saved as a CSV file in the specified folder. It will con
 **Saved Edges Trace:**
 
 The edges trace will be saved as another CSV file. It will contain the time, the edge relationship changes, and the clauses that were involved. Here’s a snippet of how the edge trace will look when saved:
+
+Click `here <https://github.com/lab-v2/pyreason/blob/docs/examples/advanced_rule_trace_edges_20241119-012153.csv>`_ for the full table.
+
 
 .. code:: text
 
