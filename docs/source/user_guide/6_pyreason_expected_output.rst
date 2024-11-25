@@ -14,7 +14,7 @@ Basic Tutorial Example
 To see ``filter_and_sort_nodes`` in action we will look at the example usage in PyReasons Basic Tutorial.
 
 .. note:: 
-   Find the full, explained tutorial here `here <https://github.com/lab-v2/pyreason/blob/docs/examples/hello_world_ex.py>`_
+   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/basic_tutorial.html>`_
 
 
 The tutorial take in a basic graph of people and their pets, then adds a Rule and a Fact.
@@ -77,7 +77,7 @@ Infer Edges Example
 To see ``filter_and_sort_edges`` in action, we will look at the example usage in PyReason's Infer Edges Tutorial.
 
 .. note:: 
-   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/infer_edges.html#pyreason-infer-edges>`_.
+   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/infer_edges.html>`_.
 
 The tutorial takes in a basic graph of airports and connections, then infers an edges between two unconnected airports.
 
@@ -143,7 +143,7 @@ Advanced Tutorial Example
 To see ``get_rule_trace`` in action we will look at the example usage in PyReasons Advanced Tutorial.
 
 .. note:: 
-   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/advanced_tutorial.html#running-pyreason-with-an-advanced-graph>_` 
+   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/advanced_tutorial.html>_` 
 
 
 The tutorial takes in a graph of we have customers, cars, pets and their relationships. We first have customer_details followed by car_details , pet_details , travel_details.
@@ -231,7 +231,7 @@ this provides full explainability of why interpretations changed.
 Infer Edges Tutorial Example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To see ``save_rule_trace`` in action, we will look at an example usage in PyReason's Advanced Tutorial.
+To see ``save_rule_trace`` in action, we will look at an example usage in PyReason's Infer Edges Tutorial.
 
 .. note::  
    Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/infer_edges.html#pyreason-infer-edges>`_.
@@ -313,7 +313,7 @@ Basic Tutorial Example
 To see ``interpretation.get_dict()`` in action we will look at the example usage in PyReasons Basic Tutorial.
 
 .. note:: 
-   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/basic_tutorial.html#pyreason-basic-tutorial>`_
+   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/basic_tutorial.html>`_
 
 Call ``.get_dict()`` function on the interpretation, and print using ``pprint``.
 
