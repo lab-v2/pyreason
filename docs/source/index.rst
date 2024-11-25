@@ -24,7 +24,6 @@ Welcome to the documentation for **PyReason**, a powerful, optimized Python tool
    user_guide/index
    tutorials/index
    license
-   examples_rst/index
 
 
 
