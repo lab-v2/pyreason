@@ -26,4 +26,4 @@ To add a fact in PyReason, use the command:
 .. code-block:: python
     
    import pyreason as pr
-    pr.add_fact(pr.Fact(fact_text=pred(x,y) : [0.2, 1], name='fact1', start_time=0, end_time=2))
+    pr.add_fact(pr.Fact(fact_text='pred(x,y) : [0.2, 1]', name='fact1', start_time=0, end_time=2))
