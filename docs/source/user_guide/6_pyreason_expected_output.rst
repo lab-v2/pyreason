@@ -293,20 +293,22 @@ Click `here <https://github.com/lab-v2/pyreason/blob/docs/examples/csv%20outputs
     0,0,"('Vnukovo_International_Airport', 'Hévíz-Balaton_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
     1,1,"('Vnukovo_International_Airport', 'Riga_International_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",connected_rule_1,"[('Riga_International_Airport', 'Amsterdam_Airport_Schiphol')]",['Amsterdam_Airport_Schiphol'],['Vnukovo_International_Airport']
 
-Reading the CSV
-^^^^^^^^^^^^^^^^
-In the csv file, the columens represent the following:
+Reading PyReasons Explainable Trace
+------------------------------------
+When using the fucntions ``save_rule_trace`` and ``get_rule_trace``, PyReason will output an explainable trace of the reasoning process.
+
+In the trace, the columens represent the following:
  - ``time``: the current timestep 
  - ``Fixed-Point Operation``: 
- - ``Edge``: The edge that has changed if applicable
+ - ``Edge``: The edge or node that has changed if applicable
  - ``Label``: The predicate or head of the rule 
  - ``Old Bound`` and ``New Bound``: Bound before and after reasoning step
  - ``Occured Due to``: what the the change in the step was due to, either ``fact`` or ``rule``
  - ``Clause-x``: What grounded the clause in the rule
 
-Interpreatation.get_dict()
+Get Dictionary
 --------------------------
-This function can be called externally to retrieve a dictionary of the interpretation values. The dictionary is triply nested from ``time`` -> ``graph component`` -> ``predicate`` -> ``bound``.
+The function ``interpretation.get_dict()`` can be called externally to retrieve a dictionary of the interpretation values. The dictionary is triply nested from ``time`` -> ``graph component`` -> ``predicate`` -> ``bound``.
 
 Basic Tutorial Example
 ^^^^^^^^^^^^^^^^
