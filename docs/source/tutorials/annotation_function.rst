@@ -149,45 +149,56 @@ This example will use a graph created with 2 facts, and only 2 nodes. The annota
 
 Facts
 ^^^^^^^^^^^^^^
-To initialize this graph, we will add 2 nodes ``P(A)`` and ``P(B)``, using ``add_fact``:
+To initialize this graph, we will add 3 nodes ``A``, ``B``, and ``C``, using ``add_fact``:
 
 .. code:: python
 
     import pyreason as pr
     
-    pr.add_fact(pr.Fact('P(A) : [0.3, 1]'))
-    pr.add_fact(pr.Fact('P(B) : [0.2, 1]'))
+    pr.add_fact(pr.Fact('A : [.1, 1]')) 
+    pr.add_fact(pr.Fact('B : [.2, 1]'))  
+    pr.add_fact(pr.Fact('C : [.4, 1]'))
    
 
 
 Linear Combination Function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Next, we define the annotation function that computes a weighted linear combination of the mapped lower and upper bounds of the grounded atoms. The weights are applied to normalize the values.
-For simplicity sake, we define the constant at 0.2 within the function, this is alterable for any constant.
+For simplicity sake, we define the constant at 0.2 within the function, this is alterable for any constant, or for the weights in the graph.
 
 .. code:: python
 
     @numba.njit
     def lin_comb_ann_fn(annotations, weights):
-        sum_lower_comb = 0
-        sum_upper_comb = 0
-        num_atoms = 0
-        constant = 0.2
-        
-        # Iterate over the clauses in the rule
-        for clause in annotations:
-            for atom in clause:
-                # Map the atom's lower and upper bounds to the interval [0, 1]
-                mapped_lower = map_to_unit_interval(atom.lower, 0, 1)
-                mapped_upper = map_to_unit_interval(atom.upper, 0, 1)
+    sum_lower_comb = 0
+    sum_upper_comb = 0
+    num_atoms = 0
+    constant = 0.2
+    # Iterate over the clauses in the rule
+    for clause in annotations:
+        for atom in clause:
+            
+            # Apply the constant weight to the lower and upper bounds, and accumulate
+            sum_lower_comb += constant * atom.lower
+            sum_upper_comb += constant * atom.upper
+            num_atoms += 1
 
-                # Apply the weights to the lower and upper bounds, and accumulate
-                sum_lower_comb += constant * mapped_lower
-                sum_upper_comb += constant * mapped_upper
-                num_atoms += 1
+    
+    #if the lower and upper are equal, return [0,1]
+    if sum_lower_comb == sum_upper_comb:
+        return 0,1
+    
+    if sum_lower_comb> sum_upper_comb:
+        sum_lower_comb,sum_upper_comb= sum_upper_comb, sum_lower_comb
 
-        # Return the weighted linear combination of the lower and upper bounds
-        return sum_lower_comb, sum_upper_comb
+    if sum_upper_comb>1:
+        sum_lower_comb = map_interval(sum_lower_comb, sum_lower_comb, sum_upper_comb, 0,1)
+
+        sum_upper_comb = map_interval(sum_upper_comb, atom.lower, atom.upper,0,1)
+
+    # Return the weighted linear combination of the lower and upper bounds
+    return sum_lower_comb, sum_upper_comb
+
 
 
 We now add the new annotation function within the PyReason framework:
@@ -206,11 +217,12 @@ Create Rules of this general format when using an annotation function:
 
 .. code:: text
     
-    linear_combination_function(A, B):lin_comb_ann_fn <- P(A):[0, 1], P(B):[0, 1]
+    linear_combination_function(A, B):lin_comb_ann_fn <- A:[0, 1], B:[0, 1], C:[0, 1]
+
 
 .. code:: python
 
-    pr.add_rule(pr.Rule('linear_combination_function(A, B):lin_comb_ann_fn <- P(A):[0, 1], P(B):[0, 1]', infer_edges=True))
+    pr.add_rule(pr.Rule('linear_combination_function(A, B):lin_comb_ann_fn <- A:[0, 1], B:[0, 1], C:[0, 1]', infer_edges=True))
 
 The annotation function will be called when all clauses in the rule have been satisfied and the head of the Rule is to be annotated.
 
@@ -230,12 +242,13 @@ Below is the expected output from running the ``linear_combination_annotation_fu
 .. code:: text
 
     Timestep: 0
+
     Converged at time: 0
     Fixed Point iterations: 2
     TIMESTEP - 0
-    component linear_combination_function
-    0    (A, B)                  [0.1, 0.4]
+    component                linear_combination_function
+    0    (A, B)  [0.24000000000000005, 0.6000000000000001]
 
 In this output:
-    - The lower bound of the ``linear_combination_function(A, B)`` is computed as ``0.1``, based on the weighted combination of the lower bounds of ``P(A)`` (0.3) and ``P(B)`` (0.2), both multiplied by the constant then added together.
-    - The upper bound of the ``linear_combination_function(A, B)`` is computed as ``0.4``, based on the weighted combination of the upper bounds of ``P(A)`` (1) and ``P(B)`` (1), both multiplied by the constant then added together.
+    - The lower bound of the ``linear_combination_function(A, B, C)`` is computed as ``0.24000000000000005``, based on the weighted combination of the lower bounds of ``A`` (0.1), ``B`` (0.2), and ``C`` (0.4)  multiplied by the constant(0.2) then added together.
+    - The upper bound of the ``linear_combination_function(A, B, C)`` is computed as ``0.6000000000000001``, based on the weighted combination of the upper bounds of ``A`` (1), ``B`` (1), and ``C`` (1)  multiplied by the constant(0.2) then added together.
