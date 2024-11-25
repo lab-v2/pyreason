@@ -2,6 +2,9 @@
 import pyreason as pr
 import faulthandler
 import networkx as nx
+from typing import Tuple
+from pprint import pprint
+
 
 
 # Reset PyReason
@@ -44,9 +47,13 @@ pr.add_fact(pr.Fact('popular(Mary)', 'popular_fact', 0, 2))
 # Run the program for two timesteps to see the diffusion take place
 faulthandler.enable()
 interpretation = pr.reason(timesteps=2)
+pr.save_rule_trace(interpretation)
 
-
-# Display the changes in the interpretation for each timestep
+interpretations_dict = interpretation.get_dict()
+print("stra")
+pprint(interpretations_dict)
+print("end")
+#Display the changes in the interpretation for each timestep
 dataframes = pr.filter_and_sort_nodes(interpretation, ['popular'])
 for t, df in enumerate(dataframes):
     print(f'TIMESTEP - {t}')
