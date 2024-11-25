@@ -38,7 +38,7 @@ autoapi_dirs = [os.path.join(project_root)]  # Only include the pyreason directo
 #autoapi_dirs = ['../pyreason/pyreason']
 
 autoapi_root = 'pyreason'
-autoapi_ignore = ['*/scripts/*', '*/examples/*', '*/pyreason.pyreason/*', '*/__init__.py']
+autoapi_ignore = ['*/scripts/*', '*/examples/*', '*/pyreason.pyreason/*']
 
 # Ignore modules in the 'scripts' folder
 # autoapi_ignore_modules = ['pyreason.scripts']
