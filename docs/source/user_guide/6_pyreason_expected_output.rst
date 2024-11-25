@@ -143,7 +143,7 @@ Advanced Tutorial Example
 To see ``get_rule_trace`` in action we will look at the example usage in PyReasons Advanced Tutorial.
 
 .. note:: 
-   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/advanced_tutorial.html>_` 
+   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/advanced_tutorial.html>`_ 
 
 
 The tutorial takes in a graph of we have customers, cars, pets and their relationships. We first have customer_details followed by car_details , pet_details , travel_details.
