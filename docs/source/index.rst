@@ -22,7 +22,6 @@ Welcome to the documentation for **PyReason**, a powerful, optimized Python tool
    installation
    key_concepts
    user_guide/index
-   api_reference/index
    tutorials/index
    license
    examples_rst/index

@@ -143,7 +143,7 @@ pr.add_rule(
 pr.add_fact(pr.Fact('popular-fact', 'popular(customer_0)', 0, 5))
 
 # Perform reasoning over 10 timesteps
-interpretation = pr.reason(timesteps=10)
+interpretation = pr.reason(timesteps=5)
 
 # Get the interpretation and display it
 interpretations_dict = interpretation.get_dict()
@@ -154,6 +154,8 @@ df1 = pr.filter_and_sort_nodes(interpretation, ['trendy', 'cool_car', 'cool_pet'
 
 # Filter and sort edges based on specific relationships
 df2 = pr.filter_and_sort_edges(interpretation, ['car_friend', 'same_color_car'])
+
+#pr.save_rule_trace(interpretation)
 
 # Display filtered node and edge data
 print(df1)

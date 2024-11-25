@@ -56,17 +56,6 @@ def average_annotation_function():
 
 
 @numba.njit
-def map_to_unit_interval(value, lower, upper):
-    """
-    Map a value from the interval [lower, upper] to the interval [0, 1].
-    The formula is f(t) = c + ((d - c) / (b - a)) * (t - a),
-    where a = lower, b = upper, c = 0, and d = 1.
-    """
-    if upper == lower:
-        return 0  # Avoid division by zero if upper == lower
-    return (value - lower) / (upper - lower)
-
-@numba.njit
 def map_interval(t, a, b, c, d):
     """
     Maps a value `t` from the interval [a, b] to the interval [c, d] using the formula:
@@ -138,9 +127,9 @@ def linear_combination_annotation_function():
 
 
     # Add facts (P(A) and P(B) with bounds)
-    pr.add_fact(pr.Fact('A : [.1, 1]'))  # Clause A with values [1, 0]
-    pr.add_fact(pr.Fact('B : [.2, 1]'))  # Clause B with values [2, 3]
-    pr.add_fact(pr.Fact('C : [.4, 1]'))  # Clause C with values [4, 5]
+    pr.add_fact(pr.Fact('A : [.1, 1]')) 
+    pr.add_fact(pr.Fact('B : [.2, 1]'))  
+    pr.add_fact(pr.Fact('C : [.4, 1]'))  
     
 
     # Register the custom annotation function with PyReason

@@ -1,6 +1,4 @@
 import pyreason as pr
-
-
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -32,17 +30,10 @@ edges = [
     ("Riga_International_Airport", "Amsterdam_Airport_Schiphol", {"isConnectedTo": 1}),
     ("Riga_International_Airport", "Düsseldorf_Airport", {"isConnectedTo": 1}),
     ("Chișinău_International_Airport", "Riga_International_Airport", {"isConnectedTo": 1}),
-    ("Amsterdam_Airport_Schiphol", "Yali", {"isConnectedTo": 1})
+    ("Amsterdam_Airport_Schiphol", "Yali", {"isConnectedTo": 1}),
 ]
 
 G.add_edges_from(edges)
-
-
-
-# Print a drawing of the directed graph
-# nx.draw(G, with_labels=True, node_color='lightblue', font_weight='bold', node_size=3000)
-# plt.show()
-
 
 
 
@@ -64,7 +55,7 @@ pr.add_rule(pr.Rule('isConnectedTo(A, Y) <-1  isConnectedTo(Y, B), Amsterdam_Air
 
 # Run the program for two timesteps to see the diffusion take place
 interpretation = pr.reason(timesteps=1)
-# pr.save_rule_trace(interpretation)
+#pr.save_rule_trace(interpretation)
 
 # Display the changes in the interpretation for each timestep
 dataframes = pr.filter_and_sort_edges(interpretation, ['isConnectedTo'])
@@ -75,6 +66,3 @@ for t, df in enumerate(dataframes):
 assert len(dataframes) == 2, 'Pyreason should run exactly 2 fixpoint operations'
 assert len(dataframes[1]) == 1, 'At t=1 there should be only 1 new isConnectedTo atom'
 assert ('Vnukovo_International_Airport', 'Riga_International_Airport') in dataframes[1]['component'].values.tolist() and dataframes[1]['isConnectedTo'].iloc[0] == [1, 1], '(Vnukovo_International_Airport, Riga_International_Airport) should have isConnectedTo bounds [1,1] for t=1 timesteps'
-
-nx.draw(G, with_labels=True, node_color='lightblue', font_weight='bold', node_size=3000)
-plt.show()

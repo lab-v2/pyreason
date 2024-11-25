@@ -5,7 +5,7 @@ In this tutorial, we will look at how to run PyReason with Custom Thresholds.
 Custom Thresholds are parameters in the :ref:`Rule Class <pyreason_rules>`. 
 
 .. note::
-    Find the full, excecutable code `here <https://pyreason--60.org.readthedocs.build/en/60/examples_rst/custom_threshold_example.html#custom-threshold-example>`_
+    Find the full, excecutable code `here <https://github.com/lab-v2/pyreason/blob/docs/examples/custom_threshold_ex.py>`_
 
 The following graph represents a network of People and a Text Message in their group chat.
 

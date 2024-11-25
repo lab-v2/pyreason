@@ -4,14 +4,13 @@ PyReason Annotation Functions
 In this tutorial, we will look at use annotation functions in PyReason. 
 Read more about annotation functions `here <https://pyreason--60.org.readthedocs.build/en/60/user_guide/3_pyreason_rules.html#annotation-functions>`_. 
 
+.. note::
+    Find the full, excecutable code for both annotation functions `here <https://github.com/lab-v2/pyreason/blob/docs/examples/annotation_function_ex.py>`_
 
 
 Average Annotation Function Example
 -----------------------------------
 This example takes the average of the lower and higher bounds of the nodes in the graph.
-
-.. note::
-    Find the full, excecutable code `here <https://pyreason--60.org.readthedocs.build/en/60/examples_rst/annF_average_example.html>`_
 
 Graph
 ^^^^^^^
@@ -119,26 +118,34 @@ Linear Combination Annotation Function
 
 Now, we will define and use a new annotation function to compute a weighted linear combination of the bounds of grounded atoms in a rule.
 
-.. note::
-    Find the full, excecutable code `here <https://pyreason--60.org.readthedocs.build/en/60/examples_rst/annF_linear_combination_example.html>`_
 
-
-The `map_to_unit_interval` Function
+The `map_interval` Function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We will first define a helper function that maps a value from the interval `[lower, upper]` to the interval `[0, 1]`. This will be used in the main annotation function to normalize the bounds:
 
 .. code:: python
 
     @numba.njit
-    def map_to_unit_interval(value, lower, upper):
+    def map_interval(t, a, b, c, d):
         """
-        Map a value from the interval [lower, upper] to the interval [0, 1].
-        The formula is f(t) = c + ((d - c) / (b - a)) * (t - a),
-        where a = lower, b = upper, c = 0, and d = 1.
-        """
-        if upper == lower:
-            return 0  # Avoid division by zero if upper == lower
-        return (value - lower) / (upper - lower)
+        Maps a value `t` from the interval [a, b] to the interval [c, d] using the formula:
+        
+            f(t) = c + ((d - c) / (b - a)) * (t - a)
+        
+        Parameters:
+        - t: The value to be mapped.
+        - a: The lower bound of the original interval.
+        - b: The upper bound of the original interval.
+        - c: The lower bound of the target interval.
+        - d: The upper bound of the target interval.
+        
+        Returns:
+        - The value `t` mapped to the new interval [c, d].
+            """
+        # Apply the formula to map the value t
+        mapped_value = c + ((d - c) / (b - a)) * (t - a)
+        
+        return mapped_value
 
 
 Graph

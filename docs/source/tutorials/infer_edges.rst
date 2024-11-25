@@ -6,7 +6,7 @@ infer edges is a parameter in the :ref:`Rule Class <pyreason_rules>`.
 
 
 .. note::
-    Find the full, excecutable code `here <https://pyreason--60.org.readthedocs.build/en/60/examples_rst/infer_edges_example.html#infer-edges-example>`_
+    Find the full, excecutable code `here <https://github.com/lab-v2/pyreason/blob/docs/examples/infer_edges_ex.py>`_
 
 The following graph represents a network of airports and connections.
 

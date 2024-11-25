@@ -14,7 +14,7 @@ Basic Tutorial Example
 To see ``filter_and_sort_nodes`` in action we will look at the example usage in PyReasons Basic Tutorial.
 
 .. note:: 
-   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/basic_tutorial.html#pyreason-basic-tutorial>`_
+   Find the full, explained tutorial here `here <https://github.com/lab-v2/pyreason/blob/docs/examples/hello_world_ex.py>`_
 
 
 The tutorial take in a basic graph of people and their pets, then adds a Rule and a Fact.
