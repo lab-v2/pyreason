@@ -279,3 +279,81 @@ The edges trace will be saved as another CSV file. It will contain the time, the
     0,0,"('Vnukovo_International_Airport', 'Hévíz-Balaton_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
     1,1,"('Vnukovo_International_Airport', 'Riga_International_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",connected_rule_1,"[('Riga_International_Airport', 'Amsterdam_Airport_Schiphol')]",['Amsterdam_Airport_Schiphol'],['Vnukovo_International_Airport']
 
+Reading the CSV
+^^^^^^^^^^^^^^^^
+In the csv file, the columens represent the following:
+ - ``time``: the current timestep 
+ - ``Fixed-Point Operation``: 
+ - ``Edge``: The edge that has changed if applicable
+ - ``Label``: The predicate or head of the rule 
+ - ``Old Bound`` and ``New Bound``: Bound before and after reasoning step
+ - ``Occured Due to``: what the the change in the step was due to, either ``fact`` or ``rule``
+ - ``Clause-x``: What grounded the clause in the rule
+
+interpreatation.get_dict()
+--------------------------
+This function can be called externally to retrieve a dictionary of the interpretation values. The dictionary is triply nested from ``time`` -> ``graph component`` -> ``predicate`` -> ``bound``.
+
+Basic Tutorial Example
+^^^^^^^^^^^^^^^^
+To see ``interpretation.get_dict()`` in action we will look at the example usage in PyReasons Basic Tutorial.
+
+.. note:: 
+   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/basic_tutorial.html#pyreason-basic-tutorial>`_
+
+Call ``.get_dict()`` function on the interpretation, and print using ``pprint``.
+
+.. code:: python
+
+    import pyreason as pr
+    from pprint import pprint
+
+    interpretation = pr.reason(timesteps=2)
+    interpretations_dict = interpretation.get_dict()
+    pprint(interpretations_dict)
+
+Expected Output
+^^^^^^^^^^^^^^^^
+Using ``.get_dict()``, the expected output is: 
+
+
+.. code:: text 
+    {0: {'Cat': {},
+        'Dog': {},
+        'John': {},
+        'Justin': {},
+        'Mary': {'popular': (1.0, 1.0)},
+        ('John', 'Dog'): {},
+        ('John', 'Justin'): {},
+        ('John', 'Mary'): {},
+        ('Justin', 'Cat'): {},
+        ('Justin', 'Dog'): {},
+        ('Justin', 'Mary'): {},
+        ('Mary', 'Cat'): {}},
+    1: {'Cat': {},
+        'Dog': {},
+        'John': {},
+        'Justin': {'popular': (1.0, 1.0)},
+        'Mary': {'popular': (1.0, 1.0)},
+        ('John', 'Dog'): {},
+        ('John', 'Justin'): {},
+        ('John', 'Mary'): {},
+        ('Justin', 'Cat'): {},
+        ('Justin', 'Dog'): {},
+        ('Justin', 'Mary'): {},
+        ('Mary', 'Cat'): {}},
+    2: {'Cat': {},
+        'Dog': {},
+        'John': {'popular': (1.0, 1.0)},
+        'Justin': {'popular': (1.0, 1.0)},
+        'Mary': {'popular': (1.0, 1.0)},
+        ('John', 'Dog'): {},
+        ('John', 'Justin'): {},
+        ('John', 'Mary'): {},
+        ('Justin', 'Cat'): {},
+        ('Justin', 'Dog'): {},
+        ('Justin', 'Mary'): {},
+        ('Mary', 'Cat'): {}}}
+
+
+``interpretation.get_dict()`` first goes through each time step, then the componenets of the graph, and finally the predicates and bounds. 
