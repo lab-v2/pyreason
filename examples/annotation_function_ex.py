@@ -108,7 +108,7 @@ def lin_comb_ann_fn(annotations, weights):
         #mapped_lower = map_interval(sum_lower_comb, atom.lower, atom.upper, 0,1)
         sum_lower_comb = map_interval(sum_lower_comb, sum_lower_comb, sum_upper_comb, 0,1)
 
-        sum_upper_comb = map_interval(sum_upper_comb, atom.lower, atom.upper,0,1)
+        sum_upper_comb = map_interval(sum_upper_comb, sum_lower_comb, sum_upper_comb,0,1)
 
 
     # Return the weighted linear combination of the lower and upper bounds
