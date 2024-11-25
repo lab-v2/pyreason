@@ -5,7 +5,7 @@ In this tutorial, we will look at how to run PyReason with a more
 complex graph.
 
 .. note:: 
-   Find the full, excecutable code `here <https://pyreason--60.org.readthedocs.build/en/60/examples_rst/advanced_example.html#advanced-example>`_
+   Find the full, excecutable code `here <https://github.com/lab-v2/pyreason/blob/docs/examples/advanced_graph_ex.py>`_
 
 Graph
 ------------
