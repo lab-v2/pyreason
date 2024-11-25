@@ -37,6 +37,8 @@ autoapi_dirs = [os.path.join(project_root)]  # Only include the pyreason directo
 #autoapi_dirs = [os.path.join(project_root)]  # Include only 'pyreason.pyreason'
 #autoapi_dirs = ['../pyreason/pyreason']
 
+autoapi_ignore = ['*/scripts/*', '*/examples/*']
+
 # Ignore modules in the 'scripts' folder
 autoapi_ignore_modules = ['pyreason.scripts']
 
@@ -50,10 +52,7 @@ autoapi_options = [
 
 templates_path = ['_templates']
 
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'pyreason.examples.rst','pyreason.scripts/*',
-                    'pyreason.scripts.numba_wrapper.numba_types.rst',
-                    'pyreason.scripts.numba_wrapper.rst', 'pyreason.scripts.program.rst',
-                    'pyreason.scripts.interpretation.rst']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
