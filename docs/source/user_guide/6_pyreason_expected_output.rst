@@ -143,7 +143,7 @@ Advanced Tutorial Example
 To see ``get_rule_trace`` in action we will look at the example usage in PyReasons Advanced Tutorial.
 
 .. note:: 
-   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/advanced_tutorial.html#running-pyreason-with-an-advanced-graph>`_
+   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/advanced_tutorial.html#running-pyreason-with-an-advanced-graph>_` 
 
 
 The tutorial takes in a graph of we have customers, cars, pets and their relationships. We first have customer_details followed by car_details , pet_details , travel_details.
@@ -160,6 +160,7 @@ Expected Output
 ^^^^^^^^^^^^^^^^
 Using ``get_rule_trace``, the expected output of ``nodes_trace`` and ``edges_trace`` is:
 
+Click `here <https://github.com/lab-v2/pyreason/blob/docs/examples/advacned_rule_trace_nodes_20241119-012153.csv>`_ for the full table.
 **Nodes Trace:**
 
 .. code:: text
@@ -261,6 +262,8 @@ The nodes trace will be saved as a CSV file in the specified folder. It will con
     0,0,Hévíz-Balaton_Airport,Hévíz-Balaton_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
     0,0,Athens_International_Airport,Athens_International_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
     0,0,Vnukovo_International_Airport,Vnukovo_International_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+
+
 
 **Saved Edges Trace:**
 
