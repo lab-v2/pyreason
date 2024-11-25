@@ -304,7 +304,7 @@ In the csv file, the columens represent the following:
  - ``Occured Due to``: what the the change in the step was due to, either ``fact`` or ``rule``
  - ``Clause-x``: What grounded the clause in the rule
 
-interpreatation.get_dict()
+Interpreatation.get_dict()
 --------------------------
 This function can be called externally to retrieve a dictionary of the interpretation values. The dictionary is triply nested from ``time`` -> ``graph component`` -> ``predicate`` -> ``bound``.
 
@@ -371,4 +371,4 @@ Using ``.get_dict()``, the expected output is:
         ('Mary', 'Cat'): {}}}
 
 
-``interpretation.get_dict()`` first goes through each time step, then the componenets of the graph(, and finally the predicates and bounds. 
+``interpretation.get_dict()`` first goes through each time step, then the componenets of the graph, and finally the predicates and bounds. 
