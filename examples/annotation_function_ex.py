@@ -67,24 +67,56 @@ def map_to_unit_interval(value, lower, upper):
     return (value - lower) / (upper - lower)
 
 
+def map_interval(t, a, b, c, d):
+    """
+    Maps a value `t` from the interval [a, b] to the interval [c, d] using the formula:
+    
+        f(t) = c + ((d - c) / (b - a)) * (t - a)
+    
+    Parameters:
+    - t: The value to be mapped.
+    - a: The lower bound of the original interval.
+    - b: The upper bound of the original interval.
+    - c: The lower bound of the target interval.
+    - d: The upper bound of the target interval.
+    
+    Returns:
+    - The value `t` mapped to the new interval [c, d].
+    
+    Raises:
+    - ValueError: If `a == b`, as the mapping is not valid when the intervals have zero length.
+    """
+    # Check if a == b to avoid division by zero
+    if a == b:
+        raise ValueError("The interval [a, b] must have non-zero length (a != b).")
+    
+    # Apply the formula to map the value t
+    mapped_value = c + ((d - c) / (b - a)) * (t - a)
+    
+    return mapped_value
+
+
+
+
 @numba.njit
 def lin_comb_ann_fn(annotations, weights):
     sum_lower_comb = 0
     sum_upper_comb = 0
     num_atoms = 0
     constant = 0.2
-    
+    print(weights)
     # Iterate over the clauses in the rule
     for clause in annotations:
         for atom in clause:
-            # Map the atom's lower and upper bounds to the interval [0, 1]
-            mapped_lower = map_to_unit_interval(atom.lower, 0, 1)
-            mapped_upper = map_to_unit_interval(atom.upper, 0, 1)
-
+                #maps to interval [0,1], maybe move back to inside the loop...
+            mapped_lower = map_interval(sum_lower_comb, atom.lower, atom.upper, 0,1)
+            mapped_upper = map_interval(sum_upper_comb, atom.lower, atom.upper,0,1)
+            weight = weights[clause][atom]
             # Apply the weights to the lower and upper bounds, and accumulate
-            sum_lower_comb += constant * mapped_lower
-            sum_upper_comb += constant * mapped_upper
+            sum_lower_comb += weight * mapped_lower
+            sum_upper_comb += weight * mapped_upper
             num_atoms += 1
+
 
     # Return the weighted linear combination of the lower and upper bounds
     return sum_lower_comb, sum_upper_comb
@@ -109,7 +141,7 @@ def linear_combination_annotation_function():
     # Register the custom annotation function with PyReason
     pr.add_annotation_function(lin_comb_ann_fn)
     
-    # Define a rule that uses this linear combination function
+    # Define a rule that uses this linear combination function, FIX THIS to be for lin comb?
     pr.add_rule(pr.Rule('linear_combination_function(A, B):lin_comb_ann_fn <- P(A):[0, 1], P(B):[0, 1]', infer_edges=True))
 
     # Perform reasoning for 1 timestep
