@@ -406,8 +406,6 @@ __clause_maps = None
 __node_facts = None
 __edge_facts = None
 __ipl = None
-__node_labels = None
-__edge_labels = None
 __specific_node_labels = None
 __specific_edge_labels = None
 
@@ -429,11 +427,9 @@ def reset():
     """Resets certain variables to None to be able to do pr.reason() multiple times in a program
     without memory blowing up
     """
-    global __node_facts, __edge_facts, __node_labels, __edge_labels
+    global __node_facts, __edge_facts
     __node_facts = None
     __edge_facts = None
-    __node_labels = None
-    __edge_labels = None
 
 
 def get_rules():
@@ -645,7 +641,7 @@ def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bou
 
 def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queries):
     # Globals
-    global __graph, __rules, __clause_maps, __node_facts, __edge_facts, __ipl, __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels, __graphml_parser
+    global __graph, __rules, __clause_maps, __node_facts, __edge_facts, __ipl, __specific_node_labels, __specific_edge_labels, __graphml_parser
     global settings, __timestamp, __program
 
     # Assert variables are of correct type
@@ -661,12 +657,6 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
     if __rules is None:
         raise Exception('There are no rules, use `add_rule` or `add_rules_from_file`')
 
-    # Check variables that are highly recommended. Warnings
-    if __node_labels is None and __edge_labels is None:
-        __node_labels = numba.typed.List.empty_list(label.label_type)
-        __edge_labels = numba.typed.List.empty_list(label.label_type)
-        __specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
-        __specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
 
     if __node_facts is None:
         __node_facts = numba.typed.List.empty_list(fact_node.fact_type)
@@ -676,7 +666,9 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
     if __ipl is None:
         __ipl = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, label.label_type)))
 
-    # If graph attribute parsing, add results to existing specific labels and facts
+    # Add results of graph parse to existing specific labels and facts
+    __specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
+    __specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
     for label_name, nodes in __specific_graph_node_labels.items():
         if label_name in __specific_node_labels:
             __specific_node_labels[label_name].extend(nodes)
@@ -722,8 +714,6 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
 
     # Setup logical program
     __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.allow_ground_rules)
-    __program.available_labels_node = __node_labels
-    __program.available_labels_edge = __edge_labels
     __program.specific_node_labels = __specific_node_labels
     __program.specific_edge_labels = __specific_edge_labels
 
@@ -735,7 +725,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
 
 def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts):
     # Globals
-    global __graph, __rules, __node_facts, __edge_facts, __ipl, __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels, __graphml_parser
+    global __graph, __rules, __node_facts, __edge_facts, __ipl, __specific_node_labels, __specific_edge_labels, __graphml_parser
     global settings, __timestamp, __program
 
     assert __program is not None, 'To run `reason_again` you need to have reasoned once before'

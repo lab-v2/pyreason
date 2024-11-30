@@ -52,8 +52,6 @@ edges_to_be_added_type = numba.types.Tuple((numba.types.ListType(node_type), num
 
 
 class Interpretation:
-	available_labels_node = []
-	available_labels_edge = []
 	specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(node_type))
 	specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(edge_type))
 
@@ -69,6 +67,7 @@ class Interpretation:
 		self.store_interpretation_changes = store_interpretation_changes
 		self.update_mode = update_mode
 		self.allow_ground_rules = allow_ground_rules
+		self.num_ga = numba.typed.List.empty_list(numba.types.int64)
 
 		# For reasoning and reasoning again (contains previous time and previous fp operation cnt)
 		self.time = 0
@@ -98,18 +97,8 @@ class Interpretation:
 		self.nodes.extend(numba.typed.List(self.graph.nodes()))
 		self.edges.extend(numba.typed.List(self.graph.edges()))
 
-		# Make sure they are correct type
-		if len(self.available_labels_node)==0:
-			self.available_labels_node = numba.typed.List.empty_list(label.label_type)
-		else:
-			self.available_labels_node = numba.typed.List(self.available_labels_node)
-		if len(self.available_labels_edge)==0:
-			self.available_labels_edge = numba.typed.List.empty_list(label.label_type)
-		else:
-			self.available_labels_edge = numba.typed.List(self.available_labels_edge)
-
-		self.interpretations_node, self.predicate_map_node = self._init_interpretations_node(self.nodes, self.available_labels_node, self.specific_node_labels)
-		self.interpretations_edge, self.predicate_map_edge = self._init_interpretations_edge(self.edges, self.available_labels_edge, self.specific_edge_labels)
+		self.interpretations_node, self.predicate_map_node = self._init_interpretations_node(self.specific_node_labels)
+		self.interpretations_edge, self.predicate_map_edge = self._init_interpretations_edge(self.specific_edge_labels)
 
 		# Setup graph neighbors and reverse neighbors
 		self.neighbors = numba.typed.Dict.empty(key_type=node_type, value_type=numba.types.ListType(node_type))
@@ -138,19 +127,14 @@ class Interpretation:
 
 	@staticmethod
 	@numba.njit(cache=True)
-	def _init_interpretations_node(nodes, available_labels, specific_labels):
+	def _init_interpretations_node(specific_labels):
 		interpretations = numba.typed.Dict.empty(key_type=node_type, value_type=world.world_type)
 		predicate_map = numba.typed.Dict.empty(key_type=label.label_type, value_type=list_of_nodes)
-		# General labels
-		for n in nodes:
-			interpretations[n] = world.World(available_labels)
+
 		# Specific labels
 		for l, ns in specific_labels.items():
 			for n in ns:
 				interpretations[n].world[l] = interval.closed(0.0, 1.0)
-
-		for l in available_labels:
-			predicate_map[l] = numba.typed.List(nodes)
 
 		for l, ns in specific_labels.items():
 			predicate_map[l] = numba.typed.List(ns)
@@ -159,19 +143,14 @@ class Interpretation:
 
 	@staticmethod
 	@numba.njit(cache=True)
-	def _init_interpretations_edge(edges, available_labels, specific_labels):
+	def _init_interpretations_edge(specific_labels):
 		interpretations = numba.typed.Dict.empty(key_type=edge_type, value_type=world.world_type)
 		predicate_map = numba.typed.Dict.empty(key_type=label.label_type, value_type=list_of_edges)
-		# General labels
-		for e in edges:
-			interpretations[e] = world.World(available_labels)
+
 		# Specific labels
 		for l, es in specific_labels.items():
 			for e in es:
 				interpretations[e].world[l] = interval.closed(0.0, 1.0)
-
-		for l in available_labels:
-			predicate_map[l] = numba.typed.List(edges)
 
 		for l, es in specific_labels.items():
 			predicate_map[l] = numba.typed.List(es)
@@ -691,22 +670,19 @@ class Interpretation:
 
 	def get_num_ground_atoms(self):
 		"""
-		This function returns the number of ground atoms after the reasoning process, for each timestep
-		:return: List: A list of number of ground atoms for each timestep
+		This function returns the number of ground atoms after the reasoning process, for the final timestep
+		:return: int: Number of ground atoms in the interpretation after reasoning
 		"""
-		num_ga = []
+		ga_cnt = 0
 
-		for t in range(self.time+1):
-			ga_cnt = 0
-			for node in self.nodes:
-				for l in self.interpretations_node[node].world:
-					ga_cnt += 1
-			for edge in self.edges:
-				for l in self.interpretations_edge[edge].world:
-					ga_cnt += 1
-			num_ga.append(ga_cnt)
+		for node in self.nodes:
+			for l in self.interpretations_node[node].world:
+				ga_cnt += 1
+		for edge in self.edges:
+			for l in self.interpretations_edge[edge].world:
+				ga_cnt += 1
 
-		return num_ga
+		return ga_cnt
 
 	def query(self, query, return_bool=True) -> Union[bool, Tuple[float, float]]:
 		"""
