@@ -97,8 +97,8 @@ class Interpretation:
 		self.nodes.extend(numba.typed.List(self.graph.nodes()))
 		self.edges.extend(numba.typed.List(self.graph.edges()))
 
-		self.interpretations_node, self.predicate_map_node = self._init_interpretations_node(self.specific_node_labels)
-		self.interpretations_edge, self.predicate_map_edge = self._init_interpretations_edge(self.specific_edge_labels)
+		self.interpretations_node, self.predicate_map_node = self._init_interpretations_node(self.nodes, self.specific_node_labels)
+		self.interpretations_edge, self.predicate_map_edge = self._init_interpretations_edge(self.edges, self.specific_edge_labels)
 
 		# Setup graph neighbors and reverse neighbors
 		self.neighbors = numba.typed.Dict.empty(key_type=node_type, value_type=numba.types.ListType(node_type))
@@ -127,9 +127,13 @@ class Interpretation:
 
 	@staticmethod
 	@numba.njit(cache=True)
-	def _init_interpretations_node(specific_labels):
+	def _init_interpretations_node(nodes, specific_labels):
 		interpretations = numba.typed.Dict.empty(key_type=node_type, value_type=world.world_type)
 		predicate_map = numba.typed.Dict.empty(key_type=label.label_type, value_type=list_of_nodes)
+
+		# Initialize nodes
+		for n in nodes:
+			interpretations[n] = world.World(numba.typed.List.empty_list(label.label_type))
 
 		# Specific labels
 		for l, ns in specific_labels.items():
@@ -143,9 +147,13 @@ class Interpretation:
 
 	@staticmethod
 	@numba.njit(cache=True)
-	def _init_interpretations_edge(specific_labels):
+	def _init_interpretations_edge(edges, specific_labels):
 		interpretations = numba.typed.Dict.empty(key_type=edge_type, value_type=world.world_type)
 		predicate_map = numba.typed.Dict.empty(key_type=label.label_type, value_type=list_of_edges)
+
+		# Initialize edges
+		for n in edges:
+			interpretations[n] = world.World(numba.typed.List.empty_list(label.label_type))
 
 		# Specific labels
 		for l, es in specific_labels.items():
