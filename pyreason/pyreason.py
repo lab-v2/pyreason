@@ -40,6 +40,7 @@ class _Settings:
         self.__atom_trace = None
         self.__save_graph_attributes_to_trace = None
         self.__canonical = None
+        self.__persistent = None
         self.__inconsistency_check = None
         self.__static_graph_facts = None
         self.__store_interpretation_changes = None
@@ -59,6 +60,7 @@ class _Settings:
         self.__atom_trace = False
         self.__save_graph_attributes_to_trace = False
         self.__canonical = False
+        self.__persistent = False
         self.__inconsistency_check = True
         self.__static_graph_facts = True
         self.__store_interpretation_changes = True
@@ -143,12 +145,21 @@ class _Settings:
     
     @property
     def canonical(self) -> bool:
-        """Returns whether the interpretation is canonical or non-canonical. Default is False
+        """DEPRECATED, use persistent instead
+        Returns whether the interpretation is canonical or non-canonical. Default is False
 
         :return: bool
         """
-        return self.__canonical
-   
+        return self.__persistent
+
+    @property
+    def persistent(self) -> bool:
+        """Returns whether the interpretation is persistent (Does not reset bounds at each timestep). Default is False
+
+        :return: bool
+        """
+        return self.__persistent
+
     @property
     def inconsistency_check(self) -> bool:
         """Returns whether to check for inconsistencies in the interpretation or not. Default is True
@@ -321,8 +332,20 @@ class _Settings:
         if not isinstance(value, bool):
             raise TypeError('value has to be a bool')
         else:
-            self.__canonical = value
-   
+            self.__persistent = value
+
+    @persistent.setter
+    def persistent(self, value: bool) -> None:
+        """Whether the interpretation should be canonical where bounds are reset at each timestep or not
+
+        :param value: Whether to reset all bounds at each timestep (non-persistent) or (persistent)
+        :raises TypeError: If not bool raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('value has to be a bool')
+        else:
+            self.__persistent = value
+
     @inconsistency_check.setter
     def inconsistency_check(self, value: bool) -> None:
         """Whether to check for inconsistencies in the interpretation or not
@@ -713,7 +736,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
             __rules.append(r)
 
     # Setup logical program
-    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.allow_ground_rules)
+    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.persistent, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.allow_ground_rules)
     __program.specific_node_labels = __specific_node_labels
     __program.specific_edge_labels = __specific_edge_labels
 
