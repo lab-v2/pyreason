@@ -20,8 +20,6 @@ An explainable inference software supporting annotated, real valued, graph based
 
 [🗎 Documentation](https://pyreason.readthedocs.io/en/latest/)
 
-Check out the [PyReason Hello World](https://pyreason.readthedocs.io/en/latest/tutorials/Basic%20tutorial.html) program if you're new, or want get get a feel for the software.
-
 
 ## Table of Contents
   
