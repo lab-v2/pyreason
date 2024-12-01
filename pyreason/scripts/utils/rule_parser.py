@@ -9,7 +9,7 @@ import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 from pyreason.scripts.threshold.threshold import Threshold
 
 
-def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, dict], infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False) -> rule.Rule:
+def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, dict], infer_edges: bool = False, set_static: bool = False, weights: Union[None, np.ndarray] = None) -> rule.Rule:
     # First remove all spaces from line
     r = rule_text.replace(' ', '')
 
@@ -194,12 +194,14 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
     else:
         edges = ('', '', label.Label(''))
 
-    weights = np.ones(len(body_predicates), dtype=np.float64)
-    weights = np.append(weights, 0)
+    if weights is None:
+        weights = np.ones(len(body_predicates), dtype=np.float64)
+    elif len(weights) != len(body_predicates):
+        raise Exception(f'Number of weights {len(weights)} is not equal to number of clauses {len(body_predicates)}')
 
     head_variables = numba.typed.List(head_variables)
 
-    r = rule.Rule(name, rule_type, target, head_variables, numba.types.uint16(t), clauses, target_bound, thresholds, ann_fn, weights, edges, set_static, immediate_rule)
+    r = rule.Rule(name, rule_type, target, head_variables, numba.types.uint16(t), clauses, target_bound, thresholds, ann_fn, weights, edges, set_static)
     return r
 
 
