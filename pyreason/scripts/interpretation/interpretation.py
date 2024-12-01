@@ -45,8 +45,8 @@ edge_applicable_rule_type = numba.types.Tuple((
 	numba.types.Tuple((numba.types.ListType(node_type), numba.types.ListType(node_type), label.label_type))
 ))
 
-rules_to_be_applied_node_type = numba.types.Tuple((numba.types.uint16, node_type, label.label_type, interval.interval_type, numba.types.boolean, numba.types.boolean))
-rules_to_be_applied_edge_type = numba.types.Tuple((numba.types.uint16, edge_type, label.label_type, interval.interval_type, numba.types.boolean, numba.types.boolean))
+rules_to_be_applied_node_type = numba.types.Tuple((numba.types.uint16, node_type, label.label_type, interval.interval_type, numba.types.boolean))
+rules_to_be_applied_edge_type = numba.types.Tuple((numba.types.uint16, edge_type, label.label_type, interval.interval_type, numba.types.boolean))
 rules_to_be_applied_trace_type = numba.types.Tuple((numba.types.ListType(numba.types.ListType(node_type)), numba.types.ListType(numba.types.ListType(edge_type)), numba.types.string))
 edges_to_be_added_type = numba.types.Tuple((numba.types.ListType(node_type), numba.types.ListType(node_type), label.label_type))
 
@@ -404,7 +404,7 @@ class Interpretation:
 				rules_to_remove_idx.clear()
 				for idx, i in enumerate(rules_to_be_applied_node):
 					if i[0] == t:
-						comp, l, bnd, immediate, set_static = i[1], i[2], i[3], i[4], i[5]
+						comp, l, bnd, set_static = i[1], i[2], i[3], i[4]
 						# Check for inconsistencies
 						if check_consistent_node(interpretations_node, comp, (l, bnd)):
 							override = True if update_mode == 'override' else False
@@ -443,7 +443,7 @@ class Interpretation:
 				rules_to_remove_idx.clear()
 				for idx, i in enumerate(rules_to_be_applied_edge):
 					if i[0] == t:
-						comp, l, bnd, immediate, set_static = i[1], i[2], i[3], i[4], i[5]
+						comp, l, bnd, set_static = i[1], i[2], i[3], i[4]
 						sources, targets, edge_l = edges_to_be_added_edge_rule[idx]
 						edges_added, changes = _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge, predicate_map_edge, num_ga, t)
 						changes_cnt += changes
@@ -515,7 +515,6 @@ class Interpretation:
 					rules_to_be_applied_edge_trace[:] = numba.typed.List([rules_to_be_applied_edge_trace[i] for i in range(len(rules_to_be_applied_edge_trace)) if i not in rules_to_remove_idx])
 
 				# Fixed point
-				# if update or immediate_node_rule_fire or immediate_edge_rule_fire or immediate_rule_applied:
 				if update:
 					# Increase fp operator count
 					fp_cnt += 1
@@ -530,7 +529,6 @@ class Interpretation:
 
 					for i in prange(len(rules)):
 						rule = rules[i]
-						immediate_rule = rule.is_immediate_rule()
 
 						# Only go through if the rule can be applied within the given timesteps, or we're running until convergence
 						delta_t = rule.get_delta()
@@ -548,7 +546,7 @@ class Interpretation:
 									bnd_u = min(max(bnd[1], 0), 1)
 									bnd = interval.closed(bnd_l, bnd_u)
 									max_rules_time = max(max_rules_time, t + delta_t)
-									rules_to_be_applied_node_threadsafe[i].append((numba.types.uint16(t + delta_t), n, rule.get_target(), bnd, immediate_rule, rule.is_static_rule()))
+									rules_to_be_applied_node_threadsafe[i].append((numba.types.uint16(t + delta_t), n, rule.get_target(), bnd, rule.is_static_rule()))
 									if atom_trace:
 										rules_to_be_applied_node_trace_threadsafe[i].append((qualified_nodes, qualified_edges, rule.get_name()))
 
@@ -569,8 +567,7 @@ class Interpretation:
 									max_rules_time = max(max_rules_time, t+delta_t)
 									# edges_to_be_added_edge_rule.append(edges_to_add)
 									edges_to_be_added_edge_rule_threadsafe[i].append(edges_to_add)
-									# rules_to_be_applied_edge.append((numba.types.uint16(t+delta_t), e, rule.get_target(), bnd, immediate_rule, rule.is_static_rule()))
-									rules_to_be_applied_edge_threadsafe[i].append((numba.types.uint16(t+delta_t), e, rule.get_target(), bnd, immediate_rule, rule.is_static_rule()))
+									rules_to_be_applied_edge_threadsafe[i].append((numba.types.uint16(t+delta_t), e, rule.get_target(), bnd, rule.is_static_rule()))
 									if atom_trace:
 										# rules_to_be_applied_edge_trace.append((qualified_nodes, qualified_edges, rule.get_name()))
 										rules_to_be_applied_edge_trace_threadsafe[i].append((qualified_nodes, qualified_edges, rule.get_name()))
