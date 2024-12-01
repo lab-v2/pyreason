@@ -28,48 +28,67 @@ To reset all settings to their default values, use the following code:
    :widths: 35 25 40
    :header-rows: 1
 
-   * - Setting
-     - Default
-     - Description
-   * - ``verbose``
-     - True
-     - Whether to print extra information to screen during the reasoning process.
-   * - ``output_to_file``
-     - False
-     - Whether to output print statements into a file.
-   * - ``output_file_name``
-     - 'pyreason_output'
-     - The name the file output will be saved as (only if ``output_to_file = True``).
-   * - ``graph_attribute_parsing``
-     - True
-     - Whether the graph will be parsed for attributes.
-   * - ``reverse_digraph``
-     - False
-     - Whether the directed edges in the graph will be reversed before reasoning.
-   * - ``atom_trace``
-     - False
-     - Whether to keep track of all ground atoms which make the clauses true. **NOTE:** For large graphs this can use up a lot of memory and slow down the runtime.
-   * - ``save_graph_attributes_to_trace``
-     - False
-     - Whether to save graph attribute facts to the rule trace. This might make the trace files large because there are generally many attributes in graphs.
-   * - ``persistent``
-     - False
-     - Whether the bounds in the interpretation are reset to uncertain ``[0,1]`` at each timestep or keep their value from the previous timestep.
-   * - ``inconsistency_check``
-     - True
-     - Whether to check for inconsistencies in the interpretation, and resolve them if found. Inconsistencies are resolved by resetting the bounds to ``[0,1]`` and making the atom static.
-   * - ``static_graph_facts``
-     - True
-     - Whether to make graph facts static. In other words, the attributes in the graph remain constant throughout the reasoning process.
-   * - ``parallel_computing``
-     - False
-     - Whether to use multiple CPU cores for inference. This can greatly speed up runtime if running on a cluster for large graphs.
-   * - ``update_mode``
-     - 'intersection'
-     - The mode for updating interpretations. Options are ``'intersection'`` or ``'override'``. When using ``'intersection'``, the resulting bound is the intersection of the new bound and the old bound. When using ``'override'``, the resulting bound is the new bound.
-   * - ``allow_ground_rules``
-     - False
-     - Whether rules can have ground atoms in the clauses. Ground atoms should have the same name as the graph component, else it will be treated as a variable.
+ * - **Setting**
+   - **Default**
+   - **Description**
+ * - ``verbose``
+   - True
+   - | Print extra information to
+     | screen during the reasoning process.
+ * - ``output_to_file``
+   - False
+   - | Output print statements
+     | into a file.
+ * - ``output_file_name``
+   - 'pyreason_output'
+   - | Name the file output will
+     | be saved as (only if ``output_to_file = True``).
+ * - ``graph_attribute_parsing``
+   - True
+   - | Parse the graph for
+     | attributes.
+ * - ``reverse_digraph``
+   - False
+   - | Reverse the directed edges
+     | in the graph before reasoning.
+ * - ``atom_trace``
+   - False
+   - | Keep track of ground atoms
+     | making the clauses true. **NOTE:** May use significant memory
+     | and slow down runtime for large graphs.
+ * - ``save_graph_attributes_to_trace``
+   - False
+   - | Save graph attribute facts
+     | to the rule trace. Trace files may become large
+     | due to many attributes in graphs.
+ * - ``persistent``
+   - False
+   - | Reset bounds in the interpretation
+     | to uncertain ``[0,1]`` at each timestep or
+     | retain their value from the previous timestep.
+ * - ``inconsistency_check``
+   - True
+   - | Check for inconsistencies in the interpretation
+     | and resolve by resetting bounds to ``[0,1]`` and
+     | making the atom static.
+ * - ``static_graph_facts``
+   - True
+   - | Make graph facts static,
+     | keeping graph attributes constant during reasoning.
+ * - ``parallel_computing``
+   - False
+   - | Use multiple CPU cores for inference
+     | to speed up runtime, especially for large graphs.
+ * - ``update_mode``
+   - 'intersection'
+   - | Update interpretations via ``'intersection'`` (new
+     | and old bounds overlap) or ``'override'`` (use new bound).
+ * - ``allow_ground_rules``
+   - False
+   - | Allow rules to include ground atoms.
+     | Ground atoms should match graph components or
+     | be treated as variables.
+
 
 Notes on Parallelism
 ~~~~~~~~~~~~~~~~~~~~
