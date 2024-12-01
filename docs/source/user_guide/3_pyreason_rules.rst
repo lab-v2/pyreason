@@ -39,6 +39,9 @@ To create a new **Rule** object in PyReason, use the ``Rule`` class with the fol
    - A list of thresholds corresponding to each clause.
    - A dictionary of thresholds mapping clause indices to specific thresholds.
 
+#. ``weights`` **(None, numpy.ndarray, optional)**:
+    A numpy array of weights for the rule passed to an annotation function. The weights can be used to calculate the annotation for the head of the rule. If not specified, the weights will default to 1 for each clause.
+
 
 .. _rule_formatting:
 Important Notes on Rule Formating: 
@@ -164,7 +167,7 @@ Only specifically structured annotation functions are allowed. The function has 
 
 This annotation function calculates the average of the bounds of all grounded atoms in the rule. The function is decorated
 with ``@numba.njit`` to ensure that it is compiled to machine code for faster execution. The function takes in two parameters,
-``annotations`` and ``weights``, which are the bounds of the grounded atoms and the weights of the grounded atoms respectively.
+``annotations`` and ``weights``, which are the bounds of the grounded atoms and the weights associated with each clause of the rule set by the user when the rule is added.
 The function returns two numbers, which are the lower and upper bounds of the annotation for the head of the rule.
 
 Adding an Annotation Function to a PyReason Rule
