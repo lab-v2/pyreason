@@ -25,7 +25,7 @@ To reset all settings to their default values, use the following code:
 
 
 .. list-table:: Settings Table
-   :widths: 25 15 30
+   :widths: 35 25 40
    :header-rows: 1
 
    * - Setting
