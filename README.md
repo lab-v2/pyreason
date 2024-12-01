@@ -26,9 +26,9 @@ An explainable inference software supporting annotated, real valued, graph based
 1. [Introduction](#1-introduction)
 2. [Documentation](#2-documentation)
 3. [Install](#3-install)
-5. [Bibtex](#4-bibtex)
-6. [License](#5-license)
-7. [Contact](#6-contact)
+4. [Bibtex](#4-bibtex)
+5. [License](#5-license)
+6. [Contact](#6-contact)
 
 
 ## 1. Introduction
