@@ -100,8 +100,8 @@ class Interpretation:
 		self.nodes.extend(numba.typed.List(self.graph.nodes()))
 		self.edges.extend(numba.typed.List(self.graph.edges()))
 
-		self.interpretations_node, self.predicate_map_node = self._init_interpretations_node(self.nodes, self.specific_node_labels, self.num_ga)
-		self.interpretations_edge, self.predicate_map_edge = self._init_interpretations_edge(self.edges, self.specific_edge_labels, self.num_ga)
+		self.interpretations_node = self._init_interpretations_node(self.nodes, self.specific_node_labels, self.num_ga)
+		self.interpretations_edge = self._init_interpretations_edge(self.edges, self.specific_edge_labels, self.num_ga)
 
 		# Setup graph neighbors and reverse neighbors
 		self.neighbors = numba.typed.Dict.empty(key_type=node_type, value_type=numba.types.ListType(node_type))
@@ -132,7 +132,6 @@ class Interpretation:
 	@numba.njit(cache=True)
 	def _init_interpretations_node(nodes, specific_labels, num_ga):
 		interpretations = numba.typed.Dict.empty(key_type=node_type, value_type=world.world_type)
-		predicate_map = numba.typed.Dict.empty(key_type=label.label_type, value_type=list_of_nodes)
 
 		# Initialize nodes
 		for n in nodes:
@@ -144,16 +143,12 @@ class Interpretation:
 				interpretations[n].world[l] = interval.closed(0.0, 1.0)
 				num_ga[0] += 1
 
-		for l, ns in specific_labels.items():
-			predicate_map[l] = numba.typed.List(ns)
-
-		return interpretations, predicate_map
+		return interpretations
 
 	@staticmethod
 	@numba.njit(cache=True)
 	def _init_interpretations_edge(edges, specific_labels, num_ga):
 		interpretations = numba.typed.Dict.empty(key_type=edge_type, value_type=world.world_type)
-		predicate_map = numba.typed.Dict.empty(key_type=label.label_type, value_type=list_of_edges)
 
 		# Initialize edges
 		for n in edges:
@@ -165,10 +160,7 @@ class Interpretation:
 				interpretations[e].world[l] = interval.closed(0.0, 1.0)
 				num_ga[0] += 1
 
-		for l, es in specific_labels.items():
-			predicate_map[l] = numba.typed.List(es)
-
-		return interpretations, predicate_map
+		return interpretations
 
 	@staticmethod
 	@numba.njit(cache=True)
@@ -213,7 +205,7 @@ class Interpretation:
 		return max_time
 
 	def _start_fp(self, rules, max_facts_time, verbose, again):
-		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.predicate_map_node, self.predicate_map_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.canonical, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, self.allow_ground_rules, max_facts_time, self.annotation_functions, self._convergence_mode, self._convergence_delta, self.num_ga, verbose, again)
+		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.canonical, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, self.allow_ground_rules, max_facts_time, self.annotation_functions, self._convergence_mode, self._convergence_delta, self.num_ga, verbose, again)
 		self.time = t - 1
 		# If we need to reason again, store the next timestep to start from
 		self.prev_reasoning_data[0] = t
@@ -223,7 +215,7 @@ class Interpretation:
 
 	@staticmethod
 	@numba.njit(cache=True, parallel=True)
-	def reason(interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules, max_facts_time, annotation_functions, convergence_mode, convergence_delta, num_ga, verbose, again):
+	def reason(interpretations_node, interpretations_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules, max_facts_time, annotation_functions, convergence_mode, convergence_delta, num_ga, verbose, again):
 		t = prev_reasoning_data[0]
 		fp_cnt = prev_reasoning_data[1]
 		max_rules_time = 0
@@ -294,7 +286,7 @@ class Interpretation:
 						if check_consistent_node(interpretations_node, comp, (l, bnd)):
 							mode = 'graph-attribute-fact' if graph_attribute else 'fact'
 							override = True if update_mode == 'override' else False
-							u, changes = _update_node(interpretations_node, predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, num_ga, mode=mode, override=override)
+							u, changes = _update_node(interpretations_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, num_ga, mode=mode, override=override)
 
 							update = u or update
 							# Update convergence params
@@ -308,7 +300,7 @@ class Interpretation:
 							if inconsistency_check:
 								resolve_inconsistency_node(interpretations_node, comp, (l, bnd), ipl, t, fp_cnt, i, atom_trace, rule_trace_node, rule_trace_node_atoms, rules_to_be_applied_node_trace, facts_to_be_applied_node_trace, store_interpretation_changes, mode=mode)
 							else:
-								u, changes = _update_node(interpretations_node, predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, num_ga, mode=mode, override=True)
+								u, changes = _update_node(interpretations_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, num_ga, mode=mode, override=True)
 
 								update = u or update
 								# Update convergence params
@@ -336,7 +328,7 @@ class Interpretation:
 					comp, l, bnd, static, graph_attribute = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3], facts_to_be_applied_edge[i][4], facts_to_be_applied_edge[i][5]
 					# If the component is not in the graph, add it
 					if comp not in edges_set:
-						_add_edge(comp[0], comp[1], neighbors, reverse_neighbors, nodes, edges, label.Label(''), interpretations_node, interpretations_edge, predicate_map_edge, num_ga, t)
+						_add_edge(comp[0], comp[1], neighbors, reverse_neighbors, nodes, edges, label.Label(''), interpretations_node, interpretations_edge, num_ga, t)
 						edges_set.add(comp)
 
 					# Check if bnd is static. Then no need to update, just add to rule trace, check if graph attribute, and add ipl complement to rule trace as well
@@ -360,7 +352,7 @@ class Interpretation:
 						if check_consistent_edge(interpretations_edge, comp, (l, bnd)):
 							mode = 'graph-attribute-fact' if graph_attribute else 'fact'
 							override = True if update_mode == 'override' else False
-							u, changes = _update_edge(interpretations_edge, predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, num_ga, mode=mode, override=override)
+							u, changes = _update_edge(interpretations_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, num_ga, mode=mode, override=override)
 
 							update = u or update
 							# Update convergence params
@@ -374,7 +366,7 @@ class Interpretation:
 							if inconsistency_check:
 								resolve_inconsistency_edge(interpretations_edge, comp, (l, bnd), ipl, t, fp_cnt, i, atom_trace, rule_trace_edge, rule_trace_edge_atoms, rules_to_be_applied_edge_trace, facts_to_be_applied_edge_trace, store_interpretation_changes, mode=mode)
 							else:
-								u, changes = _update_edge(interpretations_edge, predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, num_ga, mode=mode, override=True)
+								u, changes = _update_edge(interpretations_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, num_ga, mode=mode, override=True)
 
 								update = u or update
 								# Update convergence params
@@ -408,7 +400,7 @@ class Interpretation:
 						# Check for inconsistencies
 						if check_consistent_node(interpretations_node, comp, (l, bnd)):
 							override = True if update_mode == 'override' else False
-							u, changes = _update_node(interpretations_node, predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, idx, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, num_ga, mode='rule', override=override)
+							u, changes = _update_node(interpretations_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, idx, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, num_ga, mode='rule', override=override)
 
 							update = u or update
 							# Update convergence params
@@ -421,7 +413,7 @@ class Interpretation:
 							if inconsistency_check:
 								resolve_inconsistency_node(interpretations_node, comp, (l, bnd), ipl, t, fp_cnt, idx, atom_trace, rule_trace_node, rule_trace_node_atoms, rules_to_be_applied_node_trace, facts_to_be_applied_node_trace, store_interpretation_changes, mode='rule')
 							else:
-								u, changes = _update_node(interpretations_node, predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, idx, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, num_ga, mode='rule', override=True)
+								u, changes = _update_node(interpretations_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, idx, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, num_ga, mode='rule', override=True)
 
 								update = u or update
 								# Update convergence params
@@ -445,7 +437,7 @@ class Interpretation:
 					if i[0] == t:
 						comp, l, bnd, immediate, set_static = i[1], i[2], i[3], i[4], i[5]
 						sources, targets, edge_l = edges_to_be_added_edge_rule[idx]
-						edges_added, changes = _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge, predicate_map_edge, num_ga, t)
+						edges_added, changes = _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge, num_ga, t)
 						changes_cnt += changes
 
 						# Update bound for newly added edges. Use bnd to update all edges if label is specified, else use bnd to update normally
@@ -455,7 +447,7 @@ class Interpretation:
 									continue
 								if check_consistent_edge(interpretations_edge, e, (edge_l, bnd)):
 									override = True if update_mode == 'override' else False
-									u, changes = _update_edge(interpretations_edge, predicate_map_edge, e, (edge_l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, num_ga, mode='rule', override=override)
+									u, changes = _update_edge(interpretations_edge, e, (edge_l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, num_ga, mode='rule', override=override)
 
 									update = u or update
 
@@ -469,7 +461,7 @@ class Interpretation:
 									if inconsistency_check:
 										resolve_inconsistency_edge(interpretations_edge, e, (edge_l, bnd), ipl, t, fp_cnt, idx, atom_trace, rule_trace_edge, rule_trace_edge_atoms, rules_to_be_applied_edge_trace, facts_to_be_applied_edge_trace, store_interpretation_changes, mode='rule')
 									else:
-										u, changes = _update_edge(interpretations_edge, predicate_map_edge, e, (edge_l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, num_ga, mode='rule', override=True)
+										u, changes = _update_edge(interpretations_edge, e, (edge_l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, num_ga, mode='rule', override=True)
 
 										update = u or update
 
@@ -483,7 +475,7 @@ class Interpretation:
 							# Check for inconsistencies
 							if check_consistent_edge(interpretations_edge, comp, (l, bnd)):
 								override = True if update_mode == 'override' else False
-								u, changes = _update_edge(interpretations_edge, predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, num_ga, mode='rule', override=override)
+								u, changes = _update_edge(interpretations_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, num_ga, mode='rule', override=override)
 
 								update = u or update
 								# Update convergence params
@@ -496,7 +488,7 @@ class Interpretation:
 								if inconsistency_check:
 									resolve_inconsistency_edge(interpretations_edge, comp, (l, bnd), ipl, t, fp_cnt, idx, atom_trace, rule_trace_edge, rule_trace_edge_atoms, rules_to_be_applied_edge_trace, facts_to_be_applied_edge_trace, store_interpretation_changes, mode='rule')
 								else:
-									u, changes = _update_edge(interpretations_edge, predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, num_ga, mode='rule', override=True)
+									u, changes = _update_edge(interpretations_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, num_ga, mode='rule', override=True)
 
 									update = u or update
 									# Update convergence params
@@ -535,7 +527,7 @@ class Interpretation:
 						# Only go through if the rule can be applied within the given timesteps, or we're running until convergence
 						delta_t = rule.get_delta()
 						if t + delta_t <= tmax or tmax == -1 or again:
-							applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, num_ga, t)
+							applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, num_ga, t)
 
 							# Loop through applicable rules and add them to the rules to be applied for later or next fp operation
 							for applicable_rule in applicable_node_rules:
@@ -630,7 +622,7 @@ class Interpretation:
 
 	def add_edge(self, edge, l):
 		# This function is useful for pyreason gym, called externally
-		_add_edge(edge[0], edge[1], self.neighbors, self.reverse_neighbors, self.nodes, self.edges, l, self.interpretations_node, self.interpretations_edge, self.predicate_map_edge, self.num_ga, -1)
+		_add_edge(edge[0], edge[1], self.neighbors, self.reverse_neighbors, self.nodes, self.edges, l, self.interpretations_node, self.interpretations_edge, self.num_ga, -1)
 
 	def add_node(self, node, labels):
 		# This function is useful for pyreason gym, called externally
@@ -641,11 +633,11 @@ class Interpretation:
 
 	def delete_edge(self, edge):
 		# This function is useful for pyreason gym, called externally
-		_delete_edge(edge, self.neighbors, self.reverse_neighbors, self.edges, self.interpretations_edge, self.predicate_map_edge, self.num_ga)
+		_delete_edge(edge, self.neighbors, self.reverse_neighbors, self.edges, self.interpretations_edge, self.num_ga)
 
 	def delete_node(self, node):
 		# This function is useful for pyreason gym, called externally
-		_delete_node(node, self.neighbors, self.reverse_neighbors, self.nodes, self.interpretations_node, self.predicate_map_node, self.num_ga)
+		_delete_node(node, self.neighbors, self.reverse_neighbors, self.nodes, self.interpretations_node, self.num_ga)
 
 	def get_dict(self):
 		# This function can be called externally to retrieve a dict of the interpretation values
@@ -750,7 +742,7 @@ class Interpretation:
 
 
 @numba.njit(cache=True)
-def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, num_ga, t):
+def _ground_rule(rule, interpretations_node, interpretations_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, num_ga, t):
 	# Extract rule params
 	rule_type = rule.get_type()
 	head_variables = rule.get_head_variables()
@@ -802,7 +794,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 			if allow_ground_rules and clause_var_1 in nodes_set:
 				grounding = numba.typed.List([clause_var_1])
 			else:
-				grounding = get_rule_node_clause_grounding(clause_var_1, groundings, predicate_map_node, clause_label, nodes)
+				grounding = get_rule_node_clause_grounding(clause_var_1, groundings, nodes)
 
 			# Narrow subset based on predicate
 			qualified_groundings = get_qualified_node_groundings(interpretations_node, grounding, clause_label, clause_bnd)
@@ -829,7 +821,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 			if allow_ground_rules and (clause_var_1, clause_var_2) in edges_set:
 				grounding = numba.typed.List([(clause_var_1, clause_var_2)])
 			else:
-				grounding = get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, predicate_map_edge, clause_label, edges)
+				grounding = get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, edges)
 
 			# Narrow subset based on predicate (save the edges that are qualified to use for finding future groundings faster)
 			qualified_groundings = get_qualified_edge_groundings(interpretations_edge, grounding, clause_label, clause_bnd)
@@ -1167,7 +1159,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 				if add_head_var_2_node_to_graph and head_var_2_grounding == head_var_2:
 					_add_node(head_var_2, neighbors, reverse_neighbors, nodes, interpretations_node)
 				if add_head_edge_to_graph and (head_var_1, head_var_2) == (head_var_1_grounding, head_var_2_grounding):
-					_add_edge(head_var_1, head_var_2, neighbors, reverse_neighbors, nodes, edges, label.Label(''), interpretations_node, interpretations_edge, predicate_map_edge, num_ga, t)
+					_add_edge(head_var_1, head_var_2, neighbors, reverse_neighbors, nodes, edges, label.Label(''), interpretations_node, interpretations_edge, num_ga, t)
 
 				# For each grounding combination add a rule to be applied
 				# Only if all the clauses have valid groundings
@@ -1977,17 +1969,14 @@ def check_edge_clause_satisfaction(interpretations_edge, subsets, subset_source,
 
 
 @numba.njit(cache=True)
-def get_rule_node_clause_grounding(clause_var_1, groundings, predicate_map, l, nodes):
+def get_rule_node_clause_grounding(clause_var_1, groundings, nodes):
 	# The groundings for a node clause can be either a previous grounding or all possible nodes
-	if l in predicate_map:
-		grounding = predicate_map[l] if clause_var_1 not in groundings else groundings[clause_var_1]
-	else:
-		grounding = nodes if clause_var_1 not in groundings else groundings[clause_var_1]
+	grounding = numba.typed.List(nodes) if clause_var_1 not in groundings else groundings[clause_var_1]
 	return grounding
 
 
 @numba.njit(cache=True)
-def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, predicate_map, l, edges):
+def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, edges):
 	# There are 4 cases for predicate(Y,Z):
 	# 1. Both predicate variables Y and Z have not been encountered before
 	# 2. The source variable Y has not been encountered before but the target variable Z has
@@ -1998,10 +1987,7 @@ def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groun
 	# Case 1:
 	# We replace Y by all nodes and Z by the neighbors of each of these nodes
 	if clause_var_1 not in groundings and clause_var_2 not in groundings:
-		if l in predicate_map:
-			edge_groundings = predicate_map[l]
-		else:
-			edge_groundings = edges
+		edge_groundings = numba.typed.List(edges)
 
 	# Case 2:
 	# We replace Y by the sources of Z
@@ -2405,7 +2391,7 @@ def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
 
 
 @numba.njit(cache=True)
-def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_trace, idx, facts_to_be_applied_trace, rule_trace_atoms, store_interpretation_changes, num_ga, mode, override=False):
+def _update_node(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_trace, idx, facts_to_be_applied_trace, rule_trace_atoms, store_interpretation_changes, num_ga, mode, override=False):
 	updated = False
 	# This is to prevent a key error in case the label is a specific label
 	try:
@@ -2417,10 +2403,6 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 		if l not in world.world:
 			world.world[l] = interval.closed(0, 1)
 			num_ga[t_cnt] += 1
-			if l in predicate_map:
-				predicate_map[l].append(comp)
-			else:
-				predicate_map[l] = numba.typed.List([comp])
 
 		# Check if update is necessary with previous bnd
 		prev_bnd = world.world[l].copy()
@@ -2456,10 +2438,6 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 				if p1 == l:
 					if p2 not in world.world:
 						world.world[p2] = interval.closed(0, 1)
-						if p2 in predicate_map:
-							predicate_map[p2].append(comp)
-						else:
-							predicate_map[p2] = numba.typed.List([comp])
 					if atom_trace:
 						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p2], f'IPL: {l.get_value()}')
 					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
@@ -2473,10 +2451,6 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 				if p2 == l:
 					if p1 not in world.world:
 						world.world[p1] = interval.closed(0, 1)
-						if p1 in predicate_map:
-							predicate_map[p1].append(comp)
-						else:
-							predicate_map[p1] = numba.typed.List([comp])
 					if atom_trace:
 						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p1], f'IPL: {l.get_value()}')
 					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
@@ -2511,7 +2485,7 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 
 
 @numba.njit(cache=True)
-def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_trace, idx, facts_to_be_applied_trace, rule_trace_atoms, store_interpretation_changes, num_ga, mode, override=False):
+def _update_edge(interpretations, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_trace, idx, facts_to_be_applied_trace, rule_trace_atoms, store_interpretation_changes, num_ga, mode, override=False):
 	updated = False
 	# This is to prevent a key error in case the label is a specific label
 	try:
@@ -2523,10 +2497,6 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 		if l not in world.world:
 			world.world[l] = interval.closed(0, 1)
 			num_ga[t_cnt] += 1
-			if l in predicate_map:
-				predicate_map[l].append(comp)
-			else:
-				predicate_map[l] = numba.typed.List([comp])
 
 		# Check if update is necessary with previous bnd
 		prev_bnd = world.world[l].copy()
@@ -2562,10 +2532,6 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 				if p1 == l:
 					if p2 not in world.world:
 						world.world[p2] = interval.closed(0, 1)
-						if p2 in predicate_map:
-							predicate_map[p2].append(comp)
-						else:
-							predicate_map[p2] = numba.typed.List([comp])
 					if atom_trace:
 						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p2], f'IPL: {l.get_value()}')
 					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
@@ -2579,10 +2545,6 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 				if p2 == l:
 					if p1 not in world.world:
 						world.world[p1] = interval.closed(0, 1)
-						if p1 in predicate_map:
-							predicate_map[p1].append(comp)
-						else:
-							predicate_map[p1] = numba.typed.List([comp])
 					if atom_trace:
 						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p1], f'IPL: {l.get_value()}')
 					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
@@ -2837,7 +2799,7 @@ def _add_node(node, neighbors, reverse_neighbors, nodes, interpretations_node):
 
 
 @numba.njit(cache=True)
-def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge, predicate_map, num_ga, t):
+def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge, num_ga, t):
 	# If not a node, add to list of nodes and initialize neighbors
 	if source not in nodes:
 		_add_node(source, neighbors, reverse_neighbors, nodes, interpretations_node)
@@ -2858,10 +2820,6 @@ def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, int
 		if l.value!='':
 			interpretations_edge[edge] = world.World(numba.typed.List([l]))
 			num_ga[t] += 1
-			if l in predicate_map:
-				predicate_map[l].append(edge)
-			else:
-				predicate_map[l] = numba.typed.List([edge])
 		else:
 			interpretations_edge[edge] = world.World(numba.typed.List.empty_list(label.label_type))
 	else:
@@ -2874,40 +2832,34 @@ def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, int
 
 
 @numba.njit(cache=True)
-def _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge, predicate_map, num_ga, t):
+def _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge, num_ga, t):
 	changes = 0
 	edges_added = numba.typed.List.empty_list(edge_type)
 	for source in sources:
 		for target in targets:
-			edge, new_edge = _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge, predicate_map, num_ga, t)
+			edge, new_edge = _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge, num_ga, t)
 			edges_added.append(edge)
 			changes = changes+1 if new_edge else changes
 	return edges_added, changes
 
 
 @numba.njit(cache=True)
-def _delete_edge(edge, neighbors, reverse_neighbors, edges, interpretations_edge, predicate_map, num_ga):
+def _delete_edge(edge, neighbors, reverse_neighbors, edges, interpretations_edge, num_ga):
 	source, target = edge
 	edges.remove(edge)
 	num_ga[-1] -= len(interpretations_edge[edge].world)
 	del interpretations_edge[edge]
-	for l in predicate_map:
-		if edge in predicate_map[l]:
-			predicate_map[l].remove(edge)
 	neighbors[source].remove(target)
 	reverse_neighbors[target].remove(source)
 
 
 @numba.njit(cache=True)
-def _delete_node(node, neighbors, reverse_neighbors, nodes, interpretations_node, predicate_map, num_ga):
+def _delete_node(node, neighbors, reverse_neighbors, nodes, interpretations_node, num_ga):
 	nodes.remove(node)
 	num_ga[-1] -= len(interpretations_node[node].world)
 	del interpretations_node[node]
 	del neighbors[node]
 	del reverse_neighbors[node]
-	for l in predicate_map:
-		if node in predicate_map[l]:
-			predicate_map[l].remove(node)
 
 	# Remove all occurrences of node in neighbors
 	for n in neighbors.keys():
