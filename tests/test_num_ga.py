@@ -3,8 +3,7 @@ import pyreason as pr
 
 
 def test_num_ga():
-    graph_path = './knowledge_graph_test_subset.graphml'
-    # graph_path = './tests/knowledge_graph_test_subset.graphml'
+    graph_path = './tests/knowledge_graph_test_subset.graphml'
     pr.reset()
     pr.reset_rules()
     # Modify pyreason settings to make verbose and to save the rule trace to a file
@@ -36,4 +35,3 @@ def test_num_ga():
 
     # Make sure the computed number of ground atoms is correct
     assert ga_cnt == list(interpretation.get_num_ground_atoms()), 'Number of ground atoms should be the same as the computed number of ground atoms'
-test_num_ga()
