@@ -10,14 +10,14 @@ def test_hello_world_parallel():
     # Modify the paths based on where you've stored the files we made above
     graph_path = './tests/friends_graph.graphml'
 
-    # Modify pyreason settings to make verbose and to save the rule trace to a file
+    # Modify pyreason settings to make verbose
+    pr.reset_settings()
     pr.settings.verbose = True     # Print info to screen
-    pr.settings.parallel_computing = True
 
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
     pr.add_rule(pr.Rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule'))
-    pr.add_fact(pr.Fact('popular-fact', 'Mary', 'popular', [1, 1], 0, 2))
+    pr.add_fact(pr.Fact('popular(Mary)', 'popular_fact', 0, 2))
 
     # Run the program for two timesteps to see the diffusion take place
     interpretation = pr.reason(timesteps=2)
@@ -30,8 +30,8 @@ def test_hello_world_parallel():
         print()
 
     assert len(dataframes[0]) == 1, 'At t=0 there should be one popular person'
-    assert len(dataframes[1]) == 2, 'At t=0 there should be two popular people'
-    assert len(dataframes[2]) == 3, 'At t=0 there should be three popular people'
+    assert len(dataframes[1]) == 2, 'At t=1 there should be two popular people'
+    assert len(dataframes[2]) == 3, 'At t=2 there should be three popular people'
 
     # Mary should be popular in all three timesteps
     assert 'Mary' in dataframes[0]['component'].values and dataframes[0].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=0 timesteps'

@@ -11,7 +11,8 @@ def test_custom_thresholds():
     # Modify the paths based on where you've stored the files we made above
     graph_path = "./tests/group_chat_graph.graphml"
 
-    # Modify pyreason settings to make verbose and to save the rule trace to a file
+    # Modify pyreason settings to make verbose
+    pr.reset_settings()
     pr.settings.verbose = True  # Print info to screen
 
     # Load all the files into pyreason
@@ -25,16 +26,16 @@ def test_custom_thresholds():
 
     pr.add_rule(
         pr.Rule(
-            "ViewedByAll(x) <- HaveAccess(x,y), Viewed(y)",
+            "ViewedByAll(y) <- HaveAccess(x,y), Viewed(x)",
             "viewed_by_all_rule",
             custom_thresholds=user_defined_thresholds,
         )
     )
 
-    pr.add_fact(pr.Fact("seen-fact-zach", "Zach", "Viewed", [1, 1], 0, 3))
-    pr.add_fact(pr.Fact("seen-fact-justin", "Justin", "Viewed", [1, 1], 0, 3))
-    pr.add_fact(pr.Fact("seen-fact-michelle", "Michelle", "Viewed", [1, 1], 1, 3))
-    pr.add_fact(pr.Fact("seen-fact-amy", "Amy", "Viewed", [1, 1], 2, 3))
+    pr.add_fact(pr.Fact("Viewed(Zach)", "seen-fact-zach", 0, 3))
+    pr.add_fact(pr.Fact("Viewed(Justin)", "seen-fact-justin", 0, 3))
+    pr.add_fact(pr.Fact("Viewed(Michelle)", "seen-fact-michelle", 1, 3))
+    pr.add_fact(pr.Fact("Viewed(Amy)", "seen-fact-amy", 2, 3))
 
     # Run the program for three timesteps to see the diffusion take place
     interpretation = pr.reason(timesteps=3)

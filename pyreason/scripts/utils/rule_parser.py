@@ -1,12 +1,15 @@
 import numba
 import numpy as np
+from typing import Union
 
 import pyreason.scripts.numba_wrapper.numba_types.rule_type as rule
+# import pyreason.scripts.rules.rule_internal as rule
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
+from pyreason.scripts.threshold.threshold import Threshold
 
 
-def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: bool = False, set_static: bool = False, immediate_rule: bool = False) -> rule.Rule:
+def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, dict], infer_edges: bool = False, set_static: bool = False, weights: Union[None, np.ndarray] = None) -> rule.Rule:
     # First remove all spaces from line
     r = rule_text.replace(' ', '')
 
@@ -33,7 +36,7 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: 
     # 2. replace ) by )) and ] by ]] so that we can split without damaging the string
     # 3. Split with ), and then for each element of list, split with ], and add to new list
     # 4. Then replace ]] with ] and )) with ) in for loop
-    # 5. Add :[1,1] to the end of each element if a bound is not specified
+    # 5. Add :[1,1] or :[0,0] to the end of each element if a bound is not specified
     # 6. Then split each element with :
     # 7. Transform bound strings into pr.intervals
 
@@ -54,7 +57,9 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: 
 
     # 5
     for i in range(len(split_body)):
-        if split_body[i][-1] != ']':
+        if split_body[i][0] == '~':
+            split_body[i] = split_body[i][1:] + ':[0,0]'
+        elif split_body[i][-1] != ']':
             split_body[i] += ':[1,1]'
 
     # 6
@@ -64,6 +69,14 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: 
         clause, bound = b.split(':')
         body_clauses.append(clause)
         body_bounds.append(bound)
+
+    # Check if there are custom thresholds for the rule such as forall in string form
+    for i, b in enumerate(body_clauses.copy()):
+        if 'forall(' in b:
+            if not custom_thresholds:
+                custom_thresholds = {}
+            custom_thresholds[i] = Threshold("greater_equal", ("percent", "total"), 100)
+            body_clauses[i] = b[:-1].replace('forall(', '')
 
     # 7
     for i in range(len(body_bounds)):
@@ -79,7 +92,10 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: 
 
     # This means there is no bound or annotation function specified
     if head[-1] == ')':
-        head += ':[1,1]'
+        if head[0] == '~':
+            head = head[1:] + ':[0,0]'
+        else:
+            head += ':[1,1]'
 
     head, head_bound = head.split(':')
     # Check if we have a bound or annotation function
@@ -123,25 +139,6 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: 
     if rule_type == 'node':
         infer_edges = False
 
-    # Replace the variables in the body with source/target if they match the variables in the head
-    # If infer_edges is true, then we consider all rules to be node rules, we infer the 2nd variable of the target predicate from the rule body
-    # Else we consider the rule to be an edge rule and replace variables with source/target
-    # Node rules with possibility of adding edges
-    if infer_edges or len(head_variables) == 1:
-        head_source_variable = head_variables[0]
-        for i in range(len(body_variables)):
-            for j in range(len(body_variables[i])):
-                if body_variables[i][j] == head_source_variable:
-                    body_variables[i][j] = '__target'
-    # Edge rule, no edges to be added
-    elif len(head_variables) == 2:
-        for i in range(len(body_variables)):
-            for j in range(len(body_variables[i])):
-                if body_variables[i][j] == head_variables[0]:
-                    body_variables[i][j] = '__source'
-                elif body_variables[i][j] == head_variables[1]:
-                    body_variables[i][j] = '__target'
-
     # Start setting up clauses
     # clauses = [c1, c2, c3, c4]
     # thresholds = [t1, t2, t3, t4]
@@ -155,18 +152,25 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: 
     # gather count of clauses for threshold validation
     num_clauses = len(body_clauses)
 
-    if custom_thresholds and (len(custom_thresholds) != num_clauses):
-        raise Exception('The length of custom thresholds {} is not equal to number of clauses {}'
-                        .format(len(custom_thresholds), num_clauses))
-    
+    if isinstance(custom_thresholds, list):
+        if len(custom_thresholds) != num_clauses:
+            raise Exception(f'The length of custom thresholds {len(custom_thresholds)} is not equal to number of clauses {num_clauses}')
+        for threshold in custom_thresholds:
+            thresholds.append(threshold.to_tuple())
+    elif isinstance(custom_thresholds, dict):
+        if max(custom_thresholds.keys()) >= num_clauses:
+            raise Exception(f'The max clause index in the custom thresholds map {max(custom_thresholds.keys())} is greater than number of clauses {num_clauses}')
+        for i in range(num_clauses):
+            if i in custom_thresholds:
+                thresholds.append(custom_thresholds[i].to_tuple())
+            else:
+                thresholds.append(('greater_equal', ('number', 'total'), 1.0))
+
     # If no custom thresholds provided, use defaults
     # otherwise loop through user-defined thresholds and convert to numba compatible format
-    if not custom_thresholds:
+    elif not custom_thresholds:
         for _ in range(num_clauses):
             thresholds.append(('greater_equal', ('number', 'total'), 1.0))
-    else:  
-        for threshold in custom_thresholds:  
-            thresholds.append(threshold.to_tuple())
 
     # # Loop though clauses
     for body_clause, predicate, variables, bounds in zip(body_clauses, body_predicates, body_variables, body_bounds):
@@ -184,15 +188,20 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: list, infer_edges: 
     # Assert that there are two variables in the head of the rule if we infer edges
     # Add edges between head variables if necessary
     if infer_edges:
-        var = '__target' if head_variables[0] == head_variables[1] else head_variables[1]
-        edges = ('__target', var, target)
+        # var = '__target' if head_variables[0] == head_variables[1] else head_variables[1]
+        # edges = ('__target', var, target)
+        edges = (head_variables[0], head_variables[1], target)
     else:
         edges = ('', '', label.Label(''))
 
-    weights = np.ones(len(body_predicates), dtype=np.float64)
-    weights = np.append(weights, 0)
+    if weights is None:
+        weights = np.ones(len(body_predicates), dtype=np.float64)
+    elif len(weights) != len(body_predicates):
+        raise Exception(f'Number of weights {len(weights)} is not equal to number of clauses {len(body_predicates)}')
 
-    r = rule.Rule(name, rule_type, target, numba.types.uint16(t), clauses, target_bound, thresholds, ann_fn, weights, edges, set_static, immediate_rule)
+    head_variables = numba.typed.List(head_variables)
+
+    r = rule.Rule(name, rule_type, target, head_variables, numba.types.uint16(t), clauses, target_bound, thresholds, ann_fn, weights, edges, set_static)
     return r
 
 

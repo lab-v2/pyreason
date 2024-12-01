@@ -20,22 +20,20 @@ An explainable inference software supporting annotated, real valued, graph based
 
 [🗎 Documentation](https://pyreason.readthedocs.io/en/latest/)
 
-Check out the [PyReason Hello World](https://pyreason.readthedocs.io/en/latest/tutorials/Basic%20tutorial.html) program if you're new, or want get get a feel for the software.
-
 
 ## Table of Contents
 
 1. [Introduction](#1-introduction)
 2. [Documentation](#2-documentation)
 3. [Install](#3-install)
-5. [Bibtex](#4-bibtex)
-6. [License](#5-license)
-7. [Contact](#6-contact)
+4. [Bibtex](#4-bibtex)
+5. [License](#5-license)
+6. [Contact](#6-contact)
 
 
 ## 1. Introduction
 PyReason is a graphical inference tool that uses a set of logical rules and facts (initial conditions) to reason over graph structures. To get more details, refer to the paper/video/hello-world-example mentioned above.
-
+ 
 ## 2. Documentation 
 All API documentation and code examples can be found on [ReadTheDocs](https://pyreason.readthedocs.io/en/latest/)
 

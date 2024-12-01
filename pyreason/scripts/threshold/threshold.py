@@ -38,4 +38,4 @@ class Threshold:
         Returns:  
             tuple: A tuple representation of the Threshold instance.  
         """  
-        return (self.quantifier, self.quantifier_type, self.thresh)
+        return self.quantifier, self.quantifier_type, self.thresh
