@@ -21,6 +21,7 @@ Step-by-Step Guide
 
 1. Install pyenv
 -  Ensure your system has the necessary dependencies installed. The installation steps vary by operating system:
+    
     -   **Linux/Unix/macOS**
     .. code-block:: bash
 

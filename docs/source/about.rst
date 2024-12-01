@@ -31,6 +31,6 @@ Use Cases
 
 - **Social and Biological Network Analysis**: PyReason's support for annotated logic and reasoning over complex network structures makes it suitable for applications in social network analysis, supply chain management, and biological systems modeling.
 
-PyReason is open-source and available at: [GitHub - PyReason](https://github.com/lab-v2/pyreason).
+PyReason is open-source and available at: `Github - PyReason <https://github.com/lab-v2/pyreason>`_
 
 For more detailed information on PyReason’s logical framework, implementation details, and experimental results, refer to the full documentation or visit the project's GitHub repository.
