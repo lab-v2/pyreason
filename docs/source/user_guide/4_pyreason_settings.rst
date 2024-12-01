@@ -24,9 +24,7 @@ To reset all settings to their default values, use the following code:
     pr.reset_settings()
 
 
-.. list-table:: Settings Table
-   :widths: 35 25 40
-   :header-rows: 1
+.. list-table::
 
  * - **Setting**
    - **Default**
