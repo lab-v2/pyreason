@@ -181,7 +181,28 @@ Then you can create rules of the following format:
 
 .. code-block:: text
 
-    head(x) : avg_ann_fn <- body1(y), body2(x,y), body3(y,z), body4(x,z)
+    head(x) : avg_ann_fn <- clause1(y), clause2(x,y), clause3(y,z), clause4(x,z)
 
 The annotation function will be called when all clauses in the rule have been satisfied and the head of the rule is to be annotated.
 The ``annotations`` parameter in the annotation function will contain the bounds of the grounded atoms for each of the 4 clauses in the rule.
+
+
+Custom Thresholds
+-----------------
+
+Custom thresholds allow you to specify specific thresholds for the clauses in the body of the rule. By default, with no
+custom thresholds specified, the rule will use the default thresholds for ANY. Custom thresholds can be specified as:
+
+1. A list of thresholds corresponding to each clause. Where the size of the list should be equal to the number of clauses in the rule.
+2. A dictionary of thresholds mapping clause indices to specific thresholds. The first clause has an index of 0.
+
+The Threshold Class
+~~~~~~~~~~~~~~~~~~~
+PyReason's ``Threshold`` class is used to define custom thresholds for a rule. The class has the following parameters:
+
+#. ``quantifier`` **(str)**: "greater_equal", "greater", "less_equal", "less", "equal"
+#. ``quantifier_type`` **(tuple)**: A tuple of two elements indicating the type of quantifier, where the first is either ``"number"`` or ``"percent"``
+and the second is either ``"total"`` or ``"available"``. ``"total"`` refers to all groundings of the clause, while ``"available"`` refers to the groundings that have the predicate of the clause.
+#. ``thresh`` **(int)**: The value of the threshold
+
+An example usage can be found :ref:`here <custom_thresholds_tutorial>`.
