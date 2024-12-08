@@ -251,10 +251,6 @@ class Interpretation:
 		rules_to_remove_idx = set()
 		rules_to_remove_idx.add(-1)
 		while timestep_loop:
-			with numba.objmode():
-				print('Timestep:::: ', t)
-				print(interpretations_edge)
-				print(interpretations_node)
 			if t==tmax:
 				timestep_loop = False
 			if verbose:
@@ -529,13 +525,6 @@ class Interpretation:
 									border_down_node = _check_border(down_node)
 									border_left_node = _check_border(left_node)
 									border_right_node = _check_border(right_node)
-									with numba.objmode():
-										print('Target node', target_node)
-										print(up_node, border_up_node)
-										print(down_node, border_down_node)
-										print(left_node, border_left_node)
-										print(right_node, border_right_node)
-										print(predicate_map_node)
 
 									neigh_nodes = numba.typed.List(
 										[up_node, down_node, left_node, right_node])
@@ -555,8 +544,6 @@ class Interpretation:
 									# Add edges to new nodes and set
 									for d, n, b_flag in zip(directions, neigh_nodes, border_nodes):
 										if n != 'invalid':
-											# with numba.objmode():
-											# 	print(target_node, n, neighbors)
 											edge, changes = _add_edge(target_node, n, neighbors,
 																	  reverse_neighbors, nodes,
 																	  edges, d, interpretations_node,
@@ -568,9 +555,6 @@ class Interpretation:
 											for l, pos in zip(ad_hoc_quadrant_labels, n):
 												interpretations_node[n].world[l].set_lower_upper(
 													str_to_int(pos) / 10, 1)
-											with numba.objmode():
-												print('Adding edge?')
-												print(d, n, b_flag, edge)
 											if b_flag:
 												if n not in predicate_map_node[label.Label('borderLoc')]:
 													predicate_map_node[label.Label('borderLoc')].append(n)
