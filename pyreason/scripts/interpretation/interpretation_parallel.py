@@ -541,7 +541,7 @@ class Interpretation:
 																	  edges, d, interpretations_node,
 																	  interpretations_edge,
 																	  predicate_map_edge,
-																	  ad_hoc_quadrant_labels)
+																	  ad_hoc_quadrant_labels, num_ga, t)
 
 											# Set the correct bounds for the labels of newly added edges (change to update_edge later?)
 											for l, pos in zip(ad_hoc_quadrant_labels, n):
