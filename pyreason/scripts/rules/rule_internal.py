@@ -1,6 +1,6 @@
 class Rule:
 
-    def __init__(self, rule_name, rule_type, target, head_variables, delta, clauses, bnd, thresholds, ann_fn, weights, edges, static, immediate_rule):
+    def __init__(self, rule_name, rule_type, target, head_variables, delta, clauses, bnd, thresholds, ann_fn, weights, edges, static):
         self._rule_name = rule_name
         self._type = rule_type
         self._target = target
@@ -13,7 +13,6 @@ class Rule:
         self._weights = weights
         self._edges = edges
         self._static = static
-        self._immediate_rule = immediate_rule
 
     def get_rule_name(self):
         return self._rule_name
@@ -54,11 +53,11 @@ class Rule:
     def get_edges(self):
         return self._edges
 
+    def get_weights(self):
+        return self._weights
+
     def is_static(self):
         return self._static
-
-    def is_immediate_rule(self):
-        return self._immediate_rule
 
     def __eq__(self, other):
         if not isinstance(other, Rule):

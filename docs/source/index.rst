@@ -20,10 +20,11 @@ Welcome to the documentation for **PyReason**, a powerful, optimized Python tool
 
    about
    installation
+   key_concepts
    user_guide/index
-   api_reference/index
    tutorials/index
    license
+
 
 
 Getting Help

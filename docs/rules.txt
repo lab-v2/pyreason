@@ -1,1 +1,1 @@
-popular(x) <-1 popular(y), Friends(x,y), owns_pet(y,z), owns_pet(x,z)
+popular(x) <-1 popular(y), Friends(x,y), owns_pet(y,z), owns_pet(x,z) 

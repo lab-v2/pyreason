@@ -40,6 +40,7 @@ class _Settings:
         self.__atom_trace = None
         self.__save_graph_attributes_to_trace = None
         self.__canonical = None
+        self.__persistent = None
         self.__inconsistency_check = None
         self.__static_graph_facts = None
         self.__store_interpretation_changes = None
@@ -64,6 +65,7 @@ class _Settings:
         self.__atom_trace = False
         self.__save_graph_attributes_to_trace = False
         self.__canonical = False
+        self.__persistent = False
         self.__inconsistency_check = True
         self.__static_graph_facts = True
         self.__store_interpretation_changes = True
@@ -152,12 +154,21 @@ class _Settings:
     
     @property
     def canonical(self) -> bool:
-        """Returns whether the interpretation is canonical or non-canonical. Default is False
+        """DEPRECATED, use persistent instead
+        Returns whether the interpretation is canonical or non-canonical. Default is False
 
         :return: bool
         """
-        return self.__canonical
-   
+        return self.__persistent
+
+    @property
+    def persistent(self) -> bool:
+        """Returns whether the interpretation is persistent (Does not reset bounds at each timestep). Default is False
+
+        :return: bool
+        """
+        return self.__persistent
+
     @property
     def inconsistency_check(self) -> bool:
         """Returns whether to check for inconsistencies in the interpretation or not. Default is True
@@ -351,8 +362,20 @@ class _Settings:
         if not isinstance(value, bool):
             raise TypeError('value has to be a bool')
         else:
-            self.__canonical = value
-   
+            self.__persistent = value
+
+    @persistent.setter
+    def persistent(self, value: bool) -> None:
+        """Whether the interpretation should be canonical where bounds are reset at each timestep or not
+
+        :param value: Whether to reset all bounds at each timestep (non-persistent) or (persistent)
+        :raises TypeError: If not bool raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('value has to be a bool')
+        else:
+            self.__persistent = value
+
     @inconsistency_check.setter
     def inconsistency_check(self, value: bool) -> None:
         """Whether to check for inconsistencies in the interpretation or not
@@ -468,8 +491,6 @@ __clause_maps = None
 __node_facts = None
 __edge_facts = None
 __ipl = None
-__node_labels = None
-__edge_labels = None
 __specific_node_labels = None
 __specific_edge_labels = None
 
@@ -491,11 +512,9 @@ def reset():
     """Resets certain variables to None to be able to do pr.reason() multiple times in a program
     without memory blowing up
     """
-    global __node_facts, __edge_facts, __node_labels, __edge_labels
+    global __node_facts, __edge_facts
     __node_facts = None
     __edge_facts = None
-    __node_labels = None
-    __edge_labels = None
 
 
 def get_rules():
@@ -707,7 +726,7 @@ def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bou
 
 def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queries):
     # Globals
-    global __graph, __rules, __clause_maps, __node_facts, __edge_facts, __ipl, __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels, __graphml_parser
+    global __graph, __rules, __clause_maps, __node_facts, __edge_facts, __ipl, __specific_node_labels, __specific_edge_labels, __graphml_parser
     global settings, __timestamp, __program
 
     # Assert variables are of correct type
@@ -723,12 +742,6 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
     if __rules is None:
         raise Exception('There are no rules, use `add_rule` or `add_rules_from_file`')
 
-    # Check variables that are highly recommended. Warnings
-    if __node_labels is None and __edge_labels is None:
-        __node_labels = numba.typed.List.empty_list(label.label_type)
-        __edge_labels = numba.typed.List.empty_list(label.label_type)
-        __specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
-        __specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
 
     if __node_facts is None:
         __node_facts = numba.typed.List.empty_list(fact_node.fact_type)
@@ -738,7 +751,9 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
     if __ipl is None:
         __ipl = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, label.label_type)))
 
-    # If graph attribute parsing, add results to existing specific labels and facts
+    # Add results of graph parse to existing specific labels and facts
+    __specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
+    __specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
     for label_name, nodes in __specific_graph_node_labels.items():
         if label_name in __specific_node_labels:
             __specific_node_labels[label_name].extend(nodes)
@@ -783,9 +798,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
             __rules.append(r)
 
     # Setup logical program
-    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.canonical, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.allow_ground_rules, settings.ad_hoc_grounding, settings.resolution_levels, settings.step_size)
-    __program.available_labels_node = __node_labels
-    __program.available_labels_edge = __edge_labels
+    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.persistent, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.allow_ground_rules, settings.ad_hoc_grounding, settings.resolution_levels, settings.step_size)
     __program.specific_node_labels = __specific_node_labels
     __program.specific_edge_labels = __specific_edge_labels
 
@@ -797,7 +810,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
 
 def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts):
     # Globals
-    global __graph, __rules, __node_facts, __edge_facts, __ipl, __node_labels, __edge_labels, __specific_node_labels, __specific_edge_labels, __graphml_parser
+    global __graph, __rules, __node_facts, __edge_facts, __ipl, __specific_node_labels, __specific_edge_labels, __graphml_parser
     global settings, __timestamp, __program
 
     assert __program is not None, 'To run `reason_again` you need to have reasoned once before'
