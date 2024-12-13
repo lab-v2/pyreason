@@ -1860,6 +1860,11 @@ def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, int
 			interpretations_edge[edge].world[l] = interval.closed(0, 1)
 			num_ga[t] += 1
 
+			if l in predicate_map:
+				predicate_map[l].append(edge)
+			else:
+				predicate_map[l] = numba.typed.List([edge])
+
 	return edge, new_edge
 
 
