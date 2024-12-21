@@ -150,12 +150,10 @@ class Interpretation:
 
 		# Specific labels
 		for l, ns in specific_labels.items():
+			predicate_map[l] = numba.typed.List(ns)
 			for n in ns:
 				interpretations[n].world[l] = interval.closed(0.0, 1.0)
 				num_ga[0] += 1
-
-		for l, ns in specific_labels.items():
-			predicate_map[l] = numba.typed.List(ns)
 
 		return interpretations, predicate_map
 
@@ -171,12 +169,10 @@ class Interpretation:
 
 		# Specific labels
 		for l, es in specific_labels.items():
+			predicate_map[l] = numba.typed.List(es)
 			for e in es:
 				interpretations[e].world[l] = interval.closed(0.0, 1.0)
 				num_ga[0] += 1
-
-		for l, es in specific_labels.items():
-			predicate_map[l] = numba.typed.List(es)
 
 		return interpretations, predicate_map
 
@@ -232,7 +228,7 @@ class Interpretation:
 			print('Fixed Point iterations:', fp_cnt)
 
 	@staticmethod
-	@numba.njit(cache=True, parallel=True)
+	@numba.njit(cache=True, parallel=False)
 	def reason(interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, persistent, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules, ad_hoc_grounding, resolution_levels, step_size, ad_hoc_quadrant_labels, max_facts_time, annotation_functions, convergence_mode, convergence_delta, num_ga, verbose, again):
 		t = prev_reasoning_data[0]
 		fp_cnt = prev_reasoning_data[1]
@@ -1948,6 +1944,11 @@ def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, int
 			new_edge = True
 			interpretations_edge[edge].world[l] = interval.closed(0, 1)
 			num_ga[t] += 1
+
+			if l in predicate_map:
+				predicate_map[l].append(edge)
+			else:
+				predicate_map[l] = numba.typed.List([edge])
 
 	return edge, new_edge
 

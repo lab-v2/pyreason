@@ -31,6 +31,20 @@ Getting Help
 ------------
 If you encounter any issues or have questions, feel free to check our Github, or contact one of the authors (`dyuman.aditya@asu.edu`, `kmukher2@asu.edu`).
 
+
+Citing PyReason
+---------------
+If you use PyReason in your research, please cite the following paper:
+
+.. code-block:: bibtex
+
+    @inproceedings{aditya_pyreason_2023,
+      title = {{PyReason}: Software for Open World Temporal Logic},
+      booktitle = {{AAAI} Spring Symposium},
+      author = {Aditya, Dyuman and Mukherji, Kaustuv and Balasubramanian, Srikar and Chaudhary, Abhiraj and Shakarian, Paulo},
+      year = {2023}}
+
+
 Indices and tables
 ==================
 

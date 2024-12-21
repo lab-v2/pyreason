@@ -140,12 +140,10 @@ class Interpretation:
 
 		# Specific labels
 		for l, ns in specific_labels.items():
+			predicate_map[l] = numba.typed.List(ns)
 			for n in ns:
 				interpretations[n].world[l] = interval.closed(0.0, 1.0)
 				num_ga[0] += 1
-
-		for l, ns in specific_labels.items():
-			predicate_map[l] = numba.typed.List(ns)
 
 		return interpretations, predicate_map
 
@@ -161,12 +159,10 @@ class Interpretation:
 
 		# Specific labels
 		for l, es in specific_labels.items():
+			predicate_map[l] = numba.typed.List(es)
 			for e in es:
 				interpretations[e].world[l] = interval.closed(0.0, 1.0)
 				num_ga[0] += 1
-
-		for l, es in specific_labels.items():
-			predicate_map[l] = numba.typed.List(es)
 
 		return interpretations, predicate_map
 
@@ -1859,6 +1855,11 @@ def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, int
 			new_edge = True
 			interpretations_edge[edge].world[l] = interval.closed(0, 1)
 			num_ga[t] += 1
+
+			if l in predicate_map:
+				predicate_map[l].append(edge)
+			else:
+				predicate_map[l] = numba.typed.List([edge])
 
 	return edge, new_edge
 
