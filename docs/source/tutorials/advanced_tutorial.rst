@@ -5,7 +5,7 @@ In this tutorial, we will look at how to run PyReason with a more
 complex graph.
 
 .. note:: 
-   Find the full, excecutable code `here <https://github.com/lab-v2/pyreason/blob/docs/examples/advanced_graph_ex.py>`_
+   Find the full, executable code `here <https://github.com/lab-v2/pyreason/blob/main/examples/advanced_graph_ex.py>`_
 
 Graph
 ------------
@@ -93,7 +93,7 @@ Expected Output
 Below is the expected output at timestep ``0``
 
 .. note::
-   Find the full expected output `here <https://github.com/lab-v2/pyreason/blob/docs/examples/advanced_output.txt>`_
+   Find the full expected output `here <https://github.com/lab-v2/pyreason/blob/main/examples/advanced_output.txt>`_
 
 .. code:: text
    

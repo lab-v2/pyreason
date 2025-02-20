@@ -6,7 +6,7 @@ infer edges is a parameter in the :ref:`Rule Class <pyreason_rules>`.
 
 
 .. note::
-    Find the full, excecutable code `here <https://github.com/lab-v2/pyreason/blob/docs/examples/infer_edges_ex.py>`_
+    Find the full, excecutable code `here <https://github.com/lab-v2/pyreason/blob/main/examples/infer_edges_ex.py>`_
 
 The following graph represents a network of airports and connections.
 
@@ -55,7 +55,7 @@ First, we create the graph in Networkx. This graph has airports and flight conne
 
     G.add_edges_from(edges)
 
-We can also load the graph from a GraphML `file <https://github.com/lab-v2/pyreason/blob/docs/tests/knowledge_graph_test_subset.graphml>`_ 
+We can also load the graph from a GraphML `file <https://github.com/lab-v2/pyreason/blob/main/tests/knowledge_graph_test_subset.graphml>`_
 
 We then initialize and load the graph using the following code:
 
