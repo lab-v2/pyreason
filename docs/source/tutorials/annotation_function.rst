@@ -2,10 +2,10 @@ PyReason Annotation Functions
 =============================
 
 In this tutorial, we will look at use annotation functions in PyReason. 
-Read more about annotation functions `here <https://pyreason--60.org.readthedocs.build/en/60/user_guide/3_pyreason_rules.html#annotation-functions>`_. 
+Read more about annotation functions `here <https://pyreason.readthedocs.io/en/latest/user_guide/3_pyreason_rules.html#annotation-functions>`_.
 
 .. note::
-    Find the full, excecutable code for both annotation functions `here <https://github.com/lab-v2/pyreason/blob/main/examples/annotation_function_ex.py>`_
+    Find the full, executable code for both annotation functions `here <https://github.com/lab-v2/pyreason/blob/main/examples/annotation_function_ex.py>`_
 
 
 Average Annotation Function Example

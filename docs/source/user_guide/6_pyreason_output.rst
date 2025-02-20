@@ -14,7 +14,7 @@ Basic Tutorial Example
 To see ``filter_and_sort_nodes`` in action we will look at the example usage in PyReasons Basic Tutorial.
 
 .. note:: 
-   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/basic_tutorial.html>`_
+   Find the full, explained tutorial here `here <https://pyreason.readthedocs.io/en/latest/tutorials/basic_tutorial.html>`_
 
 
 The tutorial take in a basic graph of people and their pets, then adds a Rule and a Fact.
@@ -77,7 +77,7 @@ Infer Edges Example
 To see ``filter_and_sort_edges`` in action, we will look at the example usage in PyReason's Infer Edges Tutorial.
 
 .. note:: 
-   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/infer_edges.html>`_.
+   Find the full, explained tutorial here `here <https://pyreason.readthedocs.io/en/latest/tutorials/infer_edges.html>`_.
 
 The tutorial takes in a basic graph of airports and connections, then infers an edges between two unconnected airports.
 
@@ -143,7 +143,7 @@ Advanced Tutorial Example
 To see ``get_rule_trace`` in action we will look at the example usage in PyReasons Advanced Tutorial.
 
 .. note:: 
-   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/advanced_tutorial.html>`_ 
+   Find the full, explained tutorial here `here https://pyreason.readthedocs.io/en/latest/tutorials/advanced_tutorial.html>`_
 
 
 The tutorial takes in a graph of we have customers, cars, pets and their relationships. We first have customer_details followed by car_details , pet_details , travel_details.
@@ -160,7 +160,7 @@ Expected Output
 ^^^^^^^^^^^^^^^^
 Using ``get_rule_trace``, the expected output of ``nodes_trace`` and ``edges_trace`` is:
 
-Click `here <https://github.com/lab-v2/pyreason/blob/docs/examples/csv%20outputs/advanced_rule_trace_nodes_20241119-012153.csv>`_ for the full table.
+Click `here <https://github.com/lab-v2/pyreason/blob/main/examples/csv%20outputs/advanced_rule_trace_nodes_20241119-012153.csv>`_ for the full table.
 
 **Nodes Trace:**
 
@@ -201,7 +201,7 @@ Click `here <https://github.com/lab-v2/pyreason/blob/docs/examples/csv%20outputs
 
 **Edges Trace**
 
-Click `here <https://github.com/lab-v2/pyreason/blob/docs/examples/csv%20outputs/advanced_rule_trace_edges_20241119-012153.csv>`_ for the full table.
+Click `here <https://github.com/lab-v2/pyreason/blob/main/examples/csv%20outputs/advanced_rule_trace_edges_20241119-012153.csv>`_ for the full table.
 
 
 .. code:: text
@@ -234,7 +234,7 @@ Infer Edges Tutorial Example
 To see ``save_rule_trace`` in action, we will look at an example usage in PyReason's Infer Edges Tutorial.
 
 .. note::  
-   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/infer_edges.html#pyreason-infer-edges>`_.
+   Find the full, explained tutorial here `here <https://pyreason.readthedocs.io/en/latest/tutorials/infer_edges.html>`_.
 
 This tutorial takes a graph with airports and their connections. 
 
@@ -253,7 +253,7 @@ Using ``save_rule_trace``, the expected output is:
 
 The nodes trace will be saved as a CSV file in the specified folder. It will contain the time, the fixed-point operation, the node, and the clause information that led to the change in each timestep. Here's an example snippet of how the data will look when saved:
 
-Click `here <https://github.com/lab-v2/pyreason/blob/docs/examples/csv%20outputs/infer_edges_rule_trace_nodes_20241119-140955.csv>`_ for the full table.
+Click `here <https://github.com/lab-v2/pyreason/blob/main/examples/csv%20outputs/infer_edges_rule_trace_nodes_20241119-140955.csv>`_ for the full table.
 
 
 
@@ -277,7 +277,7 @@ Click `here <https://github.com/lab-v2/pyreason/blob/docs/examples/csv%20outputs
 
 The edges trace will be saved as another CSV file. It will contain the time, the edge relationship changes, and the clauses that were involved. Here’s a snippet of how the edge trace will look when saved:
 
-Click `here <https://github.com/lab-v2/pyreason/blob/docs/examples/csv%20outputs/infer_edges_rule_trace_edges_20241119-140955.csv>`_ for the full table.
+Click `here <https://github.com/lab-v2/pyreason/blob/main/examples/csv%20outputs/infer_edges_rule_trace_edges_20241119-140955.csv>`_ for the full table.
 
 
 .. code:: text
@@ -315,7 +315,7 @@ Basic Tutorial Example
 To see ``interpretation.get_dict()`` in action we will look at the example usage in PyReasons Basic Tutorial.
 
 .. note:: 
-   Find the full, explained tutorial here `here <https://pyreason--60.org.readthedocs.build/en/60/tutorials/basic_tutorial.html>`_
+   Find the full, explained tutorial here `here <https://pyreason.readthedocs.io/en/latest/tutorials/basic_tutorial.html>`_
 
 Call ``.get_dict()`` function on the interpretation, and print using ``pprint``.
 
@@ -373,4 +373,4 @@ Using ``.get_dict()``, the expected output is:
         ('Mary', 'Cat'): {}}}
 
 
-``interpretation.get_dict()`` first goes through each time step, then the componenets of the graph, and finally the predicates and bounds. 
+``interpretation.get_dict()`` first goes through each time step, then the components of the graph, and finally the predicates and bounds.
