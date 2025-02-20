@@ -1,6 +1,6 @@
-.. _pyreason_expected_output:
+.. _pyreason_output:
 
-PyReason Expected Output
+PyReason Output
 ===========================
 
 This section outline four functions that help display and explain the PyReason output and reasoning process.
