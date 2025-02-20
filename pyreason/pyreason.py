@@ -6,7 +6,7 @@ import sys
 import pandas as pd
 import memory_profiler as mp
 import warnings
-from typing import List, Type, Callable, Tuple
+from typing import List, Type, Callable, Tuple, Optional
 
 from pyreason.scripts.utils.output import Output
 from pyreason.scripts.utils.filter import Filter
@@ -423,24 +423,24 @@ class _Settings:
 
 
 # VARIABLES
-__graph = None
-__rules = None
-__clause_maps = None
-__node_facts = None
-__edge_facts = None
-__ipl = None
-__specific_node_labels = None
-__specific_edge_labels = None
+__graph: Optional[nx.DiGraph] = None
+__rules: Optional[numba.typed.List] = None
+__clause_maps: Optional[dict] = None
+__node_facts: Optional[numba.typed.List] = None
+__edge_facts: Optional[numba.typed.List] = None
+__ipl: Optional[numba.typed.List] = None
+__specific_node_labels: Optional[numba.typed.List] = None
+__specific_edge_labels: Optional[numba.typed.List] = None
 
-__non_fluent_graph_facts_node = None
-__non_fluent_graph_facts_edge = None
-__specific_graph_node_labels = None
-__specific_graph_edge_labels = None
+__non_fluent_graph_facts_node: Optional[numba.typed.List] = None
+__non_fluent_graph_facts_edge: Optional[numba.typed.List] = None
+__specific_graph_node_labels: Optional[numba.typed.List] = None
+__specific_graph_edge_labels: Optional[numba.typed.List] = None
 
 __annotation_functions = []
 
 __timestamp = ''
-__program = None
+__program: Optional[Program] = None
 
 __graphml_parser = GraphmlParser()
 settings = _Settings()
@@ -624,7 +624,7 @@ def add_annotation_function(function: Callable) -> None:
     __annotation_functions.append(function)
 
 
-def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bound_threshold: float = -1, queries: List[Query] = None, again: bool = False, node_facts: List[Type[fact_node.Fact]] = None, edge_facts: List[Type[fact_edge.Fact]] = None):
+def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bound_threshold: float = -1, queries: List[Query] = None, again: bool = False, facts: List[Fact] = None):
     """Function to start the main reasoning process. Graph and rules must already be loaded.
 
     :param timesteps: Max number of timesteps to run. -1 specifies run till convergence. If reasoning again, this is the number of timesteps to reason for extra (no zero timestep), defaults to -1
@@ -632,8 +632,7 @@ def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bou
     :param convergence_bound_threshold: Maximum change in any interpretation (bounds) between timesteps or fixed point operations until considered convergent, defaults to -1
     :param queries: A list of PyReason query objects that can be used to filter the ruleset based on the query. Default is None
     :param again: Whether to reason again on an existing interpretation, defaults to False
-    :param node_facts: New node facts to use during the next reasoning process. Other facts from file will be discarded, defaults to None
-    :param edge_facts: New edge facts to use during the next reasoning process. Other facts from file will be discarded, defaults to None
+    :param facts: New facts to use during the next reasoning process when reasoning again. Other facts from file will be discarded, defaults to None
     :return: The final interpretation after reasoning.
     """
     global settings, __timestamp
@@ -654,10 +653,10 @@ def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bou
     else:
         if settings.memory_profile:
             start_mem = mp.memory_usage(max_usage=True)
-            mem_usage, interp = mp.memory_usage((_reason_again, [timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts]), max_usage=True, retval=True)
+            mem_usage, interp = mp.memory_usage((_reason_again, [timesteps, convergence_threshold, convergence_bound_threshold, facts]), max_usage=True, retval=True)
             print(f"\nProgram used {mem_usage-start_mem} MB of memory")
         else:
-            interp = _reason_again(timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts)
+            interp = _reason_again(timesteps, convergence_threshold, convergence_bound_threshold, facts)
         
     return interp
 
@@ -746,20 +745,31 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
     return interpretation
 
 
-def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold, node_facts, edge_facts):
+def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold, facts):
     # Globals
     global __graph, __rules, __node_facts, __edge_facts, __ipl, __specific_node_labels, __specific_edge_labels, __graphml_parser
     global settings, __timestamp, __program
 
     assert __program is not None, 'To run `reason_again` you need to have reasoned once before'
 
-    # Extend current set of facts with the new facts supplied
-    all_edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
+    # Parse new facts and Extend current set of facts with the new facts supplied
     all_node_facts = numba.typed.List.empty_list(fact_node.fact_type)
-    if node_facts is not None:
-        all_node_facts.extend(numba.typed.List(node_facts))
-    if edge_facts is not None:
-        all_edge_facts.extend(numba.typed.List(edge_facts))
+    all_edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
+    fact_cnt = 1
+    for fact in facts:
+        if fact.type == 'node':
+            print(fact.name)
+            if fact.name is None:
+                fact.name = f'fact_{len(__node_facts)+len(__edge_facts)+fact_cnt}'
+            f = fact_node.Fact(fact.name, fact.component, fact.pred, fact.bound, fact.start_time, fact.end_time, fact.static)
+            all_node_facts.append(f)
+            fact_cnt += 1
+        else:
+            if fact.name is None:
+                fact.name = f'fact_{len(__node_facts)+len(__edge_facts)+fact_cnt}'
+            f = fact_edge.Fact(fact.name, fact.component, fact.pred, fact.bound, fact.start_time, fact.end_time, fact.static)
+            all_edge_facts.append(f)
+            fact_cnt += 1
 
     # Run Program and get final interpretation
     interpretation = __program.reason_again(timesteps, convergence_threshold, convergence_bound_threshold, all_node_facts, all_edge_facts, settings.verbose)

@@ -18,4 +18,10 @@ Reasoning Multiple Times
 -------------------------
 PyReason allows you to reason over the graph multiple times. This can be useful when you want to reason over the graph iteratively
 and add facts that were not available before. To reason over the graph multiple times, you can set ``again=True`` in ``pr.reason(again=True)``.
-To specify additional facts, use the ``node_facts`` or ``edge_facts`` parameters in ``pr.reason(...)``. These parameters allow you to add additional facts to the graph before reasoning again.
+To specify additional facts, use the ``facts`` parameter in ``pr.reason(...)``. These parameters allow you to add additional
+facts to the graph before reasoning again. The facts are specified as a list of PyReason facts.
+
+.. note::
+    When reasoning multiple times, the time continues to increment. Therefore any facts that are added should take this into account.
+    The timestep parameter specifies how many additional timesteps to reason. For example, if the initial reasoning converges at
+    timestep 5, and you want to reason for 3 more timesteps, you can set ``timestep=3`` in ``pr.reason(timestep=3, again=True, facts=[some_new_fact])``.
