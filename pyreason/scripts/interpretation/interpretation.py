@@ -228,6 +228,8 @@ class Interpretation:
 		timestep_loop = True
 		facts_to_be_applied_node_new = numba.typed.List.empty_list(facts_to_be_applied_node_type)
 		facts_to_be_applied_edge_new = numba.typed.List.empty_list(facts_to_be_applied_edge_type)
+		facts_to_be_applied_node_trace_new = numba.typed.List.empty_list(numba.types.string)
+		facts_to_be_applied_edge_trace_new = numba.typed.List.empty_list(numba.types.string)
 		rules_to_remove_idx = set()
 		rules_to_remove_idx.add(-1)
 		while timestep_loop:
@@ -260,6 +262,7 @@ class Interpretation:
 			# Start by applying facts
 			# Nodes
 			facts_to_be_applied_node_new.clear()
+			facts_to_be_applied_node_trace_new.clear()
 			nodes_set = set(nodes)
 			for i in range(len(facts_to_be_applied_node)):
 				if facts_to_be_applied_node[i][0] == t:
@@ -317,17 +320,25 @@ class Interpretation:
 
 					if static:
 						facts_to_be_applied_node_new.append((numba.types.uint16(facts_to_be_applied_node[i][0]+1), comp, l, bnd, static, graph_attribute))
+						if atom_trace:
+							facts_to_be_applied_node_trace_new.append(facts_to_be_applied_node_trace[i])
 
 				# If time doesn't match, fact to be applied later
 				else:
 					facts_to_be_applied_node_new.append(facts_to_be_applied_node[i])
+					if atom_trace:
+						facts_to_be_applied_node_trace_new.append(facts_to_be_applied_node_trace[i])
 
 			# Update list of facts with ones that have not been applied yet (delete applied facts)
 			facts_to_be_applied_node[:] = facts_to_be_applied_node_new.copy()
+			if atom_trace:
+				facts_to_be_applied_node_trace[:] = facts_to_be_applied_node_trace_new.copy()
 			facts_to_be_applied_node_new.clear()
+			facts_to_be_applied_node_trace_new.clear()
 
 			# Edges
 			facts_to_be_applied_edge_new.clear()
+			facts_to_be_applied_edge_trace_new.clear()
 			edges_set = set(edges)
 			for i in range(len(facts_to_be_applied_edge)):
 				if facts_to_be_applied_edge[i][0]==t:
@@ -383,14 +394,21 @@ class Interpretation:
 
 					if static:
 						facts_to_be_applied_edge_new.append((numba.types.uint16(facts_to_be_applied_edge[i][0]+1), comp, l, bnd, static, graph_attribute))
+						if atom_trace:
+							facts_to_be_applied_edge_trace_new.append(facts_to_be_applied_edge_trace[i])
 
 				# Time doesn't match, fact to be applied later
 				else:
 					facts_to_be_applied_edge_new.append(facts_to_be_applied_edge[i])
+					if atom_trace:
+						facts_to_be_applied_edge_trace_new.append(facts_to_be_applied_edge_trace[i])
 
 			# Update list of facts with ones that have not been applied yet (delete applied facts)
 			facts_to_be_applied_edge[:] = facts_to_be_applied_edge_new.copy()
+			if atom_trace:
+				facts_to_be_applied_edge_trace[:] = facts_to_be_applied_edge_trace_new.copy()
 			facts_to_be_applied_edge_new.clear()
+			facts_to_be_applied_edge_trace_new.clear()
 
 			in_loop = True
 			while in_loop:

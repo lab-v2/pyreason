@@ -624,7 +624,7 @@ def add_annotation_function(function: Callable) -> None:
     __annotation_functions.append(function)
 
 
-def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bound_threshold: float = -1, queries: List[Query] = None, again: bool = False, facts: List[Fact] = None):
+def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bound_threshold: float = -1, queries: List[Query] = None, again: bool = False):
     """Function to start the main reasoning process. Graph and rules must already be loaded.
 
     :param timesteps: Max number of timesteps to run. -1 specifies run till convergence. If reasoning again, this is the number of timesteps to reason for extra (no zero timestep), defaults to -1
@@ -653,10 +653,10 @@ def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bou
     else:
         if settings.memory_profile:
             start_mem = mp.memory_usage(max_usage=True)
-            mem_usage, interp = mp.memory_usage((_reason_again, [timesteps, convergence_threshold, convergence_bound_threshold, facts]), max_usage=True, retval=True)
+            mem_usage, interp = mp.memory_usage((_reason_again, [timesteps, convergence_threshold, convergence_bound_threshold]), max_usage=True, retval=True)
             print(f"\nProgram used {mem_usage-start_mem} MB of memory")
         else:
-            interp = _reason_again(timesteps, convergence_threshold, convergence_bound_threshold, facts)
+            interp = _reason_again(timesteps, convergence_threshold, convergence_bound_threshold)
         
     return interp
 
@@ -742,34 +742,25 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
     # Run Program and get final interpretation
     interpretation = __program.reason(timesteps, convergence_threshold, convergence_bound_threshold, settings.verbose)
 
+    # Clear facts after reasoning, so that reasoning again is possible with any added facts
+    __node_facts = None
+    __edge_facts = None
+
     return interpretation
 
 
-def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold, facts):
+def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold):
     # Globals
     global __graph, __rules, __node_facts, __edge_facts, __ipl, __specific_node_labels, __specific_edge_labels, __graphml_parser
     global settings, __timestamp, __program
 
     assert __program is not None, 'To run `reason_again` you need to have reasoned once before'
 
-    # Parse new facts and Extend current set of facts with the new facts supplied
+    # Extend facts
     all_node_facts = numba.typed.List.empty_list(fact_node.fact_type)
     all_edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
-    fact_cnt = 1
-    for fact in facts:
-        if fact.type == 'node':
-            print(fact.name)
-            if fact.name is None:
-                fact.name = f'fact_{len(__node_facts)+len(__edge_facts)+fact_cnt}'
-            f = fact_node.Fact(fact.name, fact.component, fact.pred, fact.bound, fact.start_time, fact.end_time, fact.static)
-            all_node_facts.append(f)
-            fact_cnt += 1
-        else:
-            if fact.name is None:
-                fact.name = f'fact_{len(__node_facts)+len(__edge_facts)+fact_cnt}'
-            f = fact_edge.Fact(fact.name, fact.component, fact.pred, fact.bound, fact.start_time, fact.end_time, fact.static)
-            all_edge_facts.append(f)
-            fact_cnt += 1
+    all_node_facts.extend(numba.typed.List(__node_facts))
+    all_edge_facts.extend(numba.typed.List(__edge_facts))
 
     # Run Program and get final interpretation
     interpretation = __program.reason_again(timesteps, convergence_threshold, convergence_bound_threshold, all_node_facts, all_edge_facts, settings.verbose)

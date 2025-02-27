@@ -28,8 +28,8 @@ def test_reason_again():
 
     # Now reason again
     new_fact = pr.Fact('popular(Mary)', 'popular_fact2', 2, 4)
-    interpretation = pr.reason(timesteps=3, again=True, facts=[new_fact])
-    pr.save_rule_trace(interpretation)
+    pr.add_fact(new_fact)
+    interpretation = pr.reason(timesteps=3, again=True)
 
     # Display the changes in the interpretation for each timestep
     dataframes = pr.filter_and_sort_nodes(interpretation, ['popular'])
