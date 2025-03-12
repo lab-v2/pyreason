@@ -26,3 +26,11 @@ class Fact:
         self.component = component
         self.bound = bound
         self.type = fact_type
+
+    def __str__(self):
+        s = f'{self.pred}({self.component}) : {self.bound}'
+        if self.static:
+            s += ' | static'
+        else:
+            s += f' | start: {self.start_time} -> end: {self.end_time}'
+        return s
