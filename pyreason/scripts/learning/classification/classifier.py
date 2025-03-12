@@ -37,7 +37,7 @@ class LogicIntegratedClassifier(torch.nn.Module):
             facts.append(fact)
         return facts
 
-    def forward(self, x, t1: int, t2: int):
+    def forward(self, x, t1: int = 0, t2: int = 0):
         """
         Forward pass of the model
         :param x: Input tensor
