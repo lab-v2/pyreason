@@ -12,7 +12,7 @@ class LogicIntegratedClassifier(torch.nn.Module):
     Class to integrate a PyTorch model with PyReason. The output of the model is returned to the
     user in the form of PyReason facts. The user can then add these facts to the logic program and reason using them.
     """
-    def __init__(self, model, class_names: List[str], model_name: str = 'classifier', interface_modes: ModelInterfaceOptions = None):
+    def __init__(self, model, class_names: List[str], model_name: str = 'classifier', interface_options: ModelInterfaceOptions = None):
         """
         :param model:
         :param class_names:
@@ -21,7 +21,7 @@ class LogicIntegratedClassifier(torch.nn.Module):
         self.model = model
         self.class_names = class_names
         self.model_name = model_name
-        self.interface_modes = interface_modes
+        self.interface_options = interface_options
 
     def get_class_facts(self, t1: int, t2: int) -> List[Fact]:
         """
@@ -49,7 +49,7 @@ class LogicIntegratedClassifier(torch.nn.Module):
 
         # Convert logits to probabilities assuming a multi-class classification.
         probabilities = F.softmax(output, dim=1).squeeze()
-        opts = self.interface_modes
+        opts = self.interface_options
 
         # Prepare threshold tensor.
         threshold = torch.tensor(opts.threshold, dtype=probabilities.dtype, device=probabilities.device)

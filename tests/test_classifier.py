@@ -19,8 +19,8 @@ def test_classifier_integration():
     # Create integration options.
     # Only probabilities exceeding 0.6 will be considered.
     # For those, if set_lower_bound is True, lower bound becomes 0.95; if set_upper_bound is False, upper bound is forced to 1.
-    dummy_options = pr.ModelInterfaceOptions(
-        threshold=0.6,
+    interface_options = pr.ModelInterfaceOptions(
+        threshold=0.4,
         set_lower_bound=True,
         set_upper_bound=False,
         snap_value=0.95
@@ -28,7 +28,7 @@ def test_classifier_integration():
 
     # Create an instance of LogicIntegratedClassifier.
     logic_classifier = pr.LogicIntegratedClassifier(model, class_names, model_name="classifier",
-                                                    interface_modes=dummy_options)
+                                                    interface_options=interface_options)
 
     # Create a dummy input tensor with 10 features.
     input_tensor = torch.rand(1, 10)
