@@ -82,7 +82,7 @@ class LogicIntegratedClassifier(torch.nn.Module):
         facts = []
         for class_name, bounds in zip(self.class_names, bounds_list):
             lower, upper = bounds
-            fact_str = f'{self.model_name}({class_name}) : [{lower:.3f}, {upper:.3f}])'
+            fact_str = f'{self.model_name}({class_name}) : [{lower:.3f}, {upper:.3f}]'
             fact = Fact(fact_str, name=f'{self.model_name}-{class_name}-fact', start_time=t1, end_time=t2)
             facts.append(fact)
         return output, facts
