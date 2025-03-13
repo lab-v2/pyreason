@@ -46,8 +46,8 @@ def test_classifier_integration():
     assert len(facts) == len(class_names), "Expected one fact per class"
 
     # Print results for visual inspection.
-    print("Model output (logits):")
-    print(output)
+    print('Logits', output)
+    print('Probabilities', probabilities)
     print("\nGenerated PyReason Facts:")
     for fact in facts:
         print(fact)
