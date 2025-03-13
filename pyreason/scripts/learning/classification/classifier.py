@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 import torch.nn
 import torch.nn.functional as F
@@ -37,7 +37,7 @@ class LogicIntegratedClassifier(torch.nn.Module):
             facts.append(fact)
         return facts
 
-    def forward(self, x, t1: int = 0, t2: int = 0):
+    def forward(self, x, t1: int = 0, t2: int = 0) -> Tuple[torch.Tensor, torch.Tensor, List[Fact]]:
         """
         Forward pass of the model
         :param x: Input tensor
