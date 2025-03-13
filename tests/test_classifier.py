@@ -38,7 +38,7 @@ def test_classifier_integration():
     t2 = 0
 
     # Run the forward pass to get the model output and the corresponding PyReason facts.
-    output, facts = logic_classifier(input_tensor, t1, t2)
+    output, probabilities, facts = logic_classifier(input_tensor, t1, t2)
 
     # Assert that the output is a tensor.
     assert isinstance(output, torch.Tensor), "The model output should be a torch.Tensor"

@@ -85,5 +85,5 @@ class LogicIntegratedClassifier(torch.nn.Module):
             fact_str = f'{self.model_name}({class_name}) : [{lower:.3f}, {upper:.3f}]'
             fact = Fact(fact_str, name=f'{self.model_name}-{class_name}-fact', start_time=t1, end_time=t2)
             facts.append(fact)
-        return output, facts
+        return output, probabilities, facts
 
