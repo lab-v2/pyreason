@@ -49,7 +49,7 @@ class LogicIntegratedClassifier(torch.nn.Module):
 
         # Convert logits to probabilities assuming a multi-class classification.
         probabilities = F.softmax(output, dim=1).squeeze()
-        opts = self.integration_options
+        opts = self.interface_modes
 
         # Prepare threshold tensor.
         threshold = torch.tensor(opts.threshold, dtype=probabilities.dtype, device=probabilities.device)
