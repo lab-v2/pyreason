@@ -39,9 +39,23 @@ class Program:
 
 		return self.interp
 	
-	def reason_again(self, tmax, convergence_threshold, convergence_bound_threshold, facts_node, facts_edge, verbose=True):
+	def reason_again(self, tmax, restart, convergence_threshold, convergence_bound_threshold, facts_node, facts_edge, verbose=True):
 		assert self.interp is not None, 'Call reason before calling reason again'
-		self._tmax = self.interp.time + tmax
-		self.interp.start_fp(self._tmax, facts_node, facts_edge, self._rules, verbose, convergence_threshold, convergence_bound_threshold, again=True)
+		if restart:
+			self._tmax = tmax
+		else:
+			self._tmax = self.interp.time + tmax
+		self.interp.start_fp(self._tmax, facts_node, facts_edge, self._rules, verbose, convergence_threshold, convergence_bound_threshold, again=True, restart=restart)
 
 		return self.interp
+
+	def reset_graph(self):
+		self._graph = None
+		self.interp = None
+
+	def reset_rules(self):
+		self._rules = None
+
+	def reset_facts(self):
+		self._facts_node = None
+		self._facts_edge = None

@@ -180,11 +180,11 @@ class Interpretation:
 			convergence_delta = convergence_bound_threshold
 		return convergence_mode, convergence_delta
 
-	def start_fp(self, tmax, facts_node, facts_edge, rules, verbose, convergence_threshold, convergence_bound_threshold, again=False):
+	def start_fp(self, tmax, facts_node, facts_edge, rules, verbose, convergence_threshold, convergence_bound_threshold, again=False, restart=True):
 		self.tmax = tmax
 		self._convergence_mode, self._convergence_delta = self._init_convergence(convergence_bound_threshold, convergence_threshold)
 		max_facts_time = self._init_facts(facts_node, facts_edge, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.atom_trace)
-		self._start_fp(rules, max_facts_time, verbose, again)
+		self._start_fp(rules, max_facts_time, verbose, again, restart)
 
 	@staticmethod
 	@numba.njit(cache=True)
@@ -208,9 +208,12 @@ class Interpretation:
 					facts_to_be_applied_edge_trace.append(fact.get_name())
 		return max_time
 
-	def _start_fp(self, rules, max_facts_time, verbose, again):
+	def _start_fp(self, rules, max_facts_time, verbose, again, restart):
 		if again:
 			self.num_ga.append(self.num_ga[-1])
+			if restart:
+				self.time = 0
+				self.prev_reasoning_data[0] = 0
 		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.predicate_map_node, self.predicate_map_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.persistent, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, self.allow_ground_rules, max_facts_time, self.annotation_functions, self._convergence_mode, self._convergence_delta, self.num_ga, verbose, again)
 		self.time = t - 1
 		# If we need to reason again, store the next timestep to start from

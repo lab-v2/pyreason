@@ -459,9 +459,21 @@ def reset():
     """Resets certain variables to None to be able to do pr.reason() multiple times in a program
     without memory blowing up
     """
-    global __node_facts, __edge_facts
+    global __node_facts, __edge_facts, __graph
+
+    # Facts
     __node_facts = None
     __edge_facts = None
+    if __program is not None:
+        __program.reset_facts()
+
+    # Graph
+    __graph = None
+    if __program is not None:
+        __program.reset_graph()
+
+    # Rules
+    reset_rules()
 
 
 def get_rules():
@@ -478,14 +490,8 @@ def reset_rules():
     """
     global __rules
     __rules = None
-
-
-def reset_graph():
-    """
-    Resets graph to none
-    """
-    global __graph
-    __graph = None
+    if __program is not None:
+        __program.reset_rules()
 
 
 def reset_settings():
@@ -633,7 +639,7 @@ def add_annotation_function(function: Callable) -> None:
     __annotation_functions.append(function)
 
 
-def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bound_threshold: float = -1, queries: List[Query] = None, again: bool = False):
+def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bound_threshold: float = -1, queries: List[Query] = None, again: bool = False, restart: bool = True):
     """Function to start the main reasoning process. Graph and rules must already be loaded.
 
     :param timesteps: Max number of timesteps to run. -1 specifies run till convergence. If reasoning again, this is the number of timesteps to reason for extra (no zero timestep), defaults to -1
@@ -641,7 +647,7 @@ def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bou
     :param convergence_bound_threshold: Maximum change in any interpretation (bounds) between timesteps or fixed point operations until considered convergent, defaults to -1
     :param queries: A list of PyReason query objects that can be used to filter the ruleset based on the query. Default is None
     :param again: Whether to reason again on an existing interpretation, defaults to False
-    :param facts: New facts to use during the next reasoning process when reasoning again. Other facts from file will be discarded, defaults to None
+    :param restart: Whether to restart the program time from 0 when reasoning again, defaults to True
     :return: The final interpretation after reasoning.
     """
     global settings, __timestamp
@@ -662,10 +668,10 @@ def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bou
     else:
         if settings.memory_profile:
             start_mem = mp.memory_usage(max_usage=True)
-            mem_usage, interp = mp.memory_usage((_reason_again, [timesteps, convergence_threshold, convergence_bound_threshold]), max_usage=True, retval=True)
+            mem_usage, interp = mp.memory_usage((_reason_again, [timesteps, restart, convergence_threshold, convergence_bound_threshold]), max_usage=True, retval=True)
             print(f"\nProgram used {mem_usage-start_mem} MB of memory")
         else:
-            interp = _reason_again(timesteps, convergence_threshold, convergence_bound_threshold)
+            interp = _reason_again(timesteps, restart, convergence_threshold, convergence_bound_threshold)
         
     return interp
 
@@ -758,7 +764,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
     return interpretation
 
 
-def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold):
+def _reason_again(timesteps, restart, convergence_threshold, convergence_bound_threshold):
     # Globals
     global __graph, __rules, __node_facts, __edge_facts, __ipl, __specific_node_labels, __specific_edge_labels, __graphml_parser
     global settings, __timestamp, __program
@@ -772,7 +778,7 @@ def _reason_again(timesteps, convergence_threshold, convergence_bound_threshold)
     all_edge_facts.extend(numba.typed.List(__edge_facts))
 
     # Run Program and get final interpretation
-    interpretation = __program.reason_again(timesteps, convergence_threshold, convergence_bound_threshold, all_node_facts, all_edge_facts, settings.verbose)
+    interpretation = __program.reason_again(timesteps, restart, convergence_threshold, convergence_bound_threshold, all_node_facts, all_edge_facts, settings.verbose)
 
     return interpretation
 
