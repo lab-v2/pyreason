@@ -64,8 +64,8 @@ class LogicIntegratedClassifier(torch.nn.Module):
                                                                              device=probabilities.device)
         else:
             # If no snap_value is provided, keep original probabilities for those passing threshold.
-            lower_val = probabilities
-            upper_val = probabilities
+            lower_val = probabilities if opts.set_lower_bound else torch.zeros_like(probabilities)
+            upper_val = probabilities if opts.set_upper_bound else torch.ones_like(probabilities)
 
         # For probabilities that pass the threshold, apply the above; else, bounds are fixed to [0,1].
         lower_bounds = torch.where(condition, lower_val, torch.zeros_like(probabilities))
