@@ -14,9 +14,9 @@ class_names = ["fraud", "legitimate"]
 transaction_features = torch.rand(1, 5)
 
 # Define integration options.
-# Only probabilities above 0.4 are considered for adjustment.
+# Only probabilities above 0.5 are considered for adjustment.
 interface_options = pr.ModelInterfaceOptions(
-    threshold=0.5,       # Only process probabilities above 0.6
+    threshold=0.5,       # Only process probabilities above 0.5
     set_lower_bound=True,  # For high confidence, adjust the lower bound.
     set_upper_bound=False, # Keep the upper bound unchanged.
     snap_value=1.0      # Use 1.0 as the snap value.
