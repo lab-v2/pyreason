@@ -497,7 +497,6 @@ def reset_settings():
     """
     Resets settings to default
     """
-    global settings
     settings.reset()
 
 
