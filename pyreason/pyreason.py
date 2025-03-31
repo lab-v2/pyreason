@@ -480,7 +480,6 @@ def get_rules():
     """
     Returns the rules
     """
-    global __rules
     return __rules
 
 
