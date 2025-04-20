@@ -69,13 +69,13 @@ interface_options = pr.ModelInterfaceOptions(
 fish_classifier = pr.LogicIntegratedClassifier(
     model,
     allowed_labels,
-    model_name="fraud_detector",
+    model_name="fish_classifier",
     interface_options=interface_options
 )
 
 logits, probabilities, classifier_facts = fish_classifier(image)
 
-print("=== Fraud Detector Output ===")
+print("=== Fish Classifier Output ===")
 print("Logits:", logits)
 print("Probabilities:", probabilities)
 print("\nGenerated Classifier Facts:")
