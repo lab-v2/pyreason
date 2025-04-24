@@ -39,7 +39,7 @@ class LogicIntegratedClassifier(torch.nn.Module):
             facts.append(fact)
         return facts
 
-    def forward(self, x, t1: int = 0, t2: int = 0) -> Tuple[torch.Tensor, torch.Tensor, List[Fact]]:
+    def forward(self, x, t1: int = 0, t2: int = 0, output = None, probabilities = None) -> Tuple[torch.Tensor, torch.Tensor, List[Fact]]:
         """
         Forward pass of the model
         :param x: Input tensor
@@ -47,10 +47,15 @@ class LogicIntegratedClassifier(torch.nn.Module):
         :param t2: End time for the facts
         :return: Output tensor
         """
-        output = self.model(x)
+        
+        if output is None: 
+            output = self.model(x)
 
-        # Convert logits to probabilities assuming a multi-class classification.
-        probabilities = F.softmax(output, dim=1).squeeze()
+        if probabilities is None:
+            # Convert logits to probabilities assuming a multi-class classification.
+            probabilities = F.softmax(output, dim=1).squeeze()
+
+        print("Probabilities:", probabilities)
         opts = self.interface_options
 
         # Prepare threshold tensor.
@@ -88,4 +93,6 @@ class LogicIntegratedClassifier(torch.nn.Module):
             fact = Fact(fact_str, name=f'{self.identifier}-{class_name}-fact', start_time=t1, end_time=t2)
             facts.append(fact)
         return output, probabilities, facts
+
+
 
