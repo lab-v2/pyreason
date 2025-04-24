@@ -1,9 +1,19 @@
-import pyreason as pr
+# import the logicIntegratedClassifier class
+
 import torch
 import torch.nn as nn
 import networkx as nx
 import numpy as np
 import random
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+from pyreason.scripts.learning.classification.classifier import LogicIntegratedClassifier
+from pyreason.scripts.facts.fact import Fact
+from pyreason.scripts.learning.utils.model_interface import ModelInterfaceOptions
+from pyreason.scripts.rules.rule import Rule
+from pyreason.pyreason import _Settings as Settings, reason, reset_settings, get_rule_trace, add_fact, add_rule, load_graph
 
 # seed_value = 41
 seed_value = 42
@@ -24,7 +34,7 @@ transaction_features = torch.rand(1, 5)
 
 # Define integration options
 # Only probabilities above 0.5 are considered for adjustment.
-interface_options = pr.ModelInterfaceOptions(
+interface_options = ModelInterfaceOptions(
     threshold=0.5,         # Only process probabilities above 0.5
     set_lower_bound=True,  # For high confidence, adjust the lower bound.
     set_upper_bound=False, # Keep the upper bound unchanged.
@@ -32,10 +42,10 @@ interface_options = pr.ModelInterfaceOptions(
 )
 
 # Wrap the model using LogicIntegratedClassifier
-fraud_detector = pr.LogicIntegratedClassifier(
+fraud_detector = LogicIntegratedClassifier(
     model,
     class_names,
-    model_name="fraud_detector",
+    identifier="fraud_detector",
     interface_options=interface_options
 )
 
@@ -51,7 +61,7 @@ for fact in classifier_facts:
 
 # Add the classifier-generated facts.
 for fact in classifier_facts:
-    pr.add_fact(fact)
+    add_fact(fact)
 
 # --- Part 2: Create and Load a Networkx Graph representing an account knowledge base ---
 
@@ -64,29 +74,31 @@ G.add_node("AccountC", account=1)
 # Add edges with an attribute "relationship" set to "associated".
 G.add_edge("AccountA", "AccountB", associated=1)
 G.add_edge("AccountB", "AccountC", associated=1)
-pr.load_graph(G)
+load_graph(G)
 
 # --- Part 3: Set Up Context and Reasoning Environment ---
 
 # Add additional contextual information:
 # 1. A fact indicating the transaction comes from a suspicious location. This could come from a separate fraud detection system.
-pr.add_fact(pr.Fact("suspicious_location(AccountA)", "transaction_fact"))
+add_fact(Fact("suspicious_location(AccountA)", "transaction_fact"))
 
 # Define a rule: if the fraud detector flags a transaction as fraud and the transaction info is suspicious,
 # then mark the associated account (AccountA) as requiring investigation.
-pr.add_rule(pr.Rule("requires_investigation(acc) <- account(acc), fraud(fraud_detector), suspicious_location(acc)", "investigation_rule"))
+add_rule(Rule("requires_investigation(acc) <- account(acc), fraud(fraud_detector), suspicious_location(acc)", "investigation_rule"))
 
 # Define a propagation rule:
 # If an account requires investigation and is connected (via the "associated" relationship) to another account,
 # then the connected account is also flagged for investigation.
-pr.add_rule(pr.Rule("requires_investigation(y) <- requires_investigation(x), associated(x,y)", "propagation_rule"))
+add_rule(Rule("requires_investigation(y) <- requires_investigation(x), associated(x,y)", "propagation_rule"))
 
 # --- Part 4: Run the Reasoning Engine ---
 
-# Run the reasoning engine to allow the investigation flag to propagate through the network.
-# pr.settings.allow_ground_rules = True
-pr.settings.atom_trace = True
-interpretation = pr.reason()
+# Reset settings before running reasoning
+reset_settings()
 
-trace = pr.get_rule_trace(interpretation)
+# Run the reasoning engine to allow the investigation flag to propagate through the network.
+Settings.atom_trace = True
+interpretation = reason()
+
+trace = get_rule_trace(interpretation)
 print(f"RULE TRACE: \n\n{trace[0]}\n")
