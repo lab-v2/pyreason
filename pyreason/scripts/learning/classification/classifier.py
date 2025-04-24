@@ -12,15 +12,17 @@ class LogicIntegratedClassifier(torch.nn.Module):
     Class to integrate a PyTorch model with PyReason. The output of the model is returned to the
     user in the form of PyReason facts. The user can then add these facts to the logic program and reason using them.
     """
-    def __init__(self, model, class_names: List[str], model_name: str = 'classifier', interface_options: ModelInterfaceOptions = None):
+    def __init__(self, model, class_names: List[str], identifier: str = 'classifier', interface_options: ModelInterfaceOptions = None):
         """
-        :param model:
-        :param class_names:
+        :param model: PyTorch model to be integrated.
+        :param class_names: List of class names for the model output.
+        :param identifier: Identifier for the model, used as the constant in the facts.
+        :param interface_options: Options for the model interface, including threshold and snapping behavior.
         """
         super(LogicIntegratedClassifier, self).__init__()
         self.model = model
         self.class_names = class_names
-        self.model_name = model_name
+        self.identifier = identifier
         self.interface_options = interface_options
 
     def get_class_facts(self, t1: int, t2: int) -> List[Fact]:
@@ -33,7 +35,7 @@ class LogicIntegratedClassifier(torch.nn.Module):
         """
         facts = []
         for c in self.class_names:
-            fact = Fact(f'{self.model_name}({c})', name=f'{self.model_name}-{c}-fact', start_time=t1, end_time=t2)
+            fact = Fact(f'{c}({self.identifier})', name=f'{self.identifier}-{c}-fact', start_time=t1, end_time=t2)
             facts.append(fact)
         return facts
 
@@ -82,8 +84,8 @@ class LogicIntegratedClassifier(torch.nn.Module):
         facts = []
         for class_name, bounds in zip(self.class_names, bounds_list):
             lower, upper = bounds
-            fact_str = f'{self.model_name}({class_name}) : [{lower:.3f}, {upper:.3f}]'
-            fact = Fact(fact_str, name=f'{self.model_name}-{class_name}-fact', start_time=t1, end_time=t2)
+            fact_str = f'{class_name}({self.identifier}) : [{lower:.3f}, {upper:.3f}]'
+            fact = Fact(fact_str, name=f'{self.identifier}-{class_name}-fact', start_time=t1, end_time=t2)
             facts.append(fact)
         return output, probabilities, facts
 

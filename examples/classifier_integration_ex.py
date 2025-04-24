@@ -2,6 +2,15 @@ import pyreason as pr
 import torch
 import torch.nn as nn
 import networkx as nx
+import numpy as np
+import random
+
+# seed_value = 41
+seed_value = 42
+random.seed(seed_value)
+np.random.seed(seed_value)
+torch.manual_seed(seed_value)
+
 
 # --- Part 1: Fraud Detector Model Integration ---
 
@@ -13,20 +22,20 @@ class_names = ["fraud", "legitimate"]
 # Create a dummy transaction feature vector.
 transaction_features = torch.rand(1, 5)
 
-# Define integration options.
+# Define integration options
 # Only probabilities above 0.5 are considered for adjustment.
 interface_options = pr.ModelInterfaceOptions(
-    threshold=0.5,       # Only process probabilities above 0.5
+    threshold=0.5,         # Only process probabilities above 0.5
     set_lower_bound=True,  # For high confidence, adjust the lower bound.
     set_upper_bound=False, # Keep the upper bound unchanged.
-    snap_value=1.0      # Use 1.0 as the snap value.
+    snap_value=1.0         # Use 1.0 as the snap value.
 )
 
 # Wrap the model using LogicIntegratedClassifier
 fraud_detector = pr.LogicIntegratedClassifier(
     model,
     class_names,
-    model_name="fraud_detector",
+    identifier="fraud_detector",
     interface_options=interface_options
 )
 
@@ -65,7 +74,7 @@ pr.add_fact(pr.Fact("suspicious_location(AccountA)", "transaction_fact"))
 
 # Define a rule: if the fraud detector flags a transaction as fraud and the transaction info is suspicious,
 # then mark the associated account (AccountA) as requiring investigation.
-pr.add_rule(pr.Rule("requires_investigation(acc) <- account(acc), fraud_detector(fraud), suspicious_location(acc)", "investigation_rule"))
+pr.add_rule(pr.Rule("requires_investigation(acc) <- account(acc), fraud(fraud_detector), suspicious_location(acc)", "investigation_rule"))
 
 # Define a propagation rule:
 # If an account requires investigation and is connected (via the "associated" relationship) to another account,
@@ -75,7 +84,7 @@ pr.add_rule(pr.Rule("requires_investigation(y) <- requires_investigation(x), ass
 # --- Part 4: Run the Reasoning Engine ---
 
 # Run the reasoning engine to allow the investigation flag to propagate through the network.
-pr.settings.allow_ground_rules = True
+# pr.settings.allow_ground_rules = True
 pr.settings.atom_trace = True
 interpretation = pr.reason()
 
