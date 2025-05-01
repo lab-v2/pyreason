@@ -39,7 +39,7 @@ class LogicIntegratedClassifier(torch.nn.Module):
             facts.append(fact)
         return facts
 
-    def forward(self, x, t1: int = 0, t2: int = 0, output = None, probabilities = None) -> Tuple[torch.Tensor, torch.Tensor, List[Fact]]:
+    def forward(self, x, t1: int = 0, t2: int = 0, limit_classification_output_classes = False) -> Tuple[torch.Tensor, torch.Tensor, List[Fact]]:
         """
         Forward pass of the model
         :param x: Input tensor
@@ -47,14 +47,42 @@ class LogicIntegratedClassifier(torch.nn.Module):
         :param t2: End time for the facts
         :return: Output tensor
         """
-        
-        if output is None: 
+
+        try:
             output = self.model(x)
+        except AttributeError as e:
+            print(f"Error during model forward pass: {e}")
+            try:
+                output = self.model(**x).logits
+            except Exception as e:
+                print(f"Error during model forward pass with kwargs: {e}")
 
-        if probabilities is None:
-            # Convert logits to probabilities assuming a multi-class classification.
-            probabilities = F.softmax(output, dim=1).squeeze()
+        probabilities = F.softmax(output, dim=1).squeeze()
 
+        if limit_classification_output_classes:
+            # Get the index-to-label mapping from the model config
+            id2label = self.model.config.id2label
+
+            # Get the indices of the allowed labels, stripping everything after the comma
+            allowed_indices = [
+                i for i, label in id2label.items()
+                if label.split(",")[0].strip().lower() in [name.lower() for name in self.class_names]
+            ]
+
+            # Filter probabilities based on allowed classes
+            filtered_probs = torch.zeros_like(probabilities)
+            filtered_probs[allowed_indices] = probabilities[allowed_indices]
+            filtered_probs = filtered_probs / filtered_probs.sum()
+            top_labels = []
+            top_probs, top_indices = filtered_probs.topk(len(self.class_names))
+            for prob, idx in zip(top_probs, top_indices):
+                label = id2label[idx.item()].split(",")[0]
+                print(f"{label}: {prob.item():.4f}")
+                top_labels.append(label)
+        
+            self.class_names = top_labels
+            
+        probabilities = top_probs
         print("Probabilities:", probabilities)
         opts = self.interface_options
 
