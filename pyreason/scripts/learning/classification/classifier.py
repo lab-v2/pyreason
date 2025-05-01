@@ -59,6 +59,9 @@ class LogicIntegratedClassifier(torch.nn.Module):
 
         probabilities = F.softmax(output, dim=1).squeeze()
 
+        # A user may want to restrict the number of classe so that the classifier only returns facts for a subset of classes.  
+        # This is useful for large models like CLIP, where the model has 4000 classes. 
+        # If we only want to reason on a small number of these, it is useful to limit the output classes.
         if limit_classification_output_classes:
             # Get the index-to-label mapping from the model config
             id2label = self.model.config.id2label
@@ -69,20 +72,21 @@ class LogicIntegratedClassifier(torch.nn.Module):
                 if label.split(",")[0].strip().lower() in [name.lower() for name in self.class_names]
             ]
 
-            # Filter probabilities based on allowed classes
+            # Normalize the probabilities based only on the allowed classes
             filtered_probs = torch.zeros_like(probabilities)
             filtered_probs[allowed_indices] = probabilities[allowed_indices]
             filtered_probs = filtered_probs / filtered_probs.sum()
+
+            # Because we are filtering the probabilities, we need to update the class names to only include the allowed classes.
             top_labels = []
             top_probs, top_indices = filtered_probs.topk(len(self.class_names))
             for prob, idx in zip(top_probs, top_indices):
                 label = id2label[idx.item()].split(",")[0]
                 print(f"{label}: {prob.item():.4f}")
                 top_labels.append(label)
-        
             self.class_names = top_labels
+            probabilities = top_probs
             
-        probabilities = top_probs
         print("Probabilities:", probabilities)
         opts = self.interface_options
 
