@@ -91,11 +91,4 @@ print(f"RULE TRACE: \n\n{trace[0]}\n")
 
 
 # TODO:
-# Re-write with non-grounded rules
-# Try to make a more general version of the LogicIntegratedClassifier that can load in a huggingface model and a set of classes
 # Ask Dyuman about how to connect all the edges of a graph within the LogicIntegratedClassifier
-
-
-# First, make the knowlege base with all the hardcoded rules
-# Get the inputs, turn the images into FACTS in pyreason.  This completes our knowlege base
-# Then, run the inferences
