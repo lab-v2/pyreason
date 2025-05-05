@@ -26,7 +26,6 @@ processor = AutoImageProcessor.from_pretrained(model_name)
 model = AutoModelForImageClassification.from_pretrained(model_name)
 
 G = nx.DiGraph()
-## Make a complete graph between all the nodes
 load_graph(G)
 
 # Step 2: Load and preprocess images from the directory
@@ -34,15 +33,6 @@ image_dir = "/Users/coltonpayne/pyreason/examples/image_classifier_two/images"
 image_paths = list(Path(image_dir).glob("*.jpeg"))  # Get all .jpeg files in the directory
 image_list = []
 allowed_labels = ['goldfish', 'tiger shark', 'hammerhead', 'great white shark', 'tench']
-
-# Get the index-to-label mapping from the model config
-id2label = model.config.id2label
-
-# Get the indices of the allowed labels, stripping everything after the comma
-allowed_indices = [
-    i for i, label in id2label.items()
-    if label.split(",")[0].strip().lower() in [name.lower() for name in allowed_labels]
-]
 
 # Add Rules to the knowlege base
 add_rule(Rule("is_fish(x) <-0 goldfish(x)", "is_fish_rule"))
@@ -52,8 +42,6 @@ add_rule(Rule("is_shark(x) <-0 hammerhead(x)", "is_shark_rule"))
 add_rule(Rule("is_shark(x) <-0 greatwhiteshark(x)", "is_shark_rule"))
 add_rule(Rule("is_scary(x) <-0 is_shark(x)", "is_scary_rule"))
 add_rule(Rule("likes_to_eat(y,x) <-0 is_shark(y), is_fish(x)", "likes_to_eat_rule"))
-
-
 
 for image_path in image_paths:
     print(f"Processing Image: {image_path.name}")
@@ -67,11 +55,8 @@ for image_path in image_paths:
         snap_value=1.0      # Use 1.0 as the snap value.
     )
 
-
     classifier_name = image_path.name.split(".")[0]
-    # We use dynamic variable names to create a unique classifier for each image
-    # There's a better way to do this probably
-    globals()[classifier_name] = LogicIntegratedClassifier(
+    fish_classifier = LogicIntegratedClassifier(
         model,
         allowed_labels,
         identifier=classifier_name,
@@ -79,10 +64,7 @@ for image_path in image_paths:
     )
 
     # print("Top Probs: ", filtered_probs)
-    logits, probabilities, classifier_facts = globals()[classifier_name](inputs, limit_classification_output_classes=True)
-    #logits, probabilities, classifier_facts = fish_classifier(inputs, output=logits, probabilities=top_probs)
-    #logits, probabilities, classifier_facts = fish_classifier(inputs)
-    #logits, probabilities, classifier_facts = fish_classifier(**inputs)
+    logits, probabilities, classifier_facts = fish_classifier(inputs, limit_classification_output_classes=True)
 
     print("=== Fish Classifier Output ===")
     #print("Probabilities:", probabilities)
@@ -108,11 +90,12 @@ trace = get_rule_trace(interpretation)
 print(f"RULE TRACE: \n\n{trace[0]}\n")
 
 
-# First, make the knowlege base with all the hardcoded rules
-# Get the inputs, turn the images into FACTS in pyreason.  This completes our knowlege base
-# Then, run the inferences
-
 # TODO:
 # Re-write with non-grounded rules
 # Try to make a more general version of the LogicIntegratedClassifier that can load in a huggingface model and a set of classes
 # Ask Dyuman about how to connect all the edges of a graph within the LogicIntegratedClassifier
+
+
+# First, make the knowlege base with all the hardcoded rules
+# Get the inputs, turn the images into FACTS in pyreason.  This completes our knowlege base
+# Then, run the inferences
