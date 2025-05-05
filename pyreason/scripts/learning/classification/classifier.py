@@ -61,7 +61,6 @@ class LogicIntegratedClassifier(torch.nn.Module):
 
         # A user may want to restrict the number of classe so that the classifier only returns facts for a subset of classes.  
         # This is useful for large models like CLIP, where the model has 4000 classes. 
-        # If we only want to reason on a small number of these, it is useful to limit the output classes.
         # We will set the new possible classes to be limited to the class names given to the classifier.
         if limit_classification_output_classes:
             # Get the index-to-label mapping from the model config
@@ -88,7 +87,6 @@ class LogicIntegratedClassifier(torch.nn.Module):
             self.class_names = top_labels
             probabilities = top_probs
 
-        print("Probabilities:", probabilities)
         opts = self.interface_options
 
         # Prepare threshold tensor.
