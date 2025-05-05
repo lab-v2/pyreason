@@ -130,5 +130,3 @@ class LogicIntegratedClassifier(torch.nn.Module):
             facts.append(fact)
         return output, probabilities, facts
 
-
-
