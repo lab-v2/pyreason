@@ -41,7 +41,7 @@ add_rule(Rule("is_shark(x) <-0 tigershark(x)", "is_shark_rule"))
 add_rule(Rule("is_shark(x) <-0 hammerhead(x)", "is_shark_rule"))
 add_rule(Rule("is_shark(x) <-0 greatwhiteshark(x)", "is_shark_rule"))
 add_rule(Rule("is_scary(x) <-0 is_shark(x)", "is_scary_rule"))
-add_rule(Rule("likes_to_eat(y,x) <-0 is_shark(y), is_fish(x)", "likes_to_eat_rule"))
+add_rule(Rule("likes_to_eat(y,x) <-0 is_shark(y), is_shark(x)", "likes_to_eat_rule", infer_edges=True))
 
 for image_path in image_paths:
     print(f"Processing Image: {image_path.name}")

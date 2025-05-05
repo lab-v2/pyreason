@@ -35,7 +35,7 @@ interface_options = pr.ModelInterfaceOptions(
 fraud_detector = pr.LogicIntegratedClassifier(
     model,
     class_names,
-    model_name="fraud_detector",
+    identifier="fraud_detector",
     interface_options=interface_options
 )
 
