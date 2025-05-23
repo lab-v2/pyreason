@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns
+         http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d0" for="node" attr.name="name" attr.type="string"/>
+  <key id="d1" for="node" attr.name="birth" attr.type="int"/>
+  <key id="d2" for="node" attr.name="death" attr.type="int"/>
+  <key id="d3" for="node" attr.name="contribution" attr.type="string"/>
+  <key id="d4" for="edge" attr.name="ethnicity" attr.type="string"/>
+  <graph id="G" edgedefault="directed">
+    <node id="Euclid">
+      <data key="d0">Euclid</data>
+      <data key="d1">-300</data>
+      <data key="d2">-275</data>
+      <data key="d3">Elements, Geometry</data>
+      <data key="d4">Greek</data>
+    </node>
+    <node id="Archimedes">
+      <data key="d0">Archimedes</data>
+      <data key="d1">-287</data>
+      <data key="d2">-212</data>
+      <data key="d3">Area, Volume, Pi</data>
+      <data key="d4">Greek</data>
+    </node>
+    <node id="Diophantus">
+      <data key="d0">Diophantus</data>
+      <data key="d1">201</data>
+      <data key="d2">285</data>
+      <data key="d3">Arithmetica, Algebra</data>
+      <data key="d4">Greek</data>
+    </node>
+    <node id="Aryabhata">
+      <data key="d0">Aryabhata</data>
+      <data key="d1">476</data>
+      <data key="d2">550</data>
+      <data key="d3">Sine tables, Astronomy</data>
+    </node>
+    <node id="Brahmagupta">
+      <data key="d0">Brahmagupta</data>
+      <data key="d1">598</data>
+      <data key="d2">668</data>
+      <data key="d3">Zero, Negative numbers</data>
+    </node>
+    <node id="Al-Khwarizmi">
+      <data key="d0">Al-Khwarizmi</data>
+      <data key="d1">780</data>
+      <data key="d2">850</data>
+      <data key="d3">Algebra, Algorithms</data>
+    </node>
+    <node id="Fibonacci">
+      <data key="d0">Fibonacci</data>
+      <data key="d1">1170</data>
+      <data key="d2">1250</data>
+      <data key="d3">Fibonacci sequence, Hindu-Arabic numerals</data>
+      <data key="d4">Italian</data>
+    </node>
+    <node id="Isaac Newton">
+      <data key="d0">Isaac Newton</data>
+      <data key="d1">1643</data>
+      <data key="d2">1727</data>
+      <data key="d3">Calculus, Laws of motion</data>
+    </node>
+    <node id="Gottfried Leibniz">
+      <data key="d0">Gottfried Leibniz</data>
+      <data key="d1">1646</data>
+      <data key="d2">1716</data>
+      <data key="d3">Calculus, Notation</data>
+    </node>
+    <node id="Leonhard Euler">
+      <data key="d0">Leonhard Euler</data>
+      <data key="d1">1707</data>
+      <data key="d2">1783</data>
+      <data key="d3">Analysis, Number theory</data>
+    </node>
+    <node id="Carl Friedrich Gauss">
+      <data key="d0">Carl Friedrich Gauss</data>
+      <data key="d1">1777</data>
+      <data key="d2">1855</data>
+      <data key="d3">Number theory, Statistics</data>
+    </node>
+    <node id="Alan Turing">
+      <data key="d0">Alan Turing</data>
+      <data key="d1">1912</data>
+      <data key="d2">1954</data>
+      <data key="d3">Computer science, Turing machine</data>
+    </node>
+    <node id="Pythagoreas">
+      <data key="d0">Pythagoreas</data>
+      <data key="d1">-570</data>
+      <data key="d2">-495</data>
+      <data key="d3">Geometry, Pythagorean Theorem</data>
+      <data key="d4"></data>
+    </node>
+    <edge source="Euclid" target="Archimedes">
+      <data key="d4">Preceded</data>
+    </edge>
+    <edge source="Archimedes" target="Diophantus">
+      <data key="d4">Preceded</data>
+    </edge>
+    <edge source="Diophantus" target="Aryabhata">
+      <data key="d4">Preceded</data>
+    </edge>
+    <edge source="Aryabhata" target="Brahmagupta">
+      <data key="d4">Preceded</data>
+    </edge>
+    <edge source="Brahmagupta" target="Al-Khwarizmi">
+      <data key="d4">Preceded</data>
+    </edge>
+    <edge source="Al-Khwarizmi" target="Fibonacci">
+      <data key="d4">Preceded</data>
+    </edge>
+    <edge source="Fibonacci" target="Isaac Newton">
+      <data key="d4">Preceded</data>
+    </edge>
+    <edge source="Fibonacci" target="Gottfried Leibniz">
+      <data key="d4">Preceded</data>
+    </edge>
+    <edge source="Isaac Newton" target="Leonhard Euler">
+      <data key="d4">Preceded</data>
+    </edge>
+    <edge source="Gottfried Leibniz" target="Leonhard Euler">
+      <data key="d4">Preceded</data>
+    </edge>
+    <edge source="Leonhard Euler" target="Carl Friedrich Gauss">
+      <data key="d4">Preceded</data>
+    </edge>
+    <edge source="Carl Friedrich Gauss" target="Alan Turing">
+      <data key="d4">Preceded</data>
+    </edge>
+  </graph>
+</graphml>

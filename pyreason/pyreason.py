@@ -8,6 +8,7 @@ import memory_profiler as mp
 import warnings
 from typing import List, Type, Callable, Tuple, Optional
 
+from pyreason.scripts.interpretation.interpretation_parallel import Interpretation
 from pyreason.scripts.utils.output import Output
 from pyreason.scripts.utils.filter import Filter
 from pyreason.scripts.program.program import Program
@@ -33,6 +34,7 @@ except ImportError:
     print('torch is not installed, model integration is disabled')
 else:
     from pyreason.scripts.learning.classification.classifier import LogicIntegratedClassifier
+    from pyreason.scripts.learning.classification.temporal_classifier import TemporalLogicIntegratedClassifier
     from pyreason.scripts.learning.utils.model_interface import ModelInterfaceOptions
 
 
@@ -635,6 +637,38 @@ def add_annotation_function(function: Callable) -> None:
     # assert hasattr(function, 'nopython_signatures'), 'The function to be added has to be under a `numba.njit` decorator'
 
     __annotation_functions.append(function)
+
+
+def get_logic_program() -> Optional[Program]:
+    """Get the logic program object
+
+    :return: Logic program object
+    """
+    global __program
+    return __program
+
+
+def get_interpretation() -> Optional[Interpretation]:
+    """Get the current interpretation
+
+    :return: Current interpretation
+    """
+    global __program
+    if __program is None:
+        raise Exception('No interpretation found. Please run `pr.reason()` first')
+    return __program.interp
+
+
+def get_time() -> int:
+    """Get the current time
+
+    :return: Current time
+    """
+    try:
+        i = get_interpretation()
+    except Exception:
+        return 0
+    return i.time + 1
 
 
 def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bound_threshold: float = -1, queries: List[Query] = None, again: bool = False, restart: bool = True):
