@@ -10,15 +10,16 @@ import torch.nn.functional as F
 
 import pyreason as pr
 from pyreason.scripts.facts.fact import Fact
+from pyreason.scripts.learning.classification.logic_integration_base import LogicIntegrationBase
 from pyreason.scripts.learning.utils.model_interface import ModelInterfaceOptions
 
 
-class TemporalLogicIntegratedClassifier(torch.nn.Module):
+class TemporalLogicIntegratedClassifier(LogicIntegrationBase):
     """
-    Class to integrate a PyTorch model with PyReason. The output of the model is returned to the
-    user in the form of PyReason facts. The user can then add these facts to the logic program and reason using them.
+    Wraps any torch.nn.Module whose forward(x) returns [N, C] logits (multi‐class),
+    but additionally polls in the background (either every N timesteps or every N seconds)
+    and injects new Facts into a PyReason logic program.
     """
-    # from pyreason import Program
     def __init__(
             self,
             model,
@@ -44,7 +45,7 @@ class TemporalLogicIntegratedClassifier(torch.nn.Module):
             If `None`, the model will be polled every `poll_interval` time steps/seconds.
         :param input_fn: Function to call to get the input to the model. This function should return a tensor.
         """
-        super(TemporalLogicIntegratedClassifier, self).__init__()
+        super().__init__(model, class_names, interface_options, identifier)
         self.model = model
         self.class_names = class_names
         self.identifier = identifier
@@ -173,54 +174,70 @@ class TemporalLogicIntegratedClassifier(torch.nn.Module):
             facts.append(fact)
         return facts
 
-    def forward(self, x, t1: int = 0, t2: int = 0) -> Tuple[torch.Tensor, torch.Tensor, List[Fact]]:
+    def _infer(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Forward pass of the model
-        :param x: Input tensor
-        :param t1: Start time for the facts
-        :param t2: End time for the facts
-        :return: Output tensor
+        Run the underlying model to get raw logits [N, C].
         """
-        output = self.model(x)
+        return self.model(x)
 
-        # Convert logits to probabilities assuming a multi-class classification.
-        probabilities = F.softmax(output, dim=1).squeeze()
+    def _postprocess(self, raw_output: torch.Tensor) -> torch.Tensor:
+        """
+        raw_output should be a [N, C] logits tensor.  Assert C == len(class_names),
+        then apply softmax over dim=1 → [N, C] probabilities.
+        """
+        logits = raw_output
+        if logits.dim() != 2 or logits.size(1) != len(self.class_names):
+            raise ValueError(
+                f"Expected logits of shape [N, C] with C={len(self.class_names)}, got {tuple(logits.shape)}"
+            )
+        return F.softmax(logits, dim=1)
+
+    def _pred_to_facts(
+        self,
+        raw_output: torch.Tensor,
+        probabilities: torch.Tensor,
+        t1: int,
+        t2: int
+    ) -> List[Fact]:
+        """
+        Given a [N, C] probability tensor, build a flat List[Fact],
+        using threshold, snap_value, set_lower_bound, set_upper_bound.
+        Returns N * C facts.
+        """
         opts = self.interface_options
+        prob = probabilities  # [N, C]
 
-        # Prepare threshold tensor.
-        threshold = torch.tensor(opts.threshold, dtype=probabilities.dtype, device=probabilities.device)
-        condition = probabilities > threshold
+        # Build a threshold tensor
+        threshold = torch.tensor(opts.threshold, dtype=prob.dtype, device=prob.device)
+        condition = prob > threshold  # [N, C] boolean mask
 
+        # Determine lower/upper for “true” entries
         if opts.snap_value is not None:
-            snap_value = torch.tensor(opts.snap_value, dtype=probabilities.dtype, device=probabilities.device)
-            # For values that pass the threshold:
-            lower_val = snap_value if opts.set_lower_bound else torch.tensor(0.0, dtype=probabilities.dtype,
-                                                                             device=probabilities.device)
-            upper_val = snap_value if opts.set_upper_bound else torch.tensor(1.0, dtype=probabilities.dtype,
-                                                                             device=probabilities.device)
+            snap_val = torch.tensor(opts.snap_value, dtype=prob.dtype, device=prob.device)
+            lower_if_true = (snap_val if opts.set_lower_bound
+                             else torch.tensor(0.0, dtype=prob.dtype, device=prob.device))
+            upper_if_true = (snap_val if opts.set_upper_bound
+                             else torch.tensor(1.0, dtype=prob.dtype, device=prob.device))
         else:
-            # If no snap_value is provided, keep original probabilities for those passing threshold.
-            lower_val = probabilities if opts.set_lower_bound else torch.zeros_like(probabilities)
-            upper_val = probabilities if opts.set_upper_bound else torch.ones_like(probabilities)
+            lower_if_true = prob if opts.set_lower_bound else torch.zeros_like(prob)
+            upper_if_true = prob if opts.set_upper_bound else torch.ones_like(prob)
 
-        # For probabilities that pass the threshold, apply the above; else, bounds are fixed to [0,1].
-        lower_bounds = torch.where(condition, lower_val, torch.zeros_like(probabilities))
-        upper_bounds = torch.where(condition, upper_val, torch.ones_like(probabilities))
+        zeros = torch.zeros_like(prob)
+        ones = torch.ones_like(prob)
+        lower_bounds = torch.where(condition, lower_if_true, zeros)  # [N, C]
+        upper_bounds = torch.where(condition, upper_if_true, ones)   # [N, C]
 
-        # Convert bounds to Python floats for fact creation.
-        bounds_list = []
-        for i in range(len(self.class_names)):
-            lower = lower_bounds[i].item()
-            upper = upper_bounds[i].item()
-            bounds_list.append([lower, upper])
+        N, C = prob.shape
+        all_facts: List[Fact] = []
 
-        # Define time bounds for the facts.
-        facts = []
-        for class_name, bounds in zip(self.class_names, bounds_list):
-            lower, upper = bounds
-            fact_str = f'{class_name}({self.identifier}) : [{lower:.3f}, {upper:.3f}]'
-            fact = Fact(fact_str, name=f'{self.identifier}-{class_name}-fact', start_time=t1, end_time=t2)
-            facts.append(fact)
+        for i in range(N):
+            for j, class_name in enumerate(self.class_names):
+                lower_val = lower_bounds[i, j].item()
+                upper_val = upper_bounds[i, j].item()
+                fact_str = f"{class_name}({self.identifier}) : [{lower_val:.3f}, {upper_val:.3f}]"
+                fact_name = f"{self.identifier}-{class_name}-fact"
+                f = Fact(fact_str, name=fact_name, start_time=t1, end_time=t2)
+                all_facts.append(f)
 
-        return output, probabilities, facts
+        return all_facts
 
