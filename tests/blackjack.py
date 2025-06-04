@@ -33,6 +33,8 @@ card_names = ["a", "2", "3", "4", "5", "6", "7", "8", "9", "10",
 
 card_suits = ["h", "d", "c", "s"]
 
+# 5c, Ah, Js
+
 deck_list = []
 
 model = YOLO('/Users/coltonpayne/dyuman-pyreason/pyreason/pyreason/train56/weights/best.pt')
@@ -69,7 +71,7 @@ card_drawn_object = TemporalLogicIntegratedClassifier(
     class_names=card_names,
     identifier="card_drawn",
     interface_options=interface_options,
-    poll_interval=None,  # No polling, we will draw a card manually
+    poll_interval=1,  # Every timestep, we will poll the model and draw a card
     input_fn=draw_random_card
 )
 
@@ -212,23 +214,50 @@ add_deck_holds_fact("Ac", 0)
 add_deck_holds_fact("5c", 0)
 
 
+# start timestep
+# Call model to get a card
+# Add the facts from the results of the model to pyreason (using the temporal classifier)
+# Perform reasoning
+
 # Init Player Percent to bust and Player odds of busting
+# Add new rules to replace the add_fact functions
 add_rule(Rule("player_hand_percent_to_busting(player_hand) : init_hand_annotation_fn <-0 player_holds(card, player_hand):[0.1,1]", "player_bust_percent_rule"))
 add_rule(Rule("player_odds_of_busting(player_hand) : hand_percent_to_busting_annotation_fn <-0 player_hand_percent_to_busting(player_hand):[0,1], deck_holds(card, remaining_deck):[0.1,1]", "bust_odds_rule"))
 
 max_iters = 2
 for blackjack_iter in range(max_iters):
+    #get user input
+    # returns hit or stay
+    #if hit, go to next timestep, draw card, eval, 
+    # else, terminate
+    # Add fact from user input
+    # Reason for one timestep: card gets drawn, reason about everything
     settings = Settings
     settings.atom_trace = True
     settings.verbose = False
+    # use the query function to get the prob bounds to set end condition.
     # if blackjack_iter == 1:
-        # print("Drawing Random Card...")
-        # #drawn_card = draw_random_card()
-        # add_player_holds_card_fact("2h")
-    again = False if blackjack_iter == 0 else True
-    interpretation = reason(timesteps=2, again=again, restart=False)
-    print(f"\n=== Reasoning for Blackjack Iteration: {blackjack_iter} ===")
-    trace = get_rule_trace(interpretation)
-    print(f"RULE TRACE: \n\n{trace[0]}\n")
-    save_rule_trace(interpretation)
+    #     print("Drawing Random Card...")
+    #     #drawn_card = draw_random_card()
+    #     add_player_holds_card_fact("5c", blackjack_iter)
+    # again = False if blackjack_iter == 0 else True
+    # interpretation = reason(timesteps=1, again=again, restart=False)
+    # print(f"\n=== Reasoning for Blackjack Iteration: {blackjack_iter} ===")
+    # trace = get_rule_trace(interpretation)
+    # print(f"RULE TRACE: \n\n{trace[0]}\n")
+    # save_rule_trace(interpretation)
 
+# Things that are needed to use the temporal classifier
+# Add support for YOLO model, should be more generalized than it is currently
+# Add support for adding edge facts
+# 
+
+
+# COLTON TODO
+# Update class_names in the temporal classifier to be all possible card names.  Temporal Classifier should result in a new fact being added for which cards are held at which timesteps
+# Remove dealer logic, just keep hitting unitl close to 42 or something
+# Create a rule that replaces the need for the facts: should use rules to keep track of game state after initialization. 
+# Example fact: 5c-card-drawn-fact
+# predicate: 5c node: card-drawn-fact 5c(card_drawn)
+# End condition: player_odds_of_busting is [1,1] (or maybe like (0.5, 1) if we want a smarter ai)
+# Remove game loop and have it run through the temporal classifier until end condition is met - set poll condition?

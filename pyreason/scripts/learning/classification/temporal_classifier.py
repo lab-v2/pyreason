@@ -68,6 +68,38 @@ class TemporalLogicIntegratedClassifier(torch.nn.Module):
             t = threading.Thread(target=self._poll_loop, daemon=True)
             t.start()
 
+    def update_classes_and_probs_for_filter(self, probabilities) -> torch.Tensor:
+        """
+        A user may want to restrict the number of classe so that the classifier only returns facts for a subset of classes.  
+        This is useful for large models like CLIP, where the model has 4000 classes. 
+        We will set the new possible classes to be limited to the class names given to the classifier.
+        :param probabilities: The probabilities output by the model.
+        """
+        # Get the index-to-label mapping from the model config
+        id2label = self.model.config.id2label
+
+        # Get the indices of the allowed labels, stripping everything after the comma
+        allowed_indices = [
+            i for i, label in id2label.items()
+            if label.split(",")[0].strip().lower() in [name.lower() for name in self.class_names]
+        ]
+
+        # Normalize the probabilities based only on the allowed classes
+        filtered_probs = torch.zeros_like(probabilities)
+        filtered_probs[allowed_indices] = probabilities[allowed_indices]
+        filtered_probs = filtered_probs / filtered_probs.sum()
+
+        # Because we are filtering the probabilities, we need to update the class labels to only include the allowed classes.
+        # We also update the class names so they are ordered by the probabilities.
+        top_labels = []
+        top_probs, top_indices = filtered_probs.topk(len(self.class_names))
+        for prob, idx in zip(top_probs, top_indices):
+            label = id2label[idx.item()].split(",")[0]
+            print(f"{label}: {prob.item():.4f}")
+            top_labels.append(label)
+        self.class_names = top_labels
+        return top_probs
+    
     def _get_current_timestep(self):
         """
         Get the current timestep from the PyReason logic program.
@@ -110,7 +142,9 @@ class TemporalLogicIntegratedClassifier(torch.nn.Module):
                         t2 = t1
 
                         if self.poll_condition:
+                            print("poll condition", self.poll_condition)
                             print(f"{self.poll_condition}({self.identifier})")
+                            print("Eval: ")
                             print(self.logic_program.interp.query(pr.Query(f"{self.poll_condition}({self.identifier})")))
                             if not self.logic_program.interp.query(pr.Query(f"{self.poll_condition}({self.identifier})")):
                                 continue
@@ -173,7 +207,7 @@ class TemporalLogicIntegratedClassifier(torch.nn.Module):
             facts.append(fact)
         return facts
 
-    def forward(self, x, t1: int = 0, t2: int = 0) -> Tuple[torch.Tensor, torch.Tensor, List[Fact]]:
+    def forward(self, x, t1: int = 0, t2: int = 0, limit_classification_output_classes = False) -> Tuple[torch.Tensor, torch.Tensor, List[Fact]]:
         """
         Forward pass of the model
         :param x: Input tensor
@@ -181,8 +215,17 @@ class TemporalLogicIntegratedClassifier(torch.nn.Module):
         :param t2: End time for the facts
         :return: Output tensor
         """
-        output = self.model(x)
+        try:
+            output = self.model(x)
+        except AttributeError as e:
+            print(f"Error during model forward pass: {e}")
+            try:
+                output = self.model(**x).logits
+            except Exception as e:
+                print(f"Error during model forward pass after trying to get the output both ways: {e}")
 
+        if limit_classification_output_classes:
+            probabilities = self.update_classes_and_probs_for_filter(probabilities)
         # Convert logits to probabilities assuming a multi-class classification.
         probabilities = F.softmax(output, dim=1).squeeze()
         opts = self.interface_options
