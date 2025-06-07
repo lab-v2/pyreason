@@ -54,7 +54,6 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
         self.poll_condition = poll_condition
         self.input_fn = input_fn
         self.logic_program = None  # Get the current logic program
-        print("Class Names: ", self.class_names)
 
         # normalize poll_interval
         if isinstance(poll_interval, int):
@@ -64,7 +63,6 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
 
         # start the async polling task if configured
         if self.poll_interval is not None and self.input_fn is not None:
-            print("Running polling")
             # this schedules the background task
             # self._poller_task = asyncio.create_task(self._poll_loop())
             # kick off the background thread
@@ -106,12 +104,8 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
         Returns N * C facts.
         """
         opts = self.interface_options
-        print("Result: ", result)
         label = result[0]
         confidence = result[1]
-        print("Label: ", label)
-        print("Confidence: ", confidence)
-        print("T1: ", t1, "T2: ", t2)
         # Build a threshold tensor
         threshold = torch.tensor(opts.threshold)
         condition = confidence > threshold  # [N, C] boolean mask
@@ -119,7 +113,6 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
         # Determine lower/upper for “true” entries
         if opts.snap_value is not None:
             snap_val = opts.snap_value
-            print("Sanp val: ", snap_val)
             lower_if_true = (snap_val if opts.set_lower_bound
                              else 0)
             upper_if_true = (snap_val if opts.set_upper_bound
@@ -131,7 +124,6 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
         all_facts: List[Fact] = []
 
         fact_str = f"_{label}({self.identifier}) : [{lower_if_true:.3f}, {upper_if_true:.3f}]"
-        print(f"Creating fact: {fact_str}")
         fact_name = f"{self.identifier}-{label}-fact"
         f = Fact(fact_str, name=fact_name, start_time=0, end_time=0)
         all_facts.append(f)
@@ -148,13 +140,11 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
             t = interp.time
             return t
         elif pr.get_logic_program() is not None and pr.get_logic_program().interp is not None:
-            print("Found")
             self.logic_program = pr.get_logic_program()
             interp = self.logic_program.interp
             t = interp.time
             return t
         else:
-            print("Not found")
             # raise ValueError("No PyReason logic program provided.")
             return -1
     
@@ -168,15 +158,11 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
         # check if we have a logic program yet or not
         while True:
             current_time = self._get_current_timestep()
-            print("here")
-            print("current time", current_time)
             if current_time != -1:
-                print("current time", current_time)
                 # determine mode
                 if isinstance(self.poll_interval, timedelta):
                     interval_secs = self.poll_interval.total_seconds()
                     while True:
-                        print("in loop")
                         time.sleep(interval_secs)
                         current_time = self._get_current_timestep()
                         t1 = current_time + 1
@@ -187,8 +173,7 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
                             print(self.logic_program.interp.query(pr.Query(f"{self.poll_condition}({self.identifier})")))
                             if not self.logic_program.interp.query(pr.Query(f"{self.poll_condition}({self.identifier})")):
                                 print(f"Condition {self.poll_condition} not met, skipping poll.")
-                                continue
-                        print("Condition met, polling model...")           
+                                continue     
                         x = self.input_fn()
                         _, _, facts = self.forward(x, t1, t2)
                         for f in facts:
@@ -199,7 +184,6 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
                         pr.reason(again=True, restart=True)
                         print("reasoning done")
                         trace = pr.get_rule_trace(self.logic_program.interp)
-                        print("Len of trace: ", len(trace))
                         print(trace[0])
 
                 else:
@@ -224,7 +208,6 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
 
                         # run the reasoning
                         pr.reason(again=True, restart=False)
-                        print("reasoning done")
                         trace = pr.get_rule_trace(self.logic_program.interp)
                         print(trace[0])
 

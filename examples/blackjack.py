@@ -57,50 +57,38 @@ def reset_used_images():
         print("No 'used' folder found. Nothing to reset.")
         return
 
-    moved_count = 0
     for file in used_dir.iterdir():
         if file.is_file():
             shutil.move(str(file), str(training_dir / file.name))
-            moved_count += 1
-
-    print(f"Moved {moved_count} files back to '{training_dir}' from '{used_dir}'.")
 
 @numba.njit
 def init_hand_annotation_fn(annotations, weights):
     """
-    Calculate the value of a player based on their attributes.
+    Given all the cards in a players hand, return a decimal representation of the hand.
+    Each point value of a card is a digit in the decimal representation.
     """
-    print("Annotations init hand: ", annotations)
-    print("Annotations init hand: ", annotations)
     row = annotations[0]
     digits = 0
     num_digits = 0
 
     for i in range(len(row)):
         card_value = int(row[i].l * 10)
-        # print("Card Value: ", card_value)
-        if card_value == 10:
-            digit = 0
-        else:
-            digit = card_value
-        digits = digits * 10 + digit
+        digits = digits * 10 + card_value
         num_digits += 1
 
-    print("DigitS: ", digits)
     bound_value = digits / (10 ** num_digits)
-    print("Bound Value: ", bound_value)
+    print("Points in player hand: ", bound_value)
     return bound_value, 1
 
 
 @numba.njit
-def hand_percent_to_busting_annotation_fn(annotations, weights):
+def hand_percent_to_losing_annotation_fn(annotations, weights):
     """
-    Calculate the odds of a player busting based on their hand and the remaining deck.
+    Calculate the odds of a player losing based on their hand and the remaining deck,
+    Given a decimal representation of the players hand and knowlege of the cards in the full deck
     """
-    print("Annotations perc to busting: ", annotations)
     fractional = annotations[0][0].l
-    print("Initial val fractional: ", fractional)
-    # First, we need to see how many digits are in the fractional part
+    # First, we need to see how many cards are in the player's hand
     num_player_cards = 52
     initial_num_player_cards = 0
     scale = 1
@@ -108,41 +96,29 @@ def hand_percent_to_busting_annotation_fn(annotations, weights):
         scale *= 10
         scaled = fractional * scale
         int_check = abs(scaled - int(scaled))
-        print("Int Check: ", int_check) 
         if int_check < 1e-8:  # close enough to an int
-            print("D: ", d)
             initial_num_player_cards = d
-            print("Cards in loop", initial_num_player_cards)
             break
-    print("Num player cards: ", num_player_cards)
-    print("Initial num player cards: ", initial_num_player_cards)
     num_player_cards = initial_num_player_cards
-    print("Num Player Cards: ", num_player_cards)   
     fractional *= 10
     player_card_array = []
-    # number_player_cards = len(player_card_array)
-    # number_player_cards = 0 
     player_point_total = 0
+    # Now, we need to get the total number of points in the players hand.
+    # We also make an array of the point total the player has so we can remove equivalent cards from the game deck
     for val in range(num_player_cards):
-        print("Fractional: ", fractional)
         digit = int(fractional)
         if digit == 0:
             point = 10
         else:
             point = digit
-        print("Point: ", point)
         player_point_total += point
         player_card_array.append(point)
-        #number_player_cards += 1
-        print("Int: ", int(fractional))
         fractional -= int(fractional)
-        # Add back a small floating point error
+        # Add back a small floating point amount to avoid floating point precision issues
         fractional += 1e-8
-        print("Fractional after int: ", fractional)
         if fractional == 0.0:
             break  # no more digits left
         fractional *= 10
-        print("Fractional Acter mult: ", fractional)
     
     print("Player Point Total: ", player_point_total)
     total_bust_cards = 0
@@ -151,23 +127,23 @@ def hand_percent_to_busting_annotation_fn(annotations, weights):
         # This gets the first item in this numpy object
         card_value = row[i].l * 10
         if card_value in player_card_array:
-            print("Found card value in player_card_array: ", card_value)
             player_card_array.remove(card_value)
             continue
         #print("Card Value: ", card_value)
         if card_value + player_point_total >= MAX_POINTS:
             total_bust_cards += 1
-    print("Total Bust Cards: ", total_bust_cards)
-    print("Total cards in deck: ", len(row) - num_player_cards)
     bust_odds = total_bust_cards / (len(row) - num_player_cards)
-    if bust_odds > 1:
+    print("Odds of losing on next card draw: ", bust_odds)
+    if bust_odds >= 1:
+        print("Every remaining card will put you over the point total.  The game is over!")
+        print("Player Final Score: ", player_point_total)
         bust_odds = 1
-    print("Odds of busting: ", bust_odds)
+
     return bust_odds, 1
 
     
 add_annotation_function(init_hand_annotation_fn)
-add_annotation_function(hand_percent_to_busting_annotation_fn)
+add_annotation_function(hand_percent_to_losing_annotation_fn)
 
 # Use these helper functions to make facts and rules for all the cards in the deck.
 def add_deck_holds_fact(card_name):
@@ -180,47 +156,29 @@ def add_player_holds_rule(card_name):
     lower_bound = card_value / 10
     add_rule(Rule(f"player_holds(_{card_name}): [{lower_bound}, 1] <-0 _{card_name}(card_drawn_obj)", f"player_holds_{card_name}_rule"))
 
-# This is the format of fact I will define before any processing - keeps track of the point value 
-# add_deck_holds_fact("2c")
-# add_deck_holds_fact("5c")
-# add_deck_holds_fact("7c")
-# add_deck_holds_fact("As")
 
-# This is the format of fact that should be returned from the YOLO Classifier.  Each time interval, should return a new fact like this
+# This is the format of fact that should be returned from the YOLO Classifier.  Each time interval, should return a new fact like this.  
+# We start the game with the player holding one card.
+print("Initializing game...")
 add_fact(Fact("_2c(card_drawn_obj)", "_2c_drawn_fact"))
-# add_fact(Fact("_5c(card_drawn_obj)", "_5c_drawn_fact"))
 
-# Init Player Percent to bust and Player odds of busting
+
+# Initialize the deck and player holds rules for each card in the deck.
 for card in CARD_NAMES:
     add_deck_holds_fact(card)
     add_player_holds_rule(card)
 
-add_rule(Rule("player_hand_percent_to_busting(player_hand) : init_hand_annotation_fn <-0 player_holds(card):[0.1,1]", "player_bust_percent_rule"))
-add_rule(Rule("player_odds_of_busting(player_hand) : hand_percent_to_busting_annotation_fn <-0 player_hand_percent_to_busting(player_hand):[0,1], deck_holds(card, full_deck):[0.1,1]", "bust_odds_rule"))
-
-# I want to pass the annotation function the cards the player has and the cards the deck has.  I know both of these conditions are met, as they are conditions in other working rules
-# However, this annotation function never runs and I can't figure out why.  Decided to encode the cards held in a float instead, but this seems less hacky
-#add_rule(Rule("player_odds_of_busting(player_hand) : hand_percent_to_busting_annotation_fn <-0 player_holds(card):[0.1,1], deck_holds(card, full_deck):[0.1,1]", "bust_odds_rule"))
+add_rule(Rule("player_hand_percent_to_losing(player_hand) : init_hand_annotation_fn <-0 player_holds(card):[0.1,1]", "player_bust_percent_rule"))
+add_rule(Rule("player_odds_of_losing(player_hand) : hand_percent_to_losing_annotation_fn <-0 player_hand_percent_to_losing(player_hand):[0,1], deck_holds(card, full_deck):[0.1,1]", "bust_odds_rule"))
 
 settings = Settings
 settings.atom_trace = True
 settings.verbose = False
-# settings.allow_ground_rules = True
 
-g = nx.DiGraph()
-g.add_node("player_hand")
-g.add_node("card")
-g.add_node("card_drawn_obj")
-
-load_graph(g)
-
+# Input function for temporal classifier
 # For yolo models, the input function should return an image.
 def input_function():
         random.seed()
-        # image_path = random.choice(list(Path(TRAINING_IMAGES_DIR).glob("*")))
-        # print("Path: ", image_path)
-        # image = cv2.imread(image_path)
-        # return image
         available_images = [p for p in Path(TRAINING_IMAGES_DIR).glob("*") if p.is_file()]
         if not available_images:
             print("No images left.")
@@ -228,7 +186,7 @@ def input_function():
         image_path = random.choice(available_images)
         print("Path:", image_path)
         image = cv2.imread(str(image_path))
-        # Move image to a "used" folder
+        # Move image to a "used" folder so it doesn't draw the same card again
         shutil.move(str(image_path), str(Path(TRAINING_IMAGES_DIR) / "used" / image_path.name))
         return image
 
@@ -244,31 +202,21 @@ card_drawn_object = YoloLogicIntegratedTemporalClassifier(
     class_names=CARD_NAMES,
     identifier="card_drawn_obj",
     interface_options=interface_options,
-    poll_interval=timedelta(seconds=10),
-    #poll_condition="player_odds_of_busting",
+    poll_interval=timedelta(seconds=2),
     input_fn=input_function,
 )
 
 interpretation = reason()
-# print(f"\n=== Reasoning for Blackjack Iteration: {0} ===")
-# trace = get_rule_trace(interpretation)
-# print(f"RULE TRACE: \n\n{trace[0]}\n")
-
 logic_program = get_logic_program()
 interp = logic_program.interp
 for i in range(200):
-    print("Quering bust odds rule...")
-    result = interp.query(Query("player_odds_of_busting(player_hand)"))
-    print('Result:', result)
+    print("Quering game end condition...")
+    result = interp.query(Query("player_odds_of_losing(player_hand)"))
     if result:
+        print("Player can not draw any more cards without going over the point total. Ending game.")
         break
     sleep(1)
 
-
-
-# interpretation = reason()
-print(f"\n=== Reasoning for Blackjack Iteration: {0} ===")
-trace = get_rule_trace(interpretation)
-print(f"RULE TRACE: \n\n{trace[0]}\n")
+# Save the rule trace and move all images from the 'used' directory.
 save_rule_trace(interpretation)
 reset_used_images()
