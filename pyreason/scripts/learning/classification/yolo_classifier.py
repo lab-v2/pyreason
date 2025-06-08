@@ -73,7 +73,7 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
         print("Running YOLO model inference...")
         # resized_image = cv2.resize(image, (640, 640))  # Direct resize
         # normalized_image = resized_image / 255.0  # Normalize
-        result_predict = self.model.predict(source = x, imgsz=(640), conf=0.5) #the default image size
+        result_predict = self.model.predict(source = x, imgsz=(640), conf=0.1) #the default image size
         #print("Predicted output:", result_predict)
         return result_predict
 
@@ -173,7 +173,8 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
                             print(self.logic_program.interp.query(pr.Query(f"{self.poll_condition}({self.identifier})")))
                             if not self.logic_program.interp.query(pr.Query(f"{self.poll_condition}({self.identifier})")):
                                 print(f"Condition {self.poll_condition} not met, skipping poll.")
-                                continue     
+                                continue
+                        print("Condition met, polling model...")           
                         x = self.input_fn()
                         _, _, facts = self.forward(x, t1, t2)
                         for f in facts:
@@ -210,4 +211,3 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
                         pr.reason(again=True, restart=False)
                         trace = pr.get_rule_trace(self.logic_program.interp)
                         print(trace[0])
-

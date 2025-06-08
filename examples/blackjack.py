@@ -30,7 +30,7 @@ CARD_SUITS = ["h", "d", "c", "s"]
 CARD_NAMES = [
     f"{number}{suit}" for number in CARD_NUMBERS for suit in CARD_SUITS]
 
-MAX_POINTS = 25
+MAX_POINTS = 42
 
 CARD_VALUES = {
     "A": 3,
@@ -126,7 +126,7 @@ def hand_percent_to_losing_annotation_fn(annotations, weights):
             player_card_array.remove(card_value)
             continue
         #print("Card Value: ", card_value)
-        if card_value + player_point_total >= MAX_POINTS:
+        if card_value + player_point_total > MAX_POINTS:
             total_bust_cards += 1
     bust_odds = total_bust_cards / (len(row) - num_player_cards)
     print("Odds of losing on next card draw: ", bust_odds)
@@ -156,14 +156,13 @@ def add_player_holds_rule(card_name):
 # This is the format of fact that should be returned from the YOLO Classifier.  Each time interval, should return a new fact like this.  
 # We start the game with the player holding one card.
 print("Initializing game...")
-add_fact(Fact("_2c(card_drawn_obj)", "_2c_drawn_fact"))
-
 
 # Initialize the deck and player holds rules for each card in the deck.
 for card in CARD_NAMES:
     add_deck_holds_fact(card)
     add_player_holds_rule(card)
 
+add_fact(Fact("_2c(card_drawn_obj)", "_2c_drawn_fact"))
 add_rule(Rule("player_hand_percent_to_losing(player_hand) : init_hand_annotation_fn <-0 player_holds(card):[0.1,1]", "player_bust_percent_rule"))
 add_rule(Rule("player_odds_of_losing(player_hand) : hand_percent_to_losing_annotation_fn <-0 player_hand_percent_to_losing(player_hand):[0,1], deck_holds(card, full_deck):[0.1,1]", "bust_odds_rule"))
 
@@ -198,7 +197,7 @@ card_drawn_object = YoloLogicIntegratedTemporalClassifier(
     class_names=CARD_NAMES,
     identifier="card_drawn_obj",
     interface_options=interface_options,
-    poll_interval=timedelta(seconds=2),
+    poll_interval=timedelta(seconds=5),
     input_fn=input_function,
 )
 
