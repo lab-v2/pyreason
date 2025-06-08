@@ -107,12 +107,8 @@ def hand_percent_to_losing_annotation_fn(annotations, weights):
     # We also make an array of the point total the player has so we can remove equivalent cards from the game deck
     for val in range(num_player_cards):
         digit = int(fractional)
-        if digit == 0:
-            point = 10
-        else:
-            point = digit
-        player_point_total += point
-        player_card_array.append(point)
+        player_point_total += digit
+        player_card_array.append(digit)
         fractional -= int(fractional)
         # Add back a small floating point amount to avoid floating point precision issues
         fractional += 1e-8
