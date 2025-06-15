@@ -162,7 +162,7 @@ for card in CARD_NAMES:
     add_deck_holds_fact(card)
     add_player_holds_rule(card)
 
-add_fact(Fact("_2c(card_drawn_obj)", "_2c_drawn_fact"))
+# add_fact(Fact("_2c(card_drawn_obj)", "_2c_drawn_fact"))
 add_rule(Rule("player_hand_percent_to_losing(player_hand) : init_hand_annotation_fn <-0 player_holds(card):[0.1,1]", "player_bust_percent_rule"))
 add_rule(Rule("player_odds_of_losing(player_hand) : hand_percent_to_losing_annotation_fn <-0 player_hand_percent_to_losing(player_hand):[0,1], deck_holds(card, full_deck):[0.1,1]", "bust_odds_rule"))
 
