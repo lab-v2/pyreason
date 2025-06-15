@@ -150,7 +150,7 @@ def add_deck_holds_fact(card_name):
 def add_player_holds_rule(card_name):
     card_value = CARD_VALUES[card_name[:-1]]
     lower_bound = card_value / 10
-    add_rule(Rule(f"player_holds(_{card_name}): [{lower_bound}, 1] <-0 _{card_name}(card_drawn_obj)", f"player_holds_{card_name}_rule"))
+    add_rule(Rule(f"player_holds_(_{card_name}): [{lower_bound}, 1] <-0 _{card_name}(card_drawn_obj)", f"player_holds_{card_name}_rule"))
 
 
 # This is the format of fact that should be returned from the YOLO Classifier.  Each time interval, should return a new fact like this.  
@@ -163,8 +163,8 @@ for card in CARD_NAMES:
     add_player_holds_rule(card)
 
 # add_fact(Fact("_2c(card_drawn_obj)", "_2c_drawn_fact"))
-add_rule(Rule("player_hand_percent_to_losing(player_hand) : init_hand_annotation_fn <-0 player_holds(card):[0.1,1]", "player_bust_percent_rule"))
-add_rule(Rule("player_odds_of_losing(player_hand) : hand_percent_to_losing_annotation_fn <-0 player_hand_percent_to_losing(player_hand):[0,1], deck_holds(card, full_deck):[0.1,1]", "bust_odds_rule"))
+add_rule(Rule("hand_as_point_vals(hand) : init_hand_annotation_fn <-0 player_holds_(card):[0.1,1]", "hand_as_point_vals_rule"))
+add_rule(Rule("odds_of_losing(hand) : hand_percent_to_losing_annotation_fn <-0 hand_as_point_vals(hand):[0,1], deck_holds(card, full_deck):[0.1,1]", "odds_of_losing_rule"))
 
 settings = Settings
 settings.atom_trace = True
@@ -206,7 +206,7 @@ logic_program = get_logic_program()
 interp = logic_program.interp
 for i in range(200):
     print("Quering game end condition...")
-    result = interp.query(Query("player_odds_of_losing(player_hand)"))
+    result = interp.query(Query("odds_of_losing(hand)"))
     if result:
         print("Player can not draw any more cards without going over the point total. Ending game.")
         break
