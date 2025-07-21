@@ -29,7 +29,7 @@ Welcome to the documentation for **PyReason**, a powerful, optimized Python tool
 
 Getting Help
 ------------
-If you encounter any issues or have questions, feel free to check our Github, or contact one of the authors (`dyuman.aditya@asu.edu`, `kmukher2@asu.edu`).
+If you encounter any issues or have questions, feel free to check our Github, or contact one of the authors (`daditya@syr.edu`, `kmukherj@syr.edu`).
 
 
 Citing PyReason
