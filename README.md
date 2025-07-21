@@ -14,7 +14,7 @@ An explainable inference software supporting annotated, real valued, graph based
 
 [📽️ Video](https://www.youtube.com/watch?v=E1PSl3KQCmo)
 
-[🌐 Website](https://neurosymbolic.asu.edu/pyreason/)
+[🌐 Website](https://pyreason-staging.sites.syr.edu)
 
 [🏋️‍♂️ PyReason Gym](https://github.com/lab-v2/pyreason-gym)
 
