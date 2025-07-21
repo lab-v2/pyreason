@@ -64,8 +64,8 @@ Trademark Permission PyReason™ and PyReason Design Logo <img src="https://raw.
 
 
 ## 6. Contact
-Dyuman Aditya - dyuman.aditya@asu.edu
+Dyuman Aditya - daditya@syr.edu
 
-Kaustuv Mukherji - kmukher2@asu.edu
+Kaustuv Mukherji - kmukherj@syr.edu
 
-Paulo Shakarian - pshak02@asu.edu
+Paulo Shakarian - pashakar@syr.edu
