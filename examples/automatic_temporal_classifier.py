@@ -75,3 +75,4 @@ for weld_iter in range(max_iters):
     if interpretation.query(pr.Query("defective(weld_object)")):
         print("Defective weld detected! \n Replacing the part.\n\n")
         # break
+pr.save_rule_trace(interpretation)

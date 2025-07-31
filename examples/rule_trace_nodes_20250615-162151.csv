@@ -1,0 +1,12 @@
+Time,Fixed-Point-Operation,Node,Label,Old Bound,New Bound,Occurred Due To,Clause-1,Clause-2
+0,0,weld_object,good,"[0.0,1.0]","[1.0,1.0]",weld_object-good-fact,,
+1,1,weld_object,gap,"[0.0,1.0]","[1.0,1.0]",weld_object-gap-fact,,
+2,2,weld_object,gap,"[0.0,1.0]","[1.0,1.0]",weld_object-gap-fact,,
+2,2,weld_object,repairing,"[0.0,1.0]","[1.0,1.0]",repair attempted rule,['weld_object'],
+3,3,weld_object,repairing,"[0.0,1.0]","[1.0,1.0]",repair attempted rule,['weld_object'],
+3,3,weld_object,defective,"[0.0,1.0]","[1.0,1.0]",defective rule,['weld_object'],['weld_object']
+4,4,weld_object,gap,"[0.0,1.0]","[1.0,1.0]",weld_object-gap-fact,,
+5,5,weld_object,good,"[0.0,1.0]","[1.0,1.0]",weld_object-good-fact,,
+5,5,weld_object,repairing,"[0.0,1.0]","[1.0,1.0]",repair attempted rule,['weld_object'],
+6,6,weld_object,good,"[0.0,1.0]","[1.0,1.0]",weld_object-good-fact,,
+7,7,weld_object,good,"[0.0,1.0]","[1.0,1.0]",weld_object-good-fact,,
