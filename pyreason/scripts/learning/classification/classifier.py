@@ -39,7 +39,7 @@ class LogicIntegratedClassifier(torch.nn.Module):
             facts.append(fact)
         return facts
 
-    def forward(self, x, t1: int = 0, t2: int = 0) -> Tuple[torch.Tensor, torch.Tensor, List[Fact]]:
+    def forward(self, x, t1: int = 0, t2: int = 0, limit_classification_output_classes = False) -> Tuple[torch.Tensor, torch.Tensor, List[Fact]]:
         """
         Forward pass of the model
         :param x: Input tensor
@@ -47,10 +47,47 @@ class LogicIntegratedClassifier(torch.nn.Module):
         :param t2: End time for the facts
         :return: Output tensor
         """
-        output = self.model(x)
 
-        # Convert logits to probabilities assuming a multi-class classification.
+        try:
+            output = self.model(x)
+        except AttributeError as e:
+            print(f"Error during model forward pass: {e}")
+            try:
+                output = self.model(**x).logits
+            except Exception as e:
+                print(f"Error during model forward pass with kwargs: {e}")
+
         probabilities = F.softmax(output, dim=1).squeeze()
+
+        # A user may want to restrict the number of classe so that the classifier only returns facts for a subset of classes.  
+        # This is useful for large models like CLIP, where the model has 4000 classes. 
+        # If we only want to reason on a small number of these, it is useful to limit the output classes.
+        if limit_classification_output_classes:
+            # Get the index-to-label mapping from the model config
+            id2label = self.model.config.id2label
+
+            # Get the indices of the allowed labels, stripping everything after the comma
+            allowed_indices = [
+                i for i, label in id2label.items()
+                if label.split(",")[0].strip().lower() in [name.lower() for name in self.class_names]
+            ]
+
+            # Normalize the probabilities based only on the allowed classes
+            filtered_probs = torch.zeros_like(probabilities)
+            filtered_probs[allowed_indices] = probabilities[allowed_indices]
+            filtered_probs = filtered_probs / filtered_probs.sum()
+
+            # Because we are filtering the probabilities, we need to update the class names to only include the allowed classes.
+            top_labels = []
+            top_probs, top_indices = filtered_probs.topk(len(self.class_names))
+            for prob, idx in zip(top_probs, top_indices):
+                label = id2label[idx.item()].split(",")[0]
+                print(f"{label}: {prob.item():.4f}")
+                top_labels.append(label)
+            self.class_names = top_labels
+            probabilities = top_probs
+            
+        print("Probabilities:", probabilities)
         opts = self.interface_options
 
         # Prepare threshold tensor.
@@ -88,4 +125,6 @@ class LogicIntegratedClassifier(torch.nn.Module):
             fact = Fact(fact_str, name=f'{self.identifier}-{class_name}-fact', start_time=t1, end_time=t2)
             facts.append(fact)
         return output, probabilities, facts
+
+
 
