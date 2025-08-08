@@ -106,9 +106,9 @@ class Interpretation:
 		# Setup graph neighbors and reverse neighbors
 		self.neighbors = numba.typed.Dict.empty(key_type=node_type, value_type=numba.types.ListType(node_type))
 		for n in self.graph.nodes():
-			lower = numba.typed.List.empty_list(node_type)
-			[lower.append(neigh) for neigh in self.graph.neighbors(n)]
-			self.neighbors[n] = lower
+			l = numba.typed.List.empty_list(node_type)
+			[l.append(neigh) for neigh in self.graph.neighbors(n)]
+			self.neighbors[n] = l
 
 		self.reverse_neighbors = self._init_reverse_neighbors(self.neighbors)
 
@@ -246,16 +246,16 @@ class Interpretation:
 				# Reset nodes (only if not static)
 				for n in nodes:
 					w = interpretations_node[n].world
-					for lower in w:
-						if not w[lower].is_static():
-							w[lower].reset()
+					for l in w:
+						if not w[l].is_static():
+							w[l].reset()
 
 				# Reset edges (only if not static)
 				for e in edges:
 					w = interpretations_edge[e].world
-					for lower in w:
-						if not w[lower].is_static():
-							w[lower].reset()
+					for l in w:
+						if not w[l].is_static():
+							w[l].reset()
 
 			# Convergence parameters
 			changes_cnt = 0
@@ -269,14 +269,14 @@ class Interpretation:
 			nodes_set = set(nodes)
 			for i in range(len(facts_to_be_applied_node)):
 				if facts_to_be_applied_node[i][0] == t:
-					comp, lower, bnd, static, graph_attribute = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4], facts_to_be_applied_node[i][5]
+					comp, l, bnd, static, graph_attribute = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4], facts_to_be_applied_node[i][5]
 					# If the component is not in the graph, add it
 					if comp not in nodes_set:
 						_add_node(comp, neighbors, reverse_neighbors, nodes, interpretations_node)
 						nodes_set.add(comp)
 
 					# Check if bnd is static. Then no need to update, just add to rule trace, check if graph attribute and add ipl complement to rule trace as well
-					if lower in interpretations_node[comp].world and interpretations_node[comp].world[lower].is_static():
+					if l in interpretations_node[comp].world and interpretations_node[comp].world[l].is_static():
 						# Check if we should even store any of the changes to the rule trace etc.
 						# Inverse of this is: if not save_graph_attributes_to_rule_trace and graph_attribute
 						if (save_graph_attributes_to_rule_trace or not graph_attribute) and store_interpretation_changes:
@@ -284,7 +284,7 @@ class Interpretation:
 							if atom_trace:
 								_update_rule_trace(rule_trace_node_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), bnd, facts_to_be_applied_node_trace[i])
 							for p1, p2 in ipl:
-								if p1==lower:
+								if p1==l:
 									rule_trace_node.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, p2, interpretations_node[comp].world[p2]))
 									if atom_trace:
 										_update_rule_trace(rule_trace_node_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), interpretations_node[comp].world[p2], facts_to_be_applied_node_trace[i])
@@ -807,7 +807,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 		clause_label = clause[1]
 		clause_variables = clause[2]
 		clause_bnd = clause[3]
-		#clause_operator = clause[4]
+		clause_operator = clause[4]
 
 		# This is a node clause
 		if clause_type == 'node':
@@ -1515,8 +1515,7 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 
 		return (updated, change)
 
-	except Exception as e:
-		print("Exception found: ", e)
+	except:
 		return (False, 0)
 
 
@@ -1621,8 +1620,7 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 					change = 1 + ip_update_cnt
 
 		return (updated, change)
-	except Exception as e:
-		print("Exception found: ", e)
+	except:
 		return (False, 0)
 
 
@@ -1647,8 +1645,7 @@ def is_satisfied_node(interpretations, comp, na):
 		try:
 			world = interpretations[comp]
 			result = world.is_satisfied(na[0], na[1])
-		except Exception as e:
-			print("Exception found: ", e)
+		except:
 			result = False
 	else:
 		result = True
@@ -1675,8 +1672,7 @@ def is_satisfied_node_comparison(interpretations, comp, na):
 					number = str_to_float(world_l_str[len(l_str)+1:])
 					break
 
-		except Exception as e:
-			print("Exception found: ", e)
+		except:
 			result = False
 	else:
 		result = True
@@ -1699,8 +1695,7 @@ def is_satisfied_edge(interpretations, comp, na):
 		try:
 			world = interpretations[comp]
 			result = world.is_satisfied(na[0], na[1])
-		except Exception as e:
-			print("Exception found: ", e)
+		except:
 			result = False
 	else:
 		result = True
@@ -1727,8 +1722,7 @@ def is_satisfied_edge_comparison(interpretations, comp, na):
 					number = str_to_float(world_l_str[len(l_str)+1:])
 					break
 
-		except Exception as e:
-			print("Exception found: ", e)
+		except:
 			result = False
 	else:
 		result = True

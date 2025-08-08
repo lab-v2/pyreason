@@ -6,31 +6,3 @@ build-backend = 'setuptools.build_meta'
 pythonpath = [
   "."
 ]
-
-[tool.ruff]
-# Max line length to match black (default is 88)
-line-length = 88
-
-# Enable only the most useful, non-intrusive rules
-# E = pycodestyle, F = pyflakes
-# You can add more like B (bugbear), I (import sorting), etc. later
-lint.select = ["E", "F", "I"]
-
-# Disable common noisy rules (add more as needed)
-lint.ignore = [
-  "E501",  # line too long (black handles this)
-  "E741",  # ambiguous variable name: l, O, I
-]
-
-# Optionally exclude certain directories
-exclude = [
-  "migrations",
-  "__pycache__",
-  ".venv",
-  "venv",
-  "build",
-  "dist"
-]
-
-# Enable auto-fix mode via CLI if you want: `ruff . --fix`
-lint.fixable = ["ALL"]
