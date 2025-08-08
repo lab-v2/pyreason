@@ -68,6 +68,7 @@ def test_bounds_with_different_interface_options(set_lower_bound, set_upper_boun
     for i, (expected_lower, expected_upper) in enumerate(expected_bounds):
         # Note: Floating point inprecision found on these upper and lower bound tenors
         assert pytest.approx(lower_bounds[i].item(), rel=1e-6) == expected_lower
+        #assert lower_bounds[i].item() == expected_lower
         assert pytest.approx(upper_bounds[i].item(), rel=1e-6) == expected_upper
 
 
