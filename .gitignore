@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 .cache_status.yaml
+.DS_Store
 
 # C extensions
 *.so

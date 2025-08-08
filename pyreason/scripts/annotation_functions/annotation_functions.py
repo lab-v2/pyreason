@@ -5,6 +5,7 @@ import numpy as np
 
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 
+
 @numba.njit
 def _get_weighted_sum(annotations, weights, mode='lower'):
     """
