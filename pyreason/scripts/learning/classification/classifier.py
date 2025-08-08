@@ -51,8 +51,29 @@ class LogicIntegratedClassifier(torch.nn.Module):
 
         # Convert logits to probabilities assuming a multi-class classification.
         probabilities = F.softmax(output, dim=1).squeeze()
-        opts = self.interface_options
+        print("Probs: ", probabilities)
+                                                                               
 
+        # Convert bounds to Python floats for fact creation.
+        lower_bounds, upper_bounds = self.calculate_bounds(probabilities)
+        bounds_list = []
+        for i in range(len(self.class_names)):
+            lower = lower_bounds[i].item()
+            upper = upper_bounds[i].item()
+            bounds_list.append([lower, upper])
+
+        # Define time bounds for the facts.
+        facts = []
+        for class_name, bounds in zip(self.class_names, bounds_list):
+            lower, upper = bounds
+            fact_str = f'{class_name}({self.identifier}) : [{lower:.3f}, {upper:.3f}]'
+            fact = Fact(fact_str, name=f'{self.identifier}-{class_name}-fact', start_time=t1, end_time=t2)
+            facts.append(fact)
+        return output, probabilities, facts
+    
+
+    def calculate_bounds(self, probabilities):
+        opts = self.interface_options
         # Prepare threshold tensor.
         threshold = torch.tensor(opts.threshold, dtype=probabilities.dtype, device=probabilities.device)
         condition = probabilities > threshold
@@ -72,20 +93,4 @@ class LogicIntegratedClassifier(torch.nn.Module):
         # For probabilities that pass the threshold, apply the above; else, bounds are fixed to [0,1].
         lower_bounds = torch.where(condition, lower_val, torch.zeros_like(probabilities))
         upper_bounds = torch.where(condition, upper_val, torch.ones_like(probabilities))
-
-        # Convert bounds to Python floats for fact creation.
-        bounds_list = []
-        for i in range(len(self.class_names)):
-            lower = lower_bounds[i].item()
-            upper = upper_bounds[i].item()
-            bounds_list.append([lower, upper])
-
-        # Define time bounds for the facts.
-        facts = []
-        for class_name, bounds in zip(self.class_names, bounds_list):
-            lower, upper = bounds
-            fact_str = f'{class_name}({self.identifier}) : [{lower:.3f}, {upper:.3f}]'
-            fact = Fact(fact_str, name=f'{self.identifier}-{class_name}-fact', start_time=t1, end_time=t2)
-            facts.append(fact)
-        return output, probabilities, facts
-
+        return lower_bounds, upper_bounds

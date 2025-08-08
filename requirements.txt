@@ -5,7 +5,9 @@ numba==0.59.1
 numpy==1.26.4
 memory_profiler
 pytest
+torch
 setuptools_scm
+pytest-cov
 
 sphinx_rtd_theme
 sphinx

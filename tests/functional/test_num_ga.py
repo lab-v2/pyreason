@@ -3,7 +3,7 @@ import pyreason as pr
 
 
 def test_num_ga():
-    graph_path = './tests/knowledge_graph_test_subset.graphml'
+    graph_path = './tests/functional/knowledge_graph_test_subset.graphml'
     pr.reset()
     pr.reset_rules()
     # Modify pyreason settings to make verbose and to save the rule trace to a file
