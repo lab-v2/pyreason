@@ -3,6 +3,6 @@ repos:
     hooks:
       - id: pytest-with-coverage
         name: Run pytest with coverage and open report
-        entry: bash -c 'pytest --cov=your_package --cov-report=html && open htmlcov/index.html'
+        entry: bash -c 'pytest --cov=pytest --cov-report=html && open htmlcov/index.html'
         language: system
         pass_filenames: false
