@@ -8,6 +8,7 @@ pytest
 torch
 setuptools_scm
 pytest-cov
+pre-commit
 
 sphinx_rtd_theme
 sphinx
