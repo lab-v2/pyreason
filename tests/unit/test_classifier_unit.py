@@ -4,6 +4,7 @@ from pyreason.scripts.learning.utils.model_interface import ModelInterfaceOption
 from pyreason.scripts.learning.classification.classifier import LogicIntegratedClassifier
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 
+#comment
 class DummyModel(torch.nn.Module):
     def forward(self, x):
         return torch.tensor([[2.0, 1.0, 0.1]])
