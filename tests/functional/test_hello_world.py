@@ -76,10 +76,14 @@ def test_hello_world_consistency():
     original_closed = interval_type.closed
     jit_res = run()
     try:
-        interval_type.closed = interval_type.closed.py_func
+        from pyreason.scripts.interval.interval import Interval
+
+        def py_closed(lower, upper, static=False):
+            return Interval(float(lower), float(upper), static)
+
+        interval_type.closed = py_closed
         py_res = run()
     finally:
         interval_type.closed = original_closed
-
 
     assert jit_res == py_res
