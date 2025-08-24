@@ -1547,6 +1547,61 @@ def test_ground_rule_edge_clause_ground_atom_allow_ground_rules(monkeypatch):
     mock_add_node.assert_called_once()
 
 
+def test_ground_rule_edge_head_vars_use_existing_nodes_when_allowed(monkeypatch):
+    _shim_typed_list(monkeypatch)
+    monkeypatch.setattr(interpretation, "refine_groundings", lambda *a, **k: None)
+    monkeypatch.setattr(interpretation, "check_all_clause_satisfaction", lambda *a, **k: True)
+
+    mock_add_node = Mock()
+    mock_add_edge = Mock()
+    monkeypatch.setattr(interpretation, "_add_node", mock_add_node)
+    monkeypatch.setattr(interpretation, "_add_edge", mock_add_edge)
+
+    rule = DummyRule(
+        rtype="edge",
+        head_vars=("A", "B"),
+        clauses=[],
+        thresholds=[],
+        ann_fn="",
+        rule_edges=("", "", "HEADLBL"),
+    )
+
+    nodes = ["A", "B"]
+    edges = [("A", "B")]
+    neighbors = {"A": ["B"]}
+    reverse_neighbors = {"B": ["A"]}
+    predicate_map_node, predicate_map_edge = {}, {}
+    interpretations_node, interpretations_edge = {}, {}
+    num_ga = [0]
+
+    apps_node, apps_edge = ground_rule(
+        rule,
+        interpretations_node,
+        interpretations_edge,
+        predicate_map_node,
+        predicate_map_edge,
+        nodes,
+        edges,
+        neighbors,
+        reverse_neighbors,
+        atom_trace=False,
+        allow_ground_rules=True,
+        num_ga=num_ga,
+        t=0,
+    )
+
+    assert apps_node == []
+    assert len(apps_edge) == 1
+    e, annotations, qn, qe, edges_to_add = apps_edge[0]
+    assert e == ("A", "B")
+    assert annotations == []
+    assert qn == []
+    assert qe == []
+    assert edges_to_add == ([], [], "HEADLBL")
+    mock_add_node.assert_not_called()
+    mock_add_edge.assert_not_called()
+
+
 def test_ground_rule_node_clause_filters_edge_groundings(monkeypatch):
     _shim_typed_list(monkeypatch)
     mock_add_node = _mock_add_node(monkeypatch)
