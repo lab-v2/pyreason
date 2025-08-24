@@ -1,6 +1,12 @@
 # Test if the simple hello world program works
 #import pyreason as pr
 import faulthandler
+import json
+import os
+import subprocess
+import sys
+import textwrap
+
 import pyreason.pyreason as pr
 
 
