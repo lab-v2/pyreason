@@ -1,6 +1,12 @@
 # Test if the simple hello world program works
 #import pyreason as pr
 import faulthandler
+import json
+import os
+import subprocess
+import sys
+import textwrap
+
 import pyreason.pyreason as pr
 
 
@@ -50,4 +56,36 @@ def test_hello_world():
     # John should be popular in timestep 3
     assert 'John' in dataframes[2]['component'].values and dataframes[2].iloc[1].popular == [1, 1], 'John should have popular bounds [1,1] for t=2 timesteps'
 
-test_hello_world()
+
+def test_hello_world_consistency():
+    """Ensure hello world output matches with and without JIT."""
+    script = textwrap.dedent(
+        """
+import json
+import pyreason.pyreason as pr
+pr.reset(); pr.reset_rules(); pr.reset_settings()
+pr.settings.verbose = False
+pr.load_graphml('./tests/functional/friends_graph.graphml')
+pr.add_rule(pr.Rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule'))
+pr.add_fact(pr.Fact('popular(Mary)', 'popular_fact', 0, 2))
+interpretation = pr.reason(timesteps=2)
+dataframes = pr.filter_and_sort_nodes(interpretation, ['popular'])
+res = [df[['component','popular']].to_dict('records') for df in dataframes]
+print(json.dumps(res))
+"""
+    )
+    env = os.environ.copy()
+    jit_run = subprocess.run([
+        sys.executable,
+        "-c",
+        script,
+    ], capture_output=True, text=True, check=True, env=env)
+    jit_res = json.loads(jit_run.stdout)
+    env["NUMBA_DISABLE_JIT"] = "1"
+    py_run = subprocess.run([
+        sys.executable,
+        "-c",
+        script,
+    ], capture_output=True, text=True, check=True, env=env)
+    py_res = json.loads(py_run.stdout)
+    assert jit_res == py_res
