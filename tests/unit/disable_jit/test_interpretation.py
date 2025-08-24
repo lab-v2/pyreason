@@ -1897,3 +1897,80 @@ def test_ground_rule_node_recheck_failure_skips_body(monkeypatch):
     mock_check_all.assert_called_once()
     mock_add_node.assert_not_called()
     mock_add_edge.assert_not_called()
+
+
+def test_ground_rule_edge_recheck_failure_skips_body(monkeypatch):
+    _shim_typed_list(monkeypatch)
+
+    monkeypatch.setattr(
+        interpretation,
+        "get_rule_node_clause_grounding",
+        lambda var, *a: ["x1"] if var == "X" else ["y1"],
+    )
+    monkeypatch.setattr(
+        interpretation,
+        "get_qualified_node_groundings",
+        lambda interp, grounding, *a: grounding,
+    )
+    monkeypatch.setattr(
+        interpretation,
+        "check_node_grounding_threshold_satisfaction",
+        lambda *a, **k: True,
+    )
+    monkeypatch.setattr(
+        interpretation,
+        "refine_groundings",
+        lambda *a, **k: None,
+    )
+
+    mock_check_all = Mock(return_value=False)
+    monkeypatch.setattr(
+        interpretation,
+        "check_all_clause_satisfaction",
+        mock_check_all,
+    )
+
+    mock_add_node = Mock()
+    mock_add_edge = Mock()
+    monkeypatch.setattr(interpretation, "_add_node", mock_add_node)
+    monkeypatch.setattr(interpretation, "_add_edge", mock_add_edge)
+
+    rule = DummyRule(
+        rtype="edge",
+        head_vars=("X", "Y"),
+        clauses=[
+            ("node", "L", ("X",), ("b",), "op"),
+            ("node", "L", ("Y",), ("b",), "op"),
+        ],
+        thresholds=[("ge", ("number", "total"), 1)] * 2,
+        ann_fn="",
+        rule_edges=("src", "tgt", "HEADLBL"),
+    )
+
+    interpretations_node, interpretations_edge = {}, {}
+    nodes, edges = [], []
+    neighbors, reverse_neighbors = {}, {}
+    predicate_map_node, predicate_map_edge = {}, {}
+    num_ga = [0]
+
+    apps_node, apps_edge = ground_rule(
+        rule,
+        interpretations_node,
+        interpretations_edge,
+        predicate_map_node,
+        predicate_map_edge,
+        nodes,
+        edges,
+        neighbors,
+        reverse_neighbors,
+        atom_trace=False,
+        allow_ground_rules=False,
+        num_ga=num_ga,
+        t=0,
+    )
+
+    assert apps_node == []
+    assert apps_edge == []
+    mock_check_all.assert_called_once()
+    mock_add_node.assert_not_called()
+    mock_add_edge.assert_not_called()
