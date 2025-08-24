@@ -1547,6 +1547,105 @@ def test_ground_rule_edge_clause_ground_atom_allow_ground_rules(monkeypatch):
     mock_add_node.assert_called_once()
 
 
+def test_ground_rule_node_clause_filters_edge_groundings(monkeypatch):
+    _shim_typed_list(monkeypatch)
+    mock_add_node = _mock_add_node(monkeypatch)
+
+    edges_xy = [("n1", "nY"), ("n2", "nY")]
+    edges_zx = [("nZ", "n1"), ("nZ", "n3")]
+
+    def mock_rule_edge_clause_grounding(cv1, cv2, *args):
+        if (cv1, cv2) == ("X", "Y"):
+            return list(edges_xy)
+        if (cv1, cv2) == ("Z", "X"):
+            return list(edges_zx)
+        return []
+
+    monkeypatch.setattr(
+        interpretation,
+        "get_rule_edge_clause_grounding",
+        mock_rule_edge_clause_grounding,
+    )
+    monkeypatch.setattr(
+        interpretation,
+        "get_qualified_edge_groundings",
+        lambda *a, **k: list(a[1]),
+    )
+    monkeypatch.setattr(
+        interpretation,
+        "check_edge_grounding_threshold_satisfaction",
+        lambda *a, **k: True,
+    )
+
+    monkeypatch.setattr(
+        interpretation,
+        "get_rule_node_clause_grounding",
+        lambda *a, **k: ["n1", "n2", "n3"],
+    )
+    monkeypatch.setattr(
+        interpretation,
+        "get_qualified_node_groundings",
+        lambda *a, **k: ["n1"],
+    )
+    monkeypatch.setattr(
+        interpretation,
+        "check_node_grounding_threshold_satisfaction",
+        lambda *a, **k: True,
+    )
+    monkeypatch.setattr(interpretation, "refine_groundings", lambda *a, **k: None)
+
+    def assert_filtered_edges(*args):
+        groundings_edges = args[5]
+        assert groundings_edges[("X", "Y")] == [("n1", "nY")]
+        assert groundings_edges[("Z", "X")] == [("nZ", "n1")]
+        return True
+
+    monkeypatch.setattr(
+        interpretation,
+        "check_all_clause_satisfaction",
+        assert_filtered_edges,
+    )
+
+    rule = DummyRule(
+        rtype="node",
+        head_vars=("X",),
+        clauses=[
+            ("edge", "L1", ("X", "Y"), ("b",), "op"),
+            ("edge", "L2", ("Z", "X"), ("b",), "op"),
+            ("node", "L3", ("X",), ("b",), "op"),
+        ],
+        thresholds=[("ge", ("number", "total"), 1)] * 3,
+        ann_fn="",
+        rule_edges=("", "", "HEADLBL"),
+    )
+
+    nodes = ["n1", "n2", "n3", "nY", "nZ"]
+    edges = []
+    neighbors, reverse_neighbors = {}, {}
+    predicate_map_node, predicate_map_edge = {}, {}
+    interpretations_node, interpretations_edge = {}, {}
+    num_ga = [0]
+
+    apps_node, apps_edge = ground_rule(
+        rule,
+        interpretations_node,
+        interpretations_edge,
+        predicate_map_node,
+        predicate_map_edge,
+        nodes,
+        edges,
+        neighbors,
+        reverse_neighbors,
+        atom_trace=False,
+        allow_ground_rules=False,
+        num_ga=num_ga,
+        t=0,
+    )
+
+    assert len(apps_node) == 1 and apps_edge == []
+    mock_add_node.assert_not_called()
+
+
 def test_ground_rule_edge_with_node_clauses_tracing(monkeypatch):
     _shim_typed_list(monkeypatch)
 
