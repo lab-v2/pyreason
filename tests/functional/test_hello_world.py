@@ -1,6 +1,12 @@
 # Test if the simple hello world program works
 #import pyreason as pr
 import faulthandler
+import json
+import os
+import subprocess
+import sys
+import textwrap
+
 import pyreason.pyreason as pr
 
 
@@ -74,5 +80,6 @@ def test_hello_world_consistency():
         py_res = run()
     finally:
         interval_type.closed = original_closed
+
 
     assert jit_res == py_res
