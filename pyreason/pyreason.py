@@ -56,6 +56,7 @@ class _Settings:
         self.__parallel_computing = None
         self.__update_mode = None
         self.__allow_ground_rules = None
+        self.__fp_version = None
         self.reset()
 
     def reset(self):
@@ -76,6 +77,7 @@ class _Settings:
         self.__parallel_computing = False
         self.__update_mode = 'intersection'
         self.__allow_ground_rules = False
+        self.__fp_version = True
 
     @property
     def verbose(self) -> bool:
@@ -218,6 +220,14 @@ class _Settings:
         :return: bool
         """
         return self.__allow_ground_rules
+
+    @property
+    def fp_version(self) -> bool:
+        """Returns whether we are using the fixed point version or the optimized version. Default is false
+
+        :return: bool
+        """
+        return self.__fp_version
 
     @verbose.setter
     def verbose(self, value: bool) -> None:
@@ -429,6 +439,18 @@ class _Settings:
             raise TypeError('value has to be a bool')
         else:
             self.__allow_ground_rules = value
+
+    @fp_version.setter
+    def fp_version(self, value: bool) -> None:
+        """Set the fixed point or optimized version. Default is False
+
+        :param value: Whether to use the fixed point version or the optimized version
+        :raises TypeError: If not bool raise error
+        """
+        if not isinstance(value, bool):
+            raise TypeError('value has to be a bool')
+        else:
+            self.__fp_version = value
 
 
 # VARIABLES
@@ -748,7 +770,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
             __rules.append(r)
 
     # Setup logical program
-    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.persistent, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.allow_ground_rules)
+    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.persistent, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.allow_ground_rules, settings.fp_version)
     __program.specific_node_labels = __specific_node_labels
     __program.specific_edge_labels = __specific_edge_labels
 
