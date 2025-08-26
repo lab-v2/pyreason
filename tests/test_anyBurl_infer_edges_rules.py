@@ -36,7 +36,6 @@ def test_anyBurl_rule_1():
     
     # Check the number of NEWLY ADDED isConnectedTo edges at each timestep
     is_connected_to_counts = {}
-    previous_edges = set()
     
     for t in sorted(interpretation_dict.keys()):
         current_edges = set()
@@ -44,10 +43,18 @@ def test_anyBurl_rule_1():
             if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1]:
                 current_edges.add(component)
         
-        # Count only newly added edges
-        newly_added = len(current_edges - previous_edges)
+        if t == min(interpretation_dict.keys()):
+            # At the first timestep, all edges are newly added (initial facts)
+            newly_added = len(current_edges)
+        else:
+            # For subsequent timesteps, compare with previous timestep
+            previous_edges = set()
+            for component, labels in interpretation_dict[t-1].items():
+                if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1]:
+                    previous_edges.add(component)
+            newly_added = len(current_edges - previous_edges)
+        
         is_connected_to_counts[t] = newly_added
-        previous_edges = current_edges
     
     assert len(interpretation_dict) == 2, 'Pyreason should run exactly 2 fixpoint operations'
     assert is_connected_to_counts[1] == 1, 'At t=1 there should be only 1 new isConnectedTo atom'
@@ -103,7 +110,6 @@ def test_anyBurl_rule_2():
     
     # Check the number of NEWLY ADDED isConnectedTo edges at each timestep
     is_connected_to_counts = {}
-    previous_edges = set()
     
     for t in sorted(interpretation_dict.keys()):
         current_edges = set()
@@ -111,10 +117,18 @@ def test_anyBurl_rule_2():
             if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1]:
                 current_edges.add(component)
         
-        # Count only newly added edges
-        newly_added = len(current_edges - previous_edges)
+        if t == min(interpretation_dict.keys()):
+            # At the first timestep, all edges are newly added (initial facts)
+            newly_added = len(current_edges)
+        else:
+            # For subsequent timesteps, compare with previous timestep
+            previous_edges = set()
+            for component, labels in interpretation_dict[t-1].items():
+                if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1]:
+                    previous_edges.add(component)
+            newly_added = len(current_edges - previous_edges)
+        
         is_connected_to_counts[t] = newly_added
-        previous_edges = current_edges
     
     assert len(interpretation_dict) == 2, 'Pyreason should run exactly 2 fixpoint operations'
     assert is_connected_to_counts[1] == 1, 'At t=1 there should be only 1 new isConnectedTo atom'
@@ -170,7 +184,6 @@ def test_anyBurl_rule_3():
     
     # Check the number of NEWLY ADDED isConnectedTo edges at each timestep
     is_connected_to_counts = {}
-    previous_edges = set()
     
     for t in sorted(interpretation_dict.keys()):
         current_edges = set()
@@ -178,10 +191,18 @@ def test_anyBurl_rule_3():
             if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1]:
                 current_edges.add(component)
         
-        # Count only newly added edges
-        newly_added = len(current_edges - previous_edges)
+        if t == min(interpretation_dict.keys()):
+            # At the first timestep, all edges are newly added (initial facts)
+            newly_added = len(current_edges)
+        else:
+            # For subsequent timesteps, compare with previous timestep
+            previous_edges = set()
+            for component, labels in interpretation_dict[t-1].items():
+                if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1]:
+                    previous_edges.add(component)
+            newly_added = len(current_edges - previous_edges)
+        
         is_connected_to_counts[t] = newly_added
-        previous_edges = current_edges
     
     assert len(interpretation_dict) == 2, 'Pyreason should run exactly 1 fixpoint operations'
     assert is_connected_to_counts[1] == 1, 'At t=1 there should be only 1 new isConnectedTo atom'
@@ -237,7 +258,6 @@ def test_anyBurl_rule_4():
     
     # Check the number of NEWLY ADDED isConnectedTo edges at each timestep
     is_connected_to_counts = {}
-    previous_edges = set()
     
     for t in sorted(interpretation_dict.keys()):
         current_edges = set()
@@ -245,10 +265,18 @@ def test_anyBurl_rule_4():
             if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1]:
                 current_edges.add(component)
         
-        # Count only newly added edges
-        newly_added = len(current_edges - previous_edges)
+        if t == min(interpretation_dict.keys()):
+            # At the first timestep, all edges are newly added (initial facts)
+            newly_added = len(current_edges)
+        else:
+            # For subsequent timesteps, compare with previous timestep
+            previous_edges = set()
+            for component, labels in interpretation_dict[t-1].items():
+                if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1]:
+                    previous_edges.add(component)
+            newly_added = len(current_edges - previous_edges)
+        
         is_connected_to_counts[t] = newly_added
-        previous_edges = current_edges
     
     assert len(interpretation_dict) == 2, 'Pyreason should run exactly 1 fixpoint operations'
     assert is_connected_to_counts[1] == 1, 'At t=1 there should be only 1 new isConnectedTo atom'

@@ -53,7 +53,6 @@ def test_custom_thresholds():
 
     # Check the number of NEWLY ADDED ViewedByAll nodes at each timestep
     viewed_by_all_counts = {}
-    previous_viewed_by_all = set()
     
     for t in sorted(interpretation_dict.keys()):
         current_viewed_by_all = set()
@@ -61,10 +60,18 @@ def test_custom_thresholds():
             if 'ViewedByAll' in labels and labels['ViewedByAll'] == [1, 1]:
                 current_viewed_by_all.add(component)
         
-        # Count only newly added ViewedByAll nodes
-        newly_added = len(current_viewed_by_all - previous_viewed_by_all)
+        if t == min(interpretation_dict.keys()):
+            # At the first timestep, all ViewedByAll nodes are newly added (initial facts)
+            newly_added = len(current_viewed_by_all)
+        else:
+            # For subsequent timesteps, compare with previous timestep
+            previous_viewed_by_all = set()
+            for component, labels in interpretation_dict[t-1].items():
+                if 'ViewedByAll' in labels and labels['ViewedByAll'] == [1, 1]:
+                    previous_viewed_by_all.add(component)
+            newly_added = len(current_viewed_by_all - previous_viewed_by_all)
+        
         viewed_by_all_counts[t] = newly_added
-        previous_viewed_by_all = current_viewed_by_all
 
     assert (
         viewed_by_all_counts[0] == 0

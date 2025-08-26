@@ -44,7 +44,6 @@ def test_reason_again():
 
     # Get the number of NEWLY ADDED popular people at each timestep
     popular_counts = {}
-    previous_popular = set()
     
     for t in sorted(interpretation_dict.keys()):
         current_popular = set()
@@ -52,10 +51,18 @@ def test_reason_again():
             if 'popular' in labels and labels['popular'] == [1, 1]:
                 current_popular.add(component)
         
-        # Count only newly added popular people
-        newly_added = len(current_popular - previous_popular)
+        if t == min(interpretation_dict.keys()):
+            # At the first timestep, all popular people are newly added (initial facts)
+            newly_added = len(current_popular)
+        else:
+            # For subsequent timesteps, compare with previous timestep
+            previous_popular = set()
+            for component, labels in interpretation_dict[t-1].items():
+                if 'popular' in labels and labels['popular'] == [1, 1]:
+                    previous_popular.add(component)
+            newly_added = len(current_popular - previous_popular)
+        
         popular_counts[t] = newly_added
-        previous_popular = current_popular
 
     assert popular_counts[2] == 1, 'At t=2 there should be one newly added popular person'
     assert popular_counts[3] == 1, 'At t=3 there should be one newly added popular person'

@@ -38,7 +38,6 @@ def test_hello_world():
 
     # Get the number of NEWLY ADDED popular people at each timestep
     popular_counts = []
-    previous_popular = set()
     
     for t in range(3):  # 0, 1, 2
         if t in interpretation_dict:
@@ -47,10 +46,18 @@ def test_hello_world():
                 if 'popular' in labels and labels['popular'] == [1, 1]:
                     current_popular.add(component)
             
-            # Count only newly added popular people
-            newly_added = len(current_popular - previous_popular)
+            if t == 0:
+                # At timestep 0, all popular people are newly added (initial facts)
+                newly_added = len(current_popular)
+            else:
+                # For subsequent timesteps, compare with previous timestep
+                previous_popular = set()
+                for component, labels in interpretation_dict[t-1].items():
+                    if 'popular' in labels and labels['popular'] == [1, 1]:
+                        previous_popular.add(component)
+                newly_added = len(current_popular - previous_popular)
+            
             popular_counts.append(newly_added)
-            previous_popular = current_popular
         else:
             popular_counts.append(0)
 
