@@ -698,8 +698,8 @@ def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bou
 
 def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queries):
     # Globals
-    global __graph, __rules, __clause_maps, __node_facts, __edge_facts, __ipl, __specific_node_labels, __specific_edge_labels
-    global __timestamp, __program
+    global __rules, __clause_maps, __node_facts, __edge_facts, __ipl, __specific_node_labels, __specific_edge_labels
+    global __program
 
     # Assert variables are of correct type
 
@@ -786,8 +786,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
 
 def _reason_again(timesteps, restart, convergence_threshold, convergence_bound_threshold):
     # Globals
-    global __node_facts, __edge_facts, __ipl, __specific_node_labels, __specific_edge_labels
-    global __timestamp, __program
+    global __program
 
     assert __program is not None, 'To run `reason_again` you need to have reasoned once before'
 

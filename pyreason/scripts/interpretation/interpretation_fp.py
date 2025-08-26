@@ -2058,4 +2058,4 @@ def str_to_int(value):
 	for i, v in enumerate(value):
 		result += (ord(v) - 48) * (10 ** (final_index - i))
 	result = -result if negative else result
-	return r
+	return result
