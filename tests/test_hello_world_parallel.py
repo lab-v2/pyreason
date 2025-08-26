@@ -22,25 +22,47 @@ def test_hello_world_parallel():
     # Run the program for two timesteps to see the diffusion take place
     interpretation = pr.reason(timesteps=2)
 
-    # Display the changes in the interpretation for each timestep
-    dataframes = pr.filter_and_sort_nodes(interpretation, ['popular'])
-    for t, df in enumerate(dataframes):
+    # Display the changes in the interpretation for each timestep using get_dict()
+    interpretation_dict = interpretation.get_dict()
+    for t, timestep_data in interpretation_dict.items():
         print(f'TIMESTEP - {t}')
-        print(df)
+        popular_nodes = []
+        for component, labels in timestep_data.items():
+            if 'popular' in labels:
+                popular_nodes.append((component, labels['popular']))
+        print(f"Popular nodes: {popular_nodes}")
         print()
 
-    assert len(dataframes[0]) == 1, 'At t=0 there should be one popular person'
-    assert len(dataframes[1]) == 2, 'At t=1 there should be two popular people'
-    assert len(dataframes[2]) == 3, 'At t=2 there should be three popular people'
+    # Get the number of popular people at each timestep
+    popular_counts = []
+    for t in range(3):  # 0, 1, 2
+        if t in interpretation_dict:
+            count = sum(1 for component, labels in interpretation_dict[t].items() 
+                       if 'popular' in labels and labels['popular'] == [1, 1])
+            popular_counts.append(count)
+        else:
+            popular_counts.append(0)
+
+    assert popular_counts[0] == 1, 'At t=0 there should be one popular person'
+    assert popular_counts[1] == 2, 'At t=1 there should be two popular people'
+    assert popular_counts[2] == 3, 'At t=2 there should be three popular people'
 
     # Mary should be popular in all three timesteps
-    assert 'Mary' in dataframes[0]['component'].values and dataframes[0].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=0 timesteps'
-    assert 'Mary' in dataframes[1]['component'].values and dataframes[1].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=1 timesteps'
-    assert 'Mary' in dataframes[2]['component'].values and dataframes[2].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=2 timesteps'
+    for t in range(3):
+        if t in interpretation_dict:
+            mary_popular = any(component == 'Mary' and labels.get('popular') == [1, 1] 
+                              for component, labels in interpretation_dict[t].items())
+            assert mary_popular, f'Mary should have popular bounds [1,1] for t={t} timesteps'
 
     # Justin should be popular in timesteps 1, 2
-    assert 'Justin' in dataframes[1]['component'].values and dataframes[1].iloc[1].popular == [1, 1], 'Justin should have popular bounds [1,1] for t=1 timesteps'
-    assert 'Justin' in dataframes[2]['component'].values and dataframes[2].iloc[2].popular == [1, 1], 'Justin should have popular bounds [1,1] for t=2 timesteps'
+    for t in [1, 2]:
+        if t in interpretation_dict:
+            justin_popular = any(component == 'Justin' and labels.get('popular') == [1, 1] 
+                                for component, labels in interpretation_dict[t].items())
+            assert justin_popular, f'Justin should have popular bounds [1,1] for t={t} timesteps'
 
-    # John should be popular in timestep 3
-    assert 'John' in dataframes[2]['component'].values and dataframes[2].iloc[1].popular == [1, 1], 'John should have popular bounds [1,1] for t=2 timesteps'
+    # John should be popular in timestep 2
+    if 2 in interpretation_dict:
+        john_popular = any(component == 'John' and labels.get('popular') == [1, 1] 
+                          for component, labels in interpretation_dict[2].items())
+        assert john_popular, 'John should have popular bounds [1,1] for t=2 timesteps'

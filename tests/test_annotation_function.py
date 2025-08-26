@@ -27,10 +27,15 @@ def test_annotation_function():
 
     interpretation = pr.reason(timesteps=1)
 
-    dataframes = pr.filter_and_sort_edges(interpretation, ['union_probability'])
-    for t, df in enumerate(dataframes):
+    # Display the changes in the interpretation for each timestep using get_dict()
+    interpretation_dict = interpretation.get_dict()
+    for t, timestep_data in interpretation_dict.items():
         print(f'TIMESTEP - {t}')
-        print(df)
+        union_probability_edges = []
+        for component, labels in timestep_data.items():
+            if 'union_probability' in labels:
+                union_probability_edges.append((component, labels['union_probability']))
+        print(f"union_probability edges: {union_probability_edges}")
         print()
 
     assert interpretation.query(pr.Query('union_probability(A, B) : [0.21, 1]')), 'Union probability should be 0.21'

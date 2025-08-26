@@ -23,15 +23,39 @@ def test_anyBurl_rule_1():
     interpretation = pr.reason(timesteps=1)
     # pr.save_rule_trace(interpretation)
 
-    # Display the changes in the interpretation for each timestep
-    dataframes = pr.filter_and_sort_edges(interpretation, ['isConnectedTo'])
-    for t, df in enumerate(dataframes):
+    # Display the changes in the interpretation for each timestep using get_dict()
+    interpretation_dict = interpretation.get_dict()
+    for t, timestep_data in interpretation_dict.items():
         print(f'TIMESTEP - {t}')
-        print(df)
+        is_connected_to_edges = []
+        for component, labels in timestep_data.items():
+            if 'isConnectedTo' in labels:
+                is_connected_to_edges.append((component, labels['isConnectedTo']))
+        print(f"isConnectedTo edges: {is_connected_to_edges}")
         print()
-    assert len(dataframes) == 2, 'Pyreason should run exactly 2 fixpoint operations'
-    assert len(dataframes[1]) == 1, 'At t=1 there should be only 1 new isConnectedTo atom'
-    assert ('Vnukovo_International_Airport', 'Riga_International_Airport') in dataframes[1]['component'].values.tolist() and dataframes[1]['isConnectedTo'].iloc[0] == [1, 1], '(Vnukovo_International_Airport, Riga_International_Airport) should have isConnectedTo bounds [1,1] for t=1 timesteps'
+    
+    # Check the number of isConnectedTo edges at each timestep
+    is_connected_to_counts = {}
+    for t in interpretation_dict.keys():
+        count = sum(1 for component, labels in interpretation_dict[t].items() 
+                   if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1])
+        is_connected_to_counts[t] = count
+    
+    assert len(interpretation_dict) == 2, 'Pyreason should run exactly 2 fixpoint operations'
+    assert is_connected_to_counts[1] == 1, 'At t=1 there should be only 1 new isConnectedTo atom'
+    
+    # Check if the specific edge exists with correct bounds
+    edge_found = False
+    for t in interpretation_dict.keys():
+        for component, labels in interpretation_dict[t].items():
+            if (component == ('Vnukovo_International_Airport', 'Riga_International_Airport') and 
+                labels.get('isConnectedTo') == [1, 1]):
+                edge_found = True
+                break
+        if edge_found:
+            break
+    
+    assert edge_found, '(Vnukovo_International_Airport, Riga_International_Airport) should have isConnectedTo bounds [1,1] for t=1 timesteps'
 
 
 def test_anyBurl_rule_2():
@@ -58,15 +82,39 @@ def test_anyBurl_rule_2():
     interpretation = pr.reason(timesteps=1)
     # pr.save_rule_trace(interpretation)
 
-    # Display the changes in the interpretation for each timestep
-    dataframes = pr.filter_and_sort_edges(interpretation, ['isConnectedTo'])
-    for t, df in enumerate(dataframes):
+    # Display the changes in the interpretation for each timestep using get_dict()
+    interpretation_dict = interpretation.get_dict()
+    for t, timestep_data in interpretation_dict.items():
         print(f'TIMESTEP - {t}')
-        print(df)
+        is_connected_to_edges = []
+        for component, labels in timestep_data.items():
+            if 'isConnectedTo' in labels:
+                is_connected_to_edges.append((component, labels['isConnectedTo']))
+        print(f"isConnectedTo edges: {is_connected_to_edges}")
         print()
-    assert len(dataframes) == 2, 'Pyreason should run exactly 2 fixpoint operations'
-    assert len(dataframes[1]) == 1, 'At t=1 there should be only 1 new isConnectedTo atom'
-    assert ('Riga_International_Airport', 'Vnukovo_International_Airport') in dataframes[1]['component'].values.tolist() and dataframes[1]['isConnectedTo'].iloc[0] == [1, 1], '(Riga_International_Airport, Vnukovo_International_Airport) should have isConnectedTo bounds [1,1] for t=1 timesteps'
+    
+    # Check the number of isConnectedTo edges at each timestep
+    is_connected_to_counts = {}
+    for t in interpretation_dict.keys():
+        count = sum(1 for component, labels in interpretation_dict[t].items() 
+                   if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1])
+        is_connected_to_counts[t] = count
+    
+    assert len(interpretation_dict) == 2, 'Pyreason should run exactly 2 fixpoint operations'
+    assert is_connected_to_counts[1] == 1, 'At t=1 there should be only 1 new isConnectedTo atom'
+    
+    # Check if the specific edge exists with correct bounds
+    edge_found = False
+    for t in interpretation_dict.keys():
+        for component, labels in interpretation_dict[t].items():
+            if (component == ('Riga_International_Airport', 'Vnukovo_International_Airport') and 
+                labels.get('isConnectedTo') == [1, 1]):
+                edge_found = True
+                break
+        if edge_found:
+            break
+    
+    assert edge_found, '(Riga_International_Airport, Vnukovo_International_Airport) should have isConnectedTo bounds [1,1] for t=1 timesteps'
 
 
 def test_anyBurl_rule_3():
@@ -93,15 +141,39 @@ def test_anyBurl_rule_3():
     interpretation = pr.reason(timesteps=1)
     # pr.save_rule_trace(interpretation)
 
-    # Display the changes in the interpretation for each timestep
-    dataframes = pr.filter_and_sort_edges(interpretation, ['isConnectedTo'])
-    for t, df in enumerate(dataframes):
+    # Display the changes in the interpretation for each timestep using get_dict()
+    interpretation_dict = interpretation.get_dict()
+    for t, timestep_data in interpretation_dict.items():
         print(f'TIMESTEP - {t}')
-        print(df)
+        is_connected_to_edges = []
+        for component, labels in timestep_data.items():
+            if 'isConnectedTo' in labels:
+                is_connected_to_edges.append((component, labels['isConnectedTo']))
+        print(f"isConnectedTo edges: {is_connected_to_edges}")
         print()
-    assert len(dataframes) == 2, 'Pyreason should run exactly 1 fixpoint operations'
-    assert len(dataframes[1]) == 1, 'At t=1 there should be only 1 new isConnectedTo atom'
-    assert ('Vnukovo_International_Airport', 'Yali') in dataframes[1]['component'].values.tolist() and dataframes[1]['isConnectedTo'].iloc[0] == [1, 1], '(Vnukovo_International_Airport, Yali) should have isConnectedTo bounds [1,1] for t=1 timesteps'
+    
+    # Check the number of isConnectedTo edges at each timestep
+    is_connected_to_counts = {}
+    for t in interpretation_dict.keys():
+        count = sum(1 for component, labels in interpretation_dict[t].items() 
+                   if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1])
+        is_connected_to_counts[t] = count
+    
+    assert len(interpretation_dict) == 2, 'Pyreason should run exactly 1 fixpoint operations'
+    assert is_connected_to_counts[1] == 1, 'At t=1 there should be only 1 new isConnectedTo atom'
+    
+    # Check if the specific edge exists with correct bounds
+    edge_found = False
+    for t in interpretation_dict.keys():
+        for component, labels in interpretation_dict[t].items():
+            if (component == ('Vnukovo_International_Airport', 'Yali') and 
+                labels.get('isConnectedTo') == [1, 1]):
+                edge_found = True
+                break
+        if edge_found:
+            break
+    
+    assert edge_found, '(Vnukovo_International_Airport, Yali) should have isConnectedTo bounds [1,1] for t=1 timesteps'
 
 
 def test_anyBurl_rule_4():
@@ -128,12 +200,36 @@ def test_anyBurl_rule_4():
     interpretation = pr.reason(timesteps=1)
     # pr.save_rule_trace(interpretation)
 
-    # Display the changes in the interpretation for each timestep
-    dataframes = pr.filter_and_sort_edges(interpretation, ['isConnectedTo'])
-    for t, df in enumerate(dataframes):
+    # Display the changes in the interpretation for each timestep using get_dict()
+    interpretation_dict = interpretation.get_dict()
+    for t, timestep_data in interpretation_dict.items():
         print(f'TIMESTEP - {t}')
-        print(df)
+        is_connected_to_edges = []
+        for component, labels in timestep_data.items():
+            if 'isConnectedTo' in labels:
+                is_connected_to_edges.append((component, labels['isConnectedTo']))
+        print(f"isConnectedTo edges: {is_connected_to_edges}")
         print()
-    assert len(dataframes) == 2, 'Pyreason should run exactly 1 fixpoint operations'
-    assert len(dataframes[1]) == 1, 'At t=1 there should be only 1 new isConnectedTo atom'
-    assert ('Yali', 'Vnukovo_International_Airport') in dataframes[1]['component'].values.tolist() and dataframes[1]['isConnectedTo'].iloc[0] == [1, 1], '(Yali, Vnukovo_International_Airport) should have isConnectedTo bounds [1,1] for t=1 timesteps'
+    
+    # Check the number of isConnectedTo edges at each timestep
+    is_connected_to_counts = {}
+    for t in interpretation_dict.keys():
+        count = sum(1 for component, labels in interpretation_dict[t].items() 
+                   if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1])
+        is_connected_to_counts[t] = count
+    
+    assert len(interpretation_dict) == 2, 'Pyreason should run exactly 1 fixpoint operations'
+    assert is_connected_to_counts[1] == 1, 'At t=1 there should be only 1 new isConnectedTo atom'
+    
+    # Check if the specific edge exists with correct bounds
+    edge_found = False
+    for t in interpretation_dict.keys():
+        for component, labels in interpretation_dict[t].items():
+            if (component == ('Yali', 'Vnukovo_International_Airport') and 
+                labels.get('isConnectedTo') == [1, 1]):
+                edge_found = True
+                break
+        if edge_found:
+            break
+    
+    assert edge_found, '(Yali, Vnukovo_International_Airport) should have isConnectedTo bounds [1,1] for t=1 timesteps'

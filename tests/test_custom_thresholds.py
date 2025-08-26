@@ -40,24 +40,33 @@ def test_custom_thresholds():
     # Run the program for three timesteps to see the diffusion take place
     interpretation = pr.reason(timesteps=3)
 
-    # Display the changes in the interpretation for each timestep
-    dataframes = pr.filter_and_sort_nodes(interpretation, ["ViewedByAll"])
-    for t, df in enumerate(dataframes):
+    # Display the changes in the interpretation for each timestep using get_dict()
+    interpretation_dict = interpretation.get_dict()
+    for t, timestep_data in interpretation_dict.items():
         print(f"TIMESTEP - {t}")
-        print(df)
+        viewed_by_all_nodes = []
+        for component, labels in timestep_data.items():
+            if 'ViewedByAll' in labels:
+                viewed_by_all_nodes.append((component, labels['ViewedByAll']))
+        print(f"ViewedByAll nodes: {viewed_by_all_nodes}")
         print()
 
+    # Check the number of ViewedByAll nodes at each timestep
+    viewed_by_all_counts = {}
+    for t in interpretation_dict.keys():
+        count = sum(1 for component, labels in interpretation_dict[t].items() 
+                   if 'ViewedByAll' in labels and labels['ViewedByAll'] == [1, 1])
+        viewed_by_all_counts[t] = count
+
     assert (
-        len(dataframes[0]) == 0
+        viewed_by_all_counts[0] == 0
     ), "At t=0 the TextMessage should not have been ViewedByAll"
     assert (
-        len(dataframes[2]) == 1
+        viewed_by_all_counts[2] == 1
     ), "At t=2 the TextMessage should have been ViewedByAll"
 
     # TextMessage should be ViewedByAll in t=2
-    assert "TextMessage" in dataframes[2]["component"].values and dataframes[2].iloc[
-        0
-    ].ViewedByAll == [
-        1,
-        1,
-    ], "TextMessage should have ViewedByAll bounds [1,1] for t=2 timesteps"
+    if 2 in interpretation_dict:
+        textmessage_viewed = any(component == 'TextMessage' and labels.get('ViewedByAll') == [1, 1] 
+                                for component, labels in interpretation_dict[2].items())
+        assert textmessage_viewed, "TextMessage should have ViewedByAll bounds [1,1] for t=2 timesteps"
