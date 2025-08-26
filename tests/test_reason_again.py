@@ -42,16 +42,24 @@ def test_reason_again():
         print(f"Popular nodes: {popular_nodes}")
         print()
 
-    # Get the number of popular people at each timestep
+    # Get the number of NEWLY ADDED popular people at each timestep
     popular_counts = {}
-    for t in interpretation_dict.keys():
-        count = sum(1 for component, labels in interpretation_dict[t].items() 
-                   if 'popular' in labels and labels['popular'] == [1, 1])
-        popular_counts[t] = count
+    previous_popular = set()
+    
+    for t in sorted(interpretation_dict.keys()):
+        current_popular = set()
+        for component, labels in interpretation_dict[t].items():
+            if 'popular' in labels and labels['popular'] == [1, 1]:
+                current_popular.add(component)
+        
+        # Count only newly added popular people
+        newly_added = len(current_popular - previous_popular)
+        popular_counts[t] = newly_added
+        previous_popular = current_popular
 
-    assert popular_counts[2] == 1, 'At t=2 there should be one popular person'
-    assert popular_counts[3] == 2, 'At t=3 there should be two popular people'
-    assert popular_counts[4] == 3, 'At t=4 there should be three popular people'
+    assert popular_counts[2] == 1, 'At t=2 there should be one newly added popular person'
+    assert popular_counts[3] == 1, 'At t=3 there should be one newly added popular person'
+    assert popular_counts[4] == 1, 'At t=4 there should be one newly added popular person'
 
     # Mary should be popular in all three timesteps
     for t in [2, 3, 4]:

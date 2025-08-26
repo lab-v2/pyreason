@@ -51,19 +51,27 @@ def test_custom_thresholds():
         print(f"ViewedByAll nodes: {viewed_by_all_nodes}")
         print()
 
-    # Check the number of ViewedByAll nodes at each timestep
+    # Check the number of NEWLY ADDED ViewedByAll nodes at each timestep
     viewed_by_all_counts = {}
-    for t in interpretation_dict.keys():
-        count = sum(1 for component, labels in interpretation_dict[t].items() 
-                   if 'ViewedByAll' in labels and labels['ViewedByAll'] == [1, 1])
-        viewed_by_all_counts[t] = count
+    previous_viewed_by_all = set()
+    
+    for t in sorted(interpretation_dict.keys()):
+        current_viewed_by_all = set()
+        for component, labels in interpretation_dict[t].items():
+            if 'ViewedByAll' in labels and labels['ViewedByAll'] == [1, 1]:
+                current_viewed_by_all.add(component)
+        
+        # Count only newly added ViewedByAll nodes
+        newly_added = len(current_viewed_by_all - previous_viewed_by_all)
+        viewed_by_all_counts[t] = newly_added
+        previous_viewed_by_all = current_viewed_by_all
 
     assert (
         viewed_by_all_counts[0] == 0
     ), "At t=0 the TextMessage should not have been ViewedByAll"
     assert (
         viewed_by_all_counts[2] == 1
-    ), "At t=2 the TextMessage should have been ViewedByAll"
+    ), "At t=2 the TextMessage should have been newly added as ViewedByAll"
 
     # TextMessage should be ViewedByAll in t=2
     if 2 in interpretation_dict:

@@ -38,4 +38,19 @@ def test_annotation_function():
         print(f"union_probability edges: {union_probability_edges}")
         print()
 
+    # Check the number of NEWLY ADDED union_probability edges at each timestep
+    union_probability_counts = {}
+    previous_edges = set()
+    
+    for t in sorted(interpretation_dict.keys()):
+        current_edges = set()
+        for component, labels in interpretation_dict[t].items():
+            if 'union_probability' in labels and labels['union_probability'] == [1, 1]:
+                current_edges.add(component)
+        
+        # Count only newly added edges
+        newly_added = len(current_edges - previous_edges)
+        union_probability_counts[t] = newly_added
+        previous_edges = current_edges
+
     assert interpretation.query(pr.Query('union_probability(A, B) : [0.21, 1]')), 'Union probability should be 0.21'

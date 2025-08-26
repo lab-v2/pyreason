@@ -33,19 +33,27 @@ def test_hello_world_parallel():
         print(f"Popular nodes: {popular_nodes}")
         print()
 
-    # Get the number of popular people at each timestep
+    # Get the number of NEWLY ADDED popular people at each timestep
     popular_counts = []
+    previous_popular = set()
+    
     for t in range(3):  # 0, 1, 2
         if t in interpretation_dict:
-            count = sum(1 for component, labels in interpretation_dict[t].items() 
-                       if 'popular' in labels and labels['popular'] == [1, 1])
-            popular_counts.append(count)
+            current_popular = set()
+            for component, labels in interpretation_dict[t].items():
+                if 'popular' in labels and labels['popular'] == [1, 1]:
+                    current_popular.add(component)
+            
+            # Count only newly added popular people
+            newly_added = len(current_popular - previous_popular)
+            popular_counts.append(newly_added)
+            previous_popular = current_popular
         else:
             popular_counts.append(0)
 
-    assert popular_counts[0] == 1, 'At t=0 there should be one popular person'
-    assert popular_counts[1] == 2, 'At t=1 there should be two popular people'
-    assert popular_counts[2] == 3, 'At t=2 there should be three popular people'
+    assert popular_counts[0] == 1, 'At t=0 there should be one newly added popular person'
+    assert popular_counts[1] == 1, 'At t=1 there should be one newly added popular person'
+    assert popular_counts[2] == 1, 'At t=2 there should be one newly added popular person'
 
     # Mary should be popular in all three timesteps
     for t in range(3):
