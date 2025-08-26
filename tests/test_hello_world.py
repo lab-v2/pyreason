@@ -25,80 +25,25 @@ def test_hello_world():
     faulthandler.enable()
     interpretation = pr.reason(timesteps=2)
 
-    # Display the changes in the interpretation for each timestep using get_dict()
-    interpretation_dict = interpretation.get_dict()
-    for t, timestep_data in interpretation_dict.items():
+    # Display the changes in the interpretation for each timestep
+    dataframes = pr.filter_and_sort_nodes(interpretation, ['popular'])
+    for t, df in enumerate(dataframes):
         print(f'TIMESTEP - {t}')
-        popular_nodes = []
-        for component, labels in timestep_data.items():
-            if 'popular' in labels:
-                popular_nodes.append((component, labels['popular']))
-        print(f"Popular nodes: {popular_nodes}")
+        print(df)
         print()
 
-    # Get the number of NEWLY ADDED popular people at each timestep
-    popular_counts = []
-    
-    for t in range(3):  # 0, 1, 2
-        if t in interpretation_dict:
-            current_popular = set()
-            for component, labels in interpretation_dict[t].items():
-                if 'popular' in labels:
-                    popular_value = labels['popular']
-                    # Check if the value represents "true" (popular)
-                    # Handle both tuple (1.0, 1.0) and list [1, 1] formats
-                    if (isinstance(popular_value, (list, tuple)) and 
-                        len(popular_value) == 2 and 
-                        popular_value[0] == 1 and popular_value[1] == 1):
-                        current_popular.add(component)
-            
-            if t == 0:
-                # At timestep 0, all popular people are newly added (initial facts)
-                newly_added = len(current_popular)
-            else:
-                # For subsequent timesteps, compare with previous timestep
-                previous_popular = set()
-                for component, labels in interpretation_dict[t-1].items():
-                    if 'popular' in labels:
-                        popular_value = labels['popular']
-                        if (isinstance(popular_value, (list, tuple)) and 
-                            len(popular_value) == 2 and 
-                            popular_value[0] == 1 and popular_value[1] == 1):
-                            previous_popular.add(component)
-                
-                newly_added = len(current_popular - previous_popular)
-            
-            popular_counts.append(newly_added)
-        else:
-            popular_counts.append(0)
-
-    assert popular_counts[0] == 1, 'At t=0 there should be one newly added popular person'
-    assert popular_counts[1] == 1, 'At t=1 there should be one newly added popular person'
-    assert popular_counts[2] == 1, 'At t=2 there should be one newly added popular person'
+    assert len(dataframes[0]) == 1, 'At t=0 there should be one popular person'
+    assert len(dataframes[1]) == 2, 'At t=1 there should be two popular people'
+    assert len(dataframes[2]) == 3, 'At t=2 there should be three popular people'
 
     # Mary should be popular in all three timesteps
-    for t in range(3):
-        if t in interpretation_dict:
-            mary_popular = any(component == 'Mary' and 
-                              'popular' in labels and 
-                              labels['popular'][0] == 1 and labels['popular'][1] == 1
-                              for component, labels in interpretation_dict[t].items())
-            assert mary_popular, f'Mary should have popular bounds [1,1] for t={t} timesteps'
+    assert 'Mary' in dataframes[0]['component'].values and dataframes[0].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=0 timesteps'
+    assert 'Mary' in dataframes[1]['component'].values and dataframes[1].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=1 timesteps'
+    assert 'Mary' in dataframes[2]['component'].values and dataframes[2].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=2 timesteps'
 
     # Justin should be popular in timesteps 1, 2
-    for t in [1, 2]:
-        if t in interpretation_dict:
-            justin_popular = any(component == 'Justin' and 
-                                'popular' in labels and 
-                                labels['popular'][0] == 1 and labels['popular'][1] == 1
-                                for component, labels in interpretation_dict[t].items())
-            assert justin_popular, f'Justin should have popular bounds [1,1] for t={t} timesteps'
+    assert 'Justin' in dataframes[1]['component'].values and dataframes[1].iloc[1].popular == [1, 1], 'Justin should have popular bounds [1,1] for t=1 timesteps'
+    assert 'Justin' in dataframes[2]['component'].values and dataframes[2].iloc[2].popular == [1, 1], 'Justin should have popular bounds [1,1] for t=2 timesteps'
 
-    # John should be popular in timestep 2
-    if 2 in interpretation_dict:
-        john_popular = any(component == 'John' and 
-                          'popular' in labels and 
-                          labels['popular'][0] == 1 and labels['popular'][1] == 1
-                          for component, labels in interpretation_dict[2].items())
-        assert john_popular, 'John should have popular bounds [1,1] for t=2 timesteps'
-
+    # John should be popular in timestep 3
+    assert 'John' in dataframes[2]['component'].values and dataframes[2].iloc[1].popular == [1, 1], 'John should have popular bounds [1,1] for t=2 timesteps'

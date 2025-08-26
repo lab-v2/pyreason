@@ -1,7 +1,7 @@
 import pyreason as pr
 
 
-def test_anyBurl_rule_1():
+def test_anyBurl_rule_1_fp():
     graph_path = './tests/knowledge_graph_test_subset.graphml'
     pr.reset()
     pr.reset_rules()
@@ -16,6 +16,7 @@ def test_anyBurl_rule_1():
     pr.settings.output_to_file = False
     pr.settings.store_interpretation_changes = True
     pr.settings.save_graph_attributes_to_trace = True
+    pr.settings.fp_version = True
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
     pr.add_rule(pr.Rule('isConnectedTo(A, Y) <-1  isConnectedTo(Y, B), Amsterdam_Airport_Schiphol(B), Vnukovo_International_Airport(A)', 'connected_rule_1', infer_edges=True))
@@ -35,7 +36,7 @@ def test_anyBurl_rule_1():
     assert ('Vnukovo_International_Airport', 'Riga_International_Airport') in dataframes[1]['component'].values.tolist() and dataframes[1]['isConnectedTo'].iloc[0] == [1, 1], '(Vnukovo_International_Airport, Riga_International_Airport) should have isConnectedTo bounds [1,1] for t=1 timesteps'
 
 
-def test_anyBurl_rule_2():
+def test_anyBurl_rule_2_fp():
     graph_path = './tests/knowledge_graph_test_subset.graphml'
     pr.reset()
     pr.reset_rules()
@@ -71,7 +72,7 @@ def test_anyBurl_rule_2():
     assert ('Riga_International_Airport', 'Vnukovo_International_Airport') in dataframes[1]['component'].values.tolist() and dataframes[1]['isConnectedTo'].iloc[0] == [1, 1], '(Riga_International_Airport, Vnukovo_International_Airport) should have isConnectedTo bounds [1,1] for t=1 timesteps'
 
 
-def test_anyBurl_rule_3():
+def test_anyBurl_rule_3_fp():
     graph_path = './tests/knowledge_graph_test_subset.graphml'
     pr.reset()
     pr.reset_rules()
@@ -107,7 +108,7 @@ def test_anyBurl_rule_3():
     assert ('Vnukovo_International_Airport', 'Yali') in dataframes[1]['component'].values.tolist() and dataframes[1]['isConnectedTo'].iloc[0] == [1, 1], '(Vnukovo_International_Airport, Yali) should have isConnectedTo bounds [1,1] for t=1 timesteps'
 
 
-def test_anyBurl_rule_4():
+def test_anyBurl_rule_4_fp():
     graph_path = './tests/knowledge_graph_test_subset.graphml'
     pr.reset()
     pr.reset_rules()

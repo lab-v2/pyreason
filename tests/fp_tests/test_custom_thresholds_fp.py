@@ -3,7 +3,7 @@ import pyreason as pr
 from pyreason import Threshold
 
 
-def test_custom_thresholds():
+def test_custom_thresholds_fp():
     # Reset PyReason
     pr.reset()
     pr.reset_rules()
@@ -14,6 +14,7 @@ def test_custom_thresholds():
     # Modify pyreason settings to make verbose
     pr.reset_settings()
     pr.settings.verbose = True  # Print info to screen
+    pr.settings.fp_version = True
 
     # Load all the files into pyreason
     pr.load_graphml(graph_path)

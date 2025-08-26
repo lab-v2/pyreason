@@ -6,6 +6,8 @@ def test_num_ga():
     graph_path = './tests/knowledge_graph_test_subset.graphml'
     pr.reset()
     pr.reset_rules()
+    pr.reset_settings()
+    
     # Modify pyreason settings to make verbose and to save the rule trace to a file
     pr.settings.verbose = True
     pr.settings.atom_trace = True

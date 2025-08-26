@@ -235,6 +235,7 @@ class Interpretation:
 	@numba.njit(cache=True, parallel=False)
 	def reason(interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, persistent, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules, max_facts_time, annotation_functions, convergence_mode, convergence_delta, verbose, again):
 		t = prev_reasoning_data[0]
+		max_t = t		# Keeps track of the max time in each fp operation
 		fp_cnt = prev_reasoning_data[1]
 		max_rules_time = 0
 		fp_loop = True
@@ -578,6 +579,7 @@ class Interpretation:
 
 				# Increment t, update number of ground atoms
 				t += 1
+				max_t = max(max_t, t)
 
 			# Now apply the rules and go back through all timesteps to see if there are more
 			# Apply the rules that need to be applied at this timestep
@@ -738,7 +740,7 @@ class Interpretation:
 			# t += 1
 			fp_cnt += 1
 
-		return fp_cnt, t
+		return fp_cnt, max_t
 
 	def add_edge(self, edge, l):
 		# This function is useful for pyreason gym, called externally
@@ -810,7 +812,7 @@ class Interpretation:
 
 		return ga_cnt
 
-	def query(self, query, return_bool=True) -> Union[bool, Tuple[float, float]]:
+	def query(self, query, t=0, return_bool=True) -> Union[bool, Tuple[float, float]]:
 		"""
 		This function is used to query the graph after reasoning
 		:param query: A PyReason query object
@@ -833,21 +835,21 @@ class Interpretation:
 
 		# Check if the predicate exists
 		if comp_type == 'node':
-			if pred not in self.interpretations_node[component].world:
+			if pred not in self.interpretations_node[t][component].world:
 				return False if return_bool else (0, 0)
 		else:
-			if pred not in self.interpretations_edge[component].world:
+			if pred not in self.interpretations_edge[t][component].world:
 				return False if return_bool else (0, 0)
 
 		# Check if the bounds are satisfied
 		if comp_type == 'node':
-			if self.interpretations_node[component].world[pred] in bnd:
-				return True if return_bool else (self.interpretations_node[component].world[pred].lower, self.interpretations_node[component].world[pred].upper)
+			if self.interpretations_node[t][component].world[pred] in bnd:
+				return True if return_bool else (self.interpretations_node[t][component].world[pred].lower, self.interpretations_node[t][component].world[pred].upper)
 			else:
 				return False if return_bool else (0, 0)
 		else:
-			if self.interpretations_edge[component].world[pred] in bnd:
-				return True if return_bool else (self.interpretations_edge[component].world[pred].lower, self.interpretations_edge[component].world[pred].upper)
+			if self.interpretations_edge[t][component].world[pred] in bnd:
+				return True if return_bool else (self.interpretations_edge[t][component].world[pred].lower, self.interpretations_edge[t][component].world[pred].upper)
 			else:
 				return False if return_bool else (0, 0)
 

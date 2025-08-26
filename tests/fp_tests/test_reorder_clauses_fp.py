@@ -2,7 +2,7 @@
 import pyreason as pr
 
 
-def test_reorder_clauses():
+def test_reorder_clauses_fp():
     # Reset PyReason
     pr.reset()
     pr.reset_rules()
@@ -14,6 +14,7 @@ def test_reorder_clauses():
     # Modify pyreason settings to make verbose
     pr.settings.verbose = True     # Print info to screen
     pr.settings.atom_trace = True  # Print atom trace
+    pr.settings.fp_version = True
 
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
@@ -49,4 +50,4 @@ def test_reorder_clauses():
     # Now look at the trace and make sure the order has gone back to the original rule
     # The second row, clause 1 should be the edge grounding ('Justin', 'Mary')
     rule_trace_node, _ = pr.get_rule_trace(interpretation)
-    assert rule_trace_node.iloc[2]['Clause-1'][0] == ('Justin', 'Mary')
+    assert rule_trace_node.iloc[3]['Clause-1'][0] == ('Justin', 'Mary')
