@@ -77,7 +77,7 @@ class _Settings:
         self.__parallel_computing = False
         self.__update_mode = 'intersection'
         self.__allow_ground_rules = False
-        self.__fp_version = True
+        self.__fp_version = False
 
     @property
     def verbose(self) -> bool:
