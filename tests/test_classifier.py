@@ -27,7 +27,7 @@ def test_classifier_integration():
     )
 
     # Create an instance of LogicIntegratedClassifier.
-    logic_classifier = pr.LogicIntegratedClassifier(model, class_names, model_name="classifier",
+    logic_classifier = pr.LogicIntegratedClassifier(model, class_names, identifier="classifier",
                                                     interface_options=interface_options)
 
     # Create a dummy input tensor with 10 features.
