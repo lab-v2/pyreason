@@ -651,7 +651,6 @@ def add_annotation_function(function: Callable) -> None:
     :type function: Callable
     :return: None
     """
-    global __annotation_functions
     # Make sure that the functions are jitted so that they can be passed around in other jitted functions
     # TODO: Remove if necessary
     # assert hasattr(function, 'nopython_signatures'), 'The function to be added has to be under a `numba.njit` decorator'
@@ -786,8 +785,6 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
 
 def _reason_again(timesteps, restart, convergence_threshold, convergence_bound_threshold):
     # Globals
-    global __program
-
     assert __program is not None, 'To run `reason_again` you need to have reasoned once before'
 
     # Extend facts
@@ -809,8 +806,6 @@ def save_rule_trace(interpretation, folder: str='./'):
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
     :param folder: the folder in which to save the result, defaults to './'
     """
-    global __timestamp, __clause_maps
-
     assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to save rule trace'
 
     output = Output(__timestamp, __clause_maps)
@@ -825,8 +820,6 @@ def get_rule_trace(interpretation) -> Tuple[pd.DataFrame, pd.DataFrame]:
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
     :returns two pandas dataframes (nodes, edges) representing the changes that occurred during reasoning
     """
-    global __timestamp, __clause_maps
-
     assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to save rule trace'
 
     output = Output(__timestamp, __clause_maps)
