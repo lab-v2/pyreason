@@ -4,11 +4,13 @@ import torch
 import torch.nn as nn
 
 
-def test_classifier_integration():
+def test_classifier_integration_fp():
     # Reset PyReason
     pr.reset()
     pr.reset_rules()
     pr.reset_settings()
+
+    pr.settings.fp_version = True
 
     # Create a dummy PyTorch model: input size 10, output 3 classes.
     model = nn.Linear(10, 3)

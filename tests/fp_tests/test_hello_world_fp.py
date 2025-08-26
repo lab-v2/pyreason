@@ -3,7 +3,7 @@ import pyreason as pr
 import faulthandler
 
 
-def test_hello_world():
+def test_hello_world_fp():
     # Reset PyReason
     pr.reset()
     pr.reset_rules()
@@ -14,6 +14,7 @@ def test_hello_world():
 
     # Modify pyreason settings to make verbose
     pr.settings.verbose = True     # Print info to screen
+    pr.settings.fp_version = True  # Use the FP version of the reasoner
     # pr.settings.optimize_rules = False  # Disable rule optimization for debugging
 
     # Load all the files into pyreason

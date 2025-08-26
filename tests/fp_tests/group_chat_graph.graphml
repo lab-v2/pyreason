@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d0" for="edge" attr.name="HaveAccess" attr.type="long" />
+  <graph edgedefault="directed">
+    <node id="TextMessage" />
+    <node id="Zach" />
+    <node id="Justin" />
+    <node id="Michelle" />
+    <node id="Amy" />
+    <edge source="Zach" target="TextMessage">
+      <data key="d0">1</data>
+    </edge>
+    <edge source="Justin" target="TextMessage">
+      <data key="d0">1</data>
+    </edge>
+    <edge source="Michelle" target="TextMessage">
+      <data key="d0">1</data>
+    </edge>
+    <edge source="Amy" target="TextMessage">
+      <data key="d0">1</data>
+    </edge>
+  </graph>
+</graphml>
