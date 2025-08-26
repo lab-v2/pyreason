@@ -711,7 +711,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
         if settings.verbose:
             warnings.warn('Graph not loaded. Use `load_graph` to load the graphml file. Using empty graph')
     if __rules is None:
-        raise Exception('There are no rules, use `add_rule` or `add_rules_from_file')
+        raise Exception('There are no rules, use `add_rule` or `add_rules_from_file`')
 
 
     if __node_facts is None:
