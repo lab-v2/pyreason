@@ -57,8 +57,14 @@ def test_custom_thresholds():
     for t in sorted(interpretation_dict.keys()):
         current_viewed_by_all = set()
         for component, labels in interpretation_dict[t].items():
-            if 'ViewedByAll' in labels and labels['ViewedByAll'] == [1, 1]:
-                current_viewed_by_all.add(component)
+            if 'ViewedByAll' in labels:
+                viewed_by_all_value = labels['ViewedByAll']
+                # Check if the value represents "true" (ViewedByAll)
+                # Handle both tuple (1.0, 1.0) and list [1, 1] formats
+                if (isinstance(viewed_by_all_value, (list, tuple)) and 
+                    len(viewed_by_all_value) == 2 and 
+                    viewed_by_all_value[0] == 1 and viewed_by_all_value[1] == 1):
+                    current_viewed_by_all.add(component)
         
         if t == min(interpretation_dict.keys()):
             # At the first timestep, all ViewedByAll nodes are newly added (initial facts)
@@ -67,8 +73,13 @@ def test_custom_thresholds():
             # For subsequent timesteps, compare with previous timestep
             previous_viewed_by_all = set()
             for component, labels in interpretation_dict[t-1].items():
-                if 'ViewedByAll' in labels and labels['ViewedByAll'] == [1, 1]:
-                    previous_viewed_by_all.add(component)
+                if 'ViewedByAll' in labels:
+                    viewed_by_all_value = labels['ViewedByAll']
+                    if (isinstance(viewed_by_all_value, (list, tuple)) and 
+                        len(viewed_by_all_value) == 2 and 
+                        viewed_by_all_value[0] == 1 and viewed_by_all_value[1] == 1):
+                        previous_viewed_by_all.add(component)
+            
             newly_added = len(current_viewed_by_all - previous_viewed_by_all)
         
         viewed_by_all_counts[t] = newly_added
@@ -82,6 +93,8 @@ def test_custom_thresholds():
 
     # TextMessage should be ViewedByAll in t=2
     if 2 in interpretation_dict:
-        textmessage_viewed = any(component == 'TextMessage' and labels.get('ViewedByAll') == [1, 1] 
+        textmessage_viewed = any(component == 'TextMessage' and 
+                                'ViewedByAll' in labels and 
+                                labels['ViewedByAll'][0] == 1 and labels['ViewedByAll'][1] == 1
                                 for component, labels in interpretation_dict[2].items())
         assert textmessage_viewed, "TextMessage should have ViewedByAll bounds [1,1] for t=2 timesteps"

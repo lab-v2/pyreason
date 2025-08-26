@@ -40,8 +40,14 @@ def test_anyBurl_rule_1():
     for t in sorted(interpretation_dict.keys()):
         current_edges = set()
         for component, labels in interpretation_dict[t].items():
-            if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1]:
-                current_edges.add(component)
+            if 'isConnectedTo' in labels:
+                is_connected_to_value = labels['isConnectedTo']
+                # Check if the value represents "true" (isConnectedTo)
+                # Handle both tuple (1.0, 1.0) and list [1, 1] formats
+                if (isinstance(is_connected_to_value, (list, tuple)) and 
+                    len(is_connected_to_value) == 2 and 
+                    is_connected_to_value[0] == 1 and is_connected_to_value[1] == 1):
+                    current_edges.add(component)
         
         if t == min(interpretation_dict.keys()):
             # At the first timestep, all edges are newly added (initial facts)
@@ -50,8 +56,13 @@ def test_anyBurl_rule_1():
             # For subsequent timesteps, compare with previous timestep
             previous_edges = set()
             for component, labels in interpretation_dict[t-1].items():
-                if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1]:
-                    previous_edges.add(component)
+                if 'isConnectedTo' in labels:
+                    is_connected_to_value = labels['isConnectedTo']
+                    if (isinstance(is_connected_to_value, (list, tuple)) and 
+                        len(is_connected_to_value) == 2 and 
+                        is_connected_to_value[0] == 1 and is_connected_to_value[1] == 1):
+                        previous_edges.add(component)
+            
             newly_added = len(current_edges - previous_edges)
         
         is_connected_to_counts[t] = newly_added
@@ -64,7 +75,8 @@ def test_anyBurl_rule_1():
     for t in interpretation_dict.keys():
         for component, labels in interpretation_dict[t].items():
             if (component == ('Vnukovo_International_Airport', 'Riga_International_Airport') and 
-                labels.get('isConnectedTo') == [1, 1]):
+                'isConnectedTo' in labels and 
+                labels['isConnectedTo'][0] == 1 and labels['isConnectedTo'][1] == 1):
                 edge_found = True
                 break
         if edge_found:
@@ -114,8 +126,14 @@ def test_anyBurl_rule_2():
     for t in sorted(interpretation_dict.keys()):
         current_edges = set()
         for component, labels in interpretation_dict[t].items():
-            if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1]:
-                current_edges.add(component)
+            if 'isConnectedTo' in labels:
+                is_connected_to_value = labels['isConnectedTo']
+                # Check if the value represents "true" (isConnectedTo)
+                # Handle both tuple (1.0, 1.0) and list [1, 1] formats
+                if (isinstance(is_connected_to_value, (list, tuple)) and 
+                    len(is_connected_to_value) == 2 and 
+                    is_connected_to_value[0] == 1 and is_connected_to_value[1] == 1):
+                    current_edges.add(component)
         
         if t == min(interpretation_dict.keys()):
             # At the first timestep, all edges are newly added (initial facts)
@@ -124,8 +142,13 @@ def test_anyBurl_rule_2():
             # For subsequent timesteps, compare with previous timestep
             previous_edges = set()
             for component, labels in interpretation_dict[t-1].items():
-                if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1]:
-                    previous_edges.add(component)
+                if 'isConnectedTo' in labels:
+                    is_connected_to_value = labels['isConnectedTo']
+                    if (isinstance(is_connected_to_value, (list, tuple)) and 
+                        len(is_connected_to_value) == 2 and 
+                        is_connected_to_value[0] == 1 and is_connected_to_value[1] == 1):
+                        previous_edges.add(component)
+            
             newly_added = len(current_edges - previous_edges)
         
         is_connected_to_counts[t] = newly_added
@@ -138,7 +161,8 @@ def test_anyBurl_rule_2():
     for t in interpretation_dict.keys():
         for component, labels in interpretation_dict[t].items():
             if (component == ('Riga_International_Airport', 'Vnukovo_International_Airport') and 
-                labels.get('isConnectedTo') == [1, 1]):
+                'isConnectedTo' in labels and 
+                labels['isConnectedTo'][0] == 1 and labels['isConnectedTo'][1] == 1):
                 edge_found = True
                 break
         if edge_found:
@@ -188,8 +212,14 @@ def test_anyBurl_rule_3():
     for t in sorted(interpretation_dict.keys()):
         current_edges = set()
         for component, labels in interpretation_dict[t].items():
-            if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1]:
-                current_edges.add(component)
+            if 'isConnectedTo' in labels:
+                is_connected_to_value = labels['isConnectedTo']
+                # Check if the value represents "true" (isConnectedTo)
+                # Handle both tuple (1.0, 1.0) and list [1, 1] formats
+                if (isinstance(is_connected_to_value, (list, tuple)) and 
+                    len(is_connected_to_value) == 2 and 
+                    is_connected_to_value[0] == 1 and is_connected_to_value[1] == 1):
+                    current_edges.add(component)
         
         if t == min(interpretation_dict.keys()):
             # At the first timestep, all edges are newly added (initial facts)
@@ -198,8 +228,13 @@ def test_anyBurl_rule_3():
             # For subsequent timesteps, compare with previous timestep
             previous_edges = set()
             for component, labels in interpretation_dict[t-1].items():
-                if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1]:
-                    previous_edges.add(component)
+                if 'isConnectedTo' in labels:
+                    is_connected_to_value = labels['isConnectedTo']
+                    if (isinstance(is_connected_to_value, (list, tuple)) and 
+                        len(is_connected_to_value) == 2 and 
+                        is_connected_to_value[0] == 1 and is_connected_to_value[1] == 1):
+                        previous_edges.add(component)
+            
             newly_added = len(current_edges - previous_edges)
         
         is_connected_to_counts[t] = newly_added
@@ -212,7 +247,8 @@ def test_anyBurl_rule_3():
     for t in interpretation_dict.keys():
         for component, labels in interpretation_dict[t].items():
             if (component == ('Vnukovo_International_Airport', 'Yali') and 
-                labels.get('isConnectedTo') == [1, 1]):
+                'isConnectedTo' in labels and 
+                labels['isConnectedTo'][0] == 1 and labels['isConnectedTo'][1] == 1):
                 edge_found = True
                 break
         if edge_found:
@@ -262,8 +298,14 @@ def test_anyBurl_rule_4():
     for t in sorted(interpretation_dict.keys()):
         current_edges = set()
         for component, labels in interpretation_dict[t].items():
-            if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1]:
-                current_edges.add(component)
+            if 'isConnectedTo' in labels:
+                is_connected_to_value = labels['isConnectedTo']
+                # Check if the value represents "true" (isConnectedTo)
+                # Handle both tuple (1.0, 1.0) and list [1, 1] formats
+                if (isinstance(is_connected_to_value, (list, tuple)) and 
+                    len(is_connected_to_value) == 2 and 
+                    is_connected_to_value[0] == 1 and is_connected_to_value[1] == 1):
+                    current_edges.add(component)
         
         if t == min(interpretation_dict.keys()):
             # At the first timestep, all edges are newly added (initial facts)
@@ -272,8 +314,13 @@ def test_anyBurl_rule_4():
             # For subsequent timesteps, compare with previous timestep
             previous_edges = set()
             for component, labels in interpretation_dict[t-1].items():
-                if 'isConnectedTo' in labels and labels['isConnectedTo'] == [1, 1]:
-                    previous_edges.add(component)
+                if 'isConnectedTo' in labels:
+                    is_connected_to_value = labels['isConnectedTo']
+                    if (isinstance(is_connected_to_value, (list, tuple)) and 
+                        len(is_connected_to_value) == 2 and 
+                        is_connected_to_value[0] == 1 and is_connected_to_value[1] == 1):
+                        previous_edges.add(component)
+            
             newly_added = len(current_edges - previous_edges)
         
         is_connected_to_counts[t] = newly_added
@@ -286,7 +333,8 @@ def test_anyBurl_rule_4():
     for t in interpretation_dict.keys():
         for component, labels in interpretation_dict[t].items():
             if (component == ('Yali', 'Vnukovo_International_Airport') and 
-                labels.get('isConnectedTo') == [1, 1]):
+                'isConnectedTo' in labels and 
+                labels['isConnectedTo'][0] == 1 and labels['isConnectedTo'][1] == 1):
                 edge_found = True
                 break
         if edge_found:

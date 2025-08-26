@@ -44,8 +44,14 @@ def test_annotation_function():
     for t in sorted(interpretation_dict.keys()):
         current_edges = set()
         for component, labels in interpretation_dict[t].items():
-            if 'union_probability' in labels and labels['union_probability'] == [1, 1]:
-                current_edges.add(component)
+            if 'union_probability' in labels:
+                union_probability_value = labels['union_probability']
+                # Check if the value represents "true" (union_probability)
+                # Handle both tuple (1.0, 1.0) and list [1, 1] formats
+                if (isinstance(union_probability_value, (list, tuple)) and 
+                    len(union_probability_value) == 2 and 
+                    union_probability_value[0] == 1 and union_probability_value[1] == 1):
+                    current_edges.add(component)
         
         if t == min(interpretation_dict.keys()):
             # At the first timestep, all edges are newly added (initial facts)
@@ -54,8 +60,13 @@ def test_annotation_function():
             # For subsequent timesteps, compare with previous timestep
             previous_edges = set()
             for component, labels in interpretation_dict[t-1].items():
-                if 'union_probability' in labels and labels['union_probability'] == [1, 1]:
-                    previous_edges.add(component)
+                if 'union_probability' in labels:
+                    union_probability_value = labels['union_probability']
+                    if (isinstance(union_probability_value, (list, tuple)) and 
+                        len(union_probability_value) == 2 and 
+                        union_probability_value[0] == 1 and union_probability_value[1] == 1):
+                        previous_edges.add(component)
+            
             newly_added = len(current_edges - previous_edges)
         
         union_probability_counts[t] = newly_added

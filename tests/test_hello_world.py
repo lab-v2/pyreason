@@ -43,8 +43,14 @@ def test_hello_world():
         if t in interpretation_dict:
             current_popular = set()
             for component, labels in interpretation_dict[t].items():
-                if 'popular' in labels and labels['popular'] == [1, 1]:
-                    current_popular.add(component)
+                if 'popular' in labels:
+                    popular_value = labels['popular']
+                    # Check if the value represents "true" (popular)
+                    # Handle both tuple (1.0, 1.0) and list [1, 1] formats
+                    if (isinstance(popular_value, (list, tuple)) and 
+                        len(popular_value) == 2 and 
+                        popular_value[0] == 1 and popular_value[1] == 1):
+                        current_popular.add(component)
             
             if t == 0:
                 # At timestep 0, all popular people are newly added (initial facts)
@@ -53,8 +59,13 @@ def test_hello_world():
                 # For subsequent timesteps, compare with previous timestep
                 previous_popular = set()
                 for component, labels in interpretation_dict[t-1].items():
-                    if 'popular' in labels and labels['popular'] == [1, 1]:
-                        previous_popular.add(component)
+                    if 'popular' in labels:
+                        popular_value = labels['popular']
+                        if (isinstance(popular_value, (list, tuple)) and 
+                            len(popular_value) == 2 and 
+                            popular_value[0] == 1 and popular_value[1] == 1):
+                            previous_popular.add(component)
+                
                 newly_added = len(current_popular - previous_popular)
             
             popular_counts.append(newly_added)
@@ -68,20 +79,26 @@ def test_hello_world():
     # Mary should be popular in all three timesteps
     for t in range(3):
         if t in interpretation_dict:
-            mary_popular = any(component == 'Mary' and labels.get('popular') == [1, 1] 
+            mary_popular = any(component == 'Mary' and 
+                              'popular' in labels and 
+                              labels['popular'][0] == 1 and labels['popular'][1] == 1
                               for component, labels in interpretation_dict[t].items())
             assert mary_popular, f'Mary should have popular bounds [1,1] for t={t} timesteps'
 
     # Justin should be popular in timesteps 1, 2
     for t in [1, 2]:
         if t in interpretation_dict:
-            justin_popular = any(component == 'Justin' and labels.get('popular') == [1, 1] 
+            justin_popular = any(component == 'Justin' and 
+                                'popular' in labels and 
+                                labels['popular'][0] == 1 and labels['popular'][1] == 1
                                 for component, labels in interpretation_dict[t].items())
             assert justin_popular, f'Justin should have popular bounds [1,1] for t={t} timesteps'
 
     # John should be popular in timestep 2
     if 2 in interpretation_dict:
-        john_popular = any(component == 'John' and labels.get('popular') == [1, 1] 
+        john_popular = any(component == 'John' and 
+                          'popular' in labels and 
+                          labels['popular'][0] == 1 and labels['popular'][1] == 1
                           for component, labels in interpretation_dict[2].items())
         assert john_popular, 'John should have popular bounds [1,1] for t=2 timesteps'
 
