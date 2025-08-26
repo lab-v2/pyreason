@@ -528,7 +528,7 @@ def load_graphml(path: str) -> None:
 
     :param path: Path for the GraphMl file
     """
-    global __graph, __graphml_parser, __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels, settings
+    global __graph, __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels
     
     # Parse graph
     __graph = __graphml_parser.parse_graph(path, settings.reverse_digraph)
@@ -550,7 +550,7 @@ def load_graph(graph: nx.DiGraph) -> None:
     :type graph: nx.DiGraph
     :return: None
     """
-    global __graph, __graphml_parser, __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels, settings
+    global __graph, __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels
     
     # Load graph
     __graph = __graphml_parser.load_graph(graph)
@@ -670,7 +670,7 @@ def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bou
     :param restart: Whether to restart the program time from 0 when reasoning again, defaults to True
     :return: The final interpretation after reasoning.
     """
-    global settings, __timestamp
+    global __timestamp
 
     # Timestamp for saving files
     __timestamp = time.strftime('%Y%m%d-%H%M%S')
@@ -698,8 +698,8 @@ def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bou
 
 def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queries):
     # Globals
-    global __graph, __rules, __clause_maps, __node_facts, __edge_facts, __ipl, __specific_node_labels, __specific_edge_labels, __graphml_parser
-    global settings, __timestamp, __program
+    global __graph, __rules, __clause_maps, __node_facts, __edge_facts, __ipl, __specific_node_labels, __specific_edge_labels
+    global __timestamp, __program
 
     # Assert variables are of correct type
 
@@ -712,7 +712,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
         if settings.verbose:
             warnings.warn('Graph not loaded. Use `load_graph` to load the graphml file. Using empty graph')
     if __rules is None:
-        raise Exception('There are no rules, use `add_rule` or `add_rules_from_file`')
+        raise Exception('There are no rules, use `add_rule` or `add_rules_from_file')
 
 
     if __node_facts is None:
@@ -786,8 +786,8 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
 
 def _reason_again(timesteps, restart, convergence_threshold, convergence_bound_threshold):
     # Globals
-    global __graph, __rules, __node_facts, __edge_facts, __ipl, __specific_node_labels, __specific_edge_labels, __graphml_parser
-    global settings, __timestamp, __program
+    global __node_facts, __edge_facts, __ipl, __specific_node_labels, __specific_edge_labels
+    global __timestamp, __program
 
     assert __program is not None, 'To run `reason_again` you need to have reasoned once before'
 
@@ -810,7 +810,7 @@ def save_rule_trace(interpretation, folder: str='./'):
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
     :param folder: the folder in which to save the result, defaults to './'
     """
-    global __timestamp, __clause_maps, settings
+    global __timestamp, __clause_maps
 
     assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to save rule trace'
 
@@ -826,7 +826,7 @@ def get_rule_trace(interpretation) -> Tuple[pd.DataFrame, pd.DataFrame]:
     :param interpretation: the output of `pyreason.reason()`, the final interpretation
     :returns two pandas dataframes (nodes, edges) representing the changes that occurred during reasoning
     """
-    global __timestamp, __clause_maps, settings
+    global __timestamp, __clause_maps
 
     assert settings.store_interpretation_changes, 'store interpretation changes setting is off, turn on to save rule trace'
 
