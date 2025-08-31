@@ -4,7 +4,7 @@ import math
 from unittest.mock import Mock, call
 
 # Single, consistent import style: import the module once
-import pyreason.scripts.interpretation.interpretation as interpretation
+import pyreason.scripts.interpretation.interpretation_fp as interpretation
 
 # Bind pure-Python callables (works even if Numba compiled elsewhere)
 _is_sat_edge = interpretation.is_satisfied_edge
@@ -844,18 +844,18 @@ class DummyWorld:
         self.world = {lab: "INIT" for lab in list(labels)}
 
 @pytest.mark.parametrize(
-    "label, pred_init, expect_pred, expect_ga, expect_world_keys, expect_new, expect_add_calls",
+    "label, pred_init, expect_pred, expect_world_keys, expect_new, expect_add_calls",
     [
         # 1) new edge, non-empty label, new predicate bucket
-        (FakeLabel("owns"), {}, [("A","B")], 1, {"owns"}, True, 2),
+        (FakeLabel("owns"), {}, [("A","B")], {"owns"}, True, 2),
         # 2) new edge, non-empty label, existing predicate bucket (append)
-        (FakeLabel("owns"), {FakeLabel("owns"): [("X","Y")]}, [("X","Y"), ("A","B")], 1, {"owns"}, True, 2),
+        (FakeLabel("owns"), {FakeLabel("owns"): [("X","Y")]}, [("X","Y"), ("A","B")], {"owns"}, True, 2),
         # 3) new edge, empty label (unlabeled)
-        (FakeLabel(""), {}, None, 0, set(), True, 2),
+        (FakeLabel(""), {}, None, set(), True, 2),
     ]
 )
 def test_add_edge_new_edge_variants(
-    monkeypatch, label, pred_init, expect_pred, expect_ga, expect_world_keys, expect_new, expect_add_calls
+    monkeypatch, label, pred_init, expect_pred, expect_world_keys, expect_new, expect_add_calls
 ):
     _shim_typed_list(monkeypatch)
     monkeypatch.setattr(interpretation.world, "World", DummyWorld)
@@ -865,12 +865,12 @@ def test_add_edge_new_edge_variants(
     nodes, edges = [], []
     interpretations_node, interpretations_edge = {}, {}
     predicate_map = dict(pred_init)  # copy
-    num_ga = [0]; t = 0
+    t = 0
 
     edge, new_edge = add_edge(
         "A", "B",
         neighbors, reverse_neighbors, nodes, edges,
-        label, interpretations_node, interpretations_edge, predicate_map, num_ga, t
+        label, interpretations_node, interpretations_edge, predicate_map, t
     )
 
     assert edge == ("A","B")
@@ -883,26 +883,25 @@ def test_add_edge_new_edge_variants(
     world_keys = {lbl.value for lbl in interpretations_edge[("A","B")].world.keys()}
     assert world_keys == expect_world_keys
 
-    # predicate_map & GA effects
+    # predicate_map effects
     if label.value == "":
         assert predicate_map == {}
     else:
         assert predicate_map[label] == expect_pred
-    assert num_ga[0] == expect_ga
 
 @pytest.mark.parametrize(
-    "initial_world_labels, pred_init, expect_pred, expect_ga, expect_new, label_value",
+    "initial_world_labels, pred_init, expect_pred, expect_new, label_value",
     [
         # 4) existing edge gains a new (missing) label -> create predicate bucket
-        ([], {}, [("A","B")], 1, True, "owns"),
+        ([], {}, [("A","B")], True, "owns"),
         # 5) existing edge gains a new label -> append to existing predicate bucket
-        ([], {FakeLabel("owns"): [("X","Y")]}, [("X","Y"), ("A","B")], 1, True, "owns"),
+        ([], {FakeLabel("owns"): [("X","Y")]}, [("X","Y"), ("A","B")], True, "owns"),
         # 6) existing edge called again with same label -> no-op
-        ([FakeLabel("owns")], {FakeLabel("owns"): [("A","B")]}, [("A","B")], 0, False, "owns"),
+        ([FakeLabel("owns")], {FakeLabel("owns"): [("A","B")]}, [("A","B")], False, "owns"),
     ]
 )
 def test_add_edge_existing_edge_variants(
-    monkeypatch, initial_world_labels, pred_init, expect_pred, expect_ga, expect_new, label_value
+    monkeypatch, initial_world_labels, pred_init, expect_pred, expect_new, label_value
 ):
     _shim_typed_list(monkeypatch)
     monkeypatch.setattr(interpretation.world, "World", DummyWorld)
@@ -918,13 +917,13 @@ def test_add_edge_existing_edge_variants(
     interpretations_node = {"A":"NODE","B":"NODE"}
     interpretations_edge = {("A","B"): DummyWorld(initial_world_labels)}
     predicate_map = dict(pred_init)
-    num_ga = [0]; t = 0
+    t = 0
     l = FakeLabel(label_value)
 
     edge, new_edge = add_edge(
         "A", "B",
         neighbors, reverse_neighbors, nodes, edges,
-        l, interpretations_node, interpretations_edge, predicate_map, num_ga, t
+        l, interpretations_node, interpretations_edge, predicate_map, t
     )
 
     assert edge == ("A","B")
@@ -936,7 +935,6 @@ def test_add_edge_existing_edge_variants(
     if expect_new:  # new label added → interval set
         assert interpretations_edge[("A","B")].world[l] == ("closed", 0, 1)
     assert predicate_map[l] == expect_pred
-    assert num_ga[0] == expect_ga
 
 # ---- _ground_rule tests (with _add_node mocked) ----
 
@@ -987,14 +985,12 @@ def test_ground_rule_node_early_fail_breaks_and_returns_empty(monkeypatch):
     neighbors, reverse_neighbors = {}, {}
     predicate_map_node, predicate_map_edge = {}, {}
     interpretations_node, interpretations_edge = {}, {}
-    num_ga = [0]
 
     apps_node, apps_edge = ground_rule(
         rule, interpretations_node, interpretations_edge,
         predicate_map_node, predicate_map_edge,
         nodes, edges, neighbors, reverse_neighbors,
-        atom_trace=False, allow_ground_rules=False,
-        num_ga=num_ga, t=0
+        atom_trace=False, allow_ground_rules=False, t=0
     )
 
     assert apps_node == []
@@ -1051,14 +1047,12 @@ def test_ground_rule_node_success_adds_head_node_and_collects_trace_ann(monkeypa
     neighbors, reverse_neighbors = {}, {}
     predicate_map_node, predicate_map_edge = {}, {}
     interpretations_edge = {}
-    num_ga = [0]
 
     apps_node, apps_edge = ground_rule(
         rule, interpretations_node, interpretations_edge,
         predicate_map_node, predicate_map_edge,
         nodes, edges, neighbors, reverse_neighbors,
-        atom_trace=True, allow_ground_rules=False,
-        num_ga=num_ga, t=0
+        atom_trace=True, allow_ground_rules=False, t=0
     )
 
     # One applicable rule instance for node head
@@ -1106,14 +1100,12 @@ def test_ground_rule_edge_infer_adds_nodes_and_unlabeled_edge(monkeypatch):
     neighbors, reverse_neighbors = {}, {}
     predicate_map_node, predicate_map_edge = {}, {}
     interpretations_node, interpretations_edge = {}, {}
-    num_ga = [0]
 
     apps_node, apps_edge = ground_rule(
         rule, interpretations_node, interpretations_edge,
         predicate_map_node, predicate_map_edge,
         nodes, edges, neighbors, reverse_neighbors,
-        atom_trace=False, allow_ground_rules=False,
-        num_ga=num_ga, t=0
+        atom_trace=False, allow_ground_rules=False, t=0
     )
 
     # One applicable edge instance
@@ -1170,7 +1162,6 @@ def test_ground_rule_edge_existing_edge_with_body_clause_trace_and_ann(monkeypat
     neighbors, reverse_neighbors = {"A": ["B"]}, {"B": ["A"]}
     predicate_map_node, predicate_map_edge = {}, {}
     interpretations_node = {}
-    num_ga = [0]
 
     # Add/edge shouldn’t be called in this path
     monkeypatch.setattr(interpretation, "_add_node", Mock())
@@ -1181,7 +1172,7 @@ def test_ground_rule_edge_existing_edge_with_body_clause_trace_and_ann(monkeypat
         predicate_map_node, predicate_map_edge,
         nodes, edges, neighbors, reverse_neighbors,
         atom_trace=True, allow_ground_rules=True,   # head vars in nodes? (they’re variables, but allow won’t force anything here)
-        num_ga=num_ga, t=0
+        t=0
     )
 
     # One applicable instance using existing edge
@@ -1272,14 +1263,12 @@ def test_ground_rule_node_edge_clause_trace_and_ann_three_cases(monkeypatch):
     nodes, edges = [], []
     neighbors, reverse_neighbors = {}, {}
     predicate_map_node, predicate_map_edge = {}, {}
-    num_ga = [0]
 
     apps_node, apps_edge = ground_rule(
         rule, interpretations_node, interpretations_edge,
         predicate_map_node, predicate_map_edge,
         nodes, edges, neighbors, reverse_neighbors,
-        atom_trace=True, allow_ground_rules=False,
-        num_ga=num_ga, t=0
+        atom_trace=True, allow_ground_rules=False, t=0
     )
 
     # Node-head: expect exactly one applicable rule instance
@@ -1394,14 +1383,12 @@ def test_ground_rule_edge_head_edge_clause_all_matching_cases(monkeypatch):
     nodes, edges = [], []
     neighbors, reverse_neighbors = {}, {}
     predicate_map_node, predicate_map_edge = {}, {}
-    num_ga = [0]
 
     apps_node, apps_edge = ground_rule(
         rule, interpretations_node, interpretations_edge,
         predicate_map_node, predicate_map_edge,
         nodes, edges, neighbors, reverse_neighbors,
-        atom_trace=True, allow_ground_rules=False,
-        num_ga=num_ga, t=0
+        atom_trace=True, allow_ground_rules=False, t=0
     )
 
     # Exactly one head pair (H1,H2) → one applicable edge
@@ -1484,14 +1471,12 @@ def test_ground_rule_node_clause_ground_atom_allow_ground_rules(monkeypatch):
     edges = []
     neighbors, reverse_neighbors = {}, {}
     predicate_map_node, predicate_map_edge = {}, {}
-    num_ga = [0]
 
     apps_node, apps_edge = ground_rule(
         rule, interpretations_node, interpretations_edge,
         predicate_map_node, predicate_map_edge,
         nodes, edges, neighbors, reverse_neighbors,
-        atom_trace=True, allow_ground_rules=True,
-        num_ga=num_ga, t=0,
+        atom_trace=True, allow_ground_rules=True, t=0,
     )
 
     assert apps_edge == []
@@ -1532,14 +1517,12 @@ def test_ground_rule_edge_clause_ground_atom_allow_ground_rules(monkeypatch):
     reverse_neighbors = {"B": ["A"]}
     predicate_map_node, predicate_map_edge = {}, {}
     interpretations_node, interpretations_edge = {}, {}
-    num_ga = [0]
 
     apps_node, apps_edge = ground_rule(
         rule, interpretations_node, interpretations_edge,
         predicate_map_node, predicate_map_edge,
         nodes, edges, neighbors, reverse_neighbors,
-        atom_trace=False, allow_ground_rules=True,
-        num_ga=num_ga, t=0,
+        atom_trace=False, allow_ground_rules=True, t=0,
     )
 
     assert len(apps_node) == 1 and apps_edge == []
@@ -1572,7 +1555,6 @@ def test_ground_rule_edge_head_vars_use_existing_nodes_when_allowed(monkeypatch)
     reverse_neighbors = {"B": ["A"]}
     predicate_map_node, predicate_map_edge = {}, {}
     interpretations_node, interpretations_edge = {}, {}
-    num_ga = [0]
 
     apps_node, apps_edge = ground_rule(
         rule,
@@ -1586,7 +1568,6 @@ def test_ground_rule_edge_head_vars_use_existing_nodes_when_allowed(monkeypatch)
         reverse_neighbors,
         atom_trace=False,
         allow_ground_rules=True,
-        num_ga=num_ga,
         t=0,
     )
 
@@ -1679,7 +1660,6 @@ def test_ground_rule_node_clause_filters_edge_groundings(monkeypatch):
     neighbors, reverse_neighbors = {}, {}
     predicate_map_node, predicate_map_edge = {}, {}
     interpretations_node, interpretations_edge = {}, {}
-    num_ga = [0]
 
     apps_node, apps_edge = ground_rule(
         rule,
@@ -1693,7 +1673,6 @@ def test_ground_rule_node_clause_filters_edge_groundings(monkeypatch):
         reverse_neighbors,
         atom_trace=False,
         allow_ground_rules=False,
-        num_ga=num_ga,
         t=0,
     )
 
@@ -1747,14 +1726,12 @@ def test_ground_rule_edge_with_node_clauses_tracing(monkeypatch):
     neighbors = {"a1": ["b1"]}
     reverse_neighbors = {"b1": ["a1"]}
     predicate_map_node, predicate_map_edge = {}, {}
-    num_ga = [0]
 
     apps_node, apps_edge = ground_rule(
         rule, interpretations_node, interpretations_edge,
         predicate_map_node, predicate_map_edge,
         nodes, edges, neighbors, reverse_neighbors,
-        atom_trace=True, allow_ground_rules=False,
-        num_ga=num_ga, t=0,
+        atom_trace=True, allow_ground_rules=False, t=0,
     )
 
     assert apps_node == []
@@ -1809,14 +1786,12 @@ def test_ground_rule_edge_infer_self_loop_prevents_output(monkeypatch):
     edges = []
     neighbors, reverse_neighbors = {}, {}
     predicate_map_node, predicate_map_edge = {}, {}
-    num_ga = [0]
 
     apps_node, apps_edge = ground_rule(
         rule, interpretations_node, interpretations_edge,
         predicate_map_node, predicate_map_edge,
         nodes, edges, neighbors, reverse_neighbors,
-        atom_trace=False, allow_ground_rules=False,
-        num_ga=num_ga, t=0,
+        atom_trace=False, allow_ground_rules=False, t=0,
     )
 
     assert apps_node == []
@@ -1874,7 +1849,6 @@ def test_ground_rule_node_recheck_failure_skips_body(monkeypatch):
     nodes, edges = [], []
     neighbors, reverse_neighbors = {}, {}
     predicate_map_node, predicate_map_edge = {}, {}
-    num_ga = [0]
 
     apps_node, apps_edge = ground_rule(
         rule,
@@ -1888,7 +1862,6 @@ def test_ground_rule_node_recheck_failure_skips_body(monkeypatch):
         reverse_neighbors,
         atom_trace=True,
         allow_ground_rules=False,
-        num_ga=num_ga,
         t=0,
     )
 
@@ -1951,7 +1924,6 @@ def test_ground_rule_edge_recheck_failure_skips_body(monkeypatch):
     nodes, edges = [], []
     neighbors, reverse_neighbors = {}, {}
     predicate_map_node, predicate_map_edge = {}, {}
-    num_ga = [0]
 
     apps_node, apps_edge = ground_rule(
         rule,
@@ -1965,7 +1937,6 @@ def test_ground_rule_edge_recheck_failure_skips_body(monkeypatch):
         reverse_neighbors,
         atom_trace=False,
         allow_ground_rules=False,
-        num_ga=num_ga,
         t=0,
     )
 
