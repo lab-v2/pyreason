@@ -5,6 +5,7 @@ from unittest.mock import Mock, call
 
 # Single, consistent import style: import the module once
 import pyreason.scripts.interpretation.interpretation_fp as interpretation
+import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 
 # Bind pure-Python callables (works even if Numba compiled elsewhere)
 _is_sat_edge = interpretation.is_satisfied_edge
@@ -102,6 +103,9 @@ str_to_int = getattr(_str_to_int, "py_func", _str_to_int)
 
 _annotate = interpretation.annotate
 annotate = getattr(_annotate, "py_func", _annotate)
+
+_reason = interpretation.Interpretation.reason
+reason = getattr(_reason, "py_func", _reason)
 
 
 class FakeWorld:
@@ -1924,6 +1928,210 @@ def test_ground_rule_node_recheck_failure_skips_body(monkeypatch):
     mock_check_all.assert_called_once()
     mock_add_node.assert_not_called()
     mock_add_edge.assert_not_called()
+
+
+# ---- reason function tests ----
+
+
+@pytest.fixture
+def reason_env(monkeypatch):
+    """Minimal environment to exercise Interpretation.reason."""
+
+    # Provide lightweight stand-ins for numba typed containers
+    class _ListShim:
+        def __call__(self, iterable=()):
+            return list(iterable)
+
+        def empty_list(self, *args, **kwargs):
+            return []
+
+    class _DictShim:
+        def empty(self, *args, **kwargs):
+            return {}
+
+    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    monkeypatch.setattr(interpretation.numba.typed, "Dict", _DictShim())
+    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+
+    # Simple world/interval representations
+    class SimpleWorld:
+        def __init__(self):
+            self.world = {}
+
+    class SimpleInterval:
+        def __init__(self, val=1.0, static=False):
+            self.val = val
+            self._static = static
+
+        def copy(self):
+            return SimpleInterval(self.val, self._static)
+
+        def is_static(self):
+            return self._static
+
+    node = "n1"
+    lbl = label.Label("L")
+    bnd = SimpleInterval()
+
+    env = {
+        "interpretations_node": {0: {node: SimpleWorld()}},
+        "interpretations_edge": {0: {}},
+        "predicate_map_node": {},
+        "predicate_map_edge": {},
+        "tmax": 0,
+        "prev_reasoning_data": [0, 0],
+        "rules": [],
+        "nodes": [node],
+        "edges": [],
+        "neighbors": {node: []},
+        "reverse_neighbors": {node: []},
+        "rules_to_be_applied_node": [],
+        "rules_to_be_applied_edge": [],
+        "edges_to_be_added_node_rule": [],
+        "edges_to_be_added_edge_rule": [],
+        "rules_to_be_applied_node_trace": [],
+        "rules_to_be_applied_edge_trace": [],
+        "facts_to_be_applied_node": [(0, node, lbl, bnd, False, False)],
+        "facts_to_be_applied_edge": [],
+        "facts_to_be_applied_node_trace": [],
+        "facts_to_be_applied_edge_trace": [],
+        "ipl": [],
+        "rule_trace_node": [],
+        "rule_trace_edge": [],
+        "rule_trace_node_atoms": [],
+        "rule_trace_edge_atoms": [],
+        "reverse_graph": {},
+        "atom_trace": False,
+        "save_graph_attributes_to_rule_trace": False,
+        "persistent": False,
+        "inconsistency_check": False,
+        "store_interpretation_changes": False,
+        "update_mode": "",
+        "allow_ground_rules": True,
+        "max_facts_time": 0,
+        "annotation_functions": {},
+        "convergence_mode": "perfect_convergence",
+        "convergence_delta": 0,
+        "verbose": False,
+        "again": False,
+    }
+
+    def run(**overrides):
+        params = env.copy()
+        params.update(overrides)
+        return reason(
+            params["interpretations_node"],
+            params["interpretations_edge"],
+            params["predicate_map_node"],
+            params["predicate_map_edge"],
+            params["tmax"],
+            params["prev_reasoning_data"],
+            params["rules"],
+            params["nodes"],
+            params["edges"],
+            params["neighbors"],
+            params["reverse_neighbors"],
+            params["rules_to_be_applied_node"],
+            params["rules_to_be_applied_edge"],
+            params["edges_to_be_added_node_rule"],
+            params["edges_to_be_added_edge_rule"],
+            params["rules_to_be_applied_node_trace"],
+            params["rules_to_be_applied_edge_trace"],
+            params["facts_to_be_applied_node"],
+            params["facts_to_be_applied_edge"],
+            params["facts_to_be_applied_node_trace"],
+            params["facts_to_be_applied_edge_trace"],
+            params["ipl"],
+            params["rule_trace_node"],
+            params["rule_trace_edge"],
+            params["rule_trace_node_atoms"],
+            params["rule_trace_edge_atoms"],
+            params["reverse_graph"],
+            params["atom_trace"],
+            params["save_graph_attributes_to_rule_trace"],
+            params["persistent"],
+            params["inconsistency_check"],
+            params["store_interpretation_changes"],
+            params["update_mode"],
+            params["allow_ground_rules"],
+            params["max_facts_time"],
+            params["annotation_functions"],
+            params["convergence_mode"],
+            params["convergence_delta"],
+            params["verbose"],
+            params["again"],
+        )
+
+    env["run"] = run
+    env["node"] = node
+    env["label"] = lbl
+    env["bnd"] = bnd
+    return env
+
+
+def test_reason_applies_node_fact(monkeypatch, reason_env):
+    monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: True)
+
+    def _updater(interp, predicate_map, comp, lb, *a, **k):
+        l, b = lb
+        interp[comp].world[l] = b
+        return True, 1
+
+    mock_update = Mock(side_effect=_updater)
+    monkeypatch.setattr(interpretation, "_update_node", mock_update)
+
+    fp, max_t = reason_env["run"]()
+
+    assert fp == 1 and max_t == 1
+    mock_update.assert_called_once()
+    assert mock_update.call_args.kwargs.get("override", False) is False
+    assert reason_env["interpretations_node"][0][reason_env["node"]].world[reason_env["label"]] is reason_env["bnd"]
+
+
+def test_reason_resolves_inconsistency(monkeypatch, reason_env):
+    monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: False)
+    mock_resolve = Mock()
+    monkeypatch.setattr(interpretation, "resolve_inconsistency_node", mock_resolve)
+    monkeypatch.setattr(interpretation, "_update_node", Mock(return_value=(True, 1)))
+
+    reason_env["run"](inconsistency_check=True)
+
+    mock_resolve.assert_called_once()
+    interpretation._update_node.assert_not_called()
+
+
+def test_reason_overrides_without_inconsistency(monkeypatch, reason_env):
+    monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: False)
+    mock_update = Mock(return_value=(True, 0))
+    monkeypatch.setattr(interpretation, "_update_node", mock_update)
+
+    reason_env["run"](inconsistency_check=False)
+
+    assert mock_update.call_args.kwargs.get("override") is True
+
+
+@pytest.mark.parametrize(
+    "mode,delta,change,expected_fp",
+    [
+        ("delta_interpretation", 1, 1, 0),
+        ("delta_interpretation", 0, 1, 1),
+        ("delta_bound", 0.5, 0.5, 0),
+        ("delta_bound", 0, 0.5, 1),
+    ],
+)
+def test_reason_convergence_modes(monkeypatch, reason_env, mode, delta, change, expected_fp):
+    monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: True)
+
+    def _updater(interp, predicate_map, comp, lb, *a, **k):
+        l, b = lb
+        interp[comp].world[l] = b
+        return True, change
+
+    monkeypatch.setattr(interpretation, "_update_node", _updater)
+
+    fp, max_t = reason_env["run"](convergence_mode=mode, convergence_delta=delta)
+
+    assert fp == expected_fp and max_t == 1
 
 
 # ---- check_consistent_node / check_consistent_edge tests ----
