@@ -2,17 +2,18 @@
 import pyreason as pr
 
 
-def test_hello_world_parallel():
+def test_hello_world_parallel_fp():
     # Reset PyReason
     pr.reset()
     pr.reset_rules()
 
     # Modify the paths based on where you've stored the files we made above
-    graph_path = './tests/functional/friends_graph.graphml'
+    graph_path = './tests/friends_graph.graphml'
 
     # Modify pyreason settings to make verbose
     pr.reset_settings()
     pr.settings.verbose = True     # Print info to screen
+    pr.settings.fp_version = True
 
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
