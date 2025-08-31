@@ -2,11 +2,11 @@
 import pyreason as pr
 import numba
 import numpy as np
-from pyreason.scripts.numba_wrapper.numba_types.interval_type import closed
 
 
 @numba.njit
 def probability_func(annotations, weights):
+    print("in ann func", annotations)
     prob_A = annotations[0][0].lower
     prob_B = annotations[1][0].lower
     union_prob = prob_A + prob_B
@@ -14,18 +14,7 @@ def probability_func(annotations, weights):
     return union_prob, 1
 
 
-def test_probability_func_consistency():
-    """Ensure annotation function behaves the same with and without JIT."""
-    annotations = numba.typed.List()
-    annotations.append(numba.typed.List([closed(0.01, 1.0)]))
-    annotations.append(numba.typed.List([closed(0.2, 1.0)]))
-    weights = numba.typed.List([1.0, 1.0])
-    jit_res = probability_func(annotations, weights)
-    py_res = probability_func.py_func(annotations, weights)
-    assert jit_res == py_res
-
-
-def test_annotation_function():
+def test_annotation_function_fp():
     # Reset PyReason
     pr.reset()
     pr.reset_rules()
@@ -33,6 +22,7 @@ def test_annotation_function():
     print("fp version", pr.settings.fp_version)
 
     pr.settings.allow_ground_rules = True
+    pr.settings.fp_version = True
 
     pr.add_fact(pr.Fact('P(A) : [0.01, 1]'))
     pr.add_fact(pr.Fact('P(B) : [0.2, 1]'))

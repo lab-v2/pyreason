@@ -2,21 +2,23 @@
 import pyreason as pr
 
 
-def test_hello_world_parallel():
+def test_reorder_clauses_fp():
     # Reset PyReason
     pr.reset()
     pr.reset_rules()
+    pr.reset_settings()
 
     # Modify the paths based on where you've stored the files we made above
-    graph_path = './tests/functional/friends_graph.graphml'
+    graph_path = './tests/friends_graph.graphml'
 
     # Modify pyreason settings to make verbose
-    pr.reset_settings()
     pr.settings.verbose = True     # Print info to screen
+    pr.settings.atom_trace = True  # Print atom trace
+    pr.settings.fp_version = True
 
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
-    pr.add_rule(pr.Rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule'))
+    pr.add_rule(pr.Rule('popular(x) <-1 Friends(x,y), popular(y), owns(y,z), owns(x,z)', 'popular_rule'))
     pr.add_fact(pr.Fact('popular(Mary)', 'popular_fact', 0, 2))
 
     # Run the program for two timesteps to see the diffusion take place
@@ -44,3 +46,8 @@ def test_hello_world_parallel():
 
     # John should be popular in timestep 3
     assert 'John' in dataframes[2]['component'].values and dataframes[2].iloc[1].popular == [1, 1], 'John should have popular bounds [1,1] for t=2 timesteps'
+
+    # Now look at the trace and make sure the order has gone back to the original rule
+    # The second row, clause 1 should be the edge grounding ('Justin', 'Mary')
+    rule_trace_node, _ = pr.get_rule_trace(interpretation)
+    assert rule_trace_node.iloc[3]['Clause-1'][0] == ('Justin', 'Mary')
