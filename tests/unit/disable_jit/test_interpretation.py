@@ -2301,6 +2301,90 @@ def test_reason_copies_previous_timestep(monkeypatch, persistent):
     assert set(edge_world.keys()) == expected
 
 
+def test_reason_adds_missing_node(monkeypatch, reason_env):
+    new_node = "n2"
+
+    def stub_add_node(node, neighbors, reverse_neighbors, nodes, interp):
+        nodes.append(node)
+        neighbors[node] = []
+        reverse_neighbors[node] = []
+        interp[node] = reason_env["interpretations_node"][0][reason_env["node"]].__class__()
+
+    monkeypatch.setattr(interpretation, "_add_node", stub_add_node)
+    monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: True)
+    monkeypatch.setattr(interpretation, "_update_node", lambda *a, **k: (False, 0))
+
+    nodes = [reason_env["node"]]
+    neighbors = {reason_env["node"]: []}
+    reverse = {reason_env["node"]: []}
+    interp = {0: {reason_env["node"]: reason_env["interpretations_node"][0][reason_env["node"]]}}
+    facts = [(0, new_node, reason_env["label"], reason_env["bnd"], False, False)]
+
+    reason_env["run"](
+        nodes=nodes,
+        neighbors=neighbors,
+        reverse_neighbors=reverse,
+        interpretations_node=interp,
+        facts_to_be_applied_node=facts,
+    )
+
+    assert new_node in nodes and new_node in interp[0] and neighbors[new_node] == []
+
+
+def test_reason_logs_static_fact(monkeypatch, reason_env):
+    node = reason_env["node"]
+    label_ = reason_env["label"]
+    static_bnd = reason_env["bnd"].__class__(1.0, True)
+    reason_env["interpretations_node"][0][node].world[label_] = static_bnd
+    new_bnd = reason_env["bnd"].__class__(0.5, False)
+    facts = [(0, node, label_, new_bnd, False, False)]
+    rule_trace = []
+
+    monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: True)
+
+    reason_env["run"](
+        facts_to_be_applied_node=facts,
+        store_interpretation_changes=True,
+        rule_trace_node=rule_trace,
+        prev_reasoning_data=[0, 1],
+    )
+
+    assert rule_trace == [(0, 1, node, label_, new_bnd)]
+    assert reason_env["interpretations_node"][0][node].world[label_] is static_bnd
+
+
+def test_reason_delta_bound_inconsistent(monkeypatch, reason_env):
+    monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: False)
+
+    def _updater(interp, predicate_map, comp, lb, *a, **k):
+        l, b = lb
+        interp[comp].world[l] = b
+        return True, 0.5
+
+    monkeypatch.setattr(interpretation, "_update_node", _updater)
+
+    fp, _ = reason_env["run"](
+        convergence_mode="delta_bound",
+        convergence_delta=0,
+    )
+
+    assert fp == 1
+
+
+def test_reason_defers_future_fact_and_traces(reason_env):
+    future_fact = [(1, reason_env["node"], reason_env["label"], reason_env["bnd"], False, False)]
+    future_trace = [["t"]]
+
+    reason_env["run"](
+        facts_to_be_applied_node=future_fact,
+        facts_to_be_applied_node_trace=future_trace,
+        atom_trace=True,
+    )
+
+    assert future_fact == [(1, reason_env["node"], reason_env["label"], reason_env["bnd"], False, False)]
+    assert future_trace == [["t"]]
+
+
 # ---- check_consistent_node / check_consistent_edge tests ----
 
 class _Interval:
