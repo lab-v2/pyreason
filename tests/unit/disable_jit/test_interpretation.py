@@ -2386,6 +2386,39 @@ def test_reason_static_fact_traces_and_requeues(reason_env):
     assert reason_env["interpretations_node"][0][node].world[lbl] is static_bnd
 
 
+def test_reason_static_fact_traces_complement_second(reason_env):
+    node = reason_env["node"]
+    lbl = reason_env["label"]
+    other = label.Label("other")
+    static_bnd = reason_env["bnd"].__class__(1.0, True)
+    other_bnd = reason_env["bnd"].__class__(0.3, False)
+    reason_env["interpretations_node"][0][node].world[lbl] = static_bnd
+    reason_env["interpretations_node"][0][node].world[other] = other_bnd
+    new_bnd = reason_env["bnd"].__class__(0.4, False)
+    facts = [(0, node, lbl, new_bnd, True, False)]
+    trace = [["z"]]
+    rule_trace = []
+    rule_trace_atoms = []
+    ipl = [(other, lbl)]
+
+    reason_env["run"](
+        facts_to_be_applied_node=facts,
+        facts_to_be_applied_node_trace=trace,
+        rule_trace_node=rule_trace,
+        rule_trace_node_atoms=rule_trace_atoms,
+        atom_trace=True,
+        store_interpretation_changes=True,
+        ipl=ipl,
+        prev_reasoning_data=[0, 1],
+    )
+
+    assert facts == [(1, node, lbl, new_bnd, True, False)]
+    assert trace == [["z"]]
+    assert rule_trace == [(0, 1, node, lbl, new_bnd), (0, 1, node, other, other_bnd)]
+    assert len(rule_trace_atoms) == 2
+    assert reason_env["interpretations_node"][0][node].world[lbl] is static_bnd
+
+
 def test_reason_delta_bound_inconsistent(monkeypatch, reason_env):
     monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: False)
 
@@ -2455,6 +2488,169 @@ def test_reason_applies_edge_fact(monkeypatch, reason_env):
 
     assert called.get("ok")
     assert edge_world.world[lbl] is bnd
+
+
+def test_reason_adds_missing_edge(monkeypatch, reason_env):
+    node = reason_env["node"]
+    edge = (node, node)
+    lbl = reason_env["label"]
+    bnd = reason_env["bnd"]
+    edges = []
+    neighbors = {node: []}
+    reverse = {node: []}
+    interpretations_edge = {0: {}}
+    called = {}
+
+    def fake_add_edge(s, t, nbrs, rev, nodes, edges_list, l, interp_node, interp_edge, pred_map, t_val):
+        interp_edge[(s, t)] = reason_env["interpretations_node"][0][node].__class__()
+        edges_list.append((s, t))
+        called["ok"] = True
+        return (s, t), True
+
+    monkeypatch.setattr(interpretation, "_add_edge", fake_add_edge)
+    monkeypatch.setattr(interpretation, "check_consistent_edge", lambda *a, **k: True)
+
+    def updater(interp, predicate_map, comp, lb, *a, **k):
+        l, bound = lb
+        interp[comp].world[l] = bound
+        return True, 0
+
+    monkeypatch.setattr(interpretation, "_update_edge", updater)
+
+    reason_env["run"](
+        edges=edges,
+        neighbors=neighbors,
+        reverse_neighbors=reverse,
+        interpretations_edge=interpretations_edge,
+        facts_to_be_applied_edge=[(0, edge, lbl, bnd, False, False)],
+        facts_to_be_applied_node=[],
+        prev_reasoning_data=[0, 1],
+    )
+
+    assert called.get("ok")
+    assert edge in edges
+    assert edge in interpretations_edge[0]
+
+
+def test_reason_adds_edge_to_interpretation(monkeypatch, reason_env):
+    node = reason_env["node"]
+    edge = (node, node)
+    lbl = reason_env["label"]
+    bnd = reason_env["bnd"]
+    edges = [edge]
+    neighbors = {node: []}
+    reverse = {node: []}
+    interpretations_edge = {0: {}}
+    called = {}
+
+    def fake_add_edge_to_interp(edge_comp, interp_edge):
+        interp_edge[edge_comp] = reason_env["interpretations_node"][0][node].__class__()
+        called["ok"] = True
+
+    monkeypatch.setattr(interpretation, "_add_edge_to_interpretation", fake_add_edge_to_interp)
+    monkeypatch.setattr(interpretation, "check_consistent_edge", lambda *a, **k: True)
+
+    def updater(interp, predicate_map, comp, lb, *a, **k):
+        l, bound = lb
+        interp[comp].world[l] = bound
+        return True, 0
+
+    monkeypatch.setattr(interpretation, "_update_edge", updater)
+
+    reason_env["run"](
+        edges=edges,
+        neighbors=neighbors,
+        reverse_neighbors=reverse,
+        interpretations_edge=interpretations_edge,
+        facts_to_be_applied_edge=[(0, edge, lbl, bnd, False, False)],
+        facts_to_be_applied_node=[],
+        prev_reasoning_data=[0, 1],
+    )
+
+    assert called.get("ok")
+    assert edge in interpretations_edge[0]
+
+
+@pytest.mark.parametrize(
+    "save_attrs, graph_attr, store_changes, expect_trace",
+    [
+        (True, True, True, True),
+        (False, True, True, False),
+        (True, True, False, False),
+        (False, False, True, True),
+    ],
+)
+def test_reason_static_edge_rule_trace_branches(
+    reason_env, save_attrs, graph_attr, store_changes, expect_trace
+):
+    node = reason_env["node"]
+    edge = (node, node)
+    lbl = reason_env["label"]
+    other = label.Label("other")
+    static_bnd = reason_env["bnd"].__class__(1.0, True)
+    other_bnd = reason_env["bnd"].__class__(0.5, False)
+    world = reason_env["interpretations_node"][0][node].__class__()
+    world.world = {lbl: static_bnd, other: other_bnd}
+    interpretations_edge = {0: {edge: world}}
+    edges = [edge]
+    facts = [(0, edge, lbl, reason_env["bnd"], True, graph_attr)]
+    rule_trace = []
+
+    reason_env["run"](
+        edges=edges,
+        neighbors={node: []},
+        reverse_neighbors={node: []},
+        interpretations_edge=interpretations_edge,
+        facts_to_be_applied_edge=facts,
+        facts_to_be_applied_node=[],
+        rule_trace_edge=rule_trace,
+        store_interpretation_changes=store_changes,
+        save_graph_attributes_to_rule_trace=save_attrs,
+        ipl=[(lbl, other)],
+        prev_reasoning_data=[0, 1],
+    )
+
+    if expect_trace:
+        assert rule_trace == [
+            (0, 1, edge, lbl, static_bnd),
+            (0, 1, edge, other, other_bnd),
+        ]
+    else:
+        assert rule_trace == []
+    assert facts == [(1, edge, lbl, reason_env["bnd"], True, graph_attr)]
+
+
+def test_reason_edge_delta_bound(monkeypatch, reason_env):
+    node = reason_env["node"]
+    edge = (node, node)
+    lbl = reason_env["label"]
+    bnd = reason_env["bnd"]
+    world = reason_env["interpretations_node"][0][node].__class__()
+    interpretations_edge = {0: {edge: world}}
+    edges = [edge]
+
+    monkeypatch.setattr(interpretation, "check_consistent_edge", lambda *a, **k: True)
+
+    def _update_edge_stub(interp, predicate_map, comp, lb, *a, **k):
+        l, bound = lb
+        interp[comp].world[l] = bound
+        return True, 0.5
+
+    monkeypatch.setattr(interpretation, "_update_edge", _update_edge_stub)
+
+    fp, _ = reason_env["run"](
+        edges=edges,
+        neighbors={node: []},
+        reverse_neighbors={node: []},
+        interpretations_edge=interpretations_edge,
+        facts_to_be_applied_edge=[(0, edge, lbl, bnd, False, False)],
+        facts_to_be_applied_node=[],
+        convergence_mode="delta_bound",
+        convergence_delta=0,
+        prev_reasoning_data=[0, 1],
+    )
+
+    assert fp == 2
 
 
 # ---- check_consistent_node / check_consistent_edge tests ----
