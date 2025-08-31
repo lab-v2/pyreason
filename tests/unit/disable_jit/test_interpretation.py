@@ -2451,6 +2451,33 @@ def test_reason_defers_future_fact_and_traces(reason_env):
     assert future_trace == [["t"]]
 
 
+def test_reason_defers_future_edge_fact_and_traces(reason_env):
+    node = reason_env["node"]
+    edge = (node, node)
+    lbl = reason_env["label"]
+    bnd = reason_env["bnd"]
+    edge_world = reason_env["interpretations_node"][0][node].__class__()
+    interpretations_edge = {0: {edge: edge_world}}
+    edges = [edge]
+    future_fact = [(1, edge, lbl, bnd, False, False)]
+    future_trace = ["edge"]
+
+    reason_env["run"](
+        edges=edges,
+        neighbors={node: []},
+        reverse_neighbors={node: []},
+        interpretations_edge=interpretations_edge,
+        facts_to_be_applied_edge=future_fact,
+        facts_to_be_applied_edge_trace=future_trace,
+        facts_to_be_applied_node=[],
+        atom_trace=True,
+        prev_reasoning_data=[0, 1],
+    )
+
+    assert future_fact == [(1, edge, lbl, bnd, False, False)]
+    assert future_trace == ["edge"]
+
+
 def test_reason_applies_edge_fact(monkeypatch, reason_env):
     node = reason_env["node"]
     edge = (node, node)
@@ -2620,6 +2647,58 @@ def test_reason_static_edge_rule_trace_branches(
     assert facts == [(1, edge, lbl, reason_env["bnd"], True, graph_attr)]
 
 
+def test_reason_static_edge_atom_trace_complements(monkeypatch, reason_env):
+    node = reason_env["node"]
+    edge = (node, node)
+    lbl = reason_env["label"]
+    other1 = label.Label("o1")
+    other2 = label.Label("o2")
+    static_bnd = reason_env["bnd"].__class__(1.0, True)
+    o1_bnd = reason_env["bnd"].__class__(0.5, False)
+    o2_bnd = reason_env["bnd"].__class__(0.6, False)
+    world = reason_env["interpretations_node"][0][node].__class__()
+    world.world = {lbl: static_bnd, other1: o1_bnd, other2: o2_bnd}
+    interpretations_edge = {0: {edge: world}}
+    edges = [edge]
+    facts = [(0, edge, lbl, reason_env["bnd"], True, False)]
+    facts_trace = ["t"]
+    rule_trace = []
+    rule_trace_atoms = []
+    mock_update = Mock()
+    monkeypatch.setattr(interpretation, "_update_rule_trace", mock_update)
+
+    reason_env["run"](
+        edges=edges,
+        neighbors={node: []},
+        reverse_neighbors={node: []},
+        interpretations_edge=interpretations_edge,
+        facts_to_be_applied_edge=facts,
+        facts_to_be_applied_edge_trace=facts_trace,
+        facts_to_be_applied_node=[],
+        rule_trace_edge=rule_trace,
+        rule_trace_edge_atoms=rule_trace_atoms,
+        store_interpretation_changes=True,
+        atom_trace=True,
+        ipl=[(lbl, other1), (other2, lbl)],
+        prev_reasoning_data=[0, 1],
+    )
+
+    assert rule_trace == [
+        (0, 1, edge, lbl, static_bnd),
+        (0, 1, edge, other1, o1_bnd),
+        (0, 1, edge, other2, o2_bnd),
+    ]
+    assert facts == [(1, edge, lbl, reason_env["bnd"], True, False)]
+    assert facts_trace == ["t"]
+    assert mock_update.call_count == 3
+    calls = [
+        call(rule_trace_atoms, [], [], reason_env["bnd"], "t"),
+        call(rule_trace_atoms, [], [], o1_bnd, "t"),
+        call(rule_trace_atoms, [], [], o2_bnd, "t"),
+    ]
+    mock_update.assert_has_calls(calls)
+
+
 def test_reason_edge_delta_bound(monkeypatch, reason_env):
     node = reason_env["node"]
     edge = (node, node)
@@ -2651,6 +2730,42 @@ def test_reason_edge_delta_bound(monkeypatch, reason_env):
     )
 
     assert fp == 2
+
+
+@pytest.mark.parametrize("inconsistency_check", [True, False])
+def test_reason_edge_inconsistency_branches(monkeypatch, reason_env, inconsistency_check):
+    node = reason_env["node"]
+    edge = (node, node)
+    lbl = reason_env["label"]
+    bnd = reason_env["bnd"]
+    world = reason_env["interpretations_node"][0][node].__class__()
+    interpretations_edge = {0: {edge: world}}
+    edges = [edge]
+
+    monkeypatch.setattr(interpretation, "check_consistent_edge", lambda *a, **k: False)
+    mock_resolve = Mock()
+    mock_update = Mock(return_value=(True, 0))
+    monkeypatch.setattr(interpretation, "resolve_inconsistency_edge", mock_resolve)
+    monkeypatch.setattr(interpretation, "_update_edge", mock_update)
+
+    reason_env["run"](
+        edges=edges,
+        neighbors={node: []},
+        reverse_neighbors={node: []},
+        interpretations_edge=interpretations_edge,
+        facts_to_be_applied_edge=[(0, edge, lbl, bnd, False, False)],
+        facts_to_be_applied_node=[],
+        inconsistency_check=inconsistency_check,
+        prev_reasoning_data=[0, 1],
+    )
+
+    if inconsistency_check:
+        assert mock_resolve.called
+        assert not mock_update.called
+    else:
+        assert mock_update.called
+        assert mock_update.call_args[1]["override"] is True
+        assert not mock_resolve.called
 
 
 # ---- check_consistent_node / check_consistent_edge tests ----
