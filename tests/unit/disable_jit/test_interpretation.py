@@ -2134,6 +2134,173 @@ def test_reason_convergence_modes(monkeypatch, reason_env, mode, delta, change, 
     assert fp == expected_fp and max_t == 1
 
 
+def make_copy_env(monkeypatch, persistent):
+    """Build a minimal environment starting from t=1 to test persistence copying."""
+
+    class _ListShim:
+        def __call__(self, iterable=()):
+            return list(iterable)
+
+        def empty_list(self, *a, **k):
+            return []
+
+    class _DictShim:
+        def empty(self, *a, **k):
+            return {}
+
+    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    monkeypatch.setattr(interpretation.numba.typed, "Dict", _DictShim())
+    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+
+    class SimpleWorld:
+        def __init__(self, *a, **k):
+            self.world = {}
+
+    monkeypatch.setattr(interpretation.world, "World", SimpleWorld)
+
+    class SimpleInterval:
+        def __init__(self, static=False):
+            self._static = static
+
+        def copy(self):
+            return SimpleInterval(self._static)
+
+        def is_static(self):
+            return self._static
+
+    n1, n2 = "n1", "n2"
+    edge = (n1, n2)
+    dyn_lbl = label.Label("dyn")
+    stat_lbl = label.Label("stat")
+
+    node_w0 = SimpleWorld()
+    node_w0.world[dyn_lbl] = SimpleInterval()
+    node_w0.world[stat_lbl] = SimpleInterval(static=True)
+
+    edge_w0 = SimpleWorld()
+    edge_w0.world[dyn_lbl] = SimpleInterval()
+    edge_w0.world[stat_lbl] = SimpleInterval(static=True)
+
+    env = {
+        "interpretations_node": {0: {n1: node_w0}},
+        "interpretations_edge": {0: {edge: edge_w0}},
+        "predicate_map_node": {},
+        "predicate_map_edge": {},
+        "tmax": 1,
+        "prev_reasoning_data": [1, 0],
+        "rules": [],
+        "nodes": [n1, n2],
+        "edges": [edge],
+        "neighbors": {n1: [n2], n2: []},
+        "reverse_neighbors": {n1: [], n2: [n1]},
+        "rules_to_be_applied_node": [],
+        "rules_to_be_applied_edge": [],
+        "edges_to_be_added_node_rule": [],
+        "edges_to_be_added_edge_rule": [],
+        "rules_to_be_applied_node_trace": [],
+        "rules_to_be_applied_edge_trace": [],
+        "facts_to_be_applied_node": [],
+        "facts_to_be_applied_edge": [],
+        "facts_to_be_applied_node_trace": [],
+        "facts_to_be_applied_edge_trace": [],
+        "ipl": [],
+        "rule_trace_node": [],
+        "rule_trace_edge": [],
+        "rule_trace_node_atoms": [],
+        "rule_trace_edge_atoms": [],
+        "reverse_graph": {},
+        "atom_trace": False,
+        "save_graph_attributes_to_rule_trace": False,
+        "persistent": persistent,
+        "inconsistency_check": False,
+        "store_interpretation_changes": False,
+        "update_mode": "",
+        "allow_ground_rules": True,
+        "max_facts_time": 0,
+        "annotation_functions": {},
+        "convergence_mode": "perfect_convergence",
+        "convergence_delta": 0,
+        "verbose": False,
+        "again": False,
+    }
+
+    def run(**overrides):
+        params = env.copy()
+        params.update(overrides)
+        return reason(
+            params["interpretations_node"],
+            params["interpretations_edge"],
+            params["predicate_map_node"],
+            params["predicate_map_edge"],
+            params["tmax"],
+            params["prev_reasoning_data"],
+            params["rules"],
+            params["nodes"],
+            params["edges"],
+            params["neighbors"],
+            params["reverse_neighbors"],
+            params["rules_to_be_applied_node"],
+            params["rules_to_be_applied_edge"],
+            params["edges_to_be_added_node_rule"],
+            params["edges_to_be_added_edge_rule"],
+            params["rules_to_be_applied_node_trace"],
+            params["rules_to_be_applied_edge_trace"],
+            params["facts_to_be_applied_node"],
+            params["facts_to_be_applied_edge"],
+            params["facts_to_be_applied_node_trace"],
+            params["facts_to_be_applied_edge_trace"],
+            params["ipl"],
+            params["rule_trace_node"],
+            params["rule_trace_edge"],
+            params["rule_trace_node_atoms"],
+            params["rule_trace_edge_atoms"],
+            params["reverse_graph"],
+            params["atom_trace"],
+            params["save_graph_attributes_to_rule_trace"],
+            params["persistent"],
+            params["inconsistency_check"],
+            params["store_interpretation_changes"],
+            params["update_mode"],
+            params["allow_ground_rules"],
+            params["max_facts_time"],
+            params["annotation_functions"],
+            params["convergence_mode"],
+            params["convergence_delta"],
+            params["verbose"],
+            params["again"],
+        )
+
+    env["run"] = run
+    env["node"] = n1
+    env["edge"] = edge
+    env["dyn_label"] = dyn_lbl
+    env["stat_label"] = stat_lbl
+    return env
+
+
+def test_reason_breaks_when_no_update(monkeypatch, reason_env):
+    fp, max_t = reason_env["run"](
+        facts_to_be_applied_node=[],
+        convergence_mode="delta_bound",
+        convergence_delta=-1,
+    )
+    assert fp == 1 and max_t == 1
+
+
+@pytest.mark.parametrize("persistent", [True, False])
+def test_reason_copies_previous_timestep(monkeypatch, persistent):
+    env = make_copy_env(monkeypatch, persistent)
+    env["run"]()
+
+    expected = {env["stat_label"]} | ({env["dyn_label"]} if persistent else set())
+
+    node_world = env["interpretations_node"][1][env["node"]].world
+    edge_world = env["interpretations_edge"][1][env["edge"]].world
+
+    assert set(node_world.keys()) == expected
+    assert set(edge_world.keys()) == expected
+
+
 # ---- check_consistent_node / check_consistent_edge tests ----
 
 class _Interval:
