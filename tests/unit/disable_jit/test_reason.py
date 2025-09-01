@@ -900,6 +900,159 @@ def test_reason_skips_rule_outside_tmax(monkeypatch, reason_env):
 
 
 
+def test_reason_node_rule_delta_zero_traces_and_applies(monkeypatch, reason_env):
+    monkeypatch.setattr(interpretation, "annotate", lambda *a, **k: (0, 1))
+    monkeypatch.setattr(
+        interpretation.interval,
+        "closed",
+        lambda lo, up: reason_env["bnd"].__class__(lo, False),
+    )
+
+    new_node = "n2"
+    rule = Mock()
+    rule.get_delta.return_value = 0
+    rule.get_target.return_value = reason_env["label"]
+    rule.is_static_rule.return_value = False
+    rule.get_weights.return_value = []
+    rule.get_annotation_function.return_value = ""
+    rule.get_name.return_value = "r"
+
+    ground_calls = {"n": 0}
+
+    def ground_rule_stub(*args, **kwargs):
+        ground_calls["n"] += 1
+        if ground_calls["n"] == 1:
+            return ([(new_node, [], ["qn"], ["qe"], None)], [])
+        return ([], [])
+
+    monkeypatch.setattr(interpretation, "_ground_rule", ground_rule_stub)
+
+    world_cls = reason_env["interpretations_node"][0][reason_env["node"]].__class__
+
+    def add_node_to_interp(comp, interp_dict):
+        interp_dict[comp] = world_cls()
+
+    mock_add = Mock(side_effect=add_node_to_interp)
+    monkeypatch.setattr(interpretation, "_add_node_to_interpretation", mock_add)
+    monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: True)
+
+    def update_node_stub(
+        interp,
+        predicate_map,
+        comp,
+        lb,
+        ipl,
+        rule_trace_node,
+        fp_cnt,
+        t,
+        set_static,
+        convergence_mode,
+        atom_trace,
+        save_graph,
+        rules_trace,
+        idx,
+        facts_trace,
+        rule_trace_node_atoms,
+        store_changes,
+        mode="rule",
+        override=False,
+    ):
+        assert rules_trace[idx] == (["qn"], ["qe"], "r")
+        l, b = lb
+        interp[comp].world[l] = b
+        return True, 1
+
+    mock_update = Mock(side_effect=update_node_stub)
+    monkeypatch.setattr(interpretation, "_update_node", mock_update)
+
+    rules_list = []
+    trace_list = []
+    fp, max_t = reason_env["run"](
+        rules=[rule],
+        atom_trace=True,
+        rules_to_be_applied_node=rules_list,
+        rules_to_be_applied_node_trace=trace_list,
+        facts_to_be_applied_node=[],
+    )
+
+    assert ground_calls["n"] == 2
+    assert mock_add.called
+    assert mock_update.called
+    assert new_node in reason_env["interpretations_node"][0]
+    assert rules_list == [] and trace_list == []
+    assert fp == 1 and max_t == 1
+
+
+def test_reason_node_rule_skips_when_static(monkeypatch, reason_env):
+    monkeypatch.setattr(interpretation, "annotate", lambda *a, **k: (0, 1))
+    monkeypatch.setattr(
+        interpretation.interval,
+        "closed",
+        lambda lo, up: reason_env["bnd"].__class__(lo, False),
+    )
+
+    node = reason_env["node"]
+    lbl = reason_env["label"]
+    reason_env["interpretations_node"][0][node].world[lbl] = reason_env["bnd"].__class__(
+        1.0, True
+    )
+
+    rule = Mock()
+    rule.get_delta.return_value = 0
+    rule.get_target.return_value = lbl
+    rule.is_static_rule.return_value = False
+    rule.get_weights.return_value = []
+    rule.get_annotation_function.return_value = ""
+    rule.get_name.return_value = "r"
+
+    mock_ground = Mock(return_value=([(node, [], [], [], None)], []))
+    monkeypatch.setattr(interpretation, "_ground_rule", mock_ground)
+
+    rules_list = []
+    trace_list = []
+    reason_env["run"](
+        rules=[rule],
+        atom_trace=True,
+        rules_to_be_applied_node=rules_list,
+        rules_to_be_applied_node_trace=trace_list,
+        facts_to_be_applied_node=[],
+        prev_reasoning_data=[0, 1],
+    )
+
+    assert mock_ground.call_count == 1
+    assert rules_list == [] and trace_list == []
+
+
+def test_reason_node_rule_resolves_inconsistency(monkeypatch, reason_env):
+    monkeypatch.setattr(interpretation, "annotate", lambda *a, **k: (0, 1))
+    monkeypatch.setattr(
+        interpretation.interval,
+        "closed",
+        lambda lo, up: reason_env["bnd"].__class__(lo, False),
+    )
+
+    rule = Mock()
+    rule.get_delta.return_value = 1
+    rule.get_target.return_value = reason_env["label"]
+    rule.is_static_rule.return_value = False
+    rule.get_weights.return_value = []
+    rule.get_annotation_function.return_value = ""
+    rule.get_name.return_value = "r"
+
+    monkeypatch.setattr(
+        interpretation, "_ground_rule", lambda *a, **k: ([(reason_env["node"], [], [], [], None)], [])
+    )
+    monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: False)
+
+    mock_resolve = Mock()
+    monkeypatch.setattr(interpretation, "resolve_inconsistency_node", mock_resolve)
+    mock_update = Mock()
+    monkeypatch.setattr(interpretation, "_update_node", mock_update)
+
+    reason_env["run"](rules=[rule], inconsistency_check=True)
+
+    assert mock_resolve.called
+    assert not mock_update.called
 
 def test_reason_edge_rule_records_trace(monkeypatch, reason_env):
     monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: True)
