@@ -1490,3 +1490,128 @@ def test_reason_edge_rule_added_inconsistency(monkeypatch, reason_env, inconsist
         assert not mock_resolve.called
 
 
+
+def test_reason_edge_rule_added_inconsistency_delta_bound(monkeypatch, reason_env):
+    node = reason_env["node"]
+    edge = (node, node)
+    edge_lbl = FakeLabel("E")
+    bnd = reason_env["bnd"]
+    world_cls = reason_env["interpretations_node"][0][node].__class__
+
+    def add_edges_stub(sources, targets, neighbors, reverse_neighbors, nodes, edges, edge_l, interp_node_t, interp_edge_t, predicate_map_edge, t):
+        e = (sources[0], targets[0])
+        world = world_cls()
+        world.world[edge_l] = bnd.__class__(0.0, False)
+        interp_edge_t[e] = world
+        edges.append(e)
+        return [e], 0
+
+    monkeypatch.setattr(interpretation, "_add_edges", add_edges_stub)
+    monkeypatch.setattr(interpretation, "check_consistent_edge", lambda *a, **k: False)
+
+    def update_stub(interp, predicate_map, comp, lb, *a, **k):
+        l, bound = lb
+        interp[comp].world[l] = bound
+        return True, 0.5
+
+    monkeypatch.setattr(interpretation, "_update_edge", update_stub)
+
+    fp, _ = reason_env["run"](
+        edges=[],
+        neighbors={node: []},
+        reverse_neighbors={node: []},
+        interpretations_edge={0: {}},
+        rules_to_be_applied_edge=[(0, edge, reason_env["label"], bnd, False)],
+        edges_to_be_added_edge_rule=[([node], [node], edge_lbl)],
+        facts_to_be_applied_node=[],
+        facts_to_be_applied_edge=[],
+        convergence_mode="delta_bound",
+        convergence_delta=0,
+        inconsistency_check=False,
+    )
+
+    assert fp == 1
+
+
+def test_reason_edge_rule_existing_edge_delta_bound(monkeypatch, reason_env):
+    node = reason_env["node"]
+    edge = (node, node)
+    lbl = reason_env["label"]
+    bnd = reason_env["bnd"]
+    world_cls = reason_env["interpretations_node"][0][node].__class__
+
+    monkeypatch.setattr(interpretation, "_add_edges", lambda *a, **k: ([], 0))
+
+    def add_edge_interp(comp, interp_edge):
+        interp_edge[comp] = world_cls()
+
+    monkeypatch.setattr(interpretation, "_add_edge_to_interpretation", add_edge_interp)
+    monkeypatch.setattr(interpretation, "check_consistent_edge", lambda *a, **k: True)
+
+    def update_stub(interp, predicate_map, comp, lb, *a, **k):
+        l, bound = lb
+        interp[comp].world[l] = bound
+        return True, 0.5
+
+    monkeypatch.setattr(interpretation, "_update_edge", update_stub)
+
+    fp, _ = reason_env["run"](
+        edges=[edge],
+        neighbors={node: []},
+        reverse_neighbors={node: []},
+        interpretations_edge={0: {}},
+        rules_to_be_applied_edge=[(0, edge, lbl, bnd, False)],
+        edges_to_be_added_edge_rule=[([], [], FakeLabel(""))],
+        facts_to_be_applied_node=[],
+        convergence_mode="delta_bound",
+        convergence_delta=0,
+    )
+
+    assert fp == 1
+
+
+def test_reason_edge_rule_existing_inconsistent_counts(monkeypatch, reason_env):
+    node = reason_env["node"]
+    edge = (node, node)
+    lbl = reason_env["label"]
+    bnd = reason_env["bnd"]
+    world_cls = reason_env["interpretations_node"][0][node].__class__
+
+    monkeypatch.setattr(interpretation, "_add_edges", lambda *a, **k: ([], 0))
+
+    def add_edge_interp(comp, interp_edge):
+        interp_edge[comp] = world_cls()
+
+    monkeypatch.setattr(interpretation, "_add_edge_to_interpretation", add_edge_interp)
+    monkeypatch.setattr(interpretation, "check_consistent_edge", lambda *a, **k: False)
+
+    def update_stub(interp, predicate_map, comp, lb, *a, **k):
+        l, bound = lb
+        interp[comp].world[l] = bound
+        return True, 1
+
+    monkeypatch.setattr(interpretation, "_update_edge", update_stub)
+
+    fp, _ = reason_env["run"](
+        edges=[edge],
+        neighbors={node: []},
+        reverse_neighbors={node: []},
+        interpretations_edge={0: {}},
+        rules_to_be_applied_edge=[(0, edge, lbl, bnd, False)],
+        edges_to_be_added_edge_rule=[([], [], FakeLabel(""))],
+        facts_to_be_applied_node=[],
+        convergence_mode="delta_interpretation",
+        convergence_delta=0,
+        inconsistency_check=False,
+    )
+
+    assert fp == 1
+
+
+def test_reason_perfect_convergence_breaks(reason_env):
+    fp, max_t = reason_env["run"](
+        facts_to_be_applied_node=[],
+        convergence_mode="perfect_convergence",
+    )
+    assert fp == 0 and max_t == 1
+
