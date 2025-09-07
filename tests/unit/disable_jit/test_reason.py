@@ -1179,6 +1179,68 @@ def test_reason_node_rule_resolves_inconsistency(monkeypatch, reason_env):
     assert mock_resolve.called
     assert not mock_update.called
 
+
+def test_reason_node_rule_delta_bound(monkeypatch, reason_env):
+    """Ensure rule applications update delta-bound convergence metrics."""
+
+    node = reason_env["node"]
+    lbl = reason_env["label"]
+    rule_entry = (0, node, lbl, reason_env["bnd"], False)
+
+    monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: True)
+
+    def _updater(interp, predicate_map, comp, lb, *a, **k):
+        l, b = lb
+        interp[comp].world[l] = b
+        return True, 0.5
+
+    mock_update = Mock(side_effect=_updater)
+    monkeypatch.setattr(interpretation, "_update_node", mock_update)
+
+    fp, _ = reason_env["run"](
+        rules_to_be_applied_node=[rule_entry],
+        rules_to_be_applied_node_trace=[],
+        facts_to_be_applied_node=[],
+        convergence_mode="delta_bound",
+        convergence_delta=0,
+    )
+
+    assert fp == 1
+    mock_update.assert_called_once()
+    assert mock_update.call_args.kwargs.get("override", False) is False
+
+
+@pytest.mark.parametrize("mode", ["delta_bound", "delta_interpretation"])
+def test_reason_node_rule_inconsistent_override(monkeypatch, reason_env, mode):
+    """Inconsistent rules override bounds and update convergence counters."""
+
+    node = reason_env["node"]
+    lbl = reason_env["label"]
+    rule_entry = (0, node, lbl, reason_env["bnd"], False)
+
+    monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: False)
+
+    def _updater(interp, predicate_map, comp, lb, *a, **k):
+        l, b = lb
+        interp[comp].world[l] = b
+        return True, 0.5
+
+    mock_update = Mock(side_effect=_updater)
+    monkeypatch.setattr(interpretation, "_update_node", mock_update)
+
+    fp, _ = reason_env["run"](
+        rules_to_be_applied_node=[rule_entry],
+        rules_to_be_applied_node_trace=[],
+        facts_to_be_applied_node=[],
+        inconsistency_check=False,
+        convergence_mode=mode,
+        convergence_delta=0,
+    )
+
+    mock_update.assert_called_once()
+    assert mock_update.call_args.kwargs.get("override") is True
+    assert fp == 1
+
 def test_reason_edge_rule_records_trace(monkeypatch, reason_env):
     monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: True)
     monkeypatch.setattr(interpretation, "_update_node", lambda *a, **k: (True, 0))
