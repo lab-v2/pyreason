@@ -8,6 +8,12 @@ repos:
         language: system
         pass_filenames: false
 
+      - id: pytest-unit-jit
+        name: Run JIT-enabled unit tests
+        entry: bash -c 'pytest tests/unit/dont_disable_jit'
+        language: system
+        pass_filenames: false
+
       # --- Functional tests ---
       - id: pytest-functional
         name: Run functional tests
