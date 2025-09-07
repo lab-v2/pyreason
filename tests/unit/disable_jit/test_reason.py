@@ -3106,3 +3106,154 @@ def test_update_edge_complement_records_traces(monkeypatch, helpers_fixture):
     assert len(calls) == 3
     if "num_ga" in sig.parameters:
         assert kwargs["num_ga"][0] == 1
+
+
+def test_update_edge_complement_existing_predicate(monkeypatch, helpers_fixture):
+    class SimpleInterval:
+        def __init__(self, lower=0.0, upper=1.0, static=False):
+            self.lower = lower
+            self.upper = upper
+            self.prev_lower = lower
+            self.prev_upper = upper
+            self._static = static
+
+        def copy(self):
+            return SimpleInterval(self.lower, self.upper, self._static)
+
+        def set_lower_upper(self, l, u):
+            self.prev_lower = self.lower
+            self.prev_upper = self.upper
+            self.lower = l
+            self.upper = u
+
+        def set_static(self, s):
+            self._static = s
+
+    class SimpleWorld:
+        def __init__(self):
+            self.world = {}
+
+        def update(self, label, bnd):
+            if label in self.world:
+                w = self.world[label]
+                lower = max(w.lower, bnd.lower)
+                upper = min(w.upper, bnd.upper)
+                w.set_lower_upper(lower, upper)
+            else:
+                self.world[label] = bnd.copy()
+
+    class _ListShim:
+        def __call__(self, iterable=()):
+            return list(iterable)
+
+        def empty_list(self, *args, **kwargs):
+            return []
+
+    interpretation = helpers_fixture.interpretation
+    label = helpers_fixture.label
+    monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
+    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+
+    l = label.Label("L")
+    p2 = label.Label("L2")
+    interpretations = {"e1": SimpleWorld()}
+    predicate_map = {p2: ["x"]}
+    ipl = [(l, p2)]
+
+    update_edge = getattr(interpretation._update_edge, "py_func", interpretation._update_edge)
+    sig = inspect.signature(update_edge)
+    kwargs = dict(
+        interpretations=interpretations,
+        predicate_map=predicate_map,
+        comp="e1",
+        na=(l, interpretation.interval.closed(0.4, 0.6)),
+        ipl=ipl,
+        rule_trace=[],
+        fp_cnt=0,
+        t_cnt=0,
+        static=False,
+        convergence_mode="perfect_convergence",
+        atom_trace=False,
+        save_graph_attributes_to_rule_trace=False,
+        rules_to_be_applied_trace=[],
+        idx=0,
+        facts_to_be_applied_trace=[],
+        rule_trace_atoms=[],
+        store_interpretation_changes=False,
+        mode="fact",
+        override=False,
+    )
+    if "num_ga" in sig.parameters:
+        kwargs["num_ga"] = [0]
+
+    updated, _ = update_edge(**kwargs)
+    assert updated is True
+    assert predicate_map[p2] == ["x", "e1"]
+    assert p2 in interpretations["e1"].world
+
+
+def test_update_edge_missing_world(monkeypatch, helpers_fixture):
+    interpretation = helpers_fixture.interpretation
+    if interpretation.__name__.endswith("interpretation_fp"):
+        pytest.skip("interpretation_fp lacks error handling branch")
+
+    class SimpleInterval:
+        def __init__(self, lower=0.0, upper=1.0, static=False):
+            self.lower = lower
+            self.upper = upper
+            self.prev_lower = lower
+            self.prev_upper = upper
+            self._static = static
+
+        def copy(self):
+            return SimpleInterval(self.lower, self.upper, self._static)
+
+        def set_lower_upper(self, l, u):
+            self.prev_lower = self.lower
+            self.prev_upper = self.upper
+            self.lower = l
+            self.upper = u
+
+        def set_static(self, s):
+            self._static = s
+
+    class _ListShim:
+        def __call__(self, iterable=()):
+            return list(iterable)
+
+        def empty_list(self, *args, **kwargs):
+            return []
+
+    label = helpers_fixture.label
+    monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
+    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+
+    update_edge = getattr(interpretation._update_edge, "py_func", interpretation._update_edge)
+    sig = inspect.signature(update_edge)
+    kwargs = dict(
+        interpretations={},
+        predicate_map={},
+        comp="missing",
+        na=(label.Label("L"), interpretation.interval.closed(0, 1)),
+        ipl=[],
+        rule_trace=[],
+        fp_cnt=0,
+        t_cnt=0,
+        static=False,
+        convergence_mode="perfect_convergence",
+        atom_trace=False,
+        save_graph_attributes_to_rule_trace=False,
+        rules_to_be_applied_trace=[],
+        idx=0,
+        facts_to_be_applied_trace=[],
+        rule_trace_atoms=[],
+        store_interpretation_changes=False,
+        mode="fact",
+        override=False,
+    )
+    if "num_ga" in sig.parameters:
+        kwargs["num_ga"] = [0]
+
+    assert update_edge(**kwargs) == (False, 0)
