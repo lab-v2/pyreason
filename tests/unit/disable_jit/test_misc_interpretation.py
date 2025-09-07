@@ -1,7 +1,11 @@
-import pytest
+import importlib
 import math
+from types import SimpleNamespace
 from unittest.mock import Mock, call
 
+import pytest
+
+from pyreason.scripts.interpretation.interpretation_dict import InterpretationDict
 from tests.unit.disable_jit.interpretation_helpers import *
 
 # ---- check_consistent_node / check_consistent_edge tests ----
@@ -231,4 +235,54 @@ def test_str_to_float_variants(s, expected):
     assert math.isclose(str_to_float(s), expected)
 
 
+
+# ---- get_dict tests ----
+
+class DummyLabel:
+    def __init__(self, value):
+        self._value = value
+
+
+class DummyBound:
+    def __init__(self, lower, upper):
+        self.lower = lower
+        self.upper = upper
+
+
+def build_dummy(persistent):
+    return SimpleNamespace(
+        time=1,
+        nodes=["n1"],
+        edges=[("n1", "n2")],
+        rule_trace_node=[(0, 0, "n1", DummyLabel("L1"), DummyBound(0.1, 0.2))],
+        rule_trace_edge=[(0, 0, ("n1", "n2"), DummyLabel("L2"), DummyBound(0.3, 0.4))],
+        persistent=persistent,
+    )
+
+
+@pytest.mark.parametrize("module_name", ["interpretation_fp", "interpretation"])
+def test_get_dict_non_persistent(module_name):
+    module = importlib.import_module(f"pyreason.scripts.interpretation.{module_name}")
+    interp = build_dummy(False)
+    result = module.Interpretation.get_dict(interp)
+
+    assert isinstance(result[0]["n1"], InterpretationDict)
+    assert result[0]["n1"]["L1"] == (0.1, 0.2)
+    assert len(result[1]["n1"]) == 0
+
+    assert result[0][("n1", "n2")]["L2"] == (0.3, 0.4)
+    assert len(result[1][("n1", "n2")]) == 0
+
+
+@pytest.mark.parametrize("module_name", ["interpretation_fp", "interpretation"])
+def test_get_dict_persistent(module_name):
+    module = importlib.import_module(f"pyreason.scripts.interpretation.{module_name}")
+    interp = build_dummy(True)
+    result = module.Interpretation.get_dict(interp)
+
+    assert result[0]["n1"]["L1"] == (0.1, 0.2)
+    assert result[1]["n1"]["L1"] == (0.1, 0.2)
+
+    assert result[0][("n1", "n2")]["L2"] == (0.3, 0.4)
+    assert result[1][("n1", "n2")]["L2"] == (0.3, 0.4)
 
