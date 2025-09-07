@@ -1611,29 +1611,49 @@ def test_reason_edge_rule_existing_inconsistent_counts(monkeypatch, reason_env):
 def test_reason_breaks_on_delta_interpretation(monkeypatch, reason_env):
     monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: True)
     monkeypatch.setattr(interpretation, "_update_node", lambda *a, **k: (False, 0))
+    printed = []
+    monkeypatch.setattr(
+        "builtins.print", lambda *a, **k: printed.append(" ".join(map(str, a)))
+    )
 
     fp, max_t = reason_env["run"](
-        convergence_mode="delta_interpretation", convergence_delta=0
+        convergence_mode="delta_interpretation",
+        convergence_delta=0,
+        verbose=True,
     )
 
     assert fp == 0 and max_t == 1
+    assert any("Converged at time" in line for line in printed)
 
 
 def test_reason_breaks_on_delta_bound(monkeypatch, reason_env):
     monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: True)
     monkeypatch.setattr(interpretation, "_update_node", lambda *a, **k: (False, 0))
+    printed = []
+    monkeypatch.setattr(
+        "builtins.print", lambda *a, **k: printed.append(" ".join(map(str, a)))
+    )
 
     fp, max_t = reason_env["run"](
-        convergence_mode="delta_bound", convergence_delta=0
+        convergence_mode="delta_bound", convergence_delta=0, verbose=True
     )
 
     assert fp == 0 and max_t == 1
+    assert any("Converged at time" in line for line in printed)
 
 
-def test_reason_breaks_on_perfect_convergence(reason_env):
+def test_reason_breaks_on_perfect_convergence(monkeypatch, reason_env):
+    printed = []
+    monkeypatch.setattr(
+        "builtins.print", lambda *a, **k: printed.append(" ".join(map(str, a)))
+    )
+
     fp, max_t = reason_env["run"](
-        facts_to_be_applied_node=[], convergence_mode="perfect_convergence"
+        facts_to_be_applied_node=[],
+        convergence_mode="perfect_convergence",
+        verbose=True,
     )
 
     assert fp == 0 and max_t == 1
+    assert any("Converged at fp" in line for line in printed)
 
