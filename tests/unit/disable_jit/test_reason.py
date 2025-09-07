@@ -183,6 +183,26 @@ def test_reason_overrides_without_inconsistency(monkeypatch, reason_env):
     assert mock_update.call_args.kwargs.get("override") is True
 
 
+def test_reason_inconsistent_counts_changes(monkeypatch, reason_env):
+    monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: False)
+
+    def _updater(interp, predicate_map, comp, lb, *a, **k):
+        l, b = lb
+        interp[comp].world[l] = b
+        return True, 1
+
+    mock_update = Mock(side_effect=_updater)
+    monkeypatch.setattr(interpretation, "_update_node", mock_update)
+
+    reason_env["run"](
+        inconsistency_check=False,
+        convergence_mode="delta_interpretation",
+        convergence_delta=0,
+    )
+
+    assert mock_update.called
+
+
 @pytest.mark.parametrize(
     "mode,delta,change,expected_fp",
     [
@@ -875,6 +895,111 @@ def test_reason_edge_inconsistency_delta_bound_override(monkeypatch, reason_env)
     )
 
     assert fp == 2
+
+
+def test_reason_edge_rule_updates_added_edges(monkeypatch, reason_env):
+    node = reason_env["node"]
+    edge = (node, node)
+    bnd = reason_env["bnd"]
+    edge_lbl = FakeLabel("E")
+
+    world_cls = reason_env["interpretations_node"][0][node].__class__
+
+    def _add_edges_stub(sources, targets, neighbors, reverse_neighbors, nodes, edges, edge_l, interp_node_t, interp_edge_t, predicate_map_edge, t):
+        e = (sources[0], targets[0])
+        world = world_cls()
+        world.world[edge_l] = bnd.__class__(0, False)
+        interp_edge_t[e] = world
+        edges.append(e)
+        return [e], 0
+
+    monkeypatch.setattr(interpretation, "_add_edges", _add_edges_stub)
+    monkeypatch.setattr(interpretation, "check_consistent_edge", lambda *a, **k: True)
+    mock_update = Mock(return_value=(True, 0))
+    monkeypatch.setattr(interpretation, "_update_edge", mock_update)
+
+    reason_env["run"](
+        edges=[],
+        neighbors={node: []},
+        reverse_neighbors={node: []},
+        interpretations_edge={0: {}},
+        rules_to_be_applied_edge=[(0, edge, reason_env["label"], bnd, False)],
+        edges_to_be_added_edge_rule=[([node], [node], edge_lbl)],
+        facts_to_be_applied_node=[],
+        facts_to_be_applied_edge=[],
+    )
+
+    mock_update.assert_called_once()
+
+
+def test_reason_edge_rule_resolves_inconsistency(monkeypatch, reason_env):
+    node = reason_env["node"]
+    edge = (node, node)
+    lbl = reason_env["label"]
+    bnd = reason_env["bnd"]
+    world = reason_env["interpretations_node"][0][node].__class__()
+    interpretations_edge = {0: {edge: world}}
+    edges = [edge]
+
+    monkeypatch.setattr(interpretation, "_add_edges", lambda *a, **k: ([], 0))
+    monkeypatch.setattr(interpretation, "check_consistent_edge", lambda *a, **k: False)
+    mock_resolve = Mock()
+    mock_update = Mock()
+    monkeypatch.setattr(interpretation, "resolve_inconsistency_edge", mock_resolve)
+    monkeypatch.setattr(interpretation, "_update_edge", mock_update)
+
+    reason_env["run"](
+        edges=edges,
+        neighbors={node: []},
+        reverse_neighbors={node: []},
+        interpretations_edge=interpretations_edge,
+        rules_to_be_applied_edge=[(0, edge, lbl, bnd, False)],
+        edges_to_be_added_edge_rule=[([], [], FakeLabel(""))],
+        facts_to_be_applied_node=[],
+        facts_to_be_applied_edge=[],
+        inconsistency_check=True,
+    )
+
+    mock_resolve.assert_called_once()
+    mock_update.assert_not_called()
+
+
+def test_reason_edge_rule_inconsistency_delta_bound_override(monkeypatch, reason_env):
+    node = reason_env["node"]
+    edge = (node, node)
+    lbl = reason_env["label"]
+    bnd = reason_env["bnd"]
+    world = reason_env["interpretations_node"][0][node].__class__()
+    interpretations_edge = {0: {edge: world}}
+    edges = [edge]
+
+    monkeypatch.setattr(interpretation, "_add_edges", lambda *a, **k: ([], 0))
+    monkeypatch.setattr(interpretation, "check_consistent_edge", lambda *a, **k: False)
+
+    def _update_edge_stub(interp, predicate_map, comp, lb, *a, **k):
+        l, bound = lb
+        interp[comp].world[l] = bound
+        return True, 0.5
+
+    mock_update = Mock(side_effect=_update_edge_stub)
+    monkeypatch.setattr(interpretation, "_update_edge", mock_update)
+
+    fp, _ = reason_env["run"](
+        edges=edges,
+        neighbors={node: []},
+        reverse_neighbors={node: []},
+        interpretations_edge=interpretations_edge,
+        rules_to_be_applied_edge=[(0, edge, lbl, bnd, False)],
+        edges_to_be_added_edge_rule=[([], [], FakeLabel(""))],
+        facts_to_be_applied_node=[],
+        facts_to_be_applied_edge=[],
+        convergence_mode="delta_bound",
+        convergence_delta=0,
+        inconsistency_check=False,
+    )
+
+    assert fp == 1
+    assert mock_update.call_args[1]["override"] is True
 
 
 def test_reason_skips_rule_outside_tmax(monkeypatch, reason_env):
