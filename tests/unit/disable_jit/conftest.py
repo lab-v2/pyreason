@@ -7,7 +7,7 @@ import sys, types
 sys.modules.setdefault("pyreason.pyreason", types.ModuleType("pyreason.pyreason"))
 
 import pytest
-from tests.unit.disable_jit.interpretation_helpers import get_interpretation_helpers
+from tests.unit.disable_jit.interpretations.test_interpretation_common import get_interpretation_helpers
 
 
 @pytest.fixture(params=["interpretation_fp", "interpretation"])

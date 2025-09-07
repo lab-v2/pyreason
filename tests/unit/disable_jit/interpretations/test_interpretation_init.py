@@ -1,7 +1,7 @@
 import pytest
 import networkx as nx
 from types import MethodType
-from tests.unit.disable_jit.interpretation_helpers import get_interpretation_helpers
+from tests.unit.disable_jit.interpretations.test_interpretation_common import get_interpretation_helpers
 
 # Preload defaults so decorators resolve
 _default = get_interpretation_helpers("interpretation_fp")
