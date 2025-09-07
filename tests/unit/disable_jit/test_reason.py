@@ -2233,3 +2233,95 @@ def test_update_node_records_rule_trace(monkeypatch, mode, save_attr, trace_key,
     assert calls and calls[0][2] == expected_name
 
 
+def test_update_node_handles_ipl_and_predicate_map(monkeypatch):
+    class SimpleInterval:
+        def __init__(self, lower=0.0, upper=1.0, static=False):
+            self.lower = lower
+            self.upper = upper
+            self.prev_lower = lower
+            self.prev_upper = upper
+            self._static = static
+
+        def copy(self):
+            return SimpleInterval(self.lower, self.upper, self._static)
+
+        def set_lower_upper(self, l, u):
+            self.prev_lower = self.lower
+            self.prev_upper = self.upper
+            self.lower = l
+            self.upper = u
+
+        def set_static(self, s):
+            self._static = s
+
+        def __eq__(self, other):
+            return self.lower == other.lower and self.upper == other.upper
+
+    class SimpleWorld:
+        def __init__(self):
+            self.world = {}
+
+        def update(self, label, bnd):
+            if label in self.world:
+                w = self.world[label]
+                lower = max(w.lower, bnd.lower)
+                upper = min(w.upper, bnd.upper)
+                w.set_lower_upper(lower, upper)
+            else:
+                self.world[label] = bnd.copy()
+
+    class _ListShim:
+        def __call__(self, iterable=()):
+            return list(iterable)
+
+        def empty_list(self, *args, **kwargs):
+            return []
+
+    monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
+    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+
+    calls = []
+    monkeypatch.setattr(interpretation, "_update_rule_trace", lambda *a, **k: calls.append(a))
+
+    l = label.Label("L")
+    p2 = label.Label("L2")
+    p3 = label.Label("L3")
+    interpretations = {"n1": SimpleWorld()}
+    predicate_map = {l: ["c0"], p2: ["x"]}
+    ipl = [(l, p2), (l, p3)]
+
+    update_node = getattr(interpretation._update_node, "py_func", interpretation._update_node)
+    sig = inspect.signature(update_node)
+    kwargs = dict(
+        interpretations=interpretations,
+        predicate_map=predicate_map,
+        comp="n1",
+        na=(l, interpretation.interval.closed(0.2, 0.4)),
+        ipl=ipl,
+        rule_trace=[],
+        fp_cnt=0,
+        t_cnt=0,
+        static=False,
+        convergence_mode="perfect_convergence",
+        atom_trace=True,
+        save_graph_attributes_to_rule_trace=False,
+        rules_to_be_applied_trace=[],
+        idx=0,
+        facts_to_be_applied_trace=[],
+        rule_trace_atoms=[],
+        store_interpretation_changes=False,
+        mode="fact",
+        override=False,
+    )
+    if "num_ga" in sig.parameters:
+        kwargs["num_ga"] = [0]
+
+    updated, _ = update_node(**kwargs)
+    assert updated is True
+    assert predicate_map[l] == ["c0", "n1"]
+    assert predicate_map[p2] == ["x", "n1"]
+    assert predicate_map[p3] == ["n1"]
+    assert p2 in interpretations["n1"].world and p3 in interpretations["n1"].world
+    assert len(calls) == 2
+
