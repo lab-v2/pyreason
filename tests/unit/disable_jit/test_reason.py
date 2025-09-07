@@ -19,7 +19,7 @@ def helpers_fixture(request):
     for name in dir(h):
         if not name.startswith("_"):
             g[name] = getattr(h, name)
-    yield
+    yield h
 
 # ---- reason function tests ----
 
@@ -2326,7 +2326,7 @@ def test_update_node_handles_ipl_and_predicate_map(monkeypatch):
     assert len(calls) == 2
 
 
-def test_update_edge_handles_ipl_and_predicate_map(monkeypatch):
+def test_update_edge_handles_ipl_and_predicate_map(monkeypatch, helpers_fixture):
     class SimpleInterval:
         def __init__(self, lower=0.0, upper=1.0, static=False):
             self.lower = lower
@@ -2370,6 +2370,8 @@ def test_update_edge_handles_ipl_and_predicate_map(monkeypatch):
         def empty_list(self, *args, **kwargs):
             return []
 
+    interpretation = helpers_fixture.interpretation
+    label = helpers_fixture.label
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
     monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
     monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
