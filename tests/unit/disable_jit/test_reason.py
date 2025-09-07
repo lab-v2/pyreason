@@ -2512,6 +2512,94 @@ def test_update_node_complement_existing_predicate(monkeypatch, helpers_fixture)
     assert not calls
 
 
+def test_update_node_predicate_map_appends_and_delta(monkeypatch, helpers_fixture):
+    class SimpleInterval:
+        def __init__(self, lower=0.0, upper=1.0, static=False):
+            self.lower = lower
+            self.upper = upper
+            self.prev_lower = lower
+            self.prev_upper = upper
+            self._static = static
+
+        def copy(self):
+            return SimpleInterval(self.lower, self.upper, self._static)
+
+        def set_lower_upper(self, l, u):
+            self.prev_lower = self.lower
+            self.prev_upper = self.upper
+            self.lower = l
+            self.upper = u
+
+        def set_static(self, s):
+            self._static = s
+
+        def __eq__(self, other):
+            return self.lower == other.lower and self.upper == other.upper
+
+    class SimpleWorld:
+        def __init__(self):
+            self.world = {}
+
+        def update(self, label, bnd):
+            if label in self.world:
+                w = self.world[label]
+                lower = max(w.lower, bnd.lower)
+                upper = min(w.upper, bnd.upper)
+                w.set_lower_upper(lower, upper)
+            else:
+                self.world[label] = bnd.copy()
+
+    class _ListShim:
+        def __call__(self, iterable=()):
+            return list(iterable)
+
+        def empty_list(self, *args, **kwargs):
+            return []
+
+    interpretation = helpers_fixture.interpretation
+    label = helpers_fixture.label
+    monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
+    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+
+    l = label.Label("L")
+    p3 = label.Label("L3")
+    world = SimpleWorld()
+    interpretations = {"n1": world}
+    predicate_map = {p3: ["other"]}
+
+    update_node = getattr(interpretation._update_node, "py_func", interpretation._update_node)
+    sig = inspect.signature(update_node)
+    kwargs = dict(
+        interpretations=interpretations,
+        predicate_map=predicate_map,
+        comp="n1",
+        na=(l, interpretation.interval.closed(0.1, 0.2)),
+        ipl=[(p3, l)],
+        rule_trace=[],
+        fp_cnt=0,
+        t_cnt=0,
+        static=False,
+        convergence_mode="delta_bound",
+        atom_trace=False,
+        save_graph_attributes_to_rule_trace=False,
+        rules_to_be_applied_trace=[],
+        idx=0,
+        facts_to_be_applied_trace=[],
+        rule_trace_atoms=[],
+        store_interpretation_changes=False,
+        mode="fact",
+        override=False,
+    )
+    if "num_ga" in sig.parameters:
+        kwargs["num_ga"] = [0]
+
+    updated, change = update_node(**kwargs)
+    assert updated is True
+    assert predicate_map[p3][-1] == "n1"
+    assert change == pytest.approx(0.8)
+
+
 def test_update_edge_handles_ipl_and_predicate_map(monkeypatch, helpers_fixture):
     class SimpleInterval:
         def __init__(self, lower=0.0, upper=1.0, static=False):
