@@ -1,53 +1,7 @@
-# tests/unit/test_interpretation.py
 import pytest
-import math
 from unittest.mock import Mock, call
 
-# Single, consistent import style: import the module once
-import pyreason.scripts.interpretation.interpretation_fp as interpretation
-
-# Bind pure-Python callables (works even if Numba compiled elsewhere)
-_is_sat_edge = interpretation.is_satisfied_edge
-is_satisfied_edge = getattr(_is_sat_edge, "py_func", _is_sat_edge)
-
-_is_sat_node = interpretation.is_satisfied_node
-is_satisfied_node = getattr(_is_sat_node, "py_func", _is_sat_node)
-
-_get_q_edge_groundings = interpretation.get_qualified_edge_groundings
-get_qualified_edge_groundings = getattr(_get_q_edge_groundings, "py_func", _get_q_edge_groundings)
-
-_get_q_node_groundings = interpretation.get_qualified_node_groundings
-get_qualified_node_groundings = getattr(_get_q_node_groundings, "py_func", _get_q_node_groundings)
-
-_get_rule_node_clause_grounding = interpretation.get_rule_node_clause_grounding
-get_rule_node_clause_grounding = getattr(_get_rule_node_clause_grounding, "py_func", _get_rule_node_clause_grounding)
-
-_get_rule_edge_clause_grounding = interpretation.get_rule_edge_clause_grounding
-get_rule_edge_clause_grounding = getattr(_get_rule_edge_clause_grounding, "py_func", _get_rule_edge_clause_grounding)
-
-_satisfies_threshold = interpretation._satisfies_threshold
-satisfies_threshold = getattr(_satisfies_threshold, "py_func", _satisfies_threshold)
-
-_check_node_thresh = interpretation.check_node_grounding_threshold_satisfaction
-check_node_grounding_threshold_satisfaction = getattr(_check_node_thresh, "py_func", _check_node_thresh)
-
-_check_edge_thresh = interpretation.check_edge_grounding_threshold_satisfaction
-check_edge_grounding_threshold_satisfaction = getattr(_check_edge_thresh, "py_func", _check_edge_thresh)
-
-_refine_groundings = interpretation.refine_groundings
-refine_groundings = getattr(_refine_groundings, "py_func", _refine_groundings)
-
-_check_all = interpretation.check_all_clause_satisfaction
-check_all_clause_satisfaction = getattr(_check_all, "py_func", _check_all)
-
-_add_node = interpretation._add_node
-add_node = getattr(_add_node, "py_func", _add_node)
-
-_add_edge = interpretation._add_edge
-add_edge = getattr(_add_edge, "py_func", _add_edge)
-
-_ground_rule = interpretation._ground_rule
-ground_rule = getattr(_ground_rule, "py_func", _ground_rule)
+from tests.unit.disable_jit.interpretation_helpers import *
 
 
 class FakeWorld:
@@ -69,13 +23,12 @@ def interpretations():
         ('Justin', 'Dog'):  FakeWorld({'owns': True},  "owns,[1.0,1.0]"),
     }
 
-
 # ---- is_satisfied_node  and is_satisfied_edge tests ----
 
 def test_satisfied_path_true(interpretations):
     comp = ('Justin', 'Dog')
     na = ('owns', [1.0, 1.0])
-    assert _is_sat_node(interpretations, comp, na) is True
+    assert is_satisfied_node(interpretations, comp, na) is True
     assert is_satisfied_edge(interpretations, comp, na) is True
 
 def test_satisfied_path_false(interpretations):
@@ -88,7 +41,7 @@ def test_missing_comp_key_false():
     interpretations = {}
     comp = ('Nobody', 'Home')
     na = ('owns', None)
-    assert _is_sat_node(interpretations, comp, na) is True
+    assert is_satisfied_node(interpretations, comp, na) is True
     assert is_satisfied_edge(interpretations, comp, na) is True
     
 def test_is_satisfied_edge_returns_false_when_comp_missing():
@@ -96,7 +49,7 @@ def test_is_satisfied_edge_returns_false_when_comp_missing():
     interpretations = {}
     comp = ("ghost", "edge")
     na = ("owns", [1.0, 1.0])  # both non-None => enter try/except
-    assert _is_sat_node(interpretations, comp, na) is False
+    assert is_satisfied_node(interpretations, comp, na) is False
     assert is_satisfied_edge(interpretations, comp, na) is False
 
 
@@ -108,10 +61,10 @@ def test_get_qualified_edge_and_node_groundings_filters_true_edges(interpretatio
 
     # Separate mocks so each gets exactly 3 calls
     mock_is_sat_edge = Mock(side_effect=[False, True, True])  # F, T, T
-    mock_is_sat_node = Mock(side_effect=[False, True, True])  # F, T, T
+    mockis_satisfied_node = Mock(side_effect=[False, True, True])  # F, T, T
 
     monkeypatch.setattr(interpretation, "is_satisfied_edge", mock_is_sat_edge)
-    monkeypatch.setattr(interpretation, "is_satisfied_node", mock_is_sat_node)
+    monkeypatch.setattr(interpretation, "is_satisfied_node", mockis_satisfied_node)
 
     grounding = [
         ('Justin', 'Cat'),   # False
@@ -128,7 +81,7 @@ def test_get_qualified_edge_and_node_groundings_filters_true_edges(interpretatio
 
     # Each mock is called 3 times with the same argument sequence
     assert mock_is_sat_edge.call_count == 3
-    assert mock_is_sat_node.call_count == 3
+    assert mockis_satisfied_node.call_count == 3
 
     from unittest.mock import call
     expected_calls = [
@@ -137,7 +90,7 @@ def test_get_qualified_edge_and_node_groundings_filters_true_edges(interpretatio
         call(interpretations, grounding[2], (clause_l, clause_bnd)),
     ]
     mock_is_sat_edge.assert_has_calls(expected_calls)
-    mock_is_sat_node.assert_has_calls(expected_calls)
+    mockis_satisfied_node.assert_has_calls(expected_calls)
 
 
 def test_get_qualified_edge_and_node_groundings_none_qualify(interpretations, monkeypatch):
@@ -146,9 +99,9 @@ def test_get_qualified_edge_and_node_groundings_none_qualify(interpretations, mo
 
     # Separate mocks so each gets exactly len(grounding) calls
     mock_is_sat_edge = Mock(return_value=False)
-    mock_is_sat_node = Mock(return_value=False)
+    mockis_satisfied_node = Mock(return_value=False)
     monkeypatch.setattr(interpretation, "is_satisfied_edge", mock_is_sat_edge)
-    monkeypatch.setattr(interpretation, "is_satisfied_node", mock_is_sat_node)
+    monkeypatch.setattr(interpretation, "is_satisfied_node", mockis_satisfied_node)
 
     grounding = [('Justin', 'Dog'), ('Justin', 'Cat')]
 
@@ -158,23 +111,23 @@ def test_get_qualified_edge_and_node_groundings_none_qualify(interpretations, mo
     assert result_edge == []
     assert result_node == []
     assert mock_is_sat_edge.call_count == 2
-    assert mock_is_sat_node.call_count == 2
+    assert mockis_satisfied_node.call_count == 2
 
     expected_calls = [
         call(interpretations, grounding[0], ('owns', [1.0, 1.0])),
         call(interpretations, grounding[1], ('owns', [1.0, 1.0])),
     ]
     mock_is_sat_edge.assert_has_calls(expected_calls)
-    mock_is_sat_node.assert_has_calls(expected_calls)
+    mockis_satisfied_node.assert_has_calls(expected_calls)
 
 
 def test_get_qualified_edge_and_node_groundings_all_qualify(interpretations, monkeypatch):
     monkeypatch.setattr(interpretation.numba.typed.List, "empty_list", lambda *a, **k: [])
 
     mock_is_sat_edge = Mock(return_value=True)
-    mock_is_sat_node = Mock(return_value=True)
+    mockis_satisfied_node = Mock(return_value=True)
     monkeypatch.setattr(interpretation, "is_satisfied_edge", mock_is_sat_edge)
-    monkeypatch.setattr(interpretation, "is_satisfied_node", mock_is_sat_node)
+    monkeypatch.setattr(interpretation, "is_satisfied_node", mockis_satisfied_node)
 
     grounding = [('A', 'B'), ('C', 'D')]
 
@@ -184,14 +137,14 @@ def test_get_qualified_edge_and_node_groundings_all_qualify(interpretations, mon
     assert result_edge == grounding
     assert result_node == grounding
     assert mock_is_sat_edge.call_count == 2
-    assert mock_is_sat_node.call_count == 2
+    assert mockis_satisfied_node.call_count == 2
 
     expected_calls = [
         call(interpretations, grounding[0], ('owns', [1.0, 1.0])),
         call(interpretations, grounding[1], ('owns', [1.0, 1.0])),
     ]
     mock_is_sat_edge.assert_has_calls(expected_calls)
-    mock_is_sat_node.assert_has_calls(expected_calls)
+    mockis_satisfied_node.assert_has_calls(expected_calls)
 
 # ---- get_rule_node_clause_grounding tests ----
 
@@ -805,16 +758,6 @@ def test_add_node_minimal(monkeypatch):
     assert isinstance(interpretations_node["A"], DummyWorld)
 
 # ---- _add_edge tests (with _add_node mocked) ----
-
-class FakeLabel:
-    def __init__(self, value: str):
-        self.value = value
-    def __hash__(self):
-        return hash(self.value)
-    def __eq__(self, other):
-        return isinstance(other, FakeLabel) and self.value == other.value
-    def __repr__(self):
-        return f"FakeLabel({self.value!r})"
 
 def _shim_typed_list(monkeypatch):
     # Make typed.List(...) -> list(iterable) and .empty_list(...) -> []
