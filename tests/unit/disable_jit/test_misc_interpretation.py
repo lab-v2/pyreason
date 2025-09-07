@@ -1,7 +1,11 @@
-import pytest
+import importlib
 import math
+from types import SimpleNamespace
 from unittest.mock import Mock, call
 
+import pytest
+
+from pyreason.scripts.interpretation.interpretation_dict import InterpretationDict
 from tests.unit.disable_jit.interpretation_helpers import *
 
 # ---- check_consistent_node / check_consistent_edge tests ----
@@ -231,4 +235,128 @@ def test_str_to_float_variants(s, expected):
     assert math.isclose(str_to_float(s), expected)
 
 
+
+# ---- get_dict tests ----
+
+class DummyLabel:
+    def __init__(self, value):
+        self._value = value
+
+
+class DummyBound:
+    def __init__(self, lower, upper):
+        self.lower = lower
+        self.upper = upper
+
+    def __contains__(self, interval):
+        return self.lower <= interval.lower and interval.upper <= self.upper
+
+
+def build_dummy(persistent):
+    return SimpleNamespace(
+        time=1,
+        nodes=["n1"],
+        edges=[("n1", "n2")],
+        rule_trace_node=[(0, 0, "n1", DummyLabel("L1"), DummyBound(0.1, 0.2))],
+        rule_trace_edge=[(0, 0, ("n1", "n2"), DummyLabel("L2"), DummyBound(0.3, 0.4))],
+        persistent=persistent,
+    )
+
+
+def build_ga_dummy():
+    nw = _World({"L1": _Interval(0.1, 0.2)})
+    ew = _World({"L2": _Interval(0.3, 0.4)})
+    return SimpleNamespace(
+        nodes=["n1"],
+        edges=[("n1", "n2")],
+        interpretations_node={"n1": nw},
+        interpretations_edge={("n1", "n2"): ew},
+    )
+
+
+def build_query_dummy(module_name):
+    interp = build_ga_dummy()
+    if module_name == "interpretation_fp":
+        interp.interpretations_node = [interp.interpretations_node]
+        interp.interpretations_edge = [interp.interpretations_edge]
+    return interp
+
+
+class DummyQuery:
+    def __init__(self, comp_type, component, pred, bounds):
+        self._ct = comp_type
+        self._comp = component
+        self._pred = pred
+        self._bnd = bounds
+
+    def get_component_type(self):
+        return self._ct
+
+    def get_component(self):
+        return self._comp
+
+    def get_predicate(self):
+        return self._pred
+
+    def get_bounds(self):
+        return self._bnd
+
+
+@pytest.mark.parametrize("module_name", ["interpretation_fp", "interpretation"])
+def test_get_dict_non_persistent(module_name):
+    module = importlib.import_module(f"pyreason.scripts.interpretation.{module_name}")
+    interp = build_dummy(False)
+    result = module.Interpretation.get_dict(interp)
+
+    assert isinstance(result[0]["n1"], InterpretationDict)
+    assert result[0]["n1"]["L1"] == (0.1, 0.2)
+    assert len(result[1]["n1"]) == 0
+
+    assert result[0][("n1", "n2")]["L2"] == (0.3, 0.4)
+    assert len(result[1][("n1", "n2")]) == 0
+
+
+@pytest.mark.parametrize("module_name", ["interpretation_fp", "interpretation"])
+def test_get_dict_persistent(module_name):
+    module = importlib.import_module(f"pyreason.scripts.interpretation.{module_name}")
+    interp = build_dummy(True)
+    result = module.Interpretation.get_dict(interp)
+
+    assert result[0]["n1"]["L1"] == (0.1, 0.2)
+    assert result[1]["n1"]["L1"] == (0.1, 0.2)
+
+    assert result[0][("n1", "n2")]["L2"] == (0.3, 0.4)
+    assert result[1][("n1", "n2")]["L2"] == (0.3, 0.4)
+
+
+# ---- get_final_num_ground_atoms / query tests ----
+
+
+@pytest.mark.parametrize("module_name", ["interpretation_fp", "interpretation"])
+def test_get_final_num_ground_atoms(module_name):
+    module = importlib.import_module(f"pyreason.scripts.interpretation.{module_name}")
+    interp = build_ga_dummy()
+    assert module.Interpretation.get_final_num_ground_atoms(interp) == 2
+
+
+@pytest.mark.parametrize("module_name", ["interpretation_fp", "interpretation"])
+@pytest.mark.parametrize(
+    "comp_type, component, pred, bound, expected_bool, expected_tuple",
+    [
+        ("node", "nX", "L1", DummyBound(0, 1), False, (0, 0)),
+        ("node", "n1", "missing", DummyBound(0, 1), False, (0, 0)),
+        ("node", "n1", "L1", DummyBound(0, 0.05), False, (0, 0)),
+        ("node", "n1", "L1", DummyBound(0, 1), True, (0.1, 0.2)),
+        ("edge", ("nX", "nY"), "L2", DummyBound(0, 1), False, (0, 0)),
+        ("edge", ("n1", "n2"), "missing", DummyBound(0, 1), False, (0, 0)),
+        ("edge", ("n1", "n2"), "L2", DummyBound(0, 0.2), False, (0, 0)),
+        ("edge", ("n1", "n2"), "L2", DummyBound(0, 1), True, (0.3, 0.4)),
+    ],
+)
+def test_query(module_name, comp_type, component, pred, bound, expected_bool, expected_tuple):
+    module = importlib.import_module(f"pyreason.scripts.interpretation.{module_name}")
+    interp = build_query_dummy(module_name)
+    q = DummyQuery(comp_type, component, pred, bound)
+    assert module.Interpretation.query(interp, q) is expected_bool
+    assert module.Interpretation.query(interp, q, return_bool=False) == expected_tuple
 
