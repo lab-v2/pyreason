@@ -3259,6 +3259,119 @@ def test_update_edge_missing_world(monkeypatch, helpers_fixture):
     assert update_edge(**kwargs) == (False, 0)
 
 
+def test_add_edge_existing_predicate_map_append(monkeypatch, helpers_fixture):
+    interpretation = helpers_fixture.interpretation
+    label = helpers_fixture.label
+
+    class SimpleInterval:
+        def __init__(self, lower=0.0, upper=1.0):
+            self.lower = lower
+            self.upper = upper
+
+    class _ListShim:
+        def __call__(self, iterable=()):
+            return list(iterable)
+
+        def empty_list(self, *args, **kwargs):
+            return []
+
+    monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
+    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+
+    l = label.Label("L")
+    l.value = l.get_value()
+    source, target = "s", "t"
+    edge = (source, target)
+    neighbors = {source: [target], target: []}
+    reverse_neighbors = {source: [], target: [source]}
+    nodes = [source, target]
+    edges = [edge]
+    interpretations_node = {}
+
+    class SimpleWorld:
+        def __init__(self):
+            self.world = {}
+
+    interpretations_edge = {edge: SimpleWorld()}
+    predicate_map = {l: [("x", "y")]}
+
+    returned_edge, new_edge = helpers_fixture.add_edge(
+        source,
+        target,
+        neighbors,
+        reverse_neighbors,
+        nodes,
+        edges,
+        l,
+        interpretations_node,
+        interpretations_edge,
+        predicate_map,
+        0,
+    )
+
+    assert returned_edge == edge
+    assert new_edge is True
+    assert l in interpretations_edge[edge].world
+    assert predicate_map[l][0] == ("x", "y")
+    assert predicate_map[l][1] == edge
+
+
+def test_add_edge_existing_creates_predicate_map_entry(monkeypatch, helpers_fixture):
+    interpretation = helpers_fixture.interpretation
+    label = helpers_fixture.label
+
+    class SimpleInterval:
+        def __init__(self, lower=0.0, upper=1.0):
+            self.lower = lower
+            self.upper = upper
+
+    class _ListShim:
+        def __call__(self, iterable=()):
+            return list(iterable)
+
+        def empty_list(self, *args, **kwargs):
+            return []
+
+    monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
+    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+
+    l = label.Label("L")
+    l.value = l.get_value()
+    source, target = "s", "t"
+    edge = (source, target)
+    neighbors = {source: [target], target: []}
+    reverse_neighbors = {source: [], target: [source]}
+    nodes = [source, target]
+    edges = [edge]
+    interpretations_node = {}
+
+    class SimpleWorld:
+        def __init__(self):
+            self.world = {}
+
+    interpretations_edge = {edge: SimpleWorld()}
+    predicate_map = {}
+
+    returned_edge, new_edge = helpers_fixture.add_edge(
+        source,
+        target,
+        neighbors,
+        reverse_neighbors,
+        nodes,
+        edges,
+        l,
+        interpretations_node,
+        interpretations_edge,
+        predicate_map,
+        0,
+    )
+
+    assert returned_edge == edge
+    assert new_edge is True
+    assert l in interpretations_edge[edge].world
+    assert predicate_map[l] == [edge]
+
+
 def test_is_satisfied_node_comparison_missing_world():
     l = label.Label("L")
     l.value = l.get_value()
@@ -3271,6 +3384,13 @@ def test_is_satisfied_edge_comparison_missing_world():
     l.value = l.get_value()
     result, number = interpretation.is_satisfied_edge_comparison({}, ("a", "b"), (l, object()))
     assert (result, number) == (False, 0)
+
+
+def test_is_satisfied_edge_comparison_missing_bounds():
+    l = label.Label("L")
+    l.value = l.get_value()
+    result, number = interpretation.is_satisfied_edge_comparison({}, ("a", "b"), (l, None))
+    assert (result, number) == (True, 0)
 
 
 def test_resolve_inconsistency_node_rule_trace(monkeypatch):
