@@ -1,115 +1,264 @@
-import pyreason.scripts.interpretation.interpretation_fp as interpretation
+"""Utility to expose pure-Python versions of numba-compiled interpretation functions.
+
+The previous implementation bound to ``interpretation_fp`` directly.  This module
+now provides :func:`get_interpretation_helpers` which can return helpers for either
+``interpretation_fp`` or ``interpretation`` based on the supplied module name.
+"""
+
+from types import SimpleNamespace
+import importlib
+import inspect
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 
-# Bind pure-Python callables for Numba-compiled functions
-_is_sat_edge = interpretation.is_satisfied_edge
-is_satisfied_edge = getattr(_is_sat_edge, "py_func", _is_sat_edge)
 
-_is_sat_node = interpretation.is_satisfied_node
-is_satisfied_node = getattr(_is_sat_node, "py_func", _is_sat_node)
+def _py(func):
+    """Return the underlying Python callable for numba compiled functions."""
+    return getattr(func, "py_func", func)
 
-_get_q_edge_groundings = interpretation.get_qualified_edge_groundings
-get_qualified_edge_groundings = getattr(_get_q_edge_groundings, "py_func", _get_q_edge_groundings)
 
-_get_q_node_groundings = interpretation.get_qualified_node_groundings
-get_qualified_node_groundings = getattr(_get_q_node_groundings, "py_func", _get_q_node_groundings)
+def get_interpretation_helpers(module_name: str = "interpretation_fp"):
+    """Return a namespace with helpers for the given interpretation module.
 
-_get_rule_node_clause_grounding = interpretation.get_rule_node_clause_grounding
-get_rule_node_clause_grounding = getattr(_get_rule_node_clause_grounding, "py_func", _get_rule_node_clause_grounding)
+    Parameters
+    ----------
+    module_name:
+        Either ``"interpretation_fp"`` or ``"interpretation"``.
+    """
+    interpretation = importlib.import_module(
+        f"pyreason.scripts.interpretation.{module_name}"
+    )
 
-_get_rule_edge_clause_grounding = interpretation.get_rule_edge_clause_grounding
-get_rule_edge_clause_grounding = getattr(_get_rule_edge_clause_grounding, "py_func", _get_rule_edge_clause_grounding)
+    ns = SimpleNamespace()
+    ns.interpretation = interpretation
+    ns.label = label
 
-_satisfies_threshold = interpretation._satisfies_threshold
-satisfies_threshold = getattr(_satisfies_threshold, "py_func", _satisfies_threshold)
+    ns.is_satisfied_edge = _py(interpretation.is_satisfied_edge)
+    ns.is_satisfied_node = _py(interpretation.is_satisfied_node)
+    ns.get_qualified_edge_groundings = _py(
+        interpretation.get_qualified_edge_groundings
+    )
+    ns.get_qualified_node_groundings = _py(
+        interpretation.get_qualified_node_groundings
+    )
+    ns.get_rule_node_clause_grounding = _py(
+        interpretation.get_rule_node_clause_grounding
+    )
+    ns.get_rule_edge_clause_grounding = _py(
+        interpretation.get_rule_edge_clause_grounding
+    )
+    ns.satisfies_threshold = _py(interpretation._satisfies_threshold)
+    ns.check_node_grounding_threshold_satisfaction = _py(
+        interpretation.check_node_grounding_threshold_satisfaction
+    )
+    ns.check_edge_grounding_threshold_satisfaction = _py(
+        interpretation.check_edge_grounding_threshold_satisfaction
+    )
+    ns.refine_groundings = _py(interpretation.refine_groundings)
+    ns.check_all_clause_satisfaction = _py(
+        interpretation.check_all_clause_satisfaction
+    )
+    ns.add_node = _py(interpretation._add_node)
 
-_check_node_thresh = interpretation.check_node_grounding_threshold_satisfaction
-check_node_grounding_threshold_satisfaction = getattr(_check_node_thresh, "py_func", _check_node_thresh)
+    _add_edge_fn = _py(interpretation._add_edge)
+    if "num_ga" in inspect.signature(_add_edge_fn).parameters:
+        def add_edge(*args):
+            *pre, t = args
+            return _add_edge_fn(*pre, [0], t)
+    else:
+        def add_edge(*args):
+            return _add_edge_fn(*args)
+    ns.add_edge = add_edge
 
-_check_edge_thresh = interpretation.check_edge_grounding_threshold_satisfaction
-check_edge_grounding_threshold_satisfaction = getattr(_check_edge_thresh, "py_func", _check_edge_thresh)
+    _ground_rule_fn = _py(interpretation._ground_rule)
+    if "num_ga" in inspect.signature(_ground_rule_fn).parameters:
+        def ground_rule(*args, **kwargs):
+            return _ground_rule_fn(*args, num_ga=[0], **kwargs)
+    else:
+        def ground_rule(*args, **kwargs):
+            return _ground_rule_fn(*args, **kwargs)
+    ns.ground_rule = ground_rule
+    ns.update_rule_trace = _py(interpretation._update_rule_trace)
+    ns.are_satisfied_node = _py(interpretation.are_satisfied_node)
+    ns.are_satisfied_edge = _py(interpretation.are_satisfied_edge)
+    ns.is_satisfied_node_comparison = _py(
+        interpretation.is_satisfied_node_comparison
+    )
+    ns.is_satisfied_edge_comparison = _py(
+        interpretation.is_satisfied_edge_comparison
+    )
+    ns.check_consistent_node = _py(interpretation.check_consistent_node)
+    ns.check_consistent_edge = _py(interpretation.check_consistent_edge)
+    ns.resolve_inconsistency_node = _py(
+        interpretation.resolve_inconsistency_node
+    )
+    ns.resolve_inconsistency_edge = _py(
+        interpretation.resolve_inconsistency_edge
+    )
+    if hasattr(interpretation, "_add_node_to_interpretation"):
+        ns.add_node_to_interpretation = _py(
+            interpretation._add_node_to_interpretation
+        )
+    if hasattr(interpretation, "_add_edge_to_interpretation"):
+        ns.add_edge_to_interpretation = _py(
+            interpretation._add_edge_to_interpretation
+        )
+    ns.add_edges = _py(interpretation._add_edges)
+    ns.delete_edge = _py(interpretation._delete_edge)
+    ns.delete_node = _py(interpretation._delete_node)
+    ns.float_to_str = _py(interpretation.float_to_str)
+    ns.str_to_float = _py(interpretation.str_to_float)
+    ns.str_to_int = _py(interpretation.str_to_int)
+    ns.annotate = _py(interpretation.annotate)
 
-_refine_groundings = interpretation.refine_groundings
-refine_groundings = getattr(_refine_groundings, "py_func", _refine_groundings)
+    # Initialization helpers
+    ns.init_reverse_neighbors = _py(
+        interpretation.Interpretation._init_reverse_neighbors
+    )
 
-_check_all = interpretation.check_all_clause_satisfaction
-check_all_clause_satisfaction = getattr(_check_all, "py_func", _check_all)
+    _init_nodes_fn = _py(
+        interpretation.Interpretation._init_interpretations_node
+    )
+    if "num_ga" in inspect.signature(_init_nodes_fn).parameters:
+        def init_interpretations_node(nodes, specific_labels):
+            return _init_nodes_fn(nodes, specific_labels, [0])
+    else:
+        def init_interpretations_node(nodes, specific_labels):
+            return _init_nodes_fn(nodes, specific_labels)
+    ns.init_interpretations_node = init_interpretations_node
 
-_add_node = interpretation._add_node
-add_node = getattr(_add_node, "py_func", _add_node)
+    _init_edges_fn = _py(
+        interpretation.Interpretation._init_interpretations_edge
+    )
+    if "num_ga" in inspect.signature(_init_edges_fn).parameters:
+        def init_interpretations_edge(edges, specific_labels):
+            return _init_edges_fn(edges, specific_labels, [0])
+    else:
+        def init_interpretations_edge(edges, specific_labels):
+            return _init_edges_fn(edges, specific_labels)
+    ns.init_interpretations_edge = init_interpretations_edge
 
-_add_edge = interpretation._add_edge
-add_edge = getattr(_add_edge, "py_func", _add_edge)
+    # Additional initialization helpers
+    ns.init_convergence = _py(
+        interpretation.Interpretation._init_convergence
+    )
+    ns.init_facts = _py(
+        interpretation.Interpretation._init_facts
+    )
+    ns.start_fp = _py(
+        interpretation.Interpretation._start_fp
+    )
 
-_ground_rule = interpretation._ground_rule
-ground_rule = getattr(_ground_rule, "py_func", _ground_rule)
+    _reason_fn = _py(interpretation.Interpretation.reason)
+    if "num_ga" in inspect.signature(_reason_fn).parameters:
+        def reason(
+            interpretations_node,
+            interpretations_edge,
+            predicate_map_node,
+            predicate_map_edge,
+            tmax,
+            prev_reasoning_data,
+            rules,
+            nodes,
+            edges,
+            neighbors,
+            reverse_neighbors,
+            rules_to_be_applied_node,
+            rules_to_be_applied_edge,
+            edges_to_be_added_node_rule,
+            edges_to_be_added_edge_rule,
+            rules_to_be_applied_node_trace,
+            rules_to_be_applied_edge_trace,
+            facts_to_be_applied_node,
+            facts_to_be_applied_edge,
+            facts_to_be_applied_node_trace,
+            facts_to_be_applied_edge_trace,
+            ipl,
+            rule_trace_node,
+            rule_trace_edge,
+            rule_trace_node_atoms,
+            rule_trace_edge_atoms,
+            reverse_graph,
+            atom_trace,
+            save_graph_attributes_to_rule_trace,
+            persistent,
+            inconsistency_check,
+            store_interpretation_changes,
+            update_mode,
+            allow_ground_rules,
+            max_facts_time,
+            annotation_functions,
+            convergence_mode,
+            convergence_delta,
+            verbose,
+            again,
+        ):
+            return _reason_fn(
+                interpretations_node[0],
+                interpretations_edge[0],
+                predicate_map_node,
+                predicate_map_edge,
+                tmax,
+                prev_reasoning_data,
+                rules,
+                nodes,
+                edges,
+                neighbors,
+                reverse_neighbors,
+                rules_to_be_applied_node,
+                rules_to_be_applied_edge,
+                edges_to_be_added_node_rule,
+                edges_to_be_added_edge_rule,
+                rules_to_be_applied_node_trace,
+                rules_to_be_applied_edge_trace,
+                facts_to_be_applied_node,
+                facts_to_be_applied_edge,
+                facts_to_be_applied_node_trace,
+                facts_to_be_applied_edge_trace,
+                ipl,
+                rule_trace_node,
+                rule_trace_edge,
+                rule_trace_node_atoms,
+                rule_trace_edge_atoms,
+                reverse_graph,
+                atom_trace,
+                save_graph_attributes_to_rule_trace,
+                persistent,
+                inconsistency_check,
+                store_interpretation_changes,
+                update_mode,
+                allow_ground_rules,
+                max_facts_time,
+                annotation_functions,
+                convergence_mode,
+                convergence_delta,
+                [0],
+                verbose,
+                again,
+            )
+    else:
+        reason = _reason_fn
 
-_update_rule_trace = interpretation._update_rule_trace
-update_rule_trace = getattr(_update_rule_trace, "py_func", _update_rule_trace)
+    ns.reason = reason
 
-_are_sat_node = interpretation.are_satisfied_node
-are_satisfied_node = getattr(_are_sat_node, "py_func", _are_sat_node)
+    class FakeLabel:
+        def __init__(self, value):
+            self.value = value
 
-_are_sat_edge = interpretation.are_satisfied_edge
-are_satisfied_edge = getattr(_are_sat_edge, "py_func", _are_sat_edge)
+        def __hash__(self):
+            return hash(self.value)
 
-_is_sat_node_cmp = interpretation.is_satisfied_node_comparison
-is_satisfied_node_comparison = getattr(_is_sat_node_cmp, "py_func", _is_sat_node_cmp)
+        def __eq__(self, other):
+            return isinstance(other, FakeLabel) and self.value == other.value
 
-_is_sat_edge_cmp = interpretation.is_satisfied_edge_comparison
-is_satisfied_edge_comparison = getattr(_is_sat_edge_cmp, "py_func", _is_sat_edge_cmp)
+        def __repr__(self):
+            return f"FakeLabel({self.value!r})"
 
-_check_cons_node = interpretation.check_consistent_node
-check_consistent_node = getattr(_check_cons_node, "py_func", _check_cons_node)
+    ns.FakeLabel = FakeLabel
+    return ns
 
-_check_cons_edge = interpretation.check_consistent_edge
-check_consistent_edge = getattr(_check_cons_edge, "py_func", _check_cons_edge)
 
-_resolve_incons_node = interpretation.resolve_inconsistency_node
-resolve_inconsistency_node = getattr(_resolve_incons_node, "py_func", _resolve_incons_node)
-
-_resolve_incons_edge = interpretation.resolve_inconsistency_edge
-resolve_inconsistency_edge = getattr(_resolve_incons_edge, "py_func", _resolve_incons_edge)
-
-_add_node_interp = interpretation._add_node_to_interpretation
-add_node_to_interpretation = getattr(_add_node_interp, "py_func", _add_node_interp)
-
-_add_edge_interp = interpretation._add_edge_to_interpretation
-add_edge_to_interpretation = getattr(_add_edge_interp, "py_func", _add_edge_interp)
-
-_add_edges_fn = interpretation._add_edges
-add_edges = getattr(_add_edges_fn, "py_func", _add_edges_fn)
-
-_delete_edge_fn = interpretation._delete_edge
-delete_edge = getattr(_delete_edge_fn, "py_func", _delete_edge_fn)
-
-_delete_node_fn = interpretation._delete_node
-delete_node = getattr(_delete_node_fn, "py_func", _delete_node_fn)
-
-_float_to_str = interpretation.float_to_str
-float_to_str = getattr(_float_to_str, "py_func", _float_to_str)
-
-_str_to_float = interpretation.str_to_float
-str_to_float = getattr(_str_to_float, "py_func", _str_to_float)
-
-_str_to_int = interpretation.str_to_int
-str_to_int = getattr(_str_to_int, "py_func", _str_to_int)
-
-_annotate = interpretation.annotate
-annotate = getattr(_annotate, "py_func", _annotate)
-
-_reason = interpretation.Interpretation.reason
-reason = getattr(_reason, "py_func", _reason)
-
-class FakeLabel:
-    def __init__(self, value):
-        self.value = value
-
-    def __hash__(self):
-        return hash(self.value)
-
-    def __eq__(self, other):
-        return isinstance(other, FakeLabel) and self.value == other.value
-
-    def __repr__(self):
-        return f"FakeLabel({self.value!r})"
+# Provide default exports for backward compatibility with existing tests
+_default = get_interpretation_helpers("interpretation_fp")
+for _name in dir(_default):
+    if not _name.startswith("_"):
+        globals()[_name] = getattr(_default, _name)
