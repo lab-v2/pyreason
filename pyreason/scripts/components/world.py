@@ -8,8 +8,8 @@ class World:
     def __init__(self, labels):
         self._labels = labels
         self._world = numba.typed.Dict.empty(key_type=label.label_type, value_type=interval.interval_type)
-        for my_label in labels:
-            self._world[my_label] = interval.closed(0.0, 1.0)
+        for l in labels:
+            self._world[l] = interval.closed(0.0, 1.0)
 
     @property
     def world(self):
@@ -29,6 +29,8 @@ class World:
         return result
 
     def update(self, label, interval):
+        lwanted = None
+        bwanted = None 
         current_bnd = self._world[label]
         new_bnd = current_bnd.intersection(interval)
         self._world[label] = new_bnd
@@ -45,7 +47,7 @@ class World:
 
     def __str__(self):
         result = ''
-        for my_label in self._world.keys():
-            result = result + my_label.get_value() + ',' + self._world[my_label].to_str() + '\n'
+        for label in self._world.keys():
+            result = result + label.get_value() + ',' + self._world[label].to_str() + '\n'
 
         return result
