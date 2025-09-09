@@ -1,5 +1,5 @@
 # Test if the simple hello world program works
-#import pyreason as pr
+import pyreason as pr
 import faulthandler
 import json
 import os
@@ -7,7 +7,7 @@ import subprocess
 import sys
 import textwrap
 
-import pyreason.pyreason as pr
+# import pyreason.pyreason as pr
 
 
 def test_hello_world():
@@ -31,7 +31,6 @@ def test_hello_world():
     # Run the program for two timesteps to see the diffusion take place
     faulthandler.enable()
     interpretation = pr.reason(timesteps=2)
-    print("Reasoning")
 
     # Display the changes in the interpretation for each timestep
     dataframes = pr.filter_and_sort_nodes(interpretation, ['popular'])
