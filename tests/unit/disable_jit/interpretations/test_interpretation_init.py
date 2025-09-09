@@ -61,6 +61,30 @@ def test_init_reverse_neighbors_empty(shim_types):
     assert init_reverse_neighbors({}) == {}
 
 
+# ---- Interpretation __init__ neighbor tests ----
+
+def test_interpretation_init_neighbors(shim_types):
+    g = nx.Graph()
+    g.add_edge("n1", "n2")
+    interp = interpretation.Interpretation(
+        g,
+        {},
+        {},
+        {},
+        False,
+        False,
+        False,
+        False,
+        False,
+        0,
+        False,
+    )
+    assert set(interp.neighbors["n1"]) == {"n2"}
+    assert set(interp.neighbors["n2"]) == {"n1"}
+    assert set(interp.reverse_neighbors["n1"]) == {"n2"}
+    assert set(interp.reverse_neighbors["n2"]) == {"n1"}
+
+
 # ---- _init_interpretations_node tests ----
 
 def test_init_interpretations_node_populates(shim_types):
@@ -265,3 +289,21 @@ def test_start_fp_restart_no_verbose(shim_types, capsys):
         assert interp.num_ga == [1, 1]
     else:
         assert interp.num_ga == [1]
+
+
+# ---- start_fp wrapper tests ----
+
+def test_start_fp_invokes_private(shim_types):
+    interp = build_interp()
+    called = {}
+
+    def stub(self, rules, max_facts_time, verbose, again, restart):
+        called["args"] = (rules, max_facts_time, verbose, again, restart)
+
+    interp._start_fp = MethodType(stub, interp)
+    fact = Fact("other", "n1", "L", (0.0, 1.0), False, 0, 1)
+    interp.start_fp(3, [fact], [], ["r"], True, 0.2, -1, again=True, restart=False)
+    assert interp.tmax == 3
+    assert interp._convergence_mode == "delta_interpretation"
+    assert interp._convergence_delta == 0.2
+    assert called["args"] == (["r"], 1, True, True, False)
