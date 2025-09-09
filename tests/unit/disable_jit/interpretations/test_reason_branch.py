@@ -297,3 +297,96 @@ def test_reason_skips_static_node_rule(monkeypatch, reason_env):
     mock_annotate.assert_not_called()
     assert mock_update.call_count == 1
     assert mock_update.call_args.kwargs["mode"] == "fact"
+
+
+def test_reason_applies_applicable_edge_rule_with_trace_and_delta_zero(monkeypatch, reason_env):
+    if interpretation.__name__.endswith("interpretation_fp"):
+        pytest.skip("interpretation backend only")
+
+    node = reason_env["node"]
+    other = "n2"
+    edge = (node, other)
+    reason_env["nodes"].append(other)
+    reason_env["edges"].append(edge)
+    reason_env["neighbors"].setdefault(other, [])
+    reason_env["reverse_neighbors"].setdefault(other, [])
+
+    world_cls = type(reason_env["interpretations_node"][0][node])
+    interval_cls = type(reason_env["bnd"])
+
+    def _add_edges_stub(
+        sources,
+        targets,
+        neighbors,
+        reverse_neighbors,
+        nodes,
+        edges_list,
+        edge_l,
+        interp_node_t,
+        interp_edge_t,
+        predicate_map_edge,
+        *rest,
+    ):
+        e = (sources[0], targets[0])
+        world = world_cls()
+        world.world[edge_l] = interval_cls(0, False)
+        interp_edge_t[e] = world
+        edges_list.append(e)
+        return [e], 0
+
+    monkeypatch.setattr(interpretation, "_add_edges", _add_edges_stub)
+    monkeypatch.setattr(interpretation, "check_consistent_edge", lambda *a, **k: True)
+    monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: True)
+    mock_update_edge = Mock(return_value=(True, 0))
+    monkeypatch.setattr(interpretation, "_update_edge", mock_update_edge)
+    monkeypatch.setattr(interpretation, "_update_node", Mock(return_value=(True, 0)))
+
+    edge_lbl = FakeLabel("E")
+
+    class Rule:
+        def __init__(self, delta):
+            self._delta = delta
+
+        def get_delta(self):
+            return self._delta
+
+        def get_target(self):
+            return edge_lbl
+
+        def is_static_rule(self):
+            return False
+
+        def get_name(self):
+            return "r"
+
+        def get_weights(self):
+            return ()
+
+    rule1 = Rule(0)
+    rule2 = Rule(1)
+    reason_env["rules"] = [rule1, rule2]
+
+    edges_to_add = ([node], [other], edge_lbl)
+    applicable_edge_rule = (edge, [], [], [], edges_to_add)
+    mock_ground = Mock(
+        side_effect=[
+            ([], [applicable_edge_rule]),
+            ([], []),
+            ([], []),
+            ([], []),
+        ]
+    )
+    monkeypatch.setattr(interpretation, "_ground_rule", mock_ground)
+    monkeypatch.setattr(interpretation, "annotate", Mock(return_value=(0.0, 1.0)))
+    monkeypatch.setattr(interpretation.interval, "closed", lambda l, u, static=False: reason_env["bnd"].copy())
+
+    fp, _ = reason_env["run"](
+        atom_trace=True,
+        convergence_mode="delta_interpretation",
+        convergence_delta=0,
+    )
+
+    assert fp == 2
+    assert mock_ground.call_count == 2
+    assert mock_ground.call_args_list[0].args[9] is True
+    assert mock_update_edge.call_count == 1
