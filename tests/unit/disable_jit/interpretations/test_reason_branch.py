@@ -390,3 +390,69 @@ def test_reason_applies_applicable_edge_rule_with_trace_and_delta_zero(monkeypat
     assert mock_ground.call_count == 2
     assert mock_ground.call_args_list[0].args[9] is True
     assert mock_update_edge.call_count == 1
+
+
+def test_reason_verbose_prints_convergence(monkeypatch, reason_env, capsys):
+    """Ensure verbose flag triggers convergence message."""
+    if interpretation.__name__.endswith("interpretation_fp"):
+        pytest.skip("interpretation backend only")
+
+    monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: True)
+
+    reason_env["run"](verbose=True)
+
+    assert "Converged at time:" in capsys.readouterr().out
+
+
+def test_get_num_ground_atoms_trims_trailing_zero():
+    """get_num_ground_atoms removes a trailing zero and returns list."""
+    if interpretation.__name__.endswith("interpretation_fp"):
+        pytest.skip("interpretation backend only")
+
+    interp_cls = interpretation.Interpretation
+    obj = interp_cls.__new__(interp_cls)
+
+    obj.num_ga = [1, 0]
+    assert obj.get_num_ground_atoms() == [1]
+
+    obj.num_ga = [1, 2]
+    assert obj.get_num_ground_atoms() == [1, 2]
+
+
+@pytest.mark.parametrize(
+    "quantifier, threshold, expected",
+    [
+        ("total", ("greater_equal", ("number", "total"), 2), False),
+        ("available", ("greater_equal", ("number", "available"), 1), True),
+    ],
+)
+def test_check_edge_grounding_threshold_satisfaction_branches(
+    monkeypatch, quantifier, threshold, expected
+):
+    if interpretation.__name__.endswith("interpretation_fp"):
+        pytest.skip("interpretation backend only")
+
+    monkeypatch.setattr(
+        interpretation.interval, "closed", lambda *a, **k: object()
+    )
+
+    class World:
+        def __init__(self, sat):
+            self._sat = sat
+
+        def is_satisfied(self, _l, _b):
+            return self._sat
+
+    edge1 = ("n1", "n2")
+    edge2 = ("n1", "n3")
+    interpretations_edge = {edge1: World(True), edge2: World(False)}
+    grounding = [edge1, edge2]
+    qualified_grounding = [edge1]
+
+    l = label.Label("L")
+
+    result = check_edge_grounding_threshold_satisfaction(
+        interpretations_edge, grounding, qualified_grounding, l, threshold
+    )
+
+    assert result is expected
