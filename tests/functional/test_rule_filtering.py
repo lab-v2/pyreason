@@ -8,7 +8,7 @@ def test_rule_filtering():
     pr.reset_settings()
 
     # Modify the paths based on where you've stored the files we made above
-    graph_path = './tests/friends_graph.graphml'
+    graph_path = './tests/functional/friends_graph.graphml'
 
     # Modify pyreason settings to make verbose
     pr.settings.verbose = True     # Print info to screen
