@@ -31,6 +31,7 @@ class World:
     def update(self, label, interval):
         lwanted = None
         bwanted = None 
+        
         current_bnd = self._world[label]
         new_bnd = current_bnd.intersection(interval)
         self._world[label] = new_bnd

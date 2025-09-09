@@ -6,8 +6,3 @@ API Documentation
    :members:
    :undoc-members:
    :show-inheritance:
-
-.. automodule:: classifier
-   :members:
-   :undoc-members:
-   :show-inheritance:
