@@ -205,3 +205,95 @@ def test_reason_skips_rule_grounding_when_out_of_time(monkeypatch, reason_env):
     reason_env["run"](tmax=0, convergence_mode="delta_interpretation", convergence_delta=0)
 
     mock_ground.assert_not_called()
+
+
+def test_reason_applies_applicable_node_rule_with_trace_and_delta_zero(monkeypatch, reason_env):
+    if interpretation.__name__.endswith("interpretation_fp"):
+        pytest.skip("interpretation backend only")
+
+    monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: True)
+
+    mock_update = Mock(return_value=(True, 0))
+    monkeypatch.setattr(interpretation, "_update_node", mock_update)
+
+    class Rule:
+        def get_delta(self):
+            return 0
+
+        def get_target(self):
+            return reason_env["label"]
+
+        def is_static_rule(self):
+            return False
+
+        def get_name(self):
+            return "r"
+
+        def get_weights(self):
+            return ()
+
+    rule = Rule()
+    reason_env["rules"] = [rule]
+
+    applicable_rule = (reason_env["node"], [], [], [], None)
+    mock_ground = Mock(side_effect=[([applicable_rule], []), ([], [])])
+    monkeypatch.setattr(interpretation, "_ground_rule", mock_ground)
+    monkeypatch.setattr(interpretation, "annotate", Mock(return_value=(0.0, 1.0)))
+    monkeypatch.setattr(interpretation.interval, "closed", lambda l, u, static=False: reason_env["bnd"].copy())
+
+    fp, _ = reason_env["run"](
+        atom_trace=True,
+        convergence_mode="delta_interpretation",
+        convergence_delta=0,
+    )
+
+    assert fp == 2
+    assert mock_ground.call_count == 2
+    assert mock_update.call_count == 2
+    # _ground_rule receives atom_trace flag enabling trace list updates
+    assert mock_ground.call_args_list[0].args[9] is True
+
+
+
+def test_reason_skips_static_node_rule(monkeypatch, reason_env):
+    if interpretation.__name__.endswith("interpretation_fp"):
+        pytest.skip("interpretation backend only")
+
+    reason_env["facts_to_be_applied_node"].clear()
+    other_label = type(reason_env["label"])("L2")
+    reason_env["facts_to_be_applied_node"].append((0, reason_env["node"], other_label, reason_env["bnd"], False, False))
+    monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: True)
+
+    static_bnd = reason_env["bnd"].copy()
+    static_bnd._static = True
+    reason_env["interpretations_node"][0][reason_env["node"]].world[reason_env["label"]] = static_bnd
+
+    class Rule:
+        def get_delta(self):
+            return 1
+
+        def get_target(self):
+            return reason_env["label"]
+
+        def is_static_rule(self):
+            return False
+
+        def get_name(self):
+            return "r"
+
+        def get_weights(self):
+            return ()
+
+    reason_env["rules"] = [Rule()]
+    applicable_rule = (reason_env["node"], [], [], [], None)
+    monkeypatch.setattr(interpretation, "_ground_rule", Mock(return_value=([applicable_rule], [])))
+    mock_annotate = Mock(return_value=(0.0, 1.0))
+    monkeypatch.setattr(interpretation, "annotate", mock_annotate)
+    mock_update = Mock(return_value=(True, 0))
+    monkeypatch.setattr(interpretation, "_update_node", mock_update)
+
+    reason_env["run"](convergence_mode="delta_interpretation", convergence_delta=0)
+
+    mock_annotate.assert_not_called()
+    assert mock_update.call_count == 1
+    assert mock_update.call_args.kwargs["mode"] == "fact"
