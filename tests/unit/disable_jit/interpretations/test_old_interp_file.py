@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 pytestmark = pytest.mark.usefixtures("helpers_fixture")
 
-
+# These tests are desinged to test branches and functions defined in interpretation.py that do not exist in interpretation_fp.py.
 def test_reason_resets_non_persistent(monkeypatch, reason_env):
     if interpretation.__name__.endswith("interpretation_fp"):
         pytest.skip("interpretation backend only")
