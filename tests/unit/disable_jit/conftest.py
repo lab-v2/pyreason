@@ -5,6 +5,23 @@ import numba
 numba.config.DISABLE_JIT = True
 import sys, types
 sys.modules.setdefault("pyreason.pyreason", types.ModuleType("pyreason.pyreason"))
+stub = sys.modules["pyreason.pyreason"]
+stub.settings = types.SimpleNamespace()
+stub.load_graphml = lambda *a, **k: None
+stub.add_rule = lambda *a, **k: None
+stub.add_fact = lambda *a, **k: None
+stub.reason = lambda *a, **k: None
+stub.reset = lambda *a, **k: None
+stub.reset_rules = lambda *a, **k: None
+class Rule:
+    def __init__(self, *args, **kwargs):
+        pass
+class Fact:
+    def __init__(self, *args, **kwargs):
+        pass
+stub.Rule = Rule
+stub.Fact = Fact
+
 
 import pytest
 from tests.unit.disable_jit.interpretations.test_interpretation_common import get_interpretation_helpers
