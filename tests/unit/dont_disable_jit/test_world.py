@@ -19,16 +19,16 @@ def test_make_world_and_bounds():
     world_dict[l] = interval.closed(0.4, 0.6)
     w = World.make_world([l], world_dict)
     assert w.world is world_dict
-    b = World.get_bound(w, l)
+    b = w.get_bound(l)
     assert b.lower == 0.4 and b.upper == 0.6
 
 
 def test_is_satisfied_and_update_and_str():
     l = label.Label("B")
     w = World([l])
-    assert World.is_satisfied(w, l, interval.closed(0.0, 1.0))
-    assert not World.is_satisfied(w, l, interval.closed(0.0, 0.5))
-    World.update(w, l, interval.closed(0.2, 0.4))
-    b = World.get_bound(w, l)
+    assert w.is_satisfied(l, interval.closed(0.0, 1.0))
+    assert not w.is_satisfied(l, interval.closed(0.0, 0.5))
+    w.update(l, interval.closed(0.2, 0.4))
+    b = w.get_bound(l)
     assert b.lower == 0.2 and b.upper == 0.4
     assert "B,[0.2,0.4]" in str(w)
