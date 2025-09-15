@@ -4,7 +4,7 @@ repos:
       # --- Unit tests ---
       - id: pytest-unit-with-coverage
         name: Run unit tests with coverage and open report
-        entry: bash -c 'pytest tests/unit/disable_jit --cov pyreason   --cov-report=html  && open htmlcov/index.html'
+        entry: bash -c 'pytest tests/unit/disable_jit --cov pyreason   --cov-report=html  && ( (command -v xdg-open >/dev/null && xdg-open htmlcov/index.html) || (command -v open >/dev/null && open htmlcov/index.html) || (command -v start >/dev/null && start htmlcov/index.html) )'
         language: system
         pass_filenames: false
 
