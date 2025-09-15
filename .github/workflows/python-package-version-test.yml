@@ -30,6 +30,13 @@ jobs:
         python -m pip install flake8 pytest
         pip install torch==2.6.0
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Test with pytest
+    - name: Pytest Unit Tests with JIT Disabled
       run: |
         pytest tests/unit/disable_jit
+    - name: Pytest Unit Tests with JIT Enabled
+      run: |
+        pytest tests/unit/dont_disable_jit
+    - name: Pytest Functional Tests
+      run: |
+        pytest tests/functional
+
