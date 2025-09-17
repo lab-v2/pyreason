@@ -1,0 +1,24 @@
+repos:
+  - repo: local
+    hooks:
+      # --- Unit tests ---
+      - id: pytest-unit-with-coverage
+        name: Run unit tests with coverage and open report
+        entry: bash -c 'pytest tests/unit/disable_jit --cov pyreason   --cov-report=html  && ( (command -v xdg-open >/dev/null && xdg-open htmlcov/index.html) || (command -v open >/dev/null && open htmlcov/index.html) || (command -v start >/dev/null && start htmlcov/index.html) )'
+        language: system
+        pass_filenames: false
+
+      - id: pytest-unit-jit
+        name: Run JIT-enabled unit tests
+        entry: bash -c 'pytest tests/unit/dont_disable_jit'
+        language: system
+        pass_filenames: false
+
+      # --- Functional tests ---
+      - id: pytest-functional
+        name: Run functional tests
+        entry: bash -c 'pytest tests/functional'
+        language: system
+        pass_filenames: false
+        # Only run manually, not on every commit
+        stages: [pre-push]

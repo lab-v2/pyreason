@@ -2,7 +2,7 @@ import pyreason as pr
 
 
 def test_anyBurl_rule_1():
-    graph_path = './tests/knowledge_graph_test_subset.graphml'
+    graph_path = './tests/functional/knowledge_graph_test_subset.graphml'
     pr.reset()
     pr.reset_rules()
     pr.reset_settings()
@@ -36,7 +36,7 @@ def test_anyBurl_rule_1():
 
 
 def test_anyBurl_rule_2():
-    graph_path = './tests/knowledge_graph_test_subset.graphml'
+    graph_path = './tests/functional/knowledge_graph_test_subset.graphml'
     pr.reset()
     pr.reset_rules()
     pr.reset_settings()
@@ -72,7 +72,7 @@ def test_anyBurl_rule_2():
 
 
 def test_anyBurl_rule_3():
-    graph_path = './tests/knowledge_graph_test_subset.graphml'
+    graph_path = './tests/functional/knowledge_graph_test_subset.graphml'
     pr.reset()
     pr.reset_rules()
     pr.reset_settings()
@@ -108,7 +108,7 @@ def test_anyBurl_rule_3():
 
 
 def test_anyBurl_rule_4():
-    graph_path = './tests/knowledge_graph_test_subset.graphml'
+    graph_path = './tests/functional/knowledge_graph_test_subset.graphml'
     pr.reset()
     pr.reset_rules()
     pr.reset_settings()

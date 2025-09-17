@@ -9,7 +9,7 @@ def test_custom_thresholds():
     pr.reset_rules()
 
     # Modify the paths based on where you've stored the files we made above
-    graph_path = "./tests/group_chat_graph.graphml"
+    graph_path = "./tests/functional/group_chat_graph.graphml"
 
     # Modify pyreason settings to make verbose
     pr.reset_settings()
