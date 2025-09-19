@@ -1,0 +1,65 @@
+{
+  "test_suites": {
+    "api_tests": {
+      "name": "API Tests",
+      "description": "Tests for main pyreason.py API functions",
+      "path": "tests/unit/api_tests",
+      "coverage_source": "pyreason",
+      "jit_disabled": false,
+      "uses_real_pyreason": true,
+      "environment_vars": {},
+      "pytest_args": ["-v"],
+      "timeout": 300
+    },
+    "disable_jit": {
+      "name": "JIT Disabled Tests",
+      "description": "Tests for internal interpretation logic with JIT disabled",
+      "path": "tests/unit/disable_jit",
+      "coverage_source": "pyreason.scripts",
+      "jit_disabled": true,
+      "uses_real_pyreason": false,
+      "environment_vars": {
+        "NUMBA_DISABLE_JIT": "1"
+      },
+      "pytest_args": ["-v"],
+      "timeout": 600
+    },
+    "dont_disable_jit": {
+      "name": "JIT Enabled Tests",
+      "description": "Tests for components that benefit from JIT compilation",
+      "path": "tests/unit/dont_disable_jit",
+      "coverage_source": "pyreason.scripts",
+      "jit_disabled": false,
+      "uses_real_pyreason": false,
+      "environment_vars": {},
+      "pytest_args": ["-v"],
+      "timeout": 300
+    }
+  },
+  "coverage": {
+    "combine": true,
+    "html_report": true,
+    "xml_report": true,
+    "json_report": false,
+    "fail_under": 80,
+    "exclude_patterns": [
+      "*/tests/*",
+      "*/conftest.py",
+      "*/__pycache__/*",
+      "*/setup.py"
+    ],
+    "omit_stub_modules": true
+  },
+  "execution": {
+    "parallel_suites": ["api_tests", "dont_disable_jit"],
+    "sequential_suites": ["disable_jit"],
+    "continue_on_failure": true,
+    "verbose": true
+  },
+  "output": {
+    "combined_report_dir": "test_reports",
+    "individual_reports": true,
+    "junit_xml": true,
+    "console_output": "detailed"
+  }
+}
