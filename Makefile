@@ -91,6 +91,18 @@ test-consistency: ## Run numba consistency tests
 	@echo "$(BOLD)$(BLUE)Running consistency tests...$(RESET)"
 	$(PYTHON) -m pytest tests/unit/dont_disable_jit/test_numba_consistency.py -v
 
+test-functional: ## Run functional/end-to-end tests
+	@echo "$(BOLD)$(BLUE)Running functional tests...$(RESET)"
+	$(RUN_TESTS) --suite functional
+
+test-functional-direct: ## Run functional tests directly with pytest
+	@echo "$(BOLD)$(BLUE)Running functional tests directly...$(RESET)"
+	$(PYTHON) -m pytest tests/functional -v
+
+test-all-suites: ## Run all test suites including functional tests
+	@echo "$(BOLD)$(BLUE)Running all test suites including functional...$(RESET)"
+	$(RUN_TESTS)
+
 # Coverage targets
 coverage-report: ## Show coverage report in terminal
 	@echo "$(BOLD)$(BLUE)Generating coverage report...$(RESET)"

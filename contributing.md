@@ -34,11 +34,12 @@ ruff check .
 
 ### Enhanced Test Suite
 
-PyReason uses a unified test runner that handles multiple test configurations automatically. The test suite is organized into three directories:
+PyReason uses a unified test runner that handles multiple test configurations automatically. The test suite is organized into four directories:
 
 - **`tests/unit/api_tests/`** - Tests for main pyreason.py API functions (JIT enabled, real pyreason)
 - **`tests/unit/disable_jit/`** - Tests for internal interpretation logic (JIT disabled, stubbed environment)
 - **`tests/unit/dont_disable_jit/`** - Tests for components that benefit from JIT (JIT enabled, lightweight stubs)
+- **`tests/functional/`** - End-to-end functional tests (JIT enabled, real pyreason, longer running)
 
 ### Quick Start
 
@@ -70,6 +71,9 @@ make test-no-jit
 
 # Consistency tests
 make test-consistency
+
+# Functional/end-to-end tests
+make test-functional
 ```
 
 ### Advanced Options
@@ -84,8 +88,10 @@ python run_tests.py --no-coverage
 # Run specific suites
 python run_tests.py --suite api_tests --suite dont_disable_jit
 
-# Run functional tests
-pytest tests/functional
+# Run functional tests (multiple options)
+make test-functional          # Using test runner
+make test-functional-direct   # Direct pytest
+pytest tests/functional       # Traditional approach
 ```
 
 ### Traditional Pytest (Per Suite)
@@ -101,6 +107,9 @@ NUMBA_DISABLE_JIT=1 pytest tests/unit/disable_jit/ -v
 
 # JIT enabled tests
 pytest tests/unit/dont_disable_jit/ -v
+
+# Functional tests
+pytest tests/functional/ -v
 ```
 
 ### Coverage Reports
@@ -121,8 +130,19 @@ make check-deps
 # Validate test runner setup
 python test_runner_validation.py
 
+# Test pytest configuration
+python -c "import configparser; c=configparser.ConfigParser(); c.read('pytest.ini'); print('pytest.ini is valid')"
+
+# Run a single functional test
+pytest tests/functional/test_hello_world.py -v
+
 # Clean up generated files
 make clean
 ```
+
+**Common Issues:**
+- **Functional tests fail with warnings**: The pytest.ini has been updated to ignore expected warnings from numba and networkx
+- **Tests time out**: Functional tests have longer timeouts (600s) and global timeout is disabled
+- **Import errors**: Ensure pytest and dependencies are installed with `make install-deps`
 
 Running tests locally before committing or pushing helps catch issues early and speeds up code review. The unified test runner ensures consistent behavior across different development environments.

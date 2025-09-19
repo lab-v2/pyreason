@@ -34,6 +34,17 @@
       "environment_vars": {},
       "pytest_args": ["-v"],
       "timeout": 300
+    },
+    "functional": {
+      "name": "Functional Tests",
+      "description": "End-to-end functional tests with full PyReason integration",
+      "path": "tests/functional",
+      "coverage_source": "pyreason",
+      "jit_disabled": false,
+      "uses_real_pyreason": true,
+      "environment_vars": {},
+      "pytest_args": ["-v", "-m", "not slow"],
+      "timeout": 600
     }
   },
   "coverage": {
@@ -52,7 +63,7 @@
   },
   "execution": {
     "parallel_suites": ["api_tests", "dont_disable_jit"],
-    "sequential_suites": ["disable_jit"],
+    "sequential_suites": ["disable_jit", "functional"],
     "continue_on_failure": true,
     "verbose": true
   },
