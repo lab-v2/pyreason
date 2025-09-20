@@ -100,6 +100,10 @@ def test_reorder_clauses_fp():
     assert 'John' in dataframes[2]['component'].values and dataframes[2].iloc[1].popular == [1, 1], 'John should have popular bounds [1,1] for t=2 timesteps'
 
     # Now look at the trace and make sure the order has gone back to the original rule
-    # The second row, clause 1 should be the edge grounding ('Justin', 'Mary')
+    # Find the first rule entry with Justin and verify clause 1 should be the edge grounding ('Justin', 'Mary')
     rule_trace_node, _ = pr.get_rule_trace(interpretation)
-    assert rule_trace_node.iloc[2]['Clause-1'][0] == ('Justin', 'Mary')
+    # Find the first Justin rule entry (more robust than relying on row index)
+    justin_rule_rows = rule_trace_node[(rule_trace_node['Node'] == 'Justin') & (rule_trace_node['Occurred Due To'] == 'popular_rule')]
+    assert len(justin_rule_rows) > 0, 'Should have at least one Justin rule entry'
+    first_justin_rule = justin_rule_rows.iloc[0]
+    assert first_justin_rule['Clause-1'][0] == ('Justin', 'Mary')

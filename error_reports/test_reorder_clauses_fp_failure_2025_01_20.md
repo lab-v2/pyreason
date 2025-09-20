@@ -36,7 +36,7 @@ File "tests/functional/test_reorder_clauses.py", line 105, in test_reorder_claus
 
 ## 2. Root Cause Analysis
 
-The problem stems from incomplete rule trace functionality in FP interpretation class:
+**UPDATED AFTER DETAILED INVESTIGATION**: The problem stems from **fact application timing differences** between regular and FP versions, creating inconsistent rule trace ordering.
 
 ### Test Logic Flow
 ```python
