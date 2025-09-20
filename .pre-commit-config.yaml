@@ -3,14 +3,21 @@ repos:
     hooks:
       # --- COMMIT STAGE: Fast unit tests only ---
       - id: pytest-unit-no-jit
-        name: JIT enabled unit tests
+        name: Run JIT-disabled unit tests (fast)
         entry: .venv/bin/python -m pytest tests/unit/disable_jit -m "not slow" --tb=short -q
         language: system
         pass_filenames: false
         stages: [pre-commit]
 
       - id: pytest-unit-jit
-        name: Run fast unit tests (exclude slow tests)
+        name: Run JIT-enabled unit tests (fast)
+        entry: .venv/bin/python -m pytest tests/unit/dont_disable_jit -m "not slow" --tb=short -q
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: pytest-unit-api
+        name: Run API unit tests (fast)
         entry: .venv/bin/python -m pytest tests/unit/api_tests -m "not slow" --tb=short -q
         language: system
         pass_filenames: false
