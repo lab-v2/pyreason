@@ -4,6 +4,7 @@ from pyreason import Threshold
 import pytest
 
 
+@pytest.mark.slow
 def test_custom_thresholds():
     # Reset PyReason
     pr.reset()
@@ -65,6 +66,7 @@ def test_custom_thresholds():
 
 
 @pytest.mark.fp
+@pytest.mark.slow
 def test_custom_thresholds_fp():
     # Reset PyReason
     pr.reset()

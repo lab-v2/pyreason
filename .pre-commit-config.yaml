@@ -1,24 +1,47 @@
 repos:
   - repo: local
     hooks:
-      # --- Unit tests ---
-      - id: pytest-unit-with-coverage
-        name: Run unit tests with coverage and open report
-        entry: bash -c 'pytest tests/unit/disable_jit --cov pyreason   --cov-report=html  && ( (command -v xdg-open >/dev/null && xdg-open htmlcov/index.html) || (command -v open >/dev/null && open htmlcov/index.html) || (command -v start >/dev/null && start htmlcov/index.html) )'
+      # --- COMMIT STAGE: Fast unit tests only ---
+      - id: pytest-unit-no-jit
+        name: Run fast unit tests (exclude slow tests)
+        entry: .venv/bin/python -m pytest tests/unit/disable_jit -m "not slow" --tb=short -q
         language: system
         pass_filenames: false
+        stages: [pre-commit]
 
       - id: pytest-unit-jit
-        name: Run JIT-enabled unit tests
-        entry: bash -c 'pytest tests/unit/dont_disable_jit'
+        name: Run fast unit tests (exclude slow tests)
+        entry: .venv/bin/python -m pytest tests/unit/dont_disable_jit -m "not slow" --tb=short -q
         language: system
         pass_filenames: false
+        stages: [pre-commit]
 
-      # --- Functional tests ---
-      - id: pytest-functional
-        name: Run functional tests
-        entry: bash -c 'pytest tests/functional'
+      - id: pytest-functional-fast
+        name: Run fast functional tests (exclude slow tests)
+        entry: .venv/bin/python -m pytest tests/functional -m "not slow" --tb=short -q
         language: system
         pass_filenames: false
-        # Only run manually, not on every commit
+        stages: [pre-commit]
+
+      # --- PUSH STAGE: Complete test suite ---
+      - id: pytest-unit-complete
+        name: Run complete unit test suite
+        entry: .venv/bin/python -m pytest tests/unit/ --tb=short
+        language: system
+        pass_filenames: false
         stages: [pre-push]
+
+      - id: pytest-functional-complete
+        name: Run complete functional test suite
+        entry: .venv/bin/python -m pytest tests/functional/ --tb=short
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      # --- MANUAL: Coverage reports ---
+      - id: pytest-unit-with-coverage
+        name: Run unit tests with coverage and open report
+        entry: bash -c '.venv/bin/python -m pytest tests/unit/disable_jit --cov pyreason --cov-report=html && ( (command -v xdg-open >/dev/null && xdg-open htmlcov/index.html) || (command -v open >/dev/null && open htmlcov/index.html) || (command -v start >/dev/null && start htmlcov/index.html) )'
+        language: system
+        pass_filenames: false
+        stages: [manual]

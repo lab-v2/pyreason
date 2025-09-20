@@ -26,6 +26,7 @@ def test_probability_func_consistency():
     assert jit_res == py_res
 
 
+@pytest.mark.slow
 def test_annotation_function():
     # Reset PyReason
     pr.reset()
@@ -52,6 +53,7 @@ def test_annotation_function():
 
 
 @pytest.mark.fp
+@pytest.mark.slow
 def test_annotation_function_fp():
     # Reset PyReason
     pr.reset()

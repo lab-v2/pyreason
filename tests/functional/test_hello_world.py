@@ -11,6 +11,7 @@ import pytest
 # import pyreason.pyreason as pr
 
 
+@pytest.mark.slow
 def test_hello_world():
     # Reset PyReason
     pr.reset()
