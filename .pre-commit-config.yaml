@@ -16,14 +16,6 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
-      - id: pytest-unit-api
-        name: Run API unit tests
-        entry: .venv/bin/python -m pytest tests/unit/api_tests -m "not slow" --tb=short -q
-        language: system
-        pass_filenames: false
-        stages: [pre-commit]
-
-
       # --- PUSH STAGE: Complete test suite ---
       - id: pytest-unit-complete
         name: Run complete unit test suite
