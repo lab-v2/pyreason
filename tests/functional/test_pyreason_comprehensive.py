@@ -390,5 +390,46 @@ class TestQueryFiltering:
         # Should complete and apply rule filtering logic
 
 
+@pytest.mark.fp
+class TestFixedPointVersions:
+    """Test key functionality with FP version enabled"""
+
+    def setup_method(self):
+        """Reset settings before each test"""
+        pr.reset()
+        pr.reset_settings()
+        pr.settings.fp_version = True  # Enable FP version for all tests in this class
+
+    @pytest.mark.fp
+    def test_basic_reasoning_fp(self):
+        """Test basic reasoning functionality with FP version"""
+        # Create simple graph
+        graph = nx.DiGraph()
+        graph.add_edge("A", "B")
+        graph.add_edge("B", "C")
+        pr.load_graph(graph)
+
+        # Add rule and fact
+        pr.add_rule(pr.Rule('connected(x, z) <-1 connected(x, y), connected(y, z)', 'transitive_rule'))
+        pr.add_fact(pr.Fact('connected(A, B)', 'fact1'))
+        pr.add_fact(pr.Fact('connected(B, C)', 'fact2'))
+
+        # Reason
+        interpretation = pr.reason(timesteps=2)
+
+        # Verify transitivity worked
+        assert interpretation.query(pr.Query('connected(A, C)')), 'Should infer connected(A, C) via transitivity'
+
+    @pytest.mark.fp
+    def test_settings_validation_fp(self):
+        """Test that settings validation works with FP version"""
+        # Test that fp_version setting is properly set
+        assert pr.settings.fp_version == True, 'FP version should be enabled'
+
+        # Test that other settings still work
+        pr.settings.verbose = True
+        assert pr.settings.verbose == True, 'Verbose setting should work'
+
+
 if __name__ == '__main__':
     pytest.main([__file__])

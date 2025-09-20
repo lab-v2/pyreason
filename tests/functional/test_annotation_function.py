@@ -2,6 +2,7 @@
 import pyreason as pr
 import numba
 import numpy as np
+import pytest
 from pyreason.scripts.numba_wrapper.numba_types.interval_type import closed
 
 
@@ -30,6 +31,35 @@ def test_annotation_function():
     pr.reset()
     pr.reset_rules()
     pr.reset_settings()
+    print("fp version", pr.settings.fp_version)
+
+    pr.settings.allow_ground_rules = True
+
+    pr.add_fact(pr.Fact('P(A) : [0.01, 1]'))
+    pr.add_fact(pr.Fact('P(B) : [0.2, 1]'))
+    pr.add_annotation_function(probability_func)
+    pr.add_rule(pr.Rule('union_probability(A, B):probability_func <- P(A):[0, 1], P(B):[0, 1]', infer_edges=True))
+
+    interpretation = pr.reason(timesteps=1)
+
+    dataframes = pr.filter_and_sort_edges(interpretation, ['union_probability'])
+    for t, df in enumerate(dataframes):
+        print(f'TIMESTEP - {t}')
+        print(df)
+        print()
+
+    assert interpretation.query(pr.Query('union_probability(A, B) : [0.21, 1]')), 'Union probability should be 0.21'
+
+
+@pytest.mark.fp
+def test_annotation_function_fp():
+    # Reset PyReason
+    pr.reset()
+    pr.reset_rules()
+    pr.reset_settings()
+
+    # Set FP version
+    pr.settings.fp_version = True
     print("fp version", pr.settings.fp_version)
 
     pr.settings.allow_ground_rules = True
