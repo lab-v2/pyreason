@@ -17,9 +17,23 @@ repos:
         stages: [pre-commit]
 
       # --- PUSH STAGE: Complete test suite ---
-      - id: pytest-unit-complete
-        name: Run complete unit test suite
-        entry: .venv/bin/python -m pytest tests/unit/ --tb=short
+      - id: pytest-unit-no-jit
+        name: Run JIT-disabled unit tests 
+        entry: .venv/bin/python -m pytest tests/unit/disable_jit --tb=short -q
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: pytest-unit-jit
+        name: Run JIT-enabled unit tests 
+        entry: .venv/bin/python -m pytest tests/unit/dont_disable_jit --tb=short -q
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: pytest-unit-api
+        name: Run JIT-enabled unit tests 
+        entry: .venv/bin/python -m pytest tests/unit/api_tests --tb=short -q
         language: system
         pass_filenames: false
         stages: [pre-push]
