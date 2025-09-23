@@ -10,6 +10,9 @@ Focus on understanding:
 import pyreason as pr
 import networkx as nx
 
+## TO TEST: FIRST RUN AS IS TO SEE THE KEY ERROR FOR THE TRANSITIVE REASONING
+# THEN UNCOMMENT THE FIX on line 892 - NOW YOU SHOULD SEE BOTH REASONING FAIL
+
 def test_fact_persistence_regular():
     """Test if facts persist in regular version with transitive rules"""
     print("=== REGULAR VERSION - FACT PERSISTENCE TEST ===")
@@ -32,6 +35,7 @@ def test_fact_persistence_regular():
     pr.add_fact(pr.Fact('connected(B, C)', 'fact2'))
 
     interpretation = pr.reason(timesteps=2)
+    print("Dict: ", interpretation.get_dict())
 
     print("\nQuerying with return_bool=False to see bounds:")
     print(f"  connected(A, B) bounds: {interpretation.query(pr.Query('connected(A, B)'), return_bool=False)}")
@@ -71,6 +75,7 @@ def test_fact_persistence_fp():
     pr.add_fact(pr.Fact('connected(B, C)', 'fact2'))
 
     interpretation = pr.reason(timesteps=2)
+    print("FP Dict: ", interpretation.get_dict())
 
     print("\nQuerying with return_bool=False to see bounds:")
     print(f"  connected(A, B) bounds: {interpretation.query(pr.Query('connected(A, B)'), return_bool=False)}")
@@ -122,6 +127,7 @@ def test_transitive_with_more_edges():
     print(f"  connected(C, D): {interpretation_reg.query(pr.Query('connected(C, D)'))}")
     print(f"  connected(A, D): {interpretation_reg.query(pr.Query('connected(A, D)'))}")
 
+    print("Reg Mult Dict: ", interpretation_reg.get_dict())
     # Test FP Version
     print("\nFP VERSION with multiple edges:")
     pr.reset()
@@ -138,6 +144,7 @@ def test_transitive_with_more_edges():
     pr.add_fact(pr.Fact('connected(D, E)', 'fact4'))
 
     interpretation_fp = pr.reason(timesteps=3)
+    print("FP Mult Dict: ", interpretation_fp.get_dict())
 
     print("FP results with multiple edges:")
     print(f"  connected(A, B): {interpretation_fp.query(pr.Query('connected(A, B)'))}")
@@ -172,6 +179,7 @@ def compare_case_1_behavior():
 
     print("Running regular version...")
     interpretation_reg = pr.reason(timesteps=2)
+    print("Reg Dict: ", interpretation_reg.get_dict())
 
     print(f"\nRegular results:")
     print(f"  connected(A, C): {interpretation_reg.query(pr.Query('connected(A, C)'))}")
@@ -197,11 +205,12 @@ def compare_case_1_behavior():
     pr.add_fact(pr.Fact('connected(X, Y)', 'fact3'))  # This should trigger over-grounding if bug exists
 
     print("Running regular version...")
-    interpretation_reg = pr.reason(timesteps=2)
+    interpretation_fp = pr.reason(timesteps=2)
 
     print(f"\nRegular results:")
-    print(f"  connected(A, C): {interpretation_reg.query(pr.Query('connected(A, C)'))}")
-    print(f"  connected(X, Y): {interpretation_reg.query(pr.Query('connected(X, Y)'))}")
+    print(f"  connected(A, C): {interpretation_fp.query(pr.Query('connected(A, C)'))}")
+    print(f"  connected(X, Y): {interpretation_fp.query(pr.Query('connected(X, Y)'))}")
+    print("FP Dict: ", interpretation_fp.get_dict())
 
 if __name__ == "__main__":
     print("DEEP COMPARISON: REGULAR vs FP INTERPRETATION ENGINES")

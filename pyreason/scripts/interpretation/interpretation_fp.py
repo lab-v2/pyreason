@@ -659,8 +659,8 @@ class Interpretation:
 				t, comp, l, bnd, set_static = i[0], i[1], i[2], i[3], i[4]
 
 				# Skip rule if timestep doesn't exist in interpretations
-				if t not in interpretations_node or t not in interpretations_edge:
-					continue
+				# if t not in interpretations_node or t not in interpretations_edge:
+				# 	continue
 
 				sources, targets, edge_l = edges_to_be_added_edge_rule[idx]
 				edges_added, changes = _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, edge_l, interpretations_node[t], interpretations_edge[t], predicate_map_edge, t)
@@ -889,6 +889,8 @@ class Interpretation:
 			if pred not in self.interpretations_node[t][component].world:
 				return False if return_bool else (0, 0)
 		else:
+			if component not in self.interpretations_edge[t]:
+				return False if return_bool else (0, 0)
 			if pred not in self.interpretations_edge[t][component].world:
 				return False if return_bool else (0, 0)
 
