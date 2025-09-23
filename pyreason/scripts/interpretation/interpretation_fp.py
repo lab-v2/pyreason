@@ -840,29 +840,6 @@ class Interpretation:
 
 		return ga_cnt
 
-	def get_num_ground_atoms(self):
-		"""
-		This function returns the number of ground atoms after the reasoning process, for each timestep
-		:return: list: Number of ground atoms in the interpretation after reasoning for each timestep
-		"""
-		# If num_ga wasn't populated during reasoning (FP version issue), compute it from the get_dict output
-		if len(self.num_ga) <= 1:
-			self.num_ga.clear()
-			# Use get_dict() to compute ground atoms per timestep (same as test logic)
-			d = self.get_dict()
-			for time, atoms in d.items():
-				ga_count = 0
-				for comp, label_bnds in atoms.items():
-					ga_count += len(label_bnds)
-				# Extend list if needed
-				while len(self.num_ga) <= time:
-					self.num_ga.append(0)
-				self.num_ga[time] = ga_count
-
-		if len(self.num_ga) > 0 and self.num_ga[-1] == 0:
-			self.num_ga.pop()
-		return self.num_ga
-
 	def query(self, query, t=0, return_bool=True) -> Union[bool, Tuple[float, float]]:
 		"""
 		This function is used to query the graph after reasoning
