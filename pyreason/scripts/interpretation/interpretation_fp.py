@@ -609,8 +609,8 @@ class Interpretation:
 				t, comp, l, bnd, set_static = i[0], i[1], i[2], i[3], i[4]
 
 				# Skip rule if timestep doesn't exist in interpretations
-				if t not in interpretations_node:
-					continue
+				# if t not in interpretations_node:
+				# 	continue
 
 				# if node doesn't exist in interpretation, add it
 				if comp not in interpretations_node[t]:
