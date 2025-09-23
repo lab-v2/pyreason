@@ -42,17 +42,6 @@ def test_fact_persistence_regular():
     print(f"  connected(B, C) bounds: {interpretation.query(pr.Query('connected(B, C)'), return_bool=False)}")
     print(f"  connected(A, C) bounds: {interpretation.query(pr.Query('connected(A, C)'), return_bool=False)}")
 
-    # Check at different timesteps with bounds
-    print("\nBounds at different timesteps:")
-    for t in range(3):
-        try:
-            ab_bounds = interpretation.query(pr.Query('connected(A, B)'), t, return_bool=False)
-            bc_bounds = interpretation.query(pr.Query('connected(B, C)'), t, return_bool=False)
-            ac_bounds = interpretation.query(pr.Query('connected(A, C)'), t, return_bool=False)
-            print(f"  t={t}: A-B={ab_bounds}, B-C={bc_bounds}, A-C={ac_bounds}")
-        except Exception as e:
-            print(f"  t={t}: Error - {e}")
-
 def test_fact_persistence_fp():
     """Test if facts persist in FP version with transitive rules"""
     print("\n=== FP VERSION - FACT PERSISTENCE TEST ===")
@@ -204,10 +193,10 @@ def compare_case_1_behavior():
     pr.add_fact(pr.Fact('connected(B, C)', 'fact2'))
     pr.add_fact(pr.Fact('connected(X, Y)', 'fact3'))  # This should trigger over-grounding if bug exists
 
-    print("Running regular version...")
+    print("Running FP version...")
     interpretation_fp = pr.reason(timesteps=2)
 
-    print(f"\nRegular results:")
+    print(f"\FP results:")
     print(f"  connected(A, C): {interpretation_fp.query(pr.Query('connected(A, C)'))}")
     print(f"  connected(X, Y): {interpretation_fp.query(pr.Query('connected(X, Y)'))}")
     print("FP Dict: ", interpretation_fp.get_dict())

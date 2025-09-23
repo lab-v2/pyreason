@@ -889,8 +889,8 @@ class Interpretation:
 			if pred not in self.interpretations_node[t][component].world:
 				return False if return_bool else (0, 0)
 		else:
-			if component not in self.interpretations_edge[t]:
-				return False if return_bool else (0, 0)
+			# if component not in self.interpretations_edge[t]:
+			# 	return False if return_bool else (0, 0)
 			if pred not in self.interpretations_edge[t][component].world:
 				return False if return_bool else (0, 0)
 
