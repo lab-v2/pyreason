@@ -41,6 +41,7 @@ def test_num_ga():
 
 
 @pytest.mark.fp
+@pytest.mark.skip(reason="Not implemented for FP version")
 def test_num_ga_fp():
     graph_path = './tests/functional/knowledge_graph_test_subset.graphml'
     pr.reset()

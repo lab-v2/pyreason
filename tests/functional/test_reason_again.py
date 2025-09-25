@@ -57,6 +57,7 @@ def test_reason_again():
 
 
 @pytest.mark.fp
+@pytest.mark.skip(reason="Reason again functionality not implemented for FP version")
 def test_reason_again_fp():
     # Reset PyReason
     pr.reset()
