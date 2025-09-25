@@ -26,7 +26,7 @@ repos:
         stages: [pre-push]
 
       - id: pytest-functional-complete
-        name: Run complete functional test suite
+        name: Run functional test suite
         entry: .venv/bin/python -m pytest tests/functional/ --tb=short
         language: system
         pass_filenames: false
