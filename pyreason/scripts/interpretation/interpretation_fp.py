@@ -224,7 +224,7 @@ class Interpretation:
 				self.time = 0
 				self.prev_reasoning_data[0] = 0
 		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.predicate_map_node, self.predicate_map_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.persistent, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, self.allow_ground_rules, max_facts_time, self.annotation_functions, self._convergence_mode, self._convergence_delta, verbose, again)
-		self.time = t - 1
+		self.time = t
 		# If we need to reason again, store the next timestep to start from
 		self.prev_reasoning_data[0] = t
 		self.prev_reasoning_data[1] = fp_cnt
@@ -236,6 +236,7 @@ class Interpretation:
 	def reason(interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, persistent, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules, max_facts_time, annotation_functions, convergence_mode, convergence_delta, verbose, again):
 		t = prev_reasoning_data[0]
 		max_t = t		# Keeps track of the max time in each fp operation
+		max_t_changes = t
 		fp_cnt = prev_reasoning_data[1]
 		max_rules_time = 0
 		fp_loop = True
@@ -380,6 +381,8 @@ class Interpretation:
 								u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode=mode, override=override)
 	
 								update = u or update
+								if update:
+									max_t_changes = max(max_t_changes, t)
 								# Update convergence params
 								if convergence_mode=='delta_bound':
 									bound_delta = max(bound_delta, changes)
@@ -394,6 +397,8 @@ class Interpretation:
 									u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode=mode, override=True)
 	
 									update = u or update
+									if update:
+										max_t_changes = max(max_t_changes, t)
 									# Update convergence params
 									if convergence_mode=='delta_bound':
 										bound_delta = max(bound_delta, changes)
@@ -456,6 +461,8 @@ class Interpretation:
 								u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode=mode, override=override)
 	
 								update = u or update
+								if update:
+									max_t_changes = max(max_t_changes, t)
 								# Update convergence params
 								if convergence_mode == 'delta_bound':
 									bound_delta = max(bound_delta, changes)
@@ -470,6 +477,8 @@ class Interpretation:
 									u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode=mode, override=True)
 	
 									update = u or update
+									if update:
+										max_t_changes = max(max_t_changes, t)
 									# Update convergence params
 									if convergence_mode == 'delta_bound':
 										bound_delta = max(bound_delta, changes)
@@ -621,6 +630,8 @@ class Interpretation:
 					u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, idx, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode='rule', override=override)
 
 					update = u or update
+					if update:
+						max_t_changes = max(max_t_changes, t)
 					# Update convergence params
 					if convergence_mode=='delta_bound':
 						bound_delta = max(bound_delta, changes)
@@ -634,6 +645,8 @@ class Interpretation:
 						u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, idx, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode='rule', override=True)
 
 						update = u or update
+						if update:
+							max_t_changes = max(max_t_changes, t)
 						# Update convergence params
 						if convergence_mode=='delta_bound':
 							bound_delta = max(bound_delta, changes)
@@ -667,7 +680,8 @@ class Interpretation:
 							u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, e, (edge_l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode='rule', override=override)
 
 							update = u or update
-
+							if update:
+								max_t_changes = max(max_t_changes, t)
 							# Update convergence params
 							if convergence_mode=='delta_bound':
 								bound_delta = max(bound_delta, changes)
@@ -681,7 +695,8 @@ class Interpretation:
 								u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, e, (edge_l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode='rule', override=True)
 
 								update = u or update
-
+								if update:
+									max_t_changes = max(max_t_changes, t)
 								# Update convergence params
 								if convergence_mode=='delta_bound':
 									bound_delta = max(bound_delta, changes)
@@ -699,6 +714,8 @@ class Interpretation:
 						u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode='rule', override=override)
 
 						update = u or update
+						if update:
+							max_t_changes = max(max_t_changes, t)
 						# Update convergence params
 						if convergence_mode=='delta_bound':
 							bound_delta = max(bound_delta, changes)
@@ -712,6 +729,8 @@ class Interpretation:
 							u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode='rule', override=True)
 
 							update = u or update
+							if update:
+								max_t_changes = max(max_t_changes, t)
 							# Update convergence params
 							if convergence_mode=='delta_bound':
 								bound_delta = max(bound_delta, changes)
@@ -736,8 +755,6 @@ class Interpretation:
 						print(f'\nConverged at time: {t} with {int(changes_cnt)} changes from the previous interpretation')
 					# # Be consistent with fp returned when we don't converge
 					# fp_cnt += 1
-					# Subtract 1 if we converge since the last timestep won't contain new info
-					max_t -= 1
 					break
 			elif convergence_mode == 'delta_bound':
 				if bound_delta <= convergence_delta:
@@ -745,8 +762,6 @@ class Interpretation:
 						print(f'\nConverged at time: {t} with {float_to_str(bound_delta)} as the maximum bound change from the previous interpretation')
 					# # Be consistent with fp returned when we don't converge
 					# fp_cnt += 1
-					# Subtract 1 if we converge since the last timestep won't contain new info
-					max_t -= 1
 					break
 			# Perfect convergence
 			# Make sure there are no rules to be applied, and no facts that will be applied in the future. We do this by checking the max time any rule/fact is applicable
@@ -757,15 +772,14 @@ class Interpretation:
 						print(f'\nConverged at fp: {fp_cnt}')
 					# # Be consistent with fp returned when we don't converge
 					# fp_cnt += 1
-					# Subtract 1 if we converge since the last timestep won't contain new info
-					max_t -= 1
 					break
 
 			# # Increment t, update number of ground atoms
 			# t += 1
 			fp_cnt += 1
 
-		return fp_cnt, max_t
+		# return fp_cnt, max_t, max_t_changes
+		return fp_cnt, max_t_changes
 
 	def add_edge(self, edge, l):
 		# This function is useful for pyreason gym, called externally
@@ -792,31 +806,55 @@ class Interpretation:
 
 		# Initialize interpretations for each time and node and edge
 		interpretations = {}
-		for t in range(self.time+1):
-			interpretations[t] = {}
-			for node in self.nodes:
-				interpretations[t][node] = InterpretationDict()
-			for edge in self.edges:
-				interpretations[t][edge] = InterpretationDict()
+		# for t in range(self.time+1):
+		# 	interpretations[t] = {}
+		# 	for node in self.nodes:
+		# 		interpretations[t][node] = InterpretationDict()
+		# 	for edge in self.edges:
+		# 		interpretations[t][edge] = InterpretationDict()
 
 		# Update interpretation nodes
 		for change in self.rule_trace_node:
 			time, _, node, l, bnd = change
+			if time not in interpretations:
+				interpretations[time] = {}
+				for node in self.nodes:
+					interpretations[time][node] = InterpretationDict()
+				for edge in self.edges:
+					interpretations[time][edge] = InterpretationDict()
 			interpretations[time][node][l._value] = (bnd.lower, bnd.upper)
 
 			# If persistent, update all following timesteps as well
-			if self. persistent:
+			if self.persistent:
 				for t in range(time+1, self.time+1):
+					if t not in interpretations:
+						interpretations[t] = {}
+						for node in self.nodes:
+							interpretations[t][node] = InterpretationDict()
+						for edge in self.edges:
+							interpretations[t][edge] = InterpretationDict()
 					interpretations[t][node][l._value] = (bnd.lower, bnd.upper)
 
 		# Update interpretation edges
 		for change in self.rule_trace_edge:
 			time, _, edge, l, bnd, = change
+			if time not in interpretations:
+				interpretations[time] = {}
+				for node in self.nodes:
+					interpretations[time][node] = InterpretationDict()
+				for edge in self.edges:
+					interpretations[time][edge] = InterpretationDict()
 			interpretations[time][edge][l._value] = (bnd.lower, bnd.upper)
 
 			# If persistent, update all following timesteps as well
-			if self. persistent:
+			if self.persistent:
 				for t in range(time+1, self.time+1):
+					if t not in interpretations:
+						interpretations[t] = {}
+						for node in self.nodes:
+							interpretations[t][node] = InterpretationDict()
+						for edge in self.edges:
+							interpretations[t][edge] = InterpretationDict()
 					interpretations[t][edge][l._value] = (bnd.lower, bnd.upper)
 
 		return interpretations
@@ -837,10 +875,11 @@ class Interpretation:
 
 		return ga_cnt
 
-	def query(self, query, t=0, return_bool=True) -> Union[bool, Tuple[float, float]]:
+	def query(self, query, t=-1, return_bool=True) -> Union[bool, Tuple[float, float]]:
 		"""
 		This function is used to query the graph after reasoning
 		:param query: A PyReason query object
+		:param t: The timestep to query at
 		:param return_bool: If True, returns boolean of query, else the bounds associated with it
 		:return: bool, or bounds
 		"""
@@ -850,21 +889,28 @@ class Interpretation:
 		pred = query.get_predicate()
 		bnd = query.get_bounds()
 
+		if t == -1:
+			t = self.time
+		elif t < 0 or t > self.time:
+			raise ValueError(f'Timestep {t} is out of bounds. Current interpretation is between 0 and {self.time}')
+
+		bnd_return = (0, 1) if bnd == interval.closed(0, 1) else (0, 0)
+
 		# Check if the component exists
 		if comp_type == 'node':
 			if component not in self.nodes:
-				return False if return_bool else (0, 1)
+				return False if return_bool else bnd_return
 		else:
 			if component not in self.edges:
-				return False if return_bool else (0, 1)
+				return False if return_bool else bnd_return
 
 		# Check if the predicate exists
 		if comp_type == 'node':
 			if component not in self.interpretations_node[t] or pred not in self.interpretations_node[t][component].world:
-				return False if return_bool else (0, 1)
+				return False if return_bool else bnd_return
 		else:
 			if component not in self.interpretations_edge[t] or pred not in self.interpretations_edge[t][component].world:
-				return False if return_bool else (0, 1)
+				return False if return_bool else bnd_return
 
 		# Check if the bounds are satisfied
 		if comp_type == 'node':
