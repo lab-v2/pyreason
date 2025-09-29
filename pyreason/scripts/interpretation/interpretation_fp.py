@@ -525,7 +525,7 @@ class Interpretation:
 						for applicable_rule in applicable_node_rules:
 							n, annotations, qualified_nodes, qualified_edges, _ = applicable_rule
 							# If the node is not in the interp or there is an edge to add or the predicate doesn't exist or the interpretation is not static
-							if n not in interpretations_node[t] or rule.get_target() not in interpretations_node[t][n].world or not interpretations_node[t][n].world[rule.get_target()].is_static():
+							if rule.get_target() not in interpretations_node[t][n].world or not interpretations_node[t][n].world[rule.get_target()].is_static():
 								bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
 								# Bound annotations in between 0 and 1
 								bnd_l = min(max(bnd[0], 0), 1)
@@ -544,7 +544,7 @@ class Interpretation:
 						for applicable_rule in applicable_edge_rules:
 							e, annotations, qualified_nodes, qualified_edges, edges_to_add = applicable_rule
 							# If the edge doesn't exist in the interp there is an edge to add or the predicate doesn't exist or the interpretation is not static
-							if e not in interpretations_edge[t] or len(edges_to_add[0]) > 0 or rule.get_target() not in interpretations_edge[t][e].world or not interpretations_edge[t][e].world[rule.get_target()].is_static():
+							if len(edges_to_add[0]) > 0 or rule.get_target() not in interpretations_edge[t][e].world or not interpretations_edge[t][e].world[rule.get_target()].is_static():
 								bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
 								# Bound annotations in between 0 and 1
 								bnd_l = min(max(bnd[0], 0), 1)
