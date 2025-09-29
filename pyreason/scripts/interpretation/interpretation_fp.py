@@ -778,8 +778,8 @@ class Interpretation:
 			# t += 1
 			fp_cnt += 1
 
-		# return fp_cnt, max_t, max_t_changes
-		return fp_cnt, max_t_changes
+		# Add 1 to max_t_changes to be consistent with other implementation
+		return fp_cnt, max_t_changes + 1
 
 	def add_edge(self, edge, l):
 		# This function is useful for pyreason gym, called externally
@@ -890,9 +890,9 @@ class Interpretation:
 		bnd = query.get_bounds()
 
 		if t == -1:
-			t = self.time
-		elif t < 0 or t > self.time:
-			raise ValueError(f'Timestep {t} is out of bounds. Current interpretation is between 0 and {self.time}')
+			t = self.time - 1
+		elif t < 0 or t > self.time - 1:
+			raise ValueError(f'Timestep {t} is out of bounds. Current interpretation is between 0 and {self.time - 1}')
 
 		bnd_return = (0, 1) if bnd == interval.closed(0, 1) else (0, 0)
 
