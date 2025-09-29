@@ -224,7 +224,7 @@ class Interpretation:
 				self.time = 0
 				self.prev_reasoning_data[0] = 0
 		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.predicate_map_node, self.predicate_map_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.persistent, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, self.allow_ground_rules, max_facts_time, self.annotation_functions, self._convergence_mode, self._convergence_delta, verbose, again)
-		self.time = t - 1
+		self.time = t
 		# If we need to reason again, store the next timestep to start from
 		self.prev_reasoning_data[0] = t
 		self.prev_reasoning_data[1] = fp_cnt
@@ -236,6 +236,7 @@ class Interpretation:
 	def reason(interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, persistent, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules, max_facts_time, annotation_functions, convergence_mode, convergence_delta, verbose, again):
 		t = prev_reasoning_data[0]
 		max_t = t		# Keeps track of the max time in each fp operation
+		max_t_changes = t
 		fp_cnt = prev_reasoning_data[1]
 		max_rules_time = 0
 		fp_loop = True
@@ -249,8 +250,6 @@ class Interpretation:
 		while fp_loop:
 			timestep_loop = True
 			t = prev_reasoning_data[0]
-			print("starting fp", fp_cnt, "with time", t)
-			print("update", update)
 			if not update:
 				break
 			update = False
@@ -269,7 +268,6 @@ class Interpretation:
 				# Nodes
 				# Only create new interpretation if it doesn't exist or if this is the first fp operation
 				if t not in interpretations_node or fp_cnt == 0:
-					print("Creating new node interpretation for time", t)
 					interpretations_node[t] = numba.typed.Dict.empty(key_type=node_type, value_type=world.world_type)
 				
 				if t > 0 and persistent:
@@ -292,7 +290,6 @@ class Interpretation:
 					for n in last_t_interp:
 						# Add node to new interpretation only if it doesn't exist
 						if n not in interpretations_node[t]:
-							print("Creating new node in interpretation", n, "for time", t)
 							interpretations_node[t][n] = world.World(numba.typed.List.empty_list(label.label_type))
 
 						w = last_t_interp[n].world
@@ -301,7 +298,6 @@ class Interpretation:
 							if w[l].is_static():
 								# Only copy if this is the first fp operation (fp_cnt == 0) or if the label doesn't exist
 								if fp_cnt == 0 or l not in new_w:
-									print("Overwriting static label", l, "for node", n, "at time", t)
 									new_w[l] = w[l].copy()
 
 				# Edges
@@ -359,11 +355,8 @@ class Interpretation:
 						elif comp not in interpretations_node[t]:
 							_add_node_to_interpretation(comp, interpretations_node[t])
 
-						print("Applying fact for node:", comp, l, bnd, static, graph_attribute, "at", t, "fp", fp_cnt)
-
 						# Check if bnd is static. Then no need to update, just add to rule trace, check if graph attribute and add ipl complement to rule trace as well
 						if l in interpretations_node[t][comp].world and interpretations_node[t][comp].world[l].is_static():
-							print("should not be here")
 							# Check if we should even store any of the changes to the rule trace etc.
 							# Inverse of this is: if not save_graph_attributes_to_rule_trace and graph_attribute
 							if (save_graph_attributes_to_rule_trace or not graph_attribute) and store_interpretation_changes:
@@ -383,12 +376,13 @@ class Interpretation:
 						else:
 							# Check for inconsistencies (multiple facts)
 							if check_consistent_node(interpretations_node[t], comp, (l, bnd)):
-								print("should be here")
 								mode = 'graph-attribute-fact' if graph_attribute else 'fact'
 								override = True if update_mode == 'override' else False
 								u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode=mode, override=override)
 	
 								update = u or update
+								if update:
+									max_t_changes = max(max_t_changes, t)
 								# Update convergence params
 								if convergence_mode=='delta_bound':
 									bound_delta = max(bound_delta, changes)
@@ -403,6 +397,8 @@ class Interpretation:
 									u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode=mode, override=True)
 	
 									update = u or update
+									if update:
+										max_t_changes = max(max_t_changes, t)
 									# Update convergence params
 									if convergence_mode=='delta_bound':
 										bound_delta = max(bound_delta, changes)
@@ -465,6 +461,8 @@ class Interpretation:
 								u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode=mode, override=override)
 	
 								update = u or update
+								if update:
+									max_t_changes = max(max_t_changes, t)
 								# Update convergence params
 								if convergence_mode == 'delta_bound':
 									bound_delta = max(bound_delta, changes)
@@ -479,6 +477,8 @@ class Interpretation:
 									u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode=mode, override=True)
 	
 									update = u or update
+									if update:
+										max_t_changes = max(max_t_changes, t)
 									# Update convergence params
 									if convergence_mode == 'delta_bound':
 										bound_delta = max(bound_delta, changes)
@@ -519,13 +519,26 @@ class Interpretation:
 					if t + delta_t <= tmax or tmax == -1 or again:
 						applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node[t], interpretations_edge[t], predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, t)
 
-						print("num applicable rules at time ", t, len(applicable_node_rules))
-
 						# Loop through applicable rules and add them to the rules to be applied for later or next fp operation
 						for applicable_rule in applicable_node_rules:
 							n, annotations, qualified_nodes, qualified_edges, _ = applicable_rule
-							# If the node is not in the interp or there is an edge to add or the predicate doesn't exist or the interpretation is not static
-							if n not in interpretations_node[t] or rule.get_target() not in interpretations_node[t][n].world or not interpretations_node[t][n].world[rule.get_target()].is_static():
+
+							# Check if this edge rule should be applied
+							should_apply_rule = False
+
+							# Case 1: Node doesn't exist yet - always apply to create it
+							if n not in interpretations_node[t]:
+								should_apply_rule = True
+
+							# Case 2: Node exists but predicate doesn't exist on it
+							elif rule.get_target() not in interpretations_node[t][n].world:
+								should_apply_rule = True
+
+							# Case 3: Node and predicate exist but predicate is not static (can be updated)
+							elif not interpretations_node[t][n].world[rule.get_target()].is_static():
+								should_apply_rule = True
+
+							if should_apply_rule:
 								bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
 								# Bound annotations in between 0 and 1
 								bnd_l = min(max(bnd[0], 0), 1)
@@ -543,8 +556,27 @@ class Interpretation:
 
 						for applicable_rule in applicable_edge_rules:
 							e, annotations, qualified_nodes, qualified_edges, edges_to_add = applicable_rule
-							# If the edge doesn't exist in the interp there is an edge to add or the predicate doesn't exist or the interpretation is not static
-							if e not in interpretations_edge[t] or len(edges_to_add[0]) > 0 or rule.get_target() not in interpretations_edge[t][e].world or not interpretations_edge[t][e].world[rule.get_target()].is_static():
+
+							# Check if this edge rule should be applied
+							should_apply_rule = False
+
+							# Case 1: Edge doesn't exist yet - always apply to create it
+							if e not in interpretations_edge[t]:
+								should_apply_rule = True
+
+							# Case 2: There are new edges to add as part of this rule
+							elif len(edges_to_add[0]) > 0:
+								should_apply_rule = True
+
+							# Case 3: Edge exists but predicate doesn't exist on it
+							elif rule.get_target() not in interpretations_edge[t][e].world:
+								should_apply_rule = True
+
+							# Case 4: Edge and predicate exist but predicate is not static (can be updated)
+							elif not interpretations_edge[t][e].world[rule.get_target()].is_static():
+								should_apply_rule = True
+
+							if should_apply_rule:
 								bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
 								# Bound annotations in between 0 and 1
 								bnd_l = min(max(bnd[0], 0), 1)
@@ -585,7 +617,6 @@ class Interpretation:
 			# Apply the rules that need to be applied at this timestep
 			# Nodes
 			rules_to_remove_idx.clear()
-			print("there are ", len(rules_to_be_applied_node), "rules to be applied for nodes")
 			for idx, i in enumerate(rules_to_be_applied_node):
 				t, comp, l, bnd, set_static = i[0], i[1], i[2], i[3], i[4]
 
@@ -599,6 +630,8 @@ class Interpretation:
 					u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, idx, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode='rule', override=override)
 
 					update = u or update
+					if update:
+						max_t_changes = max(max_t_changes, t)
 					# Update convergence params
 					if convergence_mode=='delta_bound':
 						bound_delta = max(bound_delta, changes)
@@ -612,6 +645,8 @@ class Interpretation:
 						u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, idx, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode='rule', override=True)
 
 						update = u or update
+						if update:
+							max_t_changes = max(max_t_changes, t)
 						# Update convergence params
 						if convergence_mode=='delta_bound':
 							bound_delta = max(bound_delta, changes)
@@ -620,9 +655,6 @@ class Interpretation:
 
 				# Delete rules that have been applied from list by adding index to list
 				rules_to_remove_idx.add(idx)
-				print("node rule to be applied")
-				print(t, comp, l, bnd, update)
-				print("interp change", interpretations_node[t][comp].world[l])
 
 			# Remove from rules to be applied and edges to be applied lists after coming out from loop
 			rules_to_be_applied_node[:] = numba.typed.List([rules_to_be_applied_node[i] for i in range(len(rules_to_be_applied_node)) if i not in rules_to_remove_idx])
@@ -648,7 +680,8 @@ class Interpretation:
 							u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, e, (edge_l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode='rule', override=override)
 
 							update = u or update
-
+							if update:
+								max_t_changes = max(max_t_changes, t)
 							# Update convergence params
 							if convergence_mode=='delta_bound':
 								bound_delta = max(bound_delta, changes)
@@ -662,7 +695,8 @@ class Interpretation:
 								u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, e, (edge_l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode='rule', override=True)
 
 								update = u or update
-
+								if update:
+									max_t_changes = max(max_t_changes, t)
 								# Update convergence params
 								if convergence_mode=='delta_bound':
 									bound_delta = max(bound_delta, changes)
@@ -680,6 +714,8 @@ class Interpretation:
 						u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode='rule', override=override)
 
 						update = u or update
+						if update:
+							max_t_changes = max(max_t_changes, t)
 						# Update convergence params
 						if convergence_mode=='delta_bound':
 							bound_delta = max(bound_delta, changes)
@@ -693,6 +729,8 @@ class Interpretation:
 							u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode='rule', override=True)
 
 							update = u or update
+							if update:
+								max_t_changes = max(max_t_changes, t)
 							# Update convergence params
 							if convergence_mode=='delta_bound':
 								bound_delta = max(bound_delta, changes)
@@ -740,7 +778,8 @@ class Interpretation:
 			# t += 1
 			fp_cnt += 1
 
-		return fp_cnt, max_t
+		# Add 1 to max_t_changes to be consistent with other implementation
+		return fp_cnt, max_t_changes + 1
 
 	def add_edge(self, edge, l):
 		# This function is useful for pyreason gym, called externally
@@ -767,31 +806,55 @@ class Interpretation:
 
 		# Initialize interpretations for each time and node and edge
 		interpretations = {}
-		for t in range(self.time+1):
-			interpretations[t] = {}
-			for node in self.nodes:
-				interpretations[t][node] = InterpretationDict()
-			for edge in self.edges:
-				interpretations[t][edge] = InterpretationDict()
+		# for t in range(self.time+1):
+		# 	interpretations[t] = {}
+		# 	for node in self.nodes:
+		# 		interpretations[t][node] = InterpretationDict()
+		# 	for edge in self.edges:
+		# 		interpretations[t][edge] = InterpretationDict()
 
 		# Update interpretation nodes
 		for change in self.rule_trace_node:
 			time, _, node, l, bnd = change
+			if time not in interpretations:
+				interpretations[time] = {}
+				for node in self.nodes:
+					interpretations[time][node] = InterpretationDict()
+				for edge in self.edges:
+					interpretations[time][edge] = InterpretationDict()
 			interpretations[time][node][l._value] = (bnd.lower, bnd.upper)
 
 			# If persistent, update all following timesteps as well
-			if self. persistent:
+			if self.persistent:
 				for t in range(time+1, self.time+1):
+					if t not in interpretations:
+						interpretations[t] = {}
+						for node in self.nodes:
+							interpretations[t][node] = InterpretationDict()
+						for edge in self.edges:
+							interpretations[t][edge] = InterpretationDict()
 					interpretations[t][node][l._value] = (bnd.lower, bnd.upper)
 
 		# Update interpretation edges
 		for change in self.rule_trace_edge:
 			time, _, edge, l, bnd, = change
+			if time not in interpretations:
+				interpretations[time] = {}
+				for node in self.nodes:
+					interpretations[time][node] = InterpretationDict()
+				for edge in self.edges:
+					interpretations[time][edge] = InterpretationDict()
 			interpretations[time][edge][l._value] = (bnd.lower, bnd.upper)
 
 			# If persistent, update all following timesteps as well
-			if self. persistent:
+			if self.persistent:
 				for t in range(time+1, self.time+1):
+					if t not in interpretations:
+						interpretations[t] = {}
+						for node in self.nodes:
+							interpretations[t][node] = InterpretationDict()
+						for edge in self.edges:
+							interpretations[t][edge] = InterpretationDict()
 					interpretations[t][edge][l._value] = (bnd.lower, bnd.upper)
 
 		return interpretations
@@ -812,10 +875,11 @@ class Interpretation:
 
 		return ga_cnt
 
-	def query(self, query, t=0, return_bool=True) -> Union[bool, Tuple[float, float]]:
+	def query(self, query, t=-1, return_bool=True) -> Union[bool, Tuple[float, float]]:
 		"""
 		This function is used to query the graph after reasoning
 		:param query: A PyReason query object
+		:param t: The timestep to query at
 		:param return_bool: If True, returns boolean of query, else the bounds associated with it
 		:return: bool, or bounds
 		"""
@@ -825,21 +889,28 @@ class Interpretation:
 		pred = query.get_predicate()
 		bnd = query.get_bounds()
 
+		if t == -1:
+			t = self.time - 1
+		elif t < 0 or t > self.time - 1:
+			raise ValueError(f'Timestep {t} is out of bounds. Current interpretation is between 0 and {self.time - 1}')
+
+		bnd_return = (0, 1) if bnd == interval.closed(0, 1) else (0, 0)
+
 		# Check if the component exists
 		if comp_type == 'node':
 			if component not in self.nodes:
-				return False if return_bool else (0, 0)
+				return False if return_bool else bnd_return
 		else:
 			if component not in self.edges:
-				return False if return_bool else (0, 0)
+				return False if return_bool else bnd_return
 
 		# Check if the predicate exists
 		if comp_type == 'node':
-			if pred not in self.interpretations_node[t][component].world:
-				return False if return_bool else (0, 0)
+			if component not in self.interpretations_node[t] or pred not in self.interpretations_node[t][component].world:
+				return False if return_bool else bnd_return
 		else:
-			if pred not in self.interpretations_edge[t][component].world:
-				return False if return_bool else (0, 0)
+			if component not in self.interpretations_edge[t] or pred not in self.interpretations_edge[t][component].world:
+				return False if return_bool else bnd_return
 
 		# Check if the bounds are satisfied
 		if comp_type == 'node':
@@ -924,10 +995,6 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 			# It doesn't make sense to check any other thresholds because the head could be grounded with multiple nodes/edges
 			# if thresholds[i][1][0] == 'number' and thresholds[i][1][1] == 'total' and thresholds[i][2] == 1.0:
 			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, grounding, qualified_groundings, clause_label, thresholds[i]) and satisfaction
-			print("node clause satisfaction: ", satisfaction)
-			print("qualified groundings: ", qualified_groundings)
-			print("groundings: ", groundings[clause_var_1])
-			print()
 
 		# This is an edge clause
 		elif clause_type == 'edge':
@@ -975,11 +1042,6 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 				dependency_graph_reverse_neighbors[clause_var_2] = numba.typed.List([clause_var_1])
 			elif clause_var_1 not in dependency_graph_reverse_neighbors[clause_var_2]:
 				dependency_graph_reverse_neighbors[clause_var_2].append(clause_var_1)
-
-			print("edge clause satisfaction: ", satisfaction)
-			print("qualified groundings: ", qualified_groundings)
-			print("groundings: ", groundings_edges[(clause_var_1, clause_var_2)])
-			print()
 
 		# This is a comparison clause
 		else:

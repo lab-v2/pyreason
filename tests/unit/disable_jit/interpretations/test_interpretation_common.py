@@ -690,12 +690,12 @@ def test_get_final_num_ground_atoms():
 @pytest.mark.parametrize(
     "comp_type, component, pred, bound, expected_bool, expected_tuple",
     [
-        ("node", "nX", "L1", DummyBound(0, 1), False, (0, 0)),
-        ("node", "n1", "missing", DummyBound(0, 1), False, (0, 0)),
+        ("node", "nX", "L1", DummyBound(0, 1), False, (0, 1)),
+        ("node", "n1", "missing", DummyBound(0, 1), False, (0, 1)),
         ("node", "n1", "L1", DummyBound(0, 0.05), False, (0, 0)),
         ("node", "n1", "L1", DummyBound(0, 1), True, (0.1, 0.2)),
-        ("edge", ("nX", "nY"), "L2", DummyBound(0, 1), False, (0, 0)),
-        ("edge", ("n1", "n2"), "missing", DummyBound(0, 1), False, (0, 0)),
+        ("edge", ("nX", "nY"), "L2", DummyBound(0, 1), False, (0, 1)),
+        ("edge", ("n1", "n2"), "missing", DummyBound(0, 1), False, (0, 1)),
         ("edge", ("n1", "n2"), "L2", DummyBound(0, 0.2), False, (0, 0)),
         ("edge", ("n1", "n2"), "L2", DummyBound(0, 1), True, (0.3, 0.4)),
     ],
