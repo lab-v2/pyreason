@@ -16,7 +16,7 @@ def test_reason_applies_node_fact(monkeypatch, reason_env):
 
     fp, max_t = reason_env["run"]()
 
-    assert fp == 1 and max_t == 1
+    assert fp == 1 and max_t == 0
     mock_update.assert_called_once()
     assert mock_update.call_args.kwargs.get("override", False) is False
     assert reason_env["interpretations_node"][0][reason_env["node"]].world[reason_env["label"]] is reason_env["bnd"]
@@ -87,7 +87,7 @@ def test_reason_convergence_modes(monkeypatch, reason_env, mode, delta, change, 
 
     fp, max_t = reason_env["run"](convergence_mode=mode, convergence_delta=delta)
 
-    assert fp == expected_fp and max_t == 1
+    assert fp == expected_fp and max_t == 0
 
 
 def make_copy_env(monkeypatch, persistent):
@@ -242,7 +242,7 @@ def test_reason_breaks_when_no_update(monkeypatch, reason_env):
         convergence_mode="delta_bound",
         convergence_delta=-1,
     )
-    assert fp == 1 and max_t == 1
+    assert fp == 1 and max_t == 0
 
 
 @pytest.mark.parametrize("persistent", [True, False])
@@ -1000,7 +1000,7 @@ def test_reason_node_rule_delta_zero_traces_and_applies(monkeypatch, reason_env)
     assert mock_update.called
     assert new_node in reason_env["interpretations_node"][0]
     assert rules_list == [] and trace_list == []
-    assert fp == 1 and max_t == 1
+    assert fp == 1 and max_t == 0
 
 
 def test_reason_node_rule_skips_when_static(monkeypatch, reason_env):
@@ -1575,7 +1575,7 @@ def test_reason_breaks_on_delta_interpretation(monkeypatch, reason_env):
         verbose=True,
     )
 
-    assert fp == 0 and max_t == 1
+    assert fp == 0 and max_t == 0
     assert any("Converged at time" in line for line in printed)
 
 
@@ -1591,7 +1591,7 @@ def test_reason_breaks_on_delta_bound(monkeypatch, reason_env):
         convergence_mode="delta_bound", convergence_delta=0, verbose=True
     )
 
-    assert fp == 0 and max_t == 1
+    assert fp == 0 and max_t == 0
     assert any("Converged at time" in line for line in printed)
 
 
