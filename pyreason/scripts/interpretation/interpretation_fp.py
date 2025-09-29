@@ -249,8 +249,6 @@ class Interpretation:
 		while fp_loop:
 			timestep_loop = True
 			t = prev_reasoning_data[0]
-			print("starting fp", fp_cnt, "with time", t)
-			print("update", update)
 			if not update:
 				break
 			update = False
@@ -269,7 +267,6 @@ class Interpretation:
 				# Nodes
 				# Only create new interpretation if it doesn't exist or if this is the first fp operation
 				if t not in interpretations_node or fp_cnt == 0:
-					print("Creating new node interpretation for time", t)
 					interpretations_node[t] = numba.typed.Dict.empty(key_type=node_type, value_type=world.world_type)
 				
 				if t > 0 and persistent:
@@ -292,7 +289,6 @@ class Interpretation:
 					for n in last_t_interp:
 						# Add node to new interpretation only if it doesn't exist
 						if n not in interpretations_node[t]:
-							print("Creating new node in interpretation", n, "for time", t)
 							interpretations_node[t][n] = world.World(numba.typed.List.empty_list(label.label_type))
 
 						w = last_t_interp[n].world
@@ -301,7 +297,6 @@ class Interpretation:
 							if w[l].is_static():
 								# Only copy if this is the first fp operation (fp_cnt == 0) or if the label doesn't exist
 								if fp_cnt == 0 or l not in new_w:
-									print("Overwriting static label", l, "for node", n, "at time", t)
 									new_w[l] = w[l].copy()
 
 				# Edges
@@ -359,11 +354,8 @@ class Interpretation:
 						elif comp not in interpretations_node[t]:
 							_add_node_to_interpretation(comp, interpretations_node[t])
 
-						print("Applying fact for node:", comp, l, bnd, static, graph_attribute, "at", t, "fp", fp_cnt)
-
 						# Check if bnd is static. Then no need to update, just add to rule trace, check if graph attribute and add ipl complement to rule trace as well
 						if l in interpretations_node[t][comp].world and interpretations_node[t][comp].world[l].is_static():
-							print("should not be here")
 							# Check if we should even store any of the changes to the rule trace etc.
 							# Inverse of this is: if not save_graph_attributes_to_rule_trace and graph_attribute
 							if (save_graph_attributes_to_rule_trace or not graph_attribute) and store_interpretation_changes:
@@ -383,7 +375,6 @@ class Interpretation:
 						else:
 							# Check for inconsistencies (multiple facts)
 							if check_consistent_node(interpretations_node[t], comp, (l, bnd)):
-								print("should be here")
 								mode = 'graph-attribute-fact' if graph_attribute else 'fact'
 								override = True if update_mode == 'override' else False
 								u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode=mode, override=override)
@@ -617,7 +608,6 @@ class Interpretation:
 			# Apply the rules that need to be applied at this timestep
 			# Nodes
 			rules_to_remove_idx.clear()
-			print("there are ", len(rules_to_be_applied_node), "rules to be applied for nodes")
 			for idx, i in enumerate(rules_to_be_applied_node):
 				t, comp, l, bnd, set_static = i[0], i[1], i[2], i[3], i[4]
 
@@ -652,9 +642,6 @@ class Interpretation:
 
 				# Delete rules that have been applied from list by adding index to list
 				rules_to_remove_idx.add(idx)
-				print("node rule to be applied")
-				print(t, comp, l, bnd, update)
-				print("interp change", interpretations_node[t][comp].world[l])
 
 			# Remove from rules to be applied and edges to be applied lists after coming out from loop
 			rules_to_be_applied_node[:] = numba.typed.List([rules_to_be_applied_node[i] for i in range(len(rules_to_be_applied_node)) if i not in rules_to_remove_idx])
@@ -749,6 +736,8 @@ class Interpretation:
 						print(f'\nConverged at time: {t} with {int(changes_cnt)} changes from the previous interpretation')
 					# # Be consistent with fp returned when we don't converge
 					# fp_cnt += 1
+					# Subtract 1 if we converge since the last timestep won't contain new info
+					max_t -= 1
 					break
 			elif convergence_mode == 'delta_bound':
 				if bound_delta <= convergence_delta:
@@ -756,6 +745,8 @@ class Interpretation:
 						print(f'\nConverged at time: {t} with {float_to_str(bound_delta)} as the maximum bound change from the previous interpretation')
 					# # Be consistent with fp returned when we don't converge
 					# fp_cnt += 1
+					# Subtract 1 if we converge since the last timestep won't contain new info
+					max_t -= 1
 					break
 			# Perfect convergence
 			# Make sure there are no rules to be applied, and no facts that will be applied in the future. We do this by checking the max time any rule/fact is applicable
@@ -766,6 +757,8 @@ class Interpretation:
 						print(f'\nConverged at fp: {fp_cnt}')
 					# # Be consistent with fp returned when we don't converge
 					# fp_cnt += 1
+					# Subtract 1 if we converge since the last timestep won't contain new info
+					max_t -= 1
 					break
 
 			# # Increment t, update number of ground atoms
@@ -956,10 +949,6 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 			# It doesn't make sense to check any other thresholds because the head could be grounded with multiple nodes/edges
 			# if thresholds[i][1][0] == 'number' and thresholds[i][1][1] == 'total' and thresholds[i][2] == 1.0:
 			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, grounding, qualified_groundings, clause_label, thresholds[i]) and satisfaction
-			print("node clause satisfaction: ", satisfaction)
-			print("qualified groundings: ", qualified_groundings)
-			print("groundings: ", groundings[clause_var_1])
-			print()
 
 		# This is an edge clause
 		elif clause_type == 'edge':
@@ -1007,11 +996,6 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 				dependency_graph_reverse_neighbors[clause_var_2] = numba.typed.List([clause_var_1])
 			elif clause_var_1 not in dependency_graph_reverse_neighbors[clause_var_2]:
 				dependency_graph_reverse_neighbors[clause_var_2].append(clause_var_1)
-
-			print("edge clause satisfaction: ", satisfaction)
-			print("qualified groundings: ", qualified_groundings)
-			print("groundings: ", groundings_edges[(clause_var_1, clause_var_2)])
-			print()
 
 		# This is a comparison clause
 		else:
