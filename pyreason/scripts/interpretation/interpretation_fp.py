@@ -519,8 +519,6 @@ class Interpretation:
 					if t + delta_t <= tmax or tmax == -1 or again:
 						applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node[t], interpretations_edge[t], predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, t)
 
-						print("num applicable rules at time ", t, len(applicable_node_rules))
-
 						# Loop through applicable rules and add them to the rules to be applied for later or next fp operation
 						for applicable_rule in applicable_node_rules:
 							n, annotations, qualified_nodes, qualified_edges, _ = applicable_rule
