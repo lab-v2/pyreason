@@ -867,10 +867,10 @@ class Interpretation:
 
 		# Check if the predicate exists
 		if comp_type == 'node':
-			if pred not in self.interpretations_node[t][component].world:
+			if component not in self.interpretations_node[t] or pred not in self.interpretations_node[t][component].world:
 				return False if return_bool else (0, 0)
 		else:
-			if pred not in self.interpretations_edge[t][component].world:
+			if component not in self.interpretations_edge[t] or pred not in self.interpretations_edge[t][component].world:
 				return False if return_bool else (0, 0)
 
 		# Check if the bounds are satisfied
