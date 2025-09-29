@@ -524,8 +524,23 @@ class Interpretation:
 						# Loop through applicable rules and add them to the rules to be applied for later or next fp operation
 						for applicable_rule in applicable_node_rules:
 							n, annotations, qualified_nodes, qualified_edges, _ = applicable_rule
-							# If the node is not in the interp or there is an edge to add or the predicate doesn't exist or the interpretation is not static
-							if rule.get_target() not in interpretations_node[t][n].world or not interpretations_node[t][n].world[rule.get_target()].is_static():
+
+							# Check if this edge rule should be applied
+							should_apply_rule = False
+
+							# Case 1: Node doesn't exist yet - always apply to create it
+							if n not in interpretations_node[t]:
+								should_apply_rule = True
+
+							# Case 2: Node exists but predicate doesn't exist on it
+							elif rule.get_target() not in interpretations_node[t][n].world:
+								should_apply_rule = True
+
+							# Case 3: Node and predicate exist but predicate is not static (can be updated)
+							elif not interpretations_node[t][n].world[rule.get_target()].is_static():
+								should_apply_rule = True
+
+							if should_apply_rule:
 								bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
 								# Bound annotations in between 0 and 1
 								bnd_l = min(max(bnd[0], 0), 1)
@@ -543,8 +558,27 @@ class Interpretation:
 
 						for applicable_rule in applicable_edge_rules:
 							e, annotations, qualified_nodes, qualified_edges, edges_to_add = applicable_rule
-							# If the edge doesn't exist in the interp there is an edge to add or the predicate doesn't exist or the interpretation is not static
-							if len(edges_to_add[0]) > 0 or rule.get_target() not in interpretations_edge[t][e].world or not interpretations_edge[t][e].world[rule.get_target()].is_static():
+
+							# Check if this edge rule should be applied
+							should_apply_rule = False
+
+							# Case 1: Edge doesn't exist yet - always apply to create it
+							if e not in interpretations_edge[t]:
+								should_apply_rule = True
+
+							# Case 2: There are new edges to add as part of this rule
+							elif len(edges_to_add[0]) > 0:
+								should_apply_rule = True
+
+							# Case 3: Edge exists but predicate doesn't exist on it
+							elif rule.get_target() not in interpretations_edge[t][e].world:
+								should_apply_rule = True
+
+							# Case 4: Edge and predicate exist but predicate is not static (can be updated)
+							elif not interpretations_edge[t][e].world[rule.get_target()].is_static():
+								should_apply_rule = True
+
+							if should_apply_rule:
 								bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
 								# Bound annotations in between 0 and 1
 								bnd_l = min(max(bnd[0], 0), 1)
