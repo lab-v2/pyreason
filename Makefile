@@ -81,11 +81,11 @@ test-api: ## Run only API tests (tests/unit/api_tests)
 
 test-jit: ## Run only JIT-disabled tests (tests/unit/disable_jit)
 	@echo "$(BOLD)$(BLUE)Running JIT-disabled tests...$(RESET)"
-	$(RUN_TESTS) --suite disable_jit
+	$(RUN_TESTS) --suite don_disable_jit
 
 test-no-jit: ## Run only JIT-enabled tests (tests/unit/dont_disable_jit)
 	@echo "$(BOLD)$(BLUE)Running JIT-enabled tests...$(RESET)"
-	$(RUN_TESTS) --suite dont_disable_jit
+	$(RUN_TESTS) --suite disable_jit
 
 test-consistency: ## Run numba consistency tests
 	@echo "$(BOLD)$(BLUE)Running consistency tests...$(RESET)"
@@ -95,9 +95,6 @@ test-functional: ## Run functional/end-to-end tests
 	@echo "$(BOLD)$(BLUE)Running functional tests...$(RESET)"
 	$(RUN_TESTS) --suite functional
 
-test-functional-direct: ## Run functional tests directly with pytest
-	@echo "$(BOLD)$(BLUE)Running functional tests directly...$(RESET)"
-	$(PYTHON) -m pytest tests/functional -v
 
 test-all-suites: ## Run all test suites including functional tests
 	@echo "$(BOLD)$(BLUE)Running all test suites including functional...$(RESET)"
@@ -171,24 +168,6 @@ clean-coverage: ## Clean coverage files
 clean-reports: ## Clean test report files
 	@echo "$(BOLD)$(BLUE)Cleaning test reports...$(RESET)"
 	@rm -rf test_reports 2>/dev/null || true
-
-# Continuous Integration targets
-ci-test: ## Run tests suitable for CI (with XML output)
-	@echo "$(BOLD)$(BLUE)Running CI tests...$(RESET)"
-	$(RUN_TESTS) --parallel
-
-ci-fast: ## Run only fast tests for CI
-	@echo "$(BOLD)$(BLUE)Running CI fast tests...$(RESET)"
-	$(RUN_TESTS) --fast --parallel
-
-# Debug targets
-debug-config: ## Show test configuration
-	@echo "$(BOLD)$(BLUE)Test Configuration:$(RESET)"
-	@$(PYTHON) -c "import json; print(json.dumps(json.load(open('test_config.json')), indent=2))"
-
-debug-suites: ## List available test suites
-	@echo "$(BOLD)$(BLUE)Available Test Suites:$(RESET)"
-	@$(PYTHON) -c "import json; config=json.load(open('test_config.json')); [print(f'  {k}: {v[\"name\"]}') for k,v in config['test_suites'].items()]"
 
 # Version and info
 info: ## Show project and tool versions

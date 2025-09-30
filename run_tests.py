@@ -112,8 +112,27 @@ class TestRunner:
 
     def _find_python_command(self) -> str:
         """Find the best available Python command."""
+        # First check if we're in a virtual environment
+        if 'VIRTUAL_ENV' in os.environ:
+            venv_python = os.path.join(os.environ['VIRTUAL_ENV'], 'bin', 'python')
+            if os.path.exists(venv_python):
+                return venv_python
+
+        # Look for common venv patterns in current directory
+        venv_patterns = ['./.venv/bin/python', './venv/bin/python', './env/bin/python']
+        for venv_path in venv_patterns:
+            if os.path.exists(venv_path):
+                return venv_path
+
         # Try different python commands in order of preference
-        candidates = ['python3', 'python', 'python3.13', 'python3.12', 'python3.11']
+        # Prioritize Python 3.9 as PyReason doesn't support 3.13+
+        candidates = [
+            'python3.9',
+            '/usr/bin/python3',      # System Python (often 3.9 on macOS)
+            'python3',
+            'python',
+            'python3.11'
+        ]
 
         for cmd in candidates:
             try:
