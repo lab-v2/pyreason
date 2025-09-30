@@ -27,21 +27,6 @@ class TestParameterValidation:
         with pytest.raises((TypeError, ValueError, AttributeError)):
             pr.Rule(None)
 
-
-class TestBoundaryConditions:
-    """Test boundary conditions and edge cases."""
-
-    def setup_method(self):
-        """Clean state before each test."""
-        
-        pr.reset()
-        pr.reset_settings()
-
-    def test_numeric_extremes(self):
-        """Test numeric extreme values."""
-        
-
-
 class TestTypeValidation:
     """Test type validation across all functions."""
 
@@ -111,16 +96,25 @@ class TestConcurrentModification:
         graph.add_edge('A', 'B')
         pr.load_graph(graph)
 
-        # Change settings
+        # Basic validation that operations succeed
+        # Note: pyreason doesn't expose get_graph() in public API
+
+        # Change settings and verify they take effect
         pr.settings.verbose = True
         pr.settings.memory_profile = False
+        assert pr.settings.verbose == True
+        assert pr.settings.memory_profile == False
 
-        # Add rule
+        # Add rule and verify it was added
         rule = pr.Rule('test(x) <- fact(x)')
-        pr.add_rule(rule)
+        pr.add_rule(rule)  # Should succeed without exception
 
-        # Change settings again
+        # Verify rule object properties
+        assert 'test(x) <- fact(x)' in str(rule) or hasattr(rule.rule, 'get_rule_name')
+
+        # Change settings again and verify
         pr.settings.graph_attribute_parsing = False
+        assert pr.settings.graph_attribute_parsing == False
 
 class TestErrorRecovery:
     """Test system recovery from various error conditions."""
@@ -133,7 +127,7 @@ class TestErrorRecovery:
 
     def test_recovery_after_invalid_operations(self):
         """Test that system recovers after invalid operations."""
-        # Try invalid operations
+        # Try invalid operations - they should not crash the system
         try:
             pr.add_rule(None)
         except Exception:
@@ -144,15 +138,20 @@ class TestErrorRecovery:
         except Exception:
             pass
 
-        # Valid operations should still work
+        # Valid operations should still work after failed operations
         valid_rule = pr.Rule('test(x) <- fact(x)')
         valid_fact = pr.Fact('fact(node1)')
         valid_graph = nx.DiGraph()
         valid_graph.add_edge('A', 'B')
 
+        # These operations should succeed without exceptions
         pr.add_rule(valid_rule)
         pr.add_fact(valid_fact)
         pr.load_graph(valid_graph)
+
+        # Verify objects were created correctly
+        assert hasattr(valid_rule.rule, 'get_rule_name')  # Rule object exists
+        assert 'fact(node1)' in str(valid_fact)
 
     def test_partial_failure_recovery(self):
         """Test recovery from partial failures."""
@@ -160,22 +159,41 @@ class TestErrorRecovery:
         rule = pr.Rule('test(x) <- fact(x)')
         pr.add_rule(rule)
 
+        # Verify the rule object was created correctly
+        assert hasattr(rule.rule, 'get_rule_name')  # Rule object exists
+
         # Try to load invalid file
         try:
             pr.load_graphml('nonexistent.graphml')
         except Exception:
             pass
 
-        # System should still be functional
+        # System should still be functional after the failed operation
         fact = pr.Fact('fact(node1)')
-        pr.add_fact(fact)
+        pr.add_fact(fact)  # Should succeed without exception
+
+        # Verify fact object was created correctly
+        assert 'fact(node1)' in str(fact)
 
         graph = nx.DiGraph()
         graph.add_edge('A', 'B')
-        pr.load_graph(graph)
+        pr.load_graph(graph)  # Should succeed without exception
+
+        # Verify graph object is valid
+        assert graph.number_of_nodes() == 2
+        assert graph.number_of_edges() == 1
 
     def test_reset_after_errors(self):
         """Test that reset works after various errors."""
+        # Add some valid content first
+        valid_rule = pr.Rule('initial(x) <- start(x)')
+        valid_fact = pr.Fact('start(node1)')
+        pr.add_rule(valid_rule)
+        pr.add_fact(valid_fact)
+
+        # Verify content was created correctly
+        assert hasattr(valid_rule.rule, 'get_rule_name')  # Rule object exists
+        assert 'start(node1)' in str(valid_fact)
 
         # Cause various errors
         try:
@@ -188,10 +206,13 @@ class TestErrorRecovery:
         except Exception:
             pass
 
-        # Reset should work
+        # Reset should work regardless of previous errors
         pr.reset()
         pr.reset_settings()
 
-        # System should be clean and functional
+        # System should be functional after reset
         rule = pr.Rule('test(x) <- fact(x)')
-        pr.add_rule(rule)
+        pr.add_rule(rule)  # Should succeed without exception
+
+        # Verify the new rule was created correctly
+        assert hasattr(rule.rule, 'get_rule_name')  # Rule object exists

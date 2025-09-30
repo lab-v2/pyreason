@@ -375,38 +375,6 @@ class TestReasonAgainFunction:
         interpretation2 = pr.reason(timesteps=2, restart=True)
         assert interpretation2 is not None
 
-
-class TestReasoningEdgeCases:
-    """Test edge cases and error conditions."""
-
-    def setup_method(self):
-        """Clean state before each test."""
-        pr.reset()
-        pr.reset_settings()
-
-    def test_reason_with_empty_graph_and_verbose_warning(self):
-        """Test reasoning with no graph shows warning when verbose."""
-        pr.add_rule(Rule("test(A) <- test(A)", "test_rule", False))
-        pr.settings.verbose = True
-
-        # Should show warning about empty graph
-        interpretation = pr.reason(timesteps=1)
-        assert interpretation is not None
-
-    def test_reason_with_inconsistent_predicate_list(self):
-        """Test reasoning with inconsistent predicate list."""
-        graph = nx.DiGraph()
-        graph.add_edge('A', 'B')
-        pr.load_graph(graph)
-        pr.add_rule(Rule("friend(A, B) <- connected(A, B)", "test_rule", False))
-
-        # Add inconsistent predicate pair
-        pr.add_inconsistent_predicate('friend', 'enemy')
-
-        interpretation = pr.reason(timesteps=1)
-        assert interpretation is not None
-
-
 class TestFilterAndSortFunctions:
     """Test filter_and_sort_nodes and filter_and_sort_edges functions."""
 

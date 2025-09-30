@@ -90,7 +90,6 @@ python run_tests.py --suite api_tests --suite dont_disable_jit
 
 # Run functional tests (multiple options)
 make test-functional          # Using test runner
-make test-functional-direct   # Direct pytest
 pytest tests/functional       # Traditional approach
 ```
 

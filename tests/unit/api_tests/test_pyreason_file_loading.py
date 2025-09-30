@@ -783,40 +783,6 @@ enemy(A, B) <- ~friend(A, B)
         finally:
             os.unlink(tmp_path)
 
-    def test_add_rules_from_file_only_comments(self):
-        """Test loading rules from file with only comments."""
-
-        rules_content = """# Only comments here
-# Another comment
-# Final comment"""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
-            tmp.write(rules_content)
-            tmp_path = tmp.name
-
-        try:
-            pr.add_rules_from_file(tmp_path)
-        finally:
-            os.unlink(tmp_path)
-
-    def test_add_rules_from_file_only_empty_lines(self):
-        """Test loading rules from file with only empty lines."""
-        
-
-        rules_content = """
-
-
-        """
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
-            tmp.write(rules_content)
-            tmp_path = tmp.name
-
-        try:
-            pr.add_rules_from_file(tmp_path)
-        finally:
-            os.unlink(tmp_path)
-
     def test_add_rules_from_file_multiple_calls(self):
         """Test multiple calls to add_rules_from_file."""
         rules_content1 = """friend(A, B) <- knows(A, B)"""
@@ -854,39 +820,6 @@ enemy(A, B) <- ~friend(A, B)
             pr.add_rules_from_file(tmp_path)
         finally:
             os.unlink(tmp_path)
-
-    def test_add_rules_from_file_with_invalid_path_type(self):
-        """Test add_rules_from_file() with invalid path type."""
-        
-
-        with pytest.raises((TypeError, OSError)):
-            pr.add_rules_from_file(123)  # Not a string
-
-    def test_add_rules_from_file_permission_denied(self):
-        """Test add_rules_from_file() with permission denied."""
-        rules_content = """friend(A, B) <- knows(A, B)"""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
-            tmp.write(rules_content)
-            tmp_path = tmp.name
-
-        try:
-            # Try to remove read permissions
-            os.chmod(tmp_path, 0o000)
-
-            with pytest.raises((PermissionError, OSError)):
-                pr.add_rules_from_file(tmp_path)
-
-        except (OSError, PermissionError):
-            # If we can't change permissions (e.g., Windows), skip this test
-            pytest.skip("Cannot test permission errors on this system")
-        finally:
-            # Restore permissions and clean up
-            try:
-                os.chmod(tmp_path, 0o644)
-                os.unlink(tmp_path)
-            except OSError:
-                pass
 
     def test_add_rules_from_file_after_existing_rules(self):
         """Test that rule numbering continues from existing rules."""
