@@ -806,12 +806,12 @@ class Interpretation:
 
 		# Initialize interpretations for each time and node and edge
 		interpretations = {}
-		# for t in range(self.time+1):
-		# 	interpretations[t] = {}
-		# 	for node in self.nodes:
-		# 		interpretations[t][node] = InterpretationDict()
-		# 	for edge in self.edges:
-		# 		interpretations[t][edge] = InterpretationDict()
+		for t in range(self.time+1):
+			interpretations[t] = {}
+			for node in self.nodes:
+				interpretations[t][node] = InterpretationDict()
+			for edge in self.edges:
+				interpretations[t][edge] = InterpretationDict()
 
 		# Update interpretation nodes
 		for change in self.rule_trace_node:
