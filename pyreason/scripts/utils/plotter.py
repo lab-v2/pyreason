@@ -1,4 +1,3 @@
-import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -64,9 +63,9 @@ def main():
     # ax.set_ylabel(y_axis_title, fontsize=13)
     # plt.show()
     if smooth:
-        plt.savefig(f'timesteps_vs_time_smooth.png')
+        plt.savefig('timesteps_vs_time_smooth.png')
     else:
-        plt.savefig(f'timesteps_vs_memory.png')
+        plt.savefig('timesteps_vs_memory.png')
 
 
 if __name__ == '__main__':

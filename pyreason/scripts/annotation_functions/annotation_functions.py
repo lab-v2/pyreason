@@ -30,9 +30,9 @@ def _check_bound(lower, upper):
     if lower > upper:
         return (0, 1)
     else:
-        l = min(lower, 1)
-        u = min(upper, 1)
-        return (l, u)
+        lower_bound = min(lower, 1)
+        upper_bound = min(upper, 1)
+        return (lower_bound, upper_bound)
 
 
 @numba.njit
