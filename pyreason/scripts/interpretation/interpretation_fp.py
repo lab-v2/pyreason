@@ -110,9 +110,9 @@ class Interpretation:
 		# Setup graph neighbors and reverse neighbors
 		self.neighbors = numba.typed.Dict.empty(key_type=node_type, value_type=numba.types.ListType(node_type))
 		for n in self.graph.nodes():
-			neighbor_list = numba.typed.List.empty_list(node_type)
-			[neighbor_list.append(neigh) for neigh in self.graph.neighbors(n)]
-			self.neighbors[n] = neighbor_list
+			l = numba.typed.List.empty_list(node_type)
+			[l.append(neigh) for neigh in self.graph.neighbors(n)]
+			self.neighbors[n] = l
 
 		self.reverse_neighbors = self._init_reverse_neighbors(self.neighbors)
 
@@ -146,10 +146,10 @@ class Interpretation:
 		# 	interpretations[n] = world.World(numba.typed.List.empty_list(label.label_type))
 
 		# Specific labels
-		for lbl, ns in specific_labels.items():
-			predicate_map[lbl] = numba.typed.List(ns)
+		for l, ns in specific_labels.items():
+			predicate_map[l] = numba.typed.List(ns)
 			# for n in ns:
-			# 	interpretations[n].world[lbl] = interval.closed(0.0, 1.0)
+			# 	interpretations[n].world[l] = interval.closed(0.0, 1.0)
 			# 	num_ga[0] += 1
 
 		return interpretations, predicate_map
@@ -168,10 +168,10 @@ class Interpretation:
 		# 	interpretations[n] = world.World(numba.typed.List.empty_list(label.label_type))
 
 		# Specific labels
-		for lbl, es in specific_labels.items():
-			predicate_map[lbl] = numba.typed.List(es)
+		for l, es in specific_labels.items():
+			predicate_map[l] = numba.typed.List(es)
 			# for e in es:
-			# 	interpretations[e].world[lbl] = interval.closed(0.0, 1.0)
+			# 	interpretations[e].world[l] = interval.closed(0.0, 1.0)
 			# 	num_ga[0] += 1
 
 		return interpretations, predicate_map
@@ -281,10 +281,10 @@ class Interpretation:
 
 						w = last_t_interp[n].world
 						new_w = interpretations_node[t][n].world
-						for label in w:
+						for l in w:
 							# Only copy if this is the first fp operation (fp_cnt == 0) or if the label doesn't exist
-							if fp_cnt == 0 or label not in new_w:
-								new_w[label] = w[label].copy()
+							if fp_cnt == 0 or l not in new_w:
+								new_w[l] = w[l].copy()
 
 				# If not persistent then copy only what is static
 				elif t > 0 and not persistent:
@@ -297,12 +297,12 @@ class Interpretation:
 
 						w = last_t_interp[n].world
 						new_w = interpretations_node[t][n].world
-						for label in w:
-							if w[label].is_static():
+						for l in w:
+							if w[l].is_static():
 								# Only copy if this is the first fp operation (fp_cnt == 0) or if the label doesn't exist
-								if fp_cnt == 0 or label not in new_w:
-									print("Overwriting static label", label, "for node", n, "at time", t)
-									new_w[label] = w[label].copy()
+								if fp_cnt == 0 or l not in new_w:
+									print("Overwriting static label", l, "for node", n, "at time", t)
+									new_w[l] = w[l].copy()
 
 				# Edges
 				# Only create new interpretation if it doesn't exist or if this is the first fp operation
@@ -318,10 +318,10 @@ class Interpretation:
 
 						w = last_t_interp[e].world
 						new_w = interpretations_edge[t][e].world
-						for label in w:
+						for l in w:
 							# Only copy if this is the first fp operation (fp_cnt == 0) or if the label doesn't exist
-							if fp_cnt == 0 or label not in new_w:
-								new_w[label] = w[label].copy()
+							if fp_cnt == 0 or l not in new_w:
+								new_w[l] = w[l].copy()
 
 				# If not persistent then copy only what is static
 				elif t > 0 and not persistent:
@@ -333,11 +333,11 @@ class Interpretation:
 
 						w = last_t_interp[e].world
 						new_w = interpretations_edge[t][e].world
-						for label in w:
-							if w[label].is_static():
+						for l in w:
+							if w[l].is_static():
 								# Only copy if this is the first fp operation (fp_cnt == 0) or if the label doesn't exist
-								if fp_cnt == 0 or label not in new_w:
-									new_w[label] = w[label].copy()
+								if fp_cnt == 0 or l not in new_w:
+									new_w[l] = w[l].copy()
 
 				# Convergence parameters
 				changes_cnt = 0
@@ -351,7 +351,7 @@ class Interpretation:
 				nodes_set = set(nodes)
 				for i in range(len(facts_to_be_applied_node)):
 					if facts_to_be_applied_node[i][0] == t:
-						comp, label, bnd, static, graph_attribute = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4], facts_to_be_applied_node[i][5]
+						comp, l, bnd, static, graph_attribute = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4], facts_to_be_applied_node[i][5]
 						# If the component is not in the graph, add it
 						if comp not in nodes_set:
 							nodes_set.add(comp)
@@ -359,34 +359,34 @@ class Interpretation:
 						elif comp not in interpretations_node[t]:
 							_add_node_to_interpretation(comp, interpretations_node[t])
 
-						print("Applying fact for node:", comp, label, bnd, static, graph_attribute, "at", t, "fp", fp_cnt)
+						print("Applying fact for node:", comp, l, bnd, static, graph_attribute, "at", t, "fp", fp_cnt)
 
 						# Check if bnd is static. Then no need to update, just add to rule trace, check if graph attribute and add ipl complement to rule trace as well
-						if label in interpretations_node[t][comp].world and interpretations_node[t][comp].world[label].is_static():
+						if l in interpretations_node[t][comp].world and interpretations_node[t][comp].world[l].is_static():
 							print("should not be here")
 							# Check if we should even store any of the changes to the rule trace etc.
 							# Inverse of this is: if not save_graph_attributes_to_rule_trace and graph_attribute
 							if (save_graph_attributes_to_rule_trace or not graph_attribute) and store_interpretation_changes:
-								rule_trace_node.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, label, bnd))
+								rule_trace_node.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, l, bnd))
 								if atom_trace:
 									_update_rule_trace(rule_trace_node_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), bnd, facts_to_be_applied_node_trace[i])
 								for p1, p2 in ipl:
-									if p1==label:
+									if p1==l:
 										rule_trace_node.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, p2, interpretations_node[t][comp].world[p2]))
 										if atom_trace:
 											_update_rule_trace(rule_trace_node_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), interpretations_node[t][comp].world[p2], facts_to_be_applied_node_trace[i])
-									elif p2==label:
+									elif p2==l:
 										rule_trace_node.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, p1, interpretations_node[t][comp].world[p1]))
 										if atom_trace:
 											_update_rule_trace(rule_trace_node_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), interpretations_node[t][comp].world[p1], facts_to_be_applied_node_trace[i])
 	
 						else:
 							# Check for inconsistencies (multiple facts)
-							if check_consistent_node(interpretations_node[t], comp, (label, bnd)):
+							if check_consistent_node(interpretations_node[t], comp, (l, bnd)):
 								print("should be here")
 								mode = 'graph-attribute-fact' if graph_attribute else 'fact'
 								override = True if update_mode == 'override' else False
-								u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (label, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode=mode, override=override)
+								u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode=mode, override=override)
 	
 								update = u or update
 								# Update convergence params
@@ -398,9 +398,9 @@ class Interpretation:
 							else:
 								mode = 'graph-attribute-fact' if graph_attribute else 'fact'
 								if inconsistency_check:
-									resolve_inconsistency_node(interpretations_node[t], comp, (label, bnd), ipl, t, fp_cnt, i, atom_trace, rule_trace_node, rule_trace_node_atoms, rules_to_be_applied_node_trace, facts_to_be_applied_node_trace, store_interpretation_changes, mode=mode)
+									resolve_inconsistency_node(interpretations_node[t], comp, (l, bnd), ipl, t, fp_cnt, i, atom_trace, rule_trace_node, rule_trace_node_atoms, rules_to_be_applied_node_trace, facts_to_be_applied_node_trace, store_interpretation_changes, mode=mode)
 								else:
-									u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (label, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode=mode, override=True)
+									u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode=mode, override=True)
 	
 									update = u or update
 									# Update convergence params
@@ -410,7 +410,7 @@ class Interpretation:
 										changes_cnt += changes
 	
 						if static:
-							facts_to_be_applied_node_new.append((numba.types.uint16(facts_to_be_applied_node[i][0]+1), comp, label, bnd, static, graph_attribute))
+							facts_to_be_applied_node_new.append((numba.types.uint16(facts_to_be_applied_node[i][0]+1), comp, l, bnd, static, graph_attribute))
 							if atom_trace:
 								facts_to_be_applied_node_trace_new.append(facts_to_be_applied_node_trace[i])
 	
@@ -433,7 +433,7 @@ class Interpretation:
 				edges_set = set(edges)
 				for i in range(len(facts_to_be_applied_edge)):
 					if facts_to_be_applied_edge[i][0] == t:
-						comp, label, bnd, static, graph_attribute = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3], facts_to_be_applied_edge[i][4], facts_to_be_applied_edge[i][5]
+						comp, l, bnd, static, graph_attribute = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3], facts_to_be_applied_edge[i][4], facts_to_be_applied_edge[i][5]
 						# If the component is not in the graph, add it
 						if comp not in edges_set:
 							_add_edge(comp[0], comp[1], neighbors, reverse_neighbors, nodes, edges, label.Label(''), interpretations_node[t], interpretations_edge[t], predicate_map_edge, t)
@@ -442,27 +442,27 @@ class Interpretation:
 							_add_edge_to_interpretation(comp, interpretations_edge[t])
 	
 						# Check if bnd is static. Then no need to update, just add to rule trace, check if graph attribute, and add ipl complement to rule trace as well
-						if label in interpretations_edge[t][comp].world and interpretations_edge[t][comp].world[label].is_static():
+						if l in interpretations_edge[t][comp].world and interpretations_edge[t][comp].world[l].is_static():
 							# Inverse of this is: if not save_graph_attributes_to_rule_trace and graph_attribute
 							if (save_graph_attributes_to_rule_trace or not graph_attribute) and store_interpretation_changes:
-								rule_trace_edge.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, label, interpretations_edge[t][comp].world[label]))
+								rule_trace_edge.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, l, interpretations_edge[t][comp].world[l]))
 								if atom_trace:
 									_update_rule_trace(rule_trace_edge_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), bnd, facts_to_be_applied_edge_trace[i])
 								for p1, p2 in ipl:
-									if p1 == label:
+									if p1 == l:
 										rule_trace_edge.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, p2, interpretations_edge[t][comp].world[p2]))
 										if atom_trace:
 											_update_rule_trace(rule_trace_edge_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), interpretations_edge[t][comp].world[p2], facts_to_be_applied_edge_trace[i])
-									elif p2 == label:
+									elif p2 == l:
 										rule_trace_edge.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, p1, interpretations_edge[t][comp].world[p1]))
 										if atom_trace:
 											_update_rule_trace(rule_trace_edge_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), interpretations_edge[t][comp].world[p1], facts_to_be_applied_edge_trace[i])
 						else:
 							# Check for inconsistencies
-							if check_consistent_edge(interpretations_edge[t], comp, (label, bnd)):
+							if check_consistent_edge(interpretations_edge[t], comp, (l, bnd)):
 								mode = 'graph-attribute-fact' if graph_attribute else 'fact'
 								override = True if update_mode == 'override' else False
-								u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (label, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode=mode, override=override)
+								u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode=mode, override=override)
 	
 								update = u or update
 								# Update convergence params
@@ -474,9 +474,9 @@ class Interpretation:
 							else:
 								mode = 'graph-attribute-fact' if graph_attribute else 'fact'
 								if inconsistency_check:
-									resolve_inconsistency_edge(interpretations_edge[t], comp, (label, bnd), ipl, t, fp_cnt, i, atom_trace, rule_trace_edge, rule_trace_edge_atoms, rules_to_be_applied_edge_trace, facts_to_be_applied_edge_trace, store_interpretation_changes, mode=mode)
+									resolve_inconsistency_edge(interpretations_edge[t], comp, (l, bnd), ipl, t, fp_cnt, i, atom_trace, rule_trace_edge, rule_trace_edge_atoms, rules_to_be_applied_edge_trace, facts_to_be_applied_edge_trace, store_interpretation_changes, mode=mode)
 								else:
-									u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (label, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode=mode, override=True)
+									u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode=mode, override=True)
 	
 									update = u or update
 									# Update convergence params
@@ -486,7 +486,7 @@ class Interpretation:
 										changes_cnt += changes
 	
 						if static:
-							facts_to_be_applied_edge_new.append((numba.types.uint16(facts_to_be_applied_edge[i][0]+1), comp, label, bnd, static, graph_attribute))
+							facts_to_be_applied_edge_new.append((numba.types.uint16(facts_to_be_applied_edge[i][0]+1), comp, l, bnd, static, graph_attribute))
 							if atom_trace:
 								facts_to_be_applied_edge_trace_new.append(facts_to_be_applied_edge_trace[i])
 	
@@ -538,7 +538,6 @@ class Interpretation:
 
 								# If delta_t is zero we apply the rules and check if more are applicable
 								if delta_t == 0:
-									in_loop = True
 									update = False
 
 						for applicable_rule in applicable_edge_rules:
@@ -560,7 +559,6 @@ class Interpretation:
 
 								# If delta_t is zero we apply the rules and check if more are applicable
 								if delta_t == 0:
-									in_loop = True
 									update = False
 
 				# Update lists after parallel run
@@ -587,16 +585,16 @@ class Interpretation:
 			rules_to_remove_idx.clear()
 			print("there are ", len(rules_to_be_applied_node), "rules to be applied for nodes")
 			for idx, i in enumerate(rules_to_be_applied_node):
-				t, comp, label, bnd, set_static = i[0], i[1], i[2], i[3], i[4]
+				t, comp, l, bnd, set_static = i[0], i[1], i[2], i[3], i[4]
 
 				# if node doesn't exist in interpretation, add it
 				if comp not in interpretations_node[t]:
 					_add_node_to_interpretation(comp, interpretations_node[t])
 
 				# Check for inconsistencies
-				if check_consistent_node(interpretations_node[t], comp, (label, bnd)):
+				if check_consistent_node(interpretations_node[t], comp, (l, bnd)):
 					override = True if update_mode == 'override' else False
-					u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (label, bnd), ipl, rule_trace_node, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, idx, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode='rule', override=override)
+					u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, idx, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode='rule', override=override)
 
 					update = u or update
 					# Update convergence params
@@ -607,9 +605,9 @@ class Interpretation:
 				# Resolve inconsistency
 				else:
 					if inconsistency_check:
-						resolve_inconsistency_node(interpretations_node[t], comp, (label, bnd), ipl, t, fp_cnt, idx, atom_trace, rule_trace_node, rule_trace_node_atoms, rules_to_be_applied_node_trace, facts_to_be_applied_node_trace, store_interpretation_changes, mode='rule')
+						resolve_inconsistency_node(interpretations_node[t], comp, (l, bnd), ipl, t, fp_cnt, idx, atom_trace, rule_trace_node, rule_trace_node_atoms, rules_to_be_applied_node_trace, facts_to_be_applied_node_trace, store_interpretation_changes, mode='rule')
 					else:
-						u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (label, bnd), ipl, rule_trace_node, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, idx, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode='rule', override=True)
+						u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, idx, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode='rule', override=True)
 
 						update = u or update
 						# Update convergence params
@@ -621,8 +619,8 @@ class Interpretation:
 				# Delete rules that have been applied from list by adding index to list
 				rules_to_remove_idx.add(idx)
 				print("node rule to be applied")
-				print(t, comp, label, bnd, update)
-				print("interp change", interpretations_node[t][comp].world[label])
+				print(t, comp, l, bnd, update)
+				print("interp change", interpretations_node[t][comp].world[l])
 
 			# Remove from rules to be applied and edges to be applied lists after coming out from loop
 			rules_to_be_applied_node[:] = numba.typed.List([rules_to_be_applied_node[i] for i in range(len(rules_to_be_applied_node)) if i not in rules_to_remove_idx])
@@ -633,7 +631,7 @@ class Interpretation:
 			# Edges
 			rules_to_remove_idx.clear()
 			for idx, i in enumerate(rules_to_be_applied_edge):
-				t, comp, label, bnd, set_static = i[0], i[1], i[2], i[3], i[4]
+				t, comp, l, bnd, set_static = i[0], i[1], i[2], i[3], i[4]
 				sources, targets, edge_l = edges_to_be_added_edge_rule[idx]
 				edges_added, changes = _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, edge_l, interpretations_node[t], interpretations_edge[t], predicate_map_edge, t)
 				changes_cnt += changes
@@ -675,9 +673,9 @@ class Interpretation:
 						_add_edge_to_interpretation(comp, interpretations_edge[t])
 
 					# Check for inconsistencies
-					if check_consistent_edge(interpretations_edge[t], comp, (label, bnd)):
+					if check_consistent_edge(interpretations_edge[t], comp, (l, bnd)):
 						override = True if update_mode == 'override' else False
-						u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (label, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode='rule', override=override)
+						u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode='rule', override=override)
 
 						update = u or update
 						# Update convergence params
@@ -688,9 +686,9 @@ class Interpretation:
 					# Resolve inconsistency
 					else:
 						if inconsistency_check:
-							resolve_inconsistency_edge(interpretations_edge[t], comp, (label, bnd), ipl, t, fp_cnt, idx, atom_trace, rule_trace_edge, rule_trace_edge_atoms, rules_to_be_applied_edge_trace, facts_to_be_applied_edge_trace, store_interpretation_changes, mode='rule')
+							resolve_inconsistency_edge(interpretations_edge[t], comp, (l, bnd), ipl, t, fp_cnt, idx, atom_trace, rule_trace_edge, rule_trace_edge_atoms, rules_to_be_applied_edge_trace, facts_to_be_applied_edge_trace, store_interpretation_changes, mode='rule')
 						else:
-							u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (label, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode='rule', override=True)
+							u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode='rule', override=True)
 
 							update = u or update
 							# Update convergence params
@@ -742,16 +740,16 @@ class Interpretation:
 
 		return fp_cnt, max_t
 
-	def add_edge(self, edge, label):
+	def add_edge(self, edge, l):
 		# This function is useful for pyreason gym, called externally
-		_add_edge(edge[0], edge[1], self.neighbors, self.reverse_neighbors, self.nodes, self.edges, label, self.interpretations_node, self.interpretations_edge, self.predicate_map_edge, -1)
+		_add_edge(edge[0], edge[1], self.neighbors, self.reverse_neighbors, self.nodes, self.edges, l, self.interpretations_node, self.interpretations_edge, self.predicate_map_edge, -1)
 
 	def add_node(self, node, labels):
 		# This function is useful for pyreason gym, called externally
 		if node not in self.nodes:
 			_add_node(node, self.neighbors, self.reverse_neighbors, self.nodes, self.interpretations_node)
-			for lbl in labels:
-				self.interpretations_node[node].world[label.Label(lbl)] = interval.closed(0, 1)
+			for l in labels:
+				self.interpretations_node[node].world[label.Label(l)] = interval.closed(0, 1)
 
 	def delete_edge(self, edge):
 		# This function is useful for pyreason gym, called externally
@@ -776,23 +774,23 @@ class Interpretation:
 
 		# Update interpretation nodes
 		for change in self.rule_trace_node:
-			time, _, node, label, bnd = change
-			interpretations[time][node][label._value] = (bnd.lower, bnd.upper)
+			time, _, node, l, bnd = change
+			interpretations[time][node][l._value] = (bnd.lower, bnd.upper)
 
 			# If persistent, update all following timesteps as well
 			if self. persistent:
 				for t in range(time+1, self.time+1):
-					interpretations[t][node][label._value] = (bnd.lower, bnd.upper)
+					interpretations[t][node][l._value] = (bnd.lower, bnd.upper)
 
 		# Update interpretation edges
 		for change in self.rule_trace_edge:
-			time, _, edge, label, bnd, = change
-			interpretations[time][edge][label._value] = (bnd.lower, bnd.upper)
+			time, _, edge, l, bnd, = change
+			interpretations[time][edge][l._value] = (bnd.lower, bnd.upper)
 
 			# If persistent, update all following timesteps as well
 			if self. persistent:
 				for t in range(time+1, self.time+1):
-					interpretations[t][edge][label._value] = (bnd.lower, bnd.upper)
+					interpretations[t][edge][l._value] = (bnd.lower, bnd.upper)
 
 		return interpretations
 
@@ -804,10 +802,10 @@ class Interpretation:
 		ga_cnt = 0
 
 		for node in self.nodes:
-			for lbl in self.interpretations_node[node].world:
+			for l in self.interpretations_node[node].world:
 				ga_cnt += 1
 		for edge in self.edges:
-			for lbl in self.interpretations_edge[edge].world:
+			for l in self.interpretations_edge[edge].world:
 				ga_cnt += 1
 
 		return ga_cnt
@@ -896,7 +894,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 		clause_label = clause[1]
 		clause_variables = clause[2]
 		clause_bnd = clause[3]
-		clause_operator = clause[4]
+		_clause_operator = clause[4]
 
 		# This is a node clause
 		if clause_type == 'node':
@@ -1401,17 +1399,17 @@ def check_edge_grounding_threshold_satisfaction(interpretations_edge, grounding,
 
 
 @numba.njit(cache=True)
-def get_rule_node_clause_grounding(clause_var_1, groundings, predicate_map, label, nodes):
+def get_rule_node_clause_grounding(clause_var_1, groundings, predicate_map, l, nodes):
 	# The groundings for a node clause can be either a previous grounding or all possible nodes
-	if label in predicate_map:
-		grounding = predicate_map[label] if clause_var_1 not in groundings else groundings[clause_var_1]
+	if l in predicate_map:
+		grounding = predicate_map[l] if clause_var_1 not in groundings else groundings[clause_var_1]
 	else:
 		grounding = nodes if clause_var_1 not in groundings else groundings[clause_var_1]
 	return grounding
 
 
 @numba.njit(cache=True)
-def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, predicate_map, label, edges):
+def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, predicate_map, l, edges):
 	# There are 4 cases for predicate(Y,Z):
 	# 1. Both predicate variables Y and Z have not been encountered before
 	# 2. The source variable Y has not been encountered before but the target variable Z has
@@ -1422,8 +1420,8 @@ def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groun
 	# Case 1:
 	# We replace Y by all nodes and Z by the neighbors of each of these nodes
 	if clause_var_1 not in groundings and clause_var_2 not in groundings:
-		if label in predicate_map:
-			edge_groundings = predicate_map[label]
+		if l in predicate_map:
+			edge_groundings = predicate_map[l]
 		else:
 			edge_groundings = edges
 
@@ -1516,33 +1514,33 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 	updated = False
 	# This is to prevent a key error in case the label is a specific label
 	world = interpretations[comp]
-	label, bnd = na
+	l, bnd = na
 	updated_bnds = numba.typed.List.empty_list(interval.interval_type)
 
 	# Add label to world if it is not there
-	if label not in world.world:
-		world.world[label] = interval.closed(0, 1)
-		if label in predicate_map:
-			predicate_map[label].append(comp)
+	if l not in world.world:
+		world.world[l] = interval.closed(0, 1)
+		if l in predicate_map:
+			predicate_map[l].append(comp)
 		else:
-			predicate_map[label] = numba.typed.List([comp])
+			predicate_map[l] = numba.typed.List([comp])
 
 	# Check if update is necessary with previous bnd
-	prev_bnd = world.world[label].copy()
+	prev_bnd = world.world[l].copy()
 
 	# override will not check for inconsistencies
 	if override:
-		world.world[label].set_lower_upper(bnd.lower, bnd.upper)
+		world.world[l].set_lower_upper(bnd.lower, bnd.upper)
 	else:
-		world.update(label, bnd)
-	world.world[label].set_static(static)
-	if world.world[label]!=prev_bnd:
+		world.update(l, bnd)
+	world.world[l].set_static(static)
+	if world.world[l]!=prev_bnd:
 		updated = True
-		updated_bnds.append(world.world[label])
+		updated_bnds.append(world.world[l])
 
 		# Add to rule trace if update happened and add to atom trace if necessary
 		if (save_graph_attributes_to_rule_trace or not mode=='graph-attribute-fact') and store_interpretation_changes:
-			rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, label, world.world[label].copy()))
+			rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, l, world.world[l].copy()))
 			if atom_trace:
 				# Mode can be fact or rule, updation of trace will happen accordingly
 				if mode=='fact' or mode=='graph-attribute-fact':
@@ -1558,7 +1556,7 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 	if updated:
 		ip_update_cnt = 0
 		for p1, p2 in ipl:
-			if p1 == label:
+			if p1 == l:
 				if p2 not in world.world:
 					world.world[p2] = interval.closed(0, 1)
 					if p2 in predicate_map:
@@ -1566,7 +1564,7 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 					else:
 						predicate_map[p2] = numba.typed.List([comp])
 				if atom_trace:
-					_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p2], f'IPL: {label.get_value()}')
+					_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p2], f'IPL: {l.get_value()}')
 				lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
 				upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
 				world.world[p2].set_lower_upper(lower, upper)
@@ -1575,7 +1573,7 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 				updated_bnds.append(world.world[p2])
 				if store_interpretation_changes:
 					rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, p2, interval.closed(lower, upper)))
-			if p2 == label:
+			if p2 == l:
 				if p1 not in world.world:
 					world.world[p1] = interval.closed(0, 1)
 					if p1 in predicate_map:
@@ -1583,7 +1581,7 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 					else:
 						predicate_map[p1] = numba.typed.List([comp])
 				if atom_trace:
-					_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p1], f'IPL: {label.get_value()}')
+					_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p1], f'IPL: {l.get_value()}')
 				lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
 				upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
 				world.world[p1].set_lower_upper(lower, upper)
@@ -1597,8 +1595,8 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 	change = 0
 	if updated:
 		# Find out if it has changed from previous interp
-		current_bnd = world.world[label]
-		prev_t_bnd = interval.closed(world.world[label].prev_lower, world.world[label].prev_upper)
+		current_bnd = world.world[l]
+		prev_t_bnd = interval.closed(world.world[l].prev_lower, world.world[l].prev_upper)
 		if current_bnd != prev_t_bnd:
 			if convergence_mode=='delta_bound':
 				for i in updated_bnds:
@@ -1616,33 +1614,33 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_trace, idx, facts_to_be_applied_trace, rule_trace_atoms, store_interpretation_changes, mode, override=False):
 	updated = False
 	world = interpretations[comp]
-	label, bnd = na
+	l, bnd = na
 	updated_bnds = numba.typed.List.empty_list(interval.interval_type)
 
 	# Add label to world if it is not there
-	if label not in world.world:
-		world.world[label] = interval.closed(0, 1)
-		if label in predicate_map:
-			predicate_map[label].append(comp)
+	if l not in world.world:
+		world.world[l] = interval.closed(0, 1)
+		if l in predicate_map:
+			predicate_map[l].append(comp)
 		else:
-			predicate_map[label] = numba.typed.List([comp])
+			predicate_map[l] = numba.typed.List([comp])
 
 	# Check if update is necessary with previous bnd
-	prev_bnd = world.world[label].copy()
+	prev_bnd = world.world[l].copy()
 
 	# override will not check for inconsistencies
 	if override:
-		world.world[label].set_lower_upper(bnd.lower, bnd.upper)
+		world.world[l].set_lower_upper(bnd.lower, bnd.upper)
 	else:
-		world.update(label, bnd)
-	world.world[label].set_static(static)
-	if world.world[label]!=prev_bnd:
+		world.update(l, bnd)
+	world.world[l].set_static(static)
+	if world.world[l]!=prev_bnd:
 		updated = True
-		updated_bnds.append(world.world[label])
+		updated_bnds.append(world.world[l])
 
 		# Add to rule trace if update happened and add to atom trace if necessary
 		if (save_graph_attributes_to_rule_trace or not mode=='graph-attribute-fact') and store_interpretation_changes:
-			rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, label, world.world[label].copy()))
+			rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, l, world.world[l].copy()))
 			if atom_trace:
 				# Mode can be fact or rule, updation of trace will happen accordingly
 				if mode=='fact' or mode=='graph-attribute-fact':
@@ -1658,7 +1656,7 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 	if updated:
 		ip_update_cnt = 0
 		for p1, p2 in ipl:
-			if p1 == label:
+			if p1 == l:
 				if p2 not in world.world:
 					world.world[p2] = interval.closed(0, 1)
 					if p2 in predicate_map:
@@ -1666,7 +1664,7 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 					else:
 						predicate_map[p2] = numba.typed.List([comp])
 				if atom_trace:
-					_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p2], f'IPL: {label.get_value()}')
+					_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p2], f'IPL: {l.get_value()}')
 				lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
 				upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
 				world.world[p2].set_lower_upper(lower, upper)
@@ -1675,7 +1673,7 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 				updated_bnds.append(world.world[p2])
 				if store_interpretation_changes:
 					rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, p2, interval.closed(lower, upper)))
-			if p2 == label:
+			if p2 == l:
 				if p1 not in world.world:
 					world.world[p1] = interval.closed(0, 1)
 					if p1 in predicate_map:
@@ -1683,7 +1681,7 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 					else:
 						predicate_map[p1] = numba.typed.List([comp])
 				if atom_trace:
-					_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p1], f'IPL: {label.get_value()}')
+					_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p1], f'IPL: {l.get_value()}')
 				lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
 				upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
 				world.world[p1].set_lower_upper(lower, upper)
@@ -1697,8 +1695,8 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 	change = 0
 	if updated:
 		# Find out if it has changed from previous interp
-		current_bnd = world.world[label]
-		prev_t_bnd = interval.closed(world.world[label].prev_lower, world.world[label].prev_upper)
+		current_bnd = world.world[l]
+		prev_t_bnd = interval.closed(world.world[l].prev_lower, world.world[l].prev_upper)
 		if current_bnd != prev_t_bnd:
 			if convergence_mode=='delta_bound':
 				for i in updated_bnds:
@@ -1720,8 +1718,8 @@ def _update_rule_trace(rule_trace, qn, qe, prev_bnd, name):
 @numba.njit(cache=True)
 def are_satisfied_node(interpretations, comp, nas):
 	result = True
-	for (lbl, bnd) in nas:
-		result = result and is_satisfied_node(interpretations, comp, (lbl, bnd))
+	for (l, bnd) in nas:
+		result = result and is_satisfied_node(interpretations, comp, (l, bnd))
 	return result
 
 
@@ -1744,20 +1742,20 @@ def is_satisfied_node(interpretations, comp, na):
 def is_satisfied_node_comparison(interpretations, comp, na):
 	result = False
 	number = 0
-	label, bnd = na
-	label_str = label.value
+	l, bnd = na
+	l_str = l.value
 
-	if not (label is None or bnd is None):
+	if not (l is None or bnd is None):
 		# This is to prevent a key error in case the label is a specific label
 		try:
 			world = interpretations[comp]
 			for world_l in world.world.keys():
-				world.label_str = world.label.value
-				if label_str in world.label_str and world.label_str[len(label_str)+1:].replace('.', '').replace('-', '').isdigit():
+				world_l_str = world_l.value
+				if l_str in world_l_str and world_l_str[len(l_str)+1:].replace('.', '').replace('-', '').isdigit():
 					# The label is contained in the world
 					result = world.is_satisfied(world_l, na[1])
 					# Find the suffix number
-					number = str_to_float(world.label_str[len(label_str)+1:])
+					number = str_to_float(world_l_str[len(l_str)+1:])
 					break
 
 		except Exception:
@@ -1770,8 +1768,8 @@ def is_satisfied_node_comparison(interpretations, comp, na):
 @numba.njit(cache=True)
 def are_satisfied_edge(interpretations, comp, nas):
 	result = True
-	for (lbl, bnd) in nas:
-		result = result and is_satisfied_edge(interpretations, comp, (lbl, bnd))
+	for (l, bnd) in nas:
+		result = result and is_satisfied_edge(interpretations, comp, (l, bnd))
 	return result
 
 
@@ -1794,20 +1792,20 @@ def is_satisfied_edge(interpretations, comp, na):
 def is_satisfied_edge_comparison(interpretations, comp, na):
 	result = False
 	number = 0
-	label, bnd = na
-	label_str = label.value
+	l, bnd = na
+	l_str = l.value
 
-	if not (label is None or bnd is None):
+	if not (l is None or bnd is None):
 		# This is to prevent a key error in case the label is a specific label
 		try:
 			world = interpretations[comp]
 			for world_l in world.world.keys():
-				world.label_str = world.label.value
-				if label_str in world.label_str and world.label_str[len(label_str)+1:].replace('.', '').replace('-', '').isdigit():
+				world_l_str = world_l.value
+				if l_str in world_l_str and world_l_str[len(l_str)+1:].replace('.', '').replace('-', '').isdigit():
 					# The label is contained in the world
 					result = world.is_satisfied(world_l, na[1])
 					# Find the suffix number
-					number = str_to_float(world.label_str[len(label_str)+1:])
+					number = str_to_float(world_l_str[len(l_str)+1:])
 					break
 
 		except Exception:
@@ -1945,7 +1943,7 @@ def _add_edge_to_interpretation(edge, interpretations_edge):
 
 
 @numba.njit(cache=True)
-def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, label, interpretations_node, interpretations_edge, predicate_map, t):
+def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge, predicate_map, t):
 	# If not a node, add to list of nodes and initialize neighbors
 	if source not in nodes:
 		_add_node(source, neighbors, reverse_neighbors, nodes, interpretations_node)
@@ -1955,7 +1953,7 @@ def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, label,
 
 	# Make sure edge doesn't already exist
 	# Make sure, if l=='', not to add the label
-	# Make sure, if edge exists, that we don't override the label label if it exists
+	# Make sure, if edge exists, that we don't override the l label if it exists
 	edge = (source, target)
 	new_edge = False
 	if edge not in edges:
@@ -1963,35 +1961,35 @@ def _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, label,
 		edges.append(edge)
 		neighbors[source].append(target)
 		reverse_neighbors[target].append(source)
-		if label.value!='':
+		if l.value!='':
 			if edge not in interpretations_edge:
-				interpretations_edge[edge] = world.World(numba.typed.List([label]))
-			if label in predicate_map:
-				predicate_map[label].append(edge)
+				interpretations_edge[edge] = world.World(numba.typed.List([l]))
+			if l in predicate_map:
+				predicate_map[l].append(edge)
 			else:
-				predicate_map[label] = numba.typed.List([edge])
+				predicate_map[l] = numba.typed.List([edge])
 		else:
 			interpretations_edge[edge] = world.World(numba.typed.List.empty_list(label.label_type))
 	else:
-		if label not in interpretations_edge[edge].world and label.value!='':
+		if l not in interpretations_edge[edge].world and l.value!='':
 			new_edge = True
-			interpretations_edge[edge].world[label] = interval.closed(0, 1)
+			interpretations_edge[edge].world[l] = interval.closed(0, 1)
 
-			if label in predicate_map:
-				predicate_map[label].append(edge)
+			if l in predicate_map:
+				predicate_map[l].append(edge)
 			else:
-				predicate_map[label] = numba.typed.List([edge])
+				predicate_map[l] = numba.typed.List([edge])
 
 	return edge, new_edge
 
 
 @numba.njit(cache=True)
-def _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, label, interpretations_node, interpretations_edge, predicate_map, t):
+def _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge, predicate_map, t):
 	changes = 0
 	edges_added = numba.typed.List.empty_list(edge_type)
 	for source in sources:
 		for target in targets:
-			edge, new_edge = _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, label, interpretations_node, interpretations_edge, predicate_map, t)
+			edge, new_edge = _add_edge(source, target, neighbors, reverse_neighbors, nodes, edges, l, interpretations_node, interpretations_edge, predicate_map, t)
 			edges_added.append(edge)
 			changes = changes+1 if new_edge else changes
 	return edges_added, changes
@@ -2002,9 +2000,9 @@ def _delete_edge(edge, neighbors, reverse_neighbors, edges, interpretations_edge
 	source, target = edge
 	edges.remove(edge)
 	del interpretations_edge[edge]
-	for lbl in predicate_map:
-		if edge in predicate_map[lbl]:
-			predicate_map[lbl].remove(edge)
+	for l in predicate_map:
+		if edge in predicate_map[l]:
+			predicate_map[l].remove(edge)
 	neighbors[source].remove(target)
 	reverse_neighbors[target].remove(source)
 
@@ -2015,9 +2013,9 @@ def _delete_node(node, neighbors, reverse_neighbors, nodes, interpretations_node
 	del interpretations_node[node]
 	del neighbors[node]
 	del reverse_neighbors[node]
-	for lbl in predicate_map:
-		if node in predicate_map[lbl]:
-			predicate_map[lbl].remove(node)
+	for l in predicate_map:
+		if node in predicate_map[l]:
+			predicate_map[l].remove(node)
 
 	# Remove all occurrences of node in neighbors
 	for n in neighbors.keys():
