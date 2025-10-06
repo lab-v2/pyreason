@@ -509,8 +509,9 @@ def reset_rules():
     """
     Resets rules to none
     """
-    global __rules
+    global __rules, __annotation_functions
     __rules = None
+    __annotation_functions = []
     if __program is not None:
         __program.reset_rules()
 
