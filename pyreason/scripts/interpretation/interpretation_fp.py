@@ -806,55 +806,31 @@ class Interpretation:
 
 		# Initialize interpretations for each time and node and edge
 		interpretations = {}
-		# for t in range(self.time+1):
-		# 	interpretations[t] = {}
-		# 	for node in self.nodes:
-		# 		interpretations[t][node] = InterpretationDict()
-		# 	for edge in self.edges:
-		# 		interpretations[t][edge] = InterpretationDict()
+		for t in range(self.time+1):
+			interpretations[t] = {}
+			for node in self.nodes:
+				interpretations[t][node] = InterpretationDict()
+			for edge in self.edges:
+				interpretations[t][edge] = InterpretationDict()
 
 		# Update interpretation nodes
 		for change in self.rule_trace_node:
 			time, _, node, l, bnd = change
-			if time not in interpretations:
-				interpretations[time] = {}
-				for node in self.nodes:
-					interpretations[time][node] = InterpretationDict()
-				for edge in self.edges:
-					interpretations[time][edge] = InterpretationDict()
 			interpretations[time][node][l._value] = (bnd.lower, bnd.upper)
 
 			# If persistent, update all following timesteps as well
 			if self.persistent:
 				for t in range(time+1, self.time+1):
-					if t not in interpretations:
-						interpretations[t] = {}
-						for node in self.nodes:
-							interpretations[t][node] = InterpretationDict()
-						for edge in self.edges:
-							interpretations[t][edge] = InterpretationDict()
 					interpretations[t][node][l._value] = (bnd.lower, bnd.upper)
 
 		# Update interpretation edges
 		for change in self.rule_trace_edge:
 			time, _, edge, l, bnd, = change
-			if time not in interpretations:
-				interpretations[time] = {}
-				for node in self.nodes:
-					interpretations[time][node] = InterpretationDict()
-				for edge in self.edges:
-					interpretations[time][edge] = InterpretationDict()
 			interpretations[time][edge][l._value] = (bnd.lower, bnd.upper)
 
 			# If persistent, update all following timesteps as well
 			if self.persistent:
 				for t in range(time+1, self.time+1):
-					if t not in interpretations:
-						interpretations[t] = {}
-						for node in self.nodes:
-							interpretations[t][node] = InterpretationDict()
-						for edge in self.edges:
-							interpretations[t][edge] = InterpretationDict()
 					interpretations[t][edge][l._value] = (bnd.lower, bnd.upper)
 
 		return interpretations
