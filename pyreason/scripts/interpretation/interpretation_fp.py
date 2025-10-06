@@ -865,8 +865,10 @@ class Interpretation:
 		pred = query.get_predicate()
 		bnd = query.get_bounds()
 
-		if t == -1:
+		if t == -1 and self.time > 0:
 			t = self.time - 1
+		elif self.time == 0:
+			t = 0
 		elif t < 0 or t > self.time - 1:
 			raise ValueError(f'Timestep {t} is out of bounds. Current interpretation is between 0 and {self.time - 1}')
 
