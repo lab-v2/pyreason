@@ -866,9 +866,9 @@ class Interpretation:
 		bnd = query.get_bounds()
 
 		if t == -1:
-			t = self.time - 1
-		elif t < 0 or t > self.time - 1:
-			raise ValueError(f'Timestep {t} is out of bounds. Current interpretation is between 0 and {self.time - 1}')
+			t = self.time
+		elif t < 0 or t > self.time:
+			raise ValueError(f'Timestep {t} is out of bounds. Current interpretation is between 0 and {self.time}')
 
 		bnd_return = (0, 1) if bnd == interval.closed(0, 1) else (0, 0)
 
