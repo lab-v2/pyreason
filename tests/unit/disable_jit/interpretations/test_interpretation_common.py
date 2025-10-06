@@ -597,11 +597,23 @@ class DummyLabel:
 
 class DummyBound:
     def __init__(self, lower, upper):
-        self.lower = lower
-        self.upper = upper
+        self._interval = _Interval(lower, upper)
+
+    @property
+    def lower(self):
+        return self._interval.lower
+
+    @property
+    def upper(self):
+        return self._interval.upper
 
     def __contains__(self, interval):
         return self.lower <= interval.lower and interval.upper <= self.upper
+
+    def __eq__(self, other):
+        if hasattr(other, 'lower') and hasattr(other, 'upper'):
+            return self.lower == other.lower and self.upper == other.upper
+        return False
 
 
 def build_dummy(persistent):
@@ -623,6 +635,7 @@ def build_ga_dummy():
         edges=[("n1", "n2")],
         interpretations_node={"n1": nw},
         interpretations_edge={("n1", "n2"): ew},
+        time = 1,
     )
 
 
@@ -690,17 +703,18 @@ def test_get_final_num_ground_atoms():
 @pytest.mark.parametrize(
     "comp_type, component, pred, bound, expected_bool, expected_tuple",
     [
-        ("node", "nX", "L1", DummyBound(0, 1), False, (0, 0)),
-        ("node", "n1", "missing", DummyBound(0, 1), False, (0, 0)),
+        ("node", "nX", "L1", DummyBound(0, 1), False, (0, 1)),
+        ("node", "n1", "missing", DummyBound(0, 1), False, (0, 1)),
         ("node", "n1", "L1", DummyBound(0, 0.05), False, (0, 0)),
         ("node", "n1", "L1", DummyBound(0, 1), True, (0.1, 0.2)),
-        ("edge", ("nX", "nY"), "L2", DummyBound(0, 1), False, (0, 0)),
-        ("edge", ("n1", "n2"), "missing", DummyBound(0, 1), False, (0, 0)),
+        ("edge", ("nX", "nY"), "L2", DummyBound(0, 1), False, (0, 1)),
+        ("edge", ("n1", "n2"), "missing", DummyBound(0, 1), False, (0, 1)),
         ("edge", ("n1", "n2"), "L2", DummyBound(0, 0.2), False, (0, 0)),
         ("edge", ("n1", "n2"), "L2", DummyBound(0, 1), True, (0.3, 0.4)),
     ],
 )
-def test_query(comp_type, component, pred, bound, expected_bool, expected_tuple):
+def test_query(monkeypatch, comp_type, component, pred, bound, expected_bool, expected_tuple):
+    monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: _Interval(lo, up))
     module = interpretation
     interp = build_query_dummy()
     q = DummyQuery(comp_type, component, pred, bound)
