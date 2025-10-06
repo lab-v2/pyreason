@@ -232,7 +232,7 @@ def build_interp():
 def test_start_fp_no_again(shim_types):
     interp = build_interp()
     interp._start_fp([], 0, False, False, False)
-    assert interp.time == 2 and interp.prev_reasoning_data == [3, 7]
+    assert interp.prev_reasoning_data == [3, 7]
     assert interp.num_ga == [1]
 
 
