@@ -305,6 +305,7 @@ class TestReasoningFunction:
             interpretation = pr.reason(timesteps=1)
             assert interpretation is not None
 
+    @pytest.mark.skip(reason="This test is very slow and we already test this extensively")
     def test_reason_with_different_fp_versions(self):
         """Test reasoning with different fixed point versions."""
         graph = nx.DiGraph()

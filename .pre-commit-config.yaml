@@ -1,3 +1,4 @@
+exclude: 'pyreason/\.cache_status\.yaml'
 repos:
   - repo: local
     hooks:
