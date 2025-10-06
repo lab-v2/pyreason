@@ -866,9 +866,9 @@ class Interpretation:
 		bnd = query.get_bounds()
 
 		if t == -1:
-			t = self.time
-		elif t < 0 or t > self.time:
-			raise ValueError(f'Timestep {t} is out of bounds. Current interpretation is between 0 and {self.time}')
+			t = self.time - 1
+		elif t < 0 or t > self.time - 1:
+			raise ValueError(f'Timestep {t} is out of bounds. Current interpretation is between 0 and {self.time - 1}')
 
 		bnd_return = (0, 1) if bnd == interval.closed(0, 1) else (0, 0)
 
@@ -882,10 +882,10 @@ class Interpretation:
 
 		# Check if the predicate exists
 		if comp_type == 'node':
-			if component not in self.interpretations_node[t] or pred not in self.interpretations_node[t][component].world:
+			if t >= len(self.interpretations_node) or component not in self.interpretations_node[t] or pred not in self.interpretations_node[t][component].world:
 				return False if return_bool else bnd_return
 		else:
-			if component not in self.interpretations_edge[t] or pred not in self.interpretations_edge[t][component].world:
+			if t >= len(self.interpretations_edge) or component not in self.interpretations_edge[t] or pred not in self.interpretations_edge[t][component].world:
 				return False if return_bool else bnd_return
 
 		# Check if the bounds are satisfied
