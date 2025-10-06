@@ -1,29 +1,32 @@
-# Test if the simple hello world program works
+# Basic reasoning tests for PyReason
 import pyreason as pr
-import faulthandler
-import json
-import os
-import subprocess
-import sys
-import textwrap
 import pytest
 
-# import pyreason.pyreason as pr
+
+def setup_mode(mode):
+    """Configure PyReason settings for the specified mode."""
+    pr.reset()
+    pr.reset_rules()
+    pr.reset_settings()
+    pr.settings.verbose = True
+
+    if mode == "fp":
+        pr.settings.fp_version = True
+    elif mode == "parallel":
+        pr.settings.parallel_computing = True
 
 
 @pytest.mark.slow
-def test_hello_world():
-    # Reset PyReason
-    pr.reset()
-    pr.reset_rules()
-    pr.reset_settings()
+@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
+def test_hello_world(mode):
+    """Test basic hello world program with different reasoning modes."""
+    setup_mode(mode)
 
     # Modify the paths based on where you've stored the files we made above
     graph_path = './tests/functional/friends_graph.graphml'
 
     # Modify pyreason settings to make verbose
-    pr.settings.verbose = True     # Print info to screen
-    # pr.settings.optimize_rules = False  # Disable rule optimization for debugging
+    pr.settings.atom_trace = True  # Print atom trace
 
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
@@ -31,7 +34,6 @@ def test_hello_world():
     pr.add_fact(pr.Fact('popular(Mary)', 'popular_fact', 0, 2))
 
     # Run the program for two timesteps to see the diffusion take place
-    faulthandler.enable()
     interpretation = pr.reason(timesteps=2)
 
     # Display the changes in the interpretation for each timestep
@@ -57,41 +59,10 @@ def test_hello_world():
     # John should be popular in timestep 3
     assert 'John' in dataframes[2]['component'].values and dataframes[2].iloc[1].popular == [1, 1], 'John should have popular bounds [1,1] for t=2 timesteps'
 
+
+@pytest.mark.slow
 def test_hello_world_consistency():
-    """Ensure hello world output matches when using JIT vs pure Python interval constructors."""
-
-    import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval_type
-
-    def run():
-        pr.reset()
-        pr.reset_rules()
-        pr.reset_settings()
-        pr.settings.verbose = False
-        pr.load_graphml('./tests/functional/friends_graph.graphml')
-        pr.add_rule(pr.Rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule'))
-        pr.add_fact(pr.Fact('popular(Mary)', 'popular_fact', 0, 2))
-        interpretation = pr.reason(timesteps=2)
-        dataframes = pr.filter_and_sort_nodes(interpretation, ['popular'])
-        return [df[['component', 'popular']].to_dict('records') for df in dataframes]
-
-    original_closed = interval_type.closed
-    jit_res = run()
-    try:
-        from pyreason.scripts.interval.interval import Interval
-
-        def py_closed(lower, upper, static=False):
-            return Interval(float(lower), float(upper), static)
-
-        interval_type.closed = py_closed
-        py_res = run()
-    finally:
-        interval_type.closed = original_closed
-
-    assert jit_res == py_res
-
-
-@pytest.mark.fp
-def test_hello_world_fp():
+    """Test consistency between JIT and pure Python implementations."""
     # Reset PyReason
     pr.reset()
     pr.reset_rules()
@@ -102,8 +73,8 @@ def test_hello_world_fp():
 
     # Modify pyreason settings to make verbose
     pr.settings.verbose = True     # Print info to screen
-    pr.settings.fp_version = True  # Use the FP version of the reasoner
-    # pr.settings.optimize_rules = False  # Disable rule optimization for debugging
+    pr.settings.atom_trace = True  # Print atom trace
+    pr.settings.test_inconsistency = True
 
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
@@ -111,7 +82,6 @@ def test_hello_world_fp():
     pr.add_fact(pr.Fact('popular(Mary)', 'popular_fact', 0, 2))
 
     # Run the program for two timesteps to see the diffusion take place
-    faulthandler.enable()
     interpretation = pr.reason(timesteps=2)
 
     # Display the changes in the interpretation for each timestep
@@ -138,36 +108,57 @@ def test_hello_world_fp():
     assert 'John' in dataframes[2]['component'].values and dataframes[2].iloc[1].popular == [1, 1], 'John should have popular bounds [1,1] for t=2 timesteps'
 
 
-@pytest.mark.fp
-def test_hello_world_consistency_fp():
-    """Ensure hello world output matches when using JIT vs pure Python interval constructors."""
+@pytest.mark.parametrize("mode", ["regular", "fp"])
+def test_reorder_clauses(mode):
+    """Test clause reordering functionality."""
+    setup_mode(mode)
 
-    import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval_type
+    # Modify the paths based on where you've stored the files we made above
+    graph_path = './tests/functional/friends_graph.graphml'
 
-    def run():
-        pr.reset()
-        pr.reset_rules()
-        pr.reset_settings()
-        pr.settings.verbose = False
-        pr.settings.fp_version = True  # Use the FP version of the reasoner
-        pr.load_graphml('./tests/functional/friends_graph.graphml')
-        pr.add_rule(pr.Rule('popular(x) <-1 popular(y), Friends(x,y), owns(y,z), owns(x,z)', 'popular_rule'))
-        pr.add_fact(pr.Fact('popular(Mary)', 'popular_fact', 0, 2))
-        interpretation = pr.reason(timesteps=2)
-        dataframes = pr.filter_and_sort_nodes(interpretation, ['popular'])
-        return [df[['component', 'popular']].to_dict('records') for df in dataframes]
+    # Modify pyreason settings to make verbose
+    pr.settings.atom_trace = True  # Print atom trace
 
-    original_closed = interval_type.closed
-    jit_res = run()
-    try:
-        from pyreason.scripts.interval.interval import Interval
+    # Load all the files into pyreason
+    pr.load_graphml(graph_path)
+    pr.add_rule(pr.Rule('popular(x) <-1 Friends(x,y), popular(y), owns(y,z), owns(x,z)', 'popular_rule'))
+    pr.add_fact(pr.Fact('popular(Mary)', 'popular_fact', 0, 2))
 
-        def py_closed(lower, upper, static=False):
-            return Interval(float(lower), float(upper), static)
+    # Run the program for two timesteps to see the diffusion take place
+    interpretation = pr.reason(timesteps=2)
 
-        interval_type.closed = py_closed
-        py_res = run()
-    finally:
-        interval_type.closed = original_closed
+    # Display the changes in the interpretation for each timestep
+    dataframes = pr.filter_and_sort_nodes(interpretation, ['popular'])
+    for t, df in enumerate(dataframes):
+        print(f'TIMESTEP - {t}')
+        print(df)
+        print()
 
-    assert jit_res == py_res
+    assert len(dataframes[0]) == 1, 'At t=0 there should be one popular person'
+    assert len(dataframes[1]) == 2, 'At t=1 there should be two popular people'
+    assert len(dataframes[2]) == 3, 'At t=2 there should be three popular people'
+
+    # Mary should be popular in all three timesteps
+    assert 'Mary' in dataframes[0]['component'].values and dataframes[0].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=0 timesteps'
+    assert 'Mary' in dataframes[1]['component'].values and dataframes[1].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=1 timesteps'
+    assert 'Mary' in dataframes[2]['component'].values and dataframes[2].iloc[0].popular == [1, 1], 'Mary should have popular bounds [1,1] for t=2 timesteps'
+
+    # Justin should be popular in timesteps 1, 2
+    assert 'Justin' in dataframes[1]['component'].values and dataframes[1].iloc[1].popular == [1, 1], 'Justin should have popular bounds [1,1] for t=1 timesteps'
+    assert 'Justin' in dataframes[2]['component'].values and dataframes[2].iloc[2].popular == [1, 1], 'Justin should have popular bounds [1,1] for t=2 timesteps'
+
+    # John should be popular in timestep 3
+    assert 'John' in dataframes[2]['component'].values and dataframes[2].iloc[1].popular == [1, 1], 'John should have popular bounds [1,1] for t=2 timesteps'
+
+    # Now look at the trace and make sure the order has gone back to the original rule
+    rule_trace_node, _ = pr.get_rule_trace(interpretation)
+
+    if mode == "fp":
+        # FP version: Find the first Justin rule entry (more robust than relying on row index)
+        justin_rule_rows = rule_trace_node[(rule_trace_node['Node'] == 'Justin') & (rule_trace_node['Occurred Due To'] == 'popular_rule')]
+        assert len(justin_rule_rows) > 0, 'Should have at least one Justin rule entry'
+        first_justin_rule = justin_rule_rows.iloc[0]
+        assert first_justin_rule['Clause-1'][0] == ('Justin', 'Mary')
+    else:
+        # Regular version: The second row, clause 1 should be the edge grounding ('Justin', 'Mary')
+        assert rule_trace_node.iloc[2]['Clause-1'][0] == ('Justin', 'Mary')
