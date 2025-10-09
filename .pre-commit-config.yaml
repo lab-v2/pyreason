@@ -4,7 +4,7 @@ repos:
       # --- COMMIT STAGE: Fast unit tests only ---
       - id: ruff-check
         name: Run ruff linter
-        entry: .venv/bin/python -m ruff check
+        entry: .venv/bin/python -m ruff check pyreason/scripts
         language: system
         types: [python]
         pass_filenames: false

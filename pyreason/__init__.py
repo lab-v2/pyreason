@@ -1,15 +1,13 @@
 # Set numba environment variable
 import os
+import yaml
+from pyreason.pyreason import settings, load_graphml, add_rule, Rule, add_fact, Fact, reason, reset, reset_rules
+from pkg_resources import get_distribution, DistributionNotFound
+
 package_path = os.path.abspath(os.path.dirname(__file__))
 cache_path = os.path.join(package_path, 'cache')
 cache_status_path = os.path.join(package_path, '.cache_status.yaml')
 os.environ['NUMBA_CACHE_DIR'] = cache_path
-
-
-from pyreason.pyreason import *
-import yaml
-from importlib.metadata import version
-from pkg_resources import get_distribution, DistributionNotFound
 
 try:
     __version__ = get_distribution(__name__).version

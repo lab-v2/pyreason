@@ -1,4 +1,5 @@
 # This is the file that will be imported when "import pyreason" is called. All content will be run automatically
+import importlib
 import networkx as nx
 import numba
 import time
@@ -25,15 +26,14 @@ import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 from pyreason.scripts.utils.reorder_clauses import reorder_clauses
-try:
-    import torch
-except ImportError:
+if importlib.util.find_spec("torch") is not None:
+    from pyreason.scripts.learning.classification.classifier import LogicIntegratedClassifier
+    from pyreason.scripts.learning.utils.model_interface import ModelInterfaceOptions
+else:
     LogicIntegratedClassifier = None
     ModelInterfaceOptions = None
     print('torch is not installed, model integration is disabled')
-else:
-    from pyreason.scripts.learning.classification.classifier import LogicIntegratedClassifier
-    from pyreason.scripts.learning.utils.model_interface import ModelInterfaceOptions
+
 
 
 # USER VARIABLES
