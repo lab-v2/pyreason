@@ -1,7 +1,7 @@
 # Set numba environment variable
 import os
 import yaml
-from pyreason.pyreason import settings, load_graphml, add_rule, Rule, add_fact, Fact, reason, reset, reset_rules
+from pyreason.pyreason import *
 from pkg_resources import get_distribution, DistributionNotFound
 
 package_path = os.path.abspath(os.path.dirname(__file__))

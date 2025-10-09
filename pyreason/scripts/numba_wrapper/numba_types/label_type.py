@@ -103,4 +103,3 @@ def box_label(typ, val, c):
     c.pyapi.decref(value_obj)
     c.pyapi.decref(class_obj)
     return res
-

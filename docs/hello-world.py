@@ -51,4 +51,3 @@ pr.save_rule_trace(interpretation)
 
 # Get all interpretations in a dictionary
 interpretations_dict = interpretation.get_interpretation_dict()
-

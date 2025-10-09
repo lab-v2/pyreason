@@ -32,7 +32,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with ruff
       run: |
-        python -m ruff check pyreason/scripts/
+        python -m ruff check pyreason
     - name: Pytest Unit Tests with JIT Disabled
       run: |
         pytest tests/unit/disable_jit
@@ -42,4 +42,3 @@ jobs:
     - name: Pytest Functional Tests
       run: |
         pytest tests/functional
-

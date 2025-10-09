@@ -99,5 +99,3 @@ def minimum(annotations, weights):
     lower, upper = _check_bound(min_lower, min_upper)
 
     return interval.closed(lower, upper)
-
-
