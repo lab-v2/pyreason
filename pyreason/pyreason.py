@@ -1,4 +1,5 @@
 # This is the file that will be imported when "import pyreason" is called. All content will be run automatically
+# ruff: noqa: F401 (Ignore Pyreason import * for public api)
 import importlib
 import networkx as nx
 import numba

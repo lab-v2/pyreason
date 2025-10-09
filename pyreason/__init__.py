@@ -1,4 +1,5 @@
 # Set numba environment variable
+# ruff: noqa: F403 F405 (Ignore Pyreason import * for public api)
 import os
 import yaml
 from pyreason.pyreason import *
