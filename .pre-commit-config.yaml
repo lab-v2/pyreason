@@ -2,6 +2,14 @@ repos:
   - repo: local
     hooks:
       # --- COMMIT STAGE: Fast unit tests only ---
+      - id: ruff-check
+        name: Run ruff linter
+        entry: .venv/bin/python -m ruff check
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [pre-commit]
+
       - id: pytest-unit-no-jit
         name: Run JIT-disabled unit tests 
         entry: .venv/bin/python -m pytest tests/unit/disable_jit -m "not slow" --tb=short -q
