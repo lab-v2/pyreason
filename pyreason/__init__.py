@@ -4,6 +4,7 @@ import os
 import yaml
 from pyreason.pyreason import *
 from pkg_resources import get_distribution, DistributionNotFound
+from importlib.metadata import version
 
 package_path = os.path.abspath(os.path.dirname(__file__))
 cache_path = os.path.join(package_path, 'cache')
@@ -15,7 +16,6 @@ try:
 except DistributionNotFound:
     # package is not installed
     pass
-
 
 with open(cache_status_path) as file:
     cache_status = yaml.safe_load(file)
