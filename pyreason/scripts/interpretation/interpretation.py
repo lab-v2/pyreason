@@ -463,8 +463,11 @@ class Interpretation:
 				for idx, i in enumerate(rules_to_be_applied_edge):
 					if i[0] == t:
 						comp, l, bnd, set_static = i[1], i[2], i[3], i[4]
+						print('applying edge rule at time', t, 'for component', comp, 'label', l, 'bound', bnd, 'set_static', set_static)
 						sources, targets, edge_l = edges_to_be_added_edge_rule[idx]
+						print("adding edges:", sources, targets, edge_l)
 						edges_added, changes = _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge, predicate_map_edge, num_ga, t)
+						print('after adding, edges are:', edges)
 						changes_cnt += changes
 
 						# Update bound for newly added edges. Use bnd to update all edges if label is specified, else use bnd to update normally
@@ -475,7 +478,7 @@ class Interpretation:
 								if check_consistent_edge(interpretations_edge, e, (edge_l, bnd)):
 									override = True if update_mode == 'override' else False
 									u, changes = _update_edge(interpretations_edge, predicate_map_edge, e, (edge_l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, num_ga, mode='rule', override=override)
-
+									print('updating edge', e, 'label', edge_l, 'to bound', bnd)
 									update = u or update
 
 									# Update convergence params
@@ -545,6 +548,12 @@ class Interpretation:
 						rules_to_be_applied_node_trace_threadsafe = numba.typed.List([numba.typed.List.empty_list(rules_to_be_applied_trace_type) for _ in range(len(rules))])
 						rules_to_be_applied_edge_trace_threadsafe = numba.typed.List([numba.typed.List.empty_list(rules_to_be_applied_trace_type) for _ in range(len(rules))])
 					edges_to_be_added_edge_rule_threadsafe = numba.typed.List([numba.typed.List.empty_list(edges_to_be_added_type) for _ in range(len(rules))])
+					# Threadsafe flags for in_loop and update within prange; merge after loop
+					in_loop_threadsafe = numba.typed.List.empty_list(numba.types.boolean)
+					update_threadsafe = numba.typed.List.empty_list(numba.types.boolean)
+					for _ in range(len(rules)):
+						in_loop_threadsafe.append(False)
+						update_threadsafe.append(True)
 
 					for i in prange(len(rules)):
 						rule = rules[i]
@@ -571,8 +580,8 @@ class Interpretation:
 
 									# If delta_t is zero we apply the rules and check if more are applicable
 									if delta_t == 0:
-										in_loop = True
-										update = False
+										in_loop_threadsafe[i] = True
+										update_threadsafe[i] = False
 
 							for applicable_rule in applicable_edge_rules:
 								e, annotations, qualified_nodes, qualified_edges, edges_to_add = applicable_rule
@@ -593,22 +602,38 @@ class Interpretation:
 
 									# If delta_t is zero we apply the rules and check if more are applicable
 									if delta_t == 0:
-										in_loop = True
-										update = False
+										in_loop_threadsafe[i] = True
+										update_threadsafe[i] = False
 
-					# Update lists after parallel run
+						# Update lists after parallel run
+					print("len", len(rules_to_be_applied_edge_threadsafe))
+					for i in rules_to_be_applied_edge_threadsafe:
+						print(i)
 					for i in range(len(rules)):
 						if len(rules_to_be_applied_node_threadsafe[i]) > 0:
 							rules_to_be_applied_node.extend(rules_to_be_applied_node_threadsafe[i])
 						if len(rules_to_be_applied_edge_threadsafe[i]) > 0:
+							print('here, edge rules')
 							rules_to_be_applied_edge.extend(rules_to_be_applied_edge_threadsafe[i])
+							print("rules_to_be_applied_edge", rules_to_be_applied_edge)
 						if atom_trace:
 							if len(rules_to_be_applied_node_trace_threadsafe[i]) > 0:
 								rules_to_be_applied_node_trace.extend(rules_to_be_applied_node_trace_threadsafe[i])
 							if len(rules_to_be_applied_edge_trace_threadsafe[i]) > 0:
 								rules_to_be_applied_edge_trace.extend(rules_to_be_applied_edge_trace_threadsafe[i])
 						if len(edges_to_be_added_edge_rule_threadsafe[i]) > 0:
+							print('here, edge add')
 							edges_to_be_added_edge_rule.extend(edges_to_be_added_edge_rule_threadsafe[i])
+							print("edges_to_be_added_edge_rule", edges_to_be_added_edge_rule)
+
+					# Merge threadsafe flags for in_loop and update
+					in_loop = in_loop
+					update = update
+					for i in range(len(rules)):
+						if in_loop_threadsafe[i]:
+							in_loop = True
+						if not update_threadsafe[i]:
+							update = False
 
 			# Check for convergence after each timestep (perfect convergence or convergence specified by user)
 			# Check number of changed interpretations or max bound change
