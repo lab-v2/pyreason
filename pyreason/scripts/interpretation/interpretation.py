@@ -463,11 +463,8 @@ class Interpretation:
 				for idx, i in enumerate(rules_to_be_applied_edge):
 					if i[0] == t:
 						comp, l, bnd, set_static = i[1], i[2], i[3], i[4]
-						print('applying edge rule at time', t, 'for component', comp, 'label', l, 'bound', bnd, 'set_static', set_static)
 						sources, targets, edge_l = edges_to_be_added_edge_rule[idx]
-						print("adding edges:", sources, targets, edge_l)
 						edges_added, changes = _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, edge_l, interpretations_node, interpretations_edge, predicate_map_edge, num_ga, t)
-						print('after adding, edges are:', edges)
 						changes_cnt += changes
 
 						# Update bound for newly added edges. Use bnd to update all edges if label is specified, else use bnd to update normally
@@ -605,26 +602,19 @@ class Interpretation:
 										in_loop_threadsafe[i] = True
 										update_threadsafe[i] = False
 
-						# Update lists after parallel run
-					print("len", len(rules_to_be_applied_edge_threadsafe))
-					for i in rules_to_be_applied_edge_threadsafe:
-						print(i)
+					# Update lists after parallel run
 					for i in range(len(rules)):
 						if len(rules_to_be_applied_node_threadsafe[i]) > 0:
 							rules_to_be_applied_node.extend(rules_to_be_applied_node_threadsafe[i])
 						if len(rules_to_be_applied_edge_threadsafe[i]) > 0:
-							print('here, edge rules')
 							rules_to_be_applied_edge.extend(rules_to_be_applied_edge_threadsafe[i])
-							print("rules_to_be_applied_edge", rules_to_be_applied_edge)
 						if atom_trace:
 							if len(rules_to_be_applied_node_trace_threadsafe[i]) > 0:
 								rules_to_be_applied_node_trace.extend(rules_to_be_applied_node_trace_threadsafe[i])
 							if len(rules_to_be_applied_edge_trace_threadsafe[i]) > 0:
 								rules_to_be_applied_edge_trace.extend(rules_to_be_applied_edge_trace_threadsafe[i])
 						if len(edges_to_be_added_edge_rule_threadsafe[i]) > 0:
-							print('here, edge add')
 							edges_to_be_added_edge_rule.extend(edges_to_be_added_edge_rule_threadsafe[i])
-							print("edges_to_be_added_edge_rule", edges_to_be_added_edge_rule)
 
 					# Merge threadsafe flags for in_loop and update
 					in_loop = in_loop

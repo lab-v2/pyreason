@@ -167,6 +167,7 @@ class TestRunner:
         # Prepare pytest command - try to find python/pytest
         python_cmd = self._find_python_command()
         cmd = [python_cmd, '-m', 'pytest']
+        print("Running command with Python:", python_cmd)
 
         coverage_file_path = None
         if coverage:
