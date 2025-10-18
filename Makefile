@@ -2,7 +2,7 @@
 # Provides convenient shortcuts for running different test configurations
 
 .PHONY: help test test-all test-fast test-api test-jit test-no-jit test-consistency \
-        test-parallel test-no-coverage coverage-report coverage-html coverage-xml \
+        test-parallel test-sequential test-no-coverage coverage-report coverage-html coverage-xml \
         clean clean-coverage clean-reports install-deps lint check-deps
 
 # Default target
@@ -37,16 +37,16 @@ help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  $(GREEN)%-20s$(RESET) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "$(BLUE)Examples:$(RESET)"
-	@echo "  make test                 # Run all test suites with coverage and open report"
+	@echo "  make test                 # Run all test suites in parallel with coverage"
+	@echo "  make test-sequential      # Run all test suites sequentially (slower)"
 	@echo "  make test-fast            # Run only fast test suites"
 	@echo "  make test-api             # Run only API tests"
-	@echo "  make test-parallel        # Run tests in parallel where possible"
 	@echo "  make coverage-html        # Generate HTML coverage report"
 
 # Main test targets
-test: ## Run all test suites with coverage and open report
-	@echo "$(BOLD)$(BLUE)Running all test suites...$(RESET)"
-	$(RUN_TESTS)
+test: ## Run all test suites with coverage and open report (in parallel)
+	@echo "$(BOLD)$(BLUE)Running all test suites in parallel...$(RESET)"
+	$(RUN_TESTS) --parallel
 	@echo "$(BOLD)$(GREEN)Opening coverage report in browser...$(RESET)"
 	@if [ -f test_reports/htmlcov/index.html ]; then \
 		open test_reports/htmlcov/index.html 2>/dev/null || \
@@ -58,8 +58,12 @@ test: ## Run all test suites with coverage and open report
 
 test-all: test ## Alias for 'test' target
 
-test-only: ## Run all test suites with coverage (no browser)
-	@echo "$(BOLD)$(BLUE)Running all test suites...$(RESET)"
+test-only: ## Run all test suites with coverage (no browser, in parallel)
+	@echo "$(BOLD)$(BLUE)Running all test suites in parallel...$(RESET)"
+	$(RUN_TESTS) --parallel
+
+test-sequential: ## Run all test suites sequentially (no parallelization)
+	@echo "$(BOLD)$(BLUE)Running all test suites sequentially...$(RESET)"
 	$(RUN_TESTS)
 
 test-fast: ## Run only fast test suites (api_tests, dont_disable_jit)
@@ -96,9 +100,9 @@ test-functional: ## Run functional/end-to-end tests
 	$(RUN_TESTS) --suite functional
 
 
-test-all-suites: ## Run all test suites including functional tests
-	@echo "$(BOLD)$(BLUE)Running all test suites including functional...$(RESET)"
-	$(RUN_TESTS)
+test-all-suites: ## Run all test suites including functional tests (in parallel)
+	@echo "$(BOLD)$(BLUE)Running all test suites including functional in parallel...$(RESET)"
+	$(RUN_TESTS) --parallel
 
 # Coverage targets
 coverage-report: ## Show coverage report in terminal
