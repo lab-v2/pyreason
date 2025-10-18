@@ -13,14 +13,14 @@ repos:
 
       - id: pytest-unit-no-jit
         name: Run JIT-disabled unit tests
-        entry: .venv/bin/python -m pytest tests/unit/disable_jit -m "not slow" --tb=short -q
+        entry: .venv/bin/python -m pytest tests/unit/disable_jit --tb=short -q
         language: system
         pass_filenames: false
         stages: [pre-commit]
 
       - id: pytest-unit-jit
         name: Run JIT-enabled unit tests
-        entry: .venv/bin/python -m pytest tests/unit/dont_disable_jit -m "not slow" --tb=short -q
+        entry: .venv/bin/python -m pytest tests/unit/dont_disable_jit --tb=short -q
         language: system
         pass_filenames: false
         stages: [pre-commit]
@@ -36,7 +36,7 @@ repos:
 
       - id: pytest-functional-complete
         name: Run functional test suite
-        entry: .venv/bin/python -m pytest tests/functional/ --tb=short
+        entry: .venv/bin/python -m pytest tests/functional/ --tb=short -q
         language: system
         pass_filenames: false
         stages: [pre-push]
