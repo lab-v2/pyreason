@@ -34,6 +34,13 @@ repos:
         pass_filenames: false
         stages: [pre-push]
 
+      - id: pytest-file-consistency
+        name: Verify interpretation files are in sync
+        entry: .venv/bin/python -m pytest tests/unit/api_tests/test_pyreason_file_consistency.py -v
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
       - id: pytest-functional-complete
         name: Run functional test suite
         entry: .venv/bin/python -m pytest tests/functional/ --tb=short
