@@ -475,7 +475,6 @@ class Interpretation:
 								if check_consistent_edge(interpretations_edge, e, (edge_l, bnd)):
 									override = True if update_mode == 'override' else False
 									u, changes = _update_edge(interpretations_edge, predicate_map_edge, e, (edge_l, bnd), ipl, rule_trace_edge, fp_cnt, t, set_static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, idx, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, num_ga, mode='rule', override=override)
-									print('updating edge', e, 'label', edge_l, 'to bound', bnd)
 									update = u or update
 
 									# Update convergence params
