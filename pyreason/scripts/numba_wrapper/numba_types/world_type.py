@@ -38,7 +38,8 @@ def type_world(context):
     return typer
 
 @type_callable(World)
-def type_world_labels_only(context):
+# ruff: noqa: F811
+def type_world(context): 
     def typer(labels):
         if isinstance(labels, types.ListType):
             return world_type
@@ -75,7 +76,7 @@ def impl_world(context, builder, sig, args):
     return w._getvalue()
 
 @lower_builtin(World, types.ListType(label.label_type))
-def impl_world_labels_only(context, builder, sig, args):
+def impl_world(context, builder, sig, args): # ruff: noqa: F811
     def make_world(labels_arg):
         d = numba.typed.Dict.empty(key_type=label.label_type, value_type=interval.interval_type)
         for lab in labels_arg:

@@ -1,21 +1,23 @@
-# Set numba environment variable
 # ruff: noqa: F403 F405 (Ignore Pyreason import * for public api)
+# Set numba environment variable
 import os
-import yaml
-from pyreason.pyreason import *
-from pkg_resources import get_distribution, DistributionNotFound
-from importlib.metadata import version
-
 package_path = os.path.abspath(os.path.dirname(__file__))
 cache_path = os.path.join(package_path, 'cache')
 cache_status_path = os.path.join(package_path, '.cache_status.yaml')
 os.environ['NUMBA_CACHE_DIR'] = cache_path
+
+
+from pyreason.pyreason import *
+import yaml
+from importlib.metadata import version
+from pkg_resources import get_distribution, DistributionNotFound
 
 try:
     __version__ = get_distribution(__name__).version
 except DistributionNotFound:
     # package is not installed
     pass
+
 
 with open(cache_status_path) as file:
     cache_status = yaml.safe_load(file)
