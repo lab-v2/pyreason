@@ -14,3 +14,4 @@ sphinx_rtd_theme
 sphinx
 sphinx-autopackagesummary
 sphinx-autoapi
+ruff
