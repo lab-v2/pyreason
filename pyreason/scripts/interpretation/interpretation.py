@@ -832,7 +832,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 		clause_label = clause[1]
 		clause_variables = clause[2]
 		clause_bnd = clause[3]
-		clause_operator = clause[4]
+		_clause_operator = clause[4]
 
 		# This is a node clause
 		if clause_type == 'node':
@@ -1540,7 +1540,7 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 
 		return (updated, change)
 
-	except:
+	except Exception:
 		return (False, 0)
 
 
@@ -1645,7 +1645,7 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 					change = 1 + ip_update_cnt
 
 		return (updated, change)
-	except:
+	except Exception:
 		return (False, 0)
 
 
@@ -1670,7 +1670,7 @@ def is_satisfied_node(interpretations, comp, na):
 		try:
 			world = interpretations[comp]
 			result = world.is_satisfied(na[0], na[1])
-		except:
+		except Exception:
 			result = False
 	else:
 		result = True
@@ -1697,7 +1697,7 @@ def is_satisfied_node_comparison(interpretations, comp, na):
 					number = str_to_float(world_l_str[len(l_str)+1:])
 					break
 
-		except:
+		except Exception:
 			result = False
 	else:
 		result = True
@@ -1720,7 +1720,7 @@ def is_satisfied_edge(interpretations, comp, na):
 		try:
 			world = interpretations[comp]
 			result = world.is_satisfied(na[0], na[1])
-		except:
+		except Exception:
 			result = False
 	else:
 		result = True
@@ -1747,7 +1747,7 @@ def is_satisfied_edge_comparison(interpretations, comp, na):
 					number = str_to_float(world_l_str[len(l_str)+1:])
 					break
 
-		except:
+		except Exception:
 			result = False
 	else:
 		result = True

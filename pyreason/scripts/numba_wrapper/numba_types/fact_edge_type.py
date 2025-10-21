@@ -32,8 +32,8 @@ def typeof_fact(val, c):
 # Construct object from Numba functions
 @type_callable(Fact)
 def type_fact(context):
-    def typer(name, component, l, bnd, t_lower, t_upper, static):
-        if isinstance(name, types.UnicodeType) and isinstance(component, types.Tuple) and isinstance(l, label.LabelType) and isinstance(bnd, interval.IntervalType) and isinstance(t_lower, numba.types.Integer) and isinstance(t_upper, numba.types.Integer) and isinstance(static, numba.types.Boolean):
+    def typer(name, component, label_param, bnd, t_lower, t_upper, static):
+        if isinstance(name, types.UnicodeType) and isinstance(component, types.Tuple) and isinstance(label_param, label.LabelType) and isinstance(bnd, interval.IntervalType) and isinstance(t_lower, numba.types.Integer) and isinstance(t_upper, numba.types.Integer) and isinstance(static, numba.types.Boolean):
             return fact_type
     return typer
 
@@ -68,11 +68,11 @@ make_attribute_wrapper(FactType, 'static', 'static')
 @lower_builtin(Fact, numba.types.string, numba.types.Tuple((numba.types.string, numba.types.string)), label.label_type, interval.interval_type, numba.types.uint16, numba.types.uint16, numba.types.boolean)
 def impl_fact(context, builder, sig, args):
     typ = sig.return_type
-    name, component, l, bnd, t_lower, t_upper, static = args
+    name, component, label_param, bnd, t_lower, t_upper, static = args
     fact = cgutils.create_struct_proxy(typ)(context, builder)
     fact.name = name
     fact.component = component
-    fact.l = l
+    fact.l = label_param
     fact.bnd = bnd
     fact.t_lower = t_lower
     fact.t_upper = t_upper
@@ -117,7 +117,7 @@ def get_time_lower(fact):
 
 
 @overload_method(FactType, "get_time_upper")
-def get_time_lower(fact):
+def get_time_upper(fact):
     def getter(fact):
         return fact.t_upper
     return getter

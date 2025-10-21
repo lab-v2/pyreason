@@ -164,4 +164,3 @@ Advanced Example
     # Display filtered node and edge data
     print(df1)
     print(df2)
-

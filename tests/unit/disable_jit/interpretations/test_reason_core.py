@@ -1611,5 +1611,3 @@ def test_reason_breaks_on_perfect_convergence(monkeypatch, reason_env):
 
     assert fp == 0 and max_t == 1
     assert any("Converged at fp" in line for line in printed)
-
-

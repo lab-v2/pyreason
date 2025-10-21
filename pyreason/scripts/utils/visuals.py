@@ -6,10 +6,7 @@ Last updated: 12-04-2022
 '''
 
 import networkx as nx
-import matplotlib
 import matplotlib.pyplot as plt
-import pandas as pd
-from textwrap import wrap
 
 def get_subgraph(whole_graph, node_list):
     return nx.subgraph(whole_graph, node_list)

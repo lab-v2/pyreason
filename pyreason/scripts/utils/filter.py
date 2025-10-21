@@ -20,14 +20,14 @@ class Filter:
         # change contains the timestep, fp operation, component, label and interval
         # Keep only the latest/most recent changes. Since list is sequencial, whatever was earlier will be overwritten
         for change in interpretation.rule_trace_node:
-            t, fp, comp, l, bnd = change
-            latest_changes[t][(comp, l)] = bnd
+            t, fp, comp, label, bnd = change
+            latest_changes[t][(comp, label)] = bnd
         
         # Create a list that needs to be sorted. This contains only the latest changes
         list_to_be_sorted = []
         for t, d in latest_changes.items():
-            for (comp, l), bnd in d.items():
-                list_to_be_sorted.append((bnd, t, comp, l))
+            for (comp, label), bnd in d.items():
+                list_to_be_sorted.append((bnd, t, comp, label))
 
         # Sort the list
         reverse = True if descending else False
@@ -38,15 +38,15 @@ class Filter:
 
         # Add sorted elements to df
         for i in list_to_be_sorted:
-            bnd, t, comp, l = i
-            df[t][(comp, l)] = bnd
+            bnd, t, comp, label = i
+            df[t][(comp, label)] = bnd
 
         for t, d in df.items():
-            for (comp, l), bnd in d.items():
-                if l.get_value() in labels and bnd in bound:
+            for (comp, label), bnd in d.items():
+                if label.get_value() in labels and bnd in bound:
                     if comp not in nodes[t]:
                         nodes[t][comp] = {lab:[0,1] for lab in labels}
-                    nodes[t][comp][l.get_value()] = [bnd.lower, bnd.upper]
+                    nodes[t][comp][label.get_value()] = [bnd.lower, bnd.upper]
 
         dataframes = []
         for t in range(self.tmax+1):
@@ -74,14 +74,14 @@ class Filter:
         # change contains the timestep, fp operation, component, label and interval
         # Keep only the latest/most recent changes. Since list is sequential, whatever was earlier will be overwritten
         for change in interpretation.rule_trace_edge:
-            t, fp, comp, l, bnd = change
-            latest_changes[t][(comp, l)] = bnd
+            t, fp, comp, label, bnd = change
+            latest_changes[t][(comp, label)] = bnd
 
         # Create a list that needs to be sorted. This contains only the latest changes
         list_to_be_sorted = []
         for t, d in latest_changes.items():
-            for (comp, l), bnd in d.items():
-                list_to_be_sorted.append((bnd, t, comp, l))
+            for (comp, label), bnd in d.items():
+                list_to_be_sorted.append((bnd, t, comp, label))
 
         # Sort the list
         reverse = True if descending else False
@@ -92,15 +92,15 @@ class Filter:
 
         # Add sorted elements to df
         for i in list_to_be_sorted:
-            bnd, t, comp, l = i
-            df[t][(comp, l)] = bnd
+            bnd, t, comp, label = i
+            df[t][(comp, label)] = bnd
 
         for t, d in df.items():
-            for (comp, l), bnd in d.items():
-                if l.get_value() in labels and bnd in bound:
+            for (comp, label), bnd in d.items():
+                if label.get_value() in labels and bnd in bound:
                     if comp not in edges[t]:
                         edges[t][comp] = {lab: [0, 1] for lab in labels}
-                    edges[t][comp][l.get_value()] = [bnd.lower, bnd.upper]
+                    edges[t][comp][label.get_value()] = [bnd.lower, bnd.upper]
 
         dataframes = []
         for t in range(self.tmax+1):

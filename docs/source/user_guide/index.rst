@@ -10,6 +10,3 @@ In this section we demonstrate the functionality of the `pyreason` library and h
     :glob:
 
     ./*
-
-
-

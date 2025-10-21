@@ -1603,5 +1603,3 @@ def test_add_edge_existing_creates_predicate_map_entry(monkeypatch, helpers_fixt
     assert new_edge is True
     assert l in interpretations_edge[edge].world
     assert predicate_map[l] == [edge]
-
-

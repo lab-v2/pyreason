@@ -65,10 +65,10 @@ def intersection(self, interval):
     return impl
 
 @overload_method(IntervalType, 'set_lower_upper')
-def set_lower_upper(interval, l, u):
-    def impl(interval, l, u):
-        interval.l = np.float64(l)
-        interval.u = np.float64(u)
+def set_lower_upper(interval, lower, upper):
+    def impl(interval, lower, upper):
+        interval.l = np.float64(lower)
+        interval.u = np.float64(upper)
     return impl
 
 @overload_method(IntervalType, 'reset')

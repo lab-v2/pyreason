@@ -39,9 +39,9 @@ def parse_rules(path):
                 # Append clause
                 clause_type = clause[0]
                 subset = (clause[1][0], clause[1][0]) if clause_type=='node' else (clause[1][0], clause[1][1])
-                l = label.Label(clause[2])
+                label_obj = label.Label(clause[2])
                 bnd = interval.closed(clause[3][0], clause[3][1])
-                neigh_criteria.append((clause_type, l, subset, bnd))
+                neigh_criteria.append((clause_type, label_obj, subset, bnd))
 
                 # Append threshold corresponding to clause if specified in rule, else use default of greater equal to 1
                 if len(clause)>4:
@@ -115,7 +115,7 @@ def parse_facts(path, reverse):
     if facts_yaml['nodes'] is not None:
         for fact_name, values in facts_yaml['nodes'].items():
             n = str(values['node'])
-            l = label.Label(values['label'])
+            label_obj = label.Label(values['label'])
             bound = interval.closed(values['bound'][0], values['bound'][1])
             if values['static']:
                 static = True
@@ -125,14 +125,14 @@ def parse_facts(path, reverse):
                 static = False
                 t_lower = values['t_lower']
                 t_upper = values['t_upper']
-            f = fact_node.Fact(fact_name, n, l, bound, t_lower, t_upper, static)
+            f = fact_node.Fact(fact_name, n, label_obj, bound, t_lower, t_upper, static)
             facts_node.append(f)
 
     facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
     if facts_yaml['edges'] is not None:
         for fact_name, values in facts_yaml['edges'].items():
             e = (str(values['source']), str(values['target'])) if not reverse else (str(values['target']), str(values['source']))
-            l = label.Label(values['label'])
+            label_obj = label.Label(values['label'])
             bound = interval.closed(values['bound'][0], values['bound'][1])
             if values['static']:
                 static = True
@@ -142,7 +142,7 @@ def parse_facts(path, reverse):
                 static = False
                 t_lower = values['t_lower']
                 t_upper = values['t_upper']
-            f = fact_edge.Fact(fact_name, e, l, bound, t_lower, t_upper, static)
+            f = fact_edge.Fact(fact_name, e, label_obj, bound, t_lower, t_upper, static)
             facts_edge.append(f)
 
     return facts_node, facts_edge
@@ -156,13 +156,13 @@ def parse_labels(path):
     edge_labels = numba.typed.List.empty_list(label.label_type)
     if labels_yaml['node_labels'] is not None:
         for label_name in labels_yaml['node_labels']:
-            l = label.Label(label_name)
-            node_labels.append(l)
+            label_obj = label.Label(label_name)
+            node_labels.append(label_obj)
 
     if labels_yaml['edge_labels'] is not None:
         for label_name in labels_yaml['edge_labels']:
-            l = label.Label(label_name)
-            edge_labels.append(l)
+            label_obj = label.Label(label_name)
+            edge_labels.append(label_obj)
 
     # Add an edge label for each edge
     edge_labels.append(label.Label('edge'))
@@ -171,15 +171,15 @@ def parse_labels(path):
     if labels_yaml['node_specific_labels'] is not None:
         for entry in labels_yaml['node_specific_labels']:
             for label_name, nodes in entry.items():
-                l = label.Label(str(label_name))
-                specific_node_labels[l] = numba.typed.List([str(n) for n in nodes])
+                label_obj = label.Label(str(label_name))
+                specific_node_labels[label_obj] = numba.typed.List([str(n) for n in nodes])
 
     specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
     if labels_yaml['edge_specific_labels'] is not None:
         for entry in labels_yaml['edge_specific_labels']:
             for label_name, edges in entry.items():
-                l = label.Label(str(label_name))
-                specific_edge_labels[l] = numba.typed.List([(str(e[0]), str(e[1])) for e in edges])
+                label_obj = label.Label(str(label_name))
+                specific_edge_labels[label_obj] = numba.typed.List([(str(e[0]), str(e[1])) for e in edges])
 
     return node_labels, edge_labels, specific_node_labels, specific_edge_labels
 
