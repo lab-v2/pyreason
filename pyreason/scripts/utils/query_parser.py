@@ -8,17 +8,17 @@ def parse_query(query: str):
     if ':' in query:
         pred_comp, bounds = query.split(':')
         bounds = bounds.replace('[', '').replace(']', '')
-        l, u = bounds.split(',')
-        l, u = float(l), float(u)
+        lower, upper = bounds.split(',')
+        lower, upper = float(lower), float(upper)
     else:
         if query[0] == '~':
             pred_comp = query[1:]
-            l, u = 0, 0
+            lower, upper = 0, 0
         else:
             pred_comp = query
-            l, u = 1, 1
+            lower, upper = 1, 1
 
-    bnd = interval.closed(l, u)
+    bnd = interval.closed(lower, upper)
 
     # Split predicate and component
     idx = pred_comp.find('(')

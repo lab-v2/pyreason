@@ -45,5 +45,3 @@ fi
 # Run pyreason
 python3 -u -m pyreason.scripts.diffuse --graph_path $graph_path --timesteps $timesteps --rules $rules_yaml_path  --facts $facts_yaml_path --labels $labels_yaml_path --ipl $ipl_yaml_path --output_to_file --output_file $output_file_name
 #-------------------------------------------------------------------------
-
-

@@ -538,7 +538,6 @@ class Interpretation:
 
 								# If delta_t is zero we apply the rules and check if more are applicable
 								if delta_t == 0:
-									in_loop = True
 									update = False
 
 						for applicable_rule in applicable_edge_rules:
@@ -560,7 +559,6 @@ class Interpretation:
 
 								# If delta_t is zero we apply the rules and check if more are applicable
 								if delta_t == 0:
-									in_loop = True
 									update = False
 
 				# Update lists after parallel run
@@ -896,7 +894,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 		clause_label = clause[1]
 		clause_variables = clause[2]
 		clause_bnd = clause[3]
-		clause_operator = clause[4]
+		_clause_operator = clause[4]
 
 		# This is a node clause
 		if clause_type == 'node':
@@ -1733,7 +1731,7 @@ def is_satisfied_node(interpretations, comp, na):
 		try:
 			world = interpretations[comp]
 			result = world.is_satisfied(na[0], na[1])
-		except:
+		except Exception:
 			result = False
 	else:
 		result = True
@@ -1760,7 +1758,7 @@ def is_satisfied_node_comparison(interpretations, comp, na):
 					number = str_to_float(world_l_str[len(l_str)+1:])
 					break
 
-		except:
+		except Exception:
 			result = False
 	else:
 		result = True
@@ -1783,7 +1781,7 @@ def is_satisfied_edge(interpretations, comp, na):
 		try:
 			world = interpretations[comp]
 			result = world.is_satisfied(na[0], na[1])
-		except:
+		except Exception:
 			result = False
 	else:
 		result = True
@@ -1810,7 +1808,7 @@ def is_satisfied_edge_comparison(interpretations, comp, na):
 					number = str_to_float(world_l_str[len(l_str)+1:])
 					break
 
-		except:
+		except Exception:
 			result = False
 	else:
 		result = True

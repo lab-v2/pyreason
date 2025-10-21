@@ -3,17 +3,15 @@ import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 from pyreason.scripts.components.world import World
 
-import operator
 from numba import types
 from numba.extending import typeof_impl
 from numba.extending import type_callable
 from numba.extending import models, register_model
 from numba.extending import make_attribute_wrapper
-from numba.extending import overload_method, overload
+from numba.extending import overload_method
 from numba.extending import lower_builtin
 from numba.core import cgutils
 from numba.extending import unbox, NativeValue, box
-from numba.core.typing import signature
 
 
 # Create new numba type
@@ -40,7 +38,8 @@ def type_world(context):
     return typer
 
 @type_callable(World)
-def type_world(context):
+# ruff: noqa: F811
+def type_world(context): 
     def typer(labels):
         if isinstance(labels, types.ListType):
             return world_type
@@ -68,21 +67,21 @@ make_attribute_wrapper(WorldType, 'world', 'world')
 def impl_world(context, builder, sig, args):
     # context.build_map(builder, )
     typ = sig.return_type
-    l, wo = args
+    labels_arg, wo = args
     context.nrt.incref(builder, types.DictType(label.label_type, interval.interval_type), wo)
-    context.nrt.incref(builder, types.ListType(label.label_type), l)
+    context.nrt.incref(builder, types.ListType(label.label_type), labels_arg)
     w = cgutils.create_struct_proxy(typ)(context, builder)
-    w.labels = l
+    w.labels = labels_arg
     w.world = wo
     return w._getvalue()
 
 @lower_builtin(World, types.ListType(label.label_type))
-def impl_world(context, builder, sig, args):
-    def make_world(l):
+def impl_world(context, builder, sig, args): # ruff: noqa: F811
+    def make_world(labels_arg):
         d = numba.typed.Dict.empty(key_type=label.label_type, value_type=interval.interval_type)
-        for lab in l:
+        for lab in labels_arg:
             d[lab] = interval.closed(0.0, 1.0)
-        w = World(l, d)
+        w = World(labels_arg, d)
         return w
 
     w = context.compile_internal(builder, make_world, sig, args)

@@ -45,4 +45,3 @@ def test_hello_world_parallel():
 
     # John should be popular in timestep 3
     assert 'John' in dataframes[2]['component'].values and dataframes[2].iloc[1].popular == [1, 1], 'John should have popular bounds [1,1] for t=2 timesteps'
-
