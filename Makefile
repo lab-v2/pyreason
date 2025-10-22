@@ -131,10 +131,10 @@ coverage-xml: ## Show path to XML coverage report
 # Development targets
 lint: ## Run linting checks
 	@echo "$(BOLD)$(BLUE)Running linting checks...$(RESET)"
-	@echo "$(YELLOW)Note: Add your preferred linter commands here$(RESET)"
-	# Example: flake8 pyreason tests
-	# Example: black --check pyreason tests
-	# Example: mypy pyreason
+	@echo "Fixing end of files..."
+	@pre-commit run end-of-file-fixer --all-files || true
+	@echo "Running ruff..."
+	./.venv/bin/python -m ruff check pyreason/scripts
 
 check-deps: ## Check if required dependencies are installed
 	@echo "$(BOLD)$(BLUE)Checking dependencies...$(RESET)"

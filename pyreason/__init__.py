@@ -1,3 +1,4 @@
+# ruff: noqa: F403 F405 (Ignore Pyreason import * for public api)
 # Set numba environment variable
 import os
 package_path = os.path.abspath(os.path.dirname(__file__))

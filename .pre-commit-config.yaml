@@ -1,26 +1,40 @@
 exclude: 'pyreason/\.cache_status\.yaml'
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+        name: Fix end of files
+        stages: [pre-commit]
+
   - repo: local
     hooks:
       # --- COMMIT STAGE: Fast unit tests only ---
+      - id: ruff-check
+        name: Run ruff linter
+        entry: .venv/bin/python -m ruff check pyreason/scripts
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [pre-commit]
+
       - id: pytest-unit-no-jit
-        name: Run JIT-disabled unit tests 
+        name: Run JIT-disabled unit tests
         entry: .venv/bin/python -m pytest tests/unit/disable_jit -m "not slow" --tb=short -q
         language: system
         pass_filenames: false
         stages: [pre-commit]
 
       - id: pytest-unit-jit
-        name: Run JIT-enabled unit tests 
+        name: Run JIT-enabled unit tests
         entry: .venv/bin/python -m pytest tests/unit/dont_disable_jit -m "not slow" --tb=short -q
         language: system
         pass_filenames: false
         stages: [pre-commit]
 
       # --- PUSH STAGE: Complete test suite ---
-
       - id: pytest-unit-api
-        name: Run pyreason api unit tests 
+        name: Run pyreason api unit tests
         entry: .venv/bin/python -m pytest tests/unit/api_tests --tb=short -q
         language: system
         pass_filenames: false

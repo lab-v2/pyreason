@@ -34,13 +34,13 @@ class GraphmlParser:
                 # IF attribute is a float or int and it is less than 1, then make it a bound, else make it a label
                 if (isinstance(value, (float, int)) and 1 >= value >= 0) or (
                         isinstance(value, str) and value.replace('.', '').isdigit() and 1 >= float(value) >= 0):
-                    l = str(key)
-                    l_bnd = float(value)
-                    u_bnd = 1
+                    label_str = str(key)
+                    lower_bnd = float(value)
+                    upper_bnd = 1
                 else:
-                    l = f'{key}-{value}'
-                    l_bnd = 1
-                    u_bnd = 1
+                    label_str = f'{key}-{value}'
+                    lower_bnd = 1
+                    upper_bnd = 1
                 if isinstance(value, str):
                     bnd_str = value.split(',')
                     if len(bnd_str) == 2:
@@ -48,29 +48,29 @@ class GraphmlParser:
                             low = int(bnd_str[0])
                             up = int(bnd_str[1])
                             if 1 >= low >= 0 and 1 >= up >= 0:
-                                l_bnd = low
-                                u_bnd = up
-                                l = str(key)
-                        except:
+                                lower_bnd = low
+                                upper_bnd = up
+                                label_str = str(key)
+                        except (ValueError, TypeError):
                             pass
 
-                if label.Label(l) not in specific_node_labels.keys():
-                    specific_node_labels[label.Label(l)] = numba.typed.List.empty_list(numba.types.string)
-                specific_node_labels[label.Label(l)].append(n)
-                f = fact_node.Fact('graph-attribute-fact', n, label.Label(l), interval.closed(l_bnd, u_bnd), 0, 0, static=static_facts)
+                if label.Label(label_str) not in specific_node_labels.keys():
+                    specific_node_labels[label.Label(label_str)] = numba.typed.List.empty_list(numba.types.string)
+                specific_node_labels[label.Label(label_str)].append(n)
+                f = fact_node.Fact('graph-attribute-fact', n, label.Label(label_str), interval.closed(lower_bnd, upper_bnd), 0, 0, static=static_facts)
                 facts_node.append(f)
         for e in self.graph.edges:
             for key, value in self.graph.edges[e].items():
                 # IF attribute is a float or int and it is less than 1, then make it a bound, else make it a label
                 if (isinstance(value, (float, int)) and 1 >= value >= 0) or (
                         isinstance(value, str) and value.replace('.', '').isdigit() and 1 >= float(value) >= 0):
-                    l = str(key)
-                    l_bnd = float(value)
-                    u_bnd = 1
+                    label_str = str(key)
+                    lower_bnd = float(value)
+                    upper_bnd = 1
                 else:
-                    l = f'{key}-{value}'
-                    l_bnd = 1
-                    u_bnd = 1
+                    label_str = f'{key}-{value}'
+                    lower_bnd = 1
+                    upper_bnd = 1
                 if isinstance(value, str):
                     bnd_str = value.split(',')
                     if len(bnd_str) == 2:
@@ -78,16 +78,16 @@ class GraphmlParser:
                             low = int(bnd_str[0])
                             up = int(bnd_str[1])
                             if 1 >= low >= 0 and 1 >= up >= 0:
-                                l_bnd = low
-                                u_bnd = up
-                                l = str(key)
-                        except:
+                                lower_bnd = low
+                                upper_bnd = up
+                                label_str = str(key)
+                        except (ValueError, TypeError):
                             pass
 
-                if label.Label(l) not in specific_edge_labels.keys():
-                    specific_edge_labels[label.Label(l)] = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.string)))
-                specific_edge_labels[label.Label(l)].append((e[0], e[1]))
-                f = fact_edge.Fact('graph-attribute-fact', (e[0], e[1]), label.Label(l), interval.closed(l_bnd, u_bnd), 0, 0, static=static_facts)
+                if label.Label(label_str) not in specific_edge_labels.keys():
+                    specific_edge_labels[label.Label(label_str)] = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.string)))
+                specific_edge_labels[label.Label(label_str)].append((e[0], e[1]))
+                f = fact_edge.Fact('graph-attribute-fact', (e[0], e[1]), label.Label(label_str), interval.closed(lower_bnd, upper_bnd), 0, 0, static=static_facts)
                 facts_edge.append(f)
 
         return facts_node, facts_edge, specific_node_labels, specific_edge_labels
