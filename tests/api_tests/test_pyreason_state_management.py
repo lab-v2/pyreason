@@ -173,6 +173,17 @@ class TestGlobalStateManagement:
         pr.reset()
         pr.reset_settings()
 
+    def test_torch_integration_consistency(self):
+        """Test that torch integration variables are consistent"""
+        # Just verify the current state is consistent
+        if hasattr(pr, 'LogicIntegratedClassifier'):
+            if pr.LogicIntegratedClassifier is None:
+                # If LogicIntegratedClassifier is None, ModelInterfaceOptions should also be None
+                assert pr.ModelInterfaceOptions is None
+            else:
+                # If LogicIntegratedClassifier exists, ModelInterfaceOptions should also exist
+                assert pr.ModelInterfaceOptions is not None
+
     def test_state_isolation_between_operations(self):
         """Test that state is properly isolated between operations."""
         # This test verifies that subsequent operations don't interfere

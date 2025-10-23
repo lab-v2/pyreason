@@ -18,6 +18,14 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      - id: sync-interpretation-parallel
+        name: Sync interpretation_parallel.py from interpretation.py
+        entry: .venv/bin/python sync_interpretation_parallel.py
+        language: system
+        pass_filenames: false
+        files: 'pyreason/scripts/interpretation/interpretation\.py'
+        stages: [pre-commit]
+
       - id: pytest-unit-no-jit
         name: Run JIT-disabled unit tests
         entry: .venv/bin/python -m pytest tests/unit/disable_jit -m "not slow" --tb=short -q
@@ -34,15 +42,15 @@ repos:
 
       # --- PUSH STAGE: Complete test suite ---
       - id: pytest-unit-api
-        name: Run pyreason api unit tests
-        entry: .venv/bin/python -m pytest tests/unit/api_tests --tb=short -q
+        name: Run pyreason api tests
+        entry: .venv/bin/python -m pytest tests/api_tests --tb=short -q
         language: system
         pass_filenames: false
         stages: [pre-push]
 
       - id: pytest-functional-complete
         name: Run functional test suite
-        entry: .venv/bin/python -m pytest tests/functional/ --tb=short
+        entry: .venv/bin/python -m pytest tests/functional/ --tb=short -q
         language: system
         pass_filenames: false
         stages: [pre-push]
