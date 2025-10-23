@@ -58,4 +58,3 @@ Average Annotation Function Example
         assert interpretation.query('average_function(A, B) : [0.105, 1]'), 'Average function should be [0.105, 1]'
 
     average_annotation_function()
-

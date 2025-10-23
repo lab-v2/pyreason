@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+"pyreason/.cache_status.yaml
 # Cache status file when initialized
 # Keep the initial false version in repo, ignore when it becomes true
 .DS_STORE
@@ -174,4 +175,3 @@ cython_debug/
 
 # Sphinx Documentation
 /docs/source/_static/css/fonts/
-

@@ -4,8 +4,8 @@ import numpy as np
 
 
 class Interval(structref.StructRefProxy):
-    def __new__(cls, l, u, s=False):
-        return structref.StructRefProxy.__new__(cls, l, u, s, l, u)
+    def __new__(cls, lower, upper, s=False):
+        return structref.StructRefProxy.__new__(cls, lower, upper, s, lower, upper)
 
     @property
     @njit
@@ -33,9 +33,9 @@ class Interval(structref.StructRefProxy):
         return self.prev_u
 
     @njit
-    def set_lower_upper(self, l, u):
-        self.l = l
-        self.u = u
+    def set_lower_upper(self, lower, upper):
+        self.l = lower
+        self.u = upper
     
     @njit
     def reset(self):

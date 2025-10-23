@@ -81,8 +81,8 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
     # 7
     for i in range(len(body_bounds)):
         bound = body_bounds[i]
-        l, u = _str_bound_to_bound(bound)
-        body_bounds[i] = [l, u]
+        lower, upper = _str_bound_to_bound(bound)
+        body_bounds[i] = [lower, upper]
 
     # Find the target predicate and bounds and annotation function if any.
     # Possible heads:
@@ -181,9 +181,9 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
             clause_type = 'comparison'
 
         subset = numba.typed.List(variables)
-        l = label.Label(predicate)
+        label_obj = label.Label(predicate)
         bnd = interval.closed(bounds[0], bounds[1])
-        clauses.append((clause_type, l, subset, bnd, op))
+        clauses.append((clause_type, label_obj, subset, bnd, op))
 
     # Assert that there are two variables in the head of the rule if we infer edges
     # Add edges between head variables if necessary
@@ -208,22 +208,22 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
 def _str_bound_to_bound(str_bound):
     str_bound = str_bound.replace('[', '')
     str_bound = str_bound.replace(']', '')
-    l, u = str_bound.split(',')
-    return float(l), float(u)
+    lower, upper = str_bound.split(',')
+    return float(lower), float(upper)
 
 
 def _is_bound(str_bound):
     str_bound = str_bound.replace('[', '')
     str_bound = str_bound.replace(']', '')
     try:
-        l, u = str_bound.split(',')
-        l = l.replace('.', '')
-        u = u.replace('.', '')
-        if l.isdigit() and u.isdigit():
+        lower, upper = str_bound.split(',')
+        lower = lower.replace('.', '')
+        upper = upper.replace('.', '')
+        if lower.isdigit() and upper.isdigit():
             result = True
         else:
             result = False
-    except:
+    except (ValueError, AttributeError):
         result = False
 
     return result

@@ -146,6 +146,3 @@ The graph after running shows a new connection from ``Vnukovo_International_Airp
 
 .. image:: ../../../media/infer_edges2.png
    :align: center
-
-
-
