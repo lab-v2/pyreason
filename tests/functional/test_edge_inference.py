@@ -1,23 +1,14 @@
+# Edge inference rule tests for PyReason
 import pyreason as pr
 import pytest
+
 
 def setup_mode(mode):
     """Configure PyReason settings for the specified mode."""
     pr.reset()
     pr.reset_rules()
     pr.reset_settings()
-    pr.settings.verbose = True
 
-    if mode == "fp":
-        pr.settings.fp_version = True
-    elif mode == "parallel":
-        pr.settings.parallel_computing = True
-
-@pytest.mark.slow
-@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
-def test_anyBurl_rule_1(mode):
-    graph_path = './tests/functional/knowledge_graph_test_subset.graphml'
-    setup_mode(mode)
     # Modify pyreason settings to make verbose and to save the rule trace to a file
     pr.settings.verbose = True
     pr.settings.atom_trace = True
@@ -28,13 +19,27 @@ def test_anyBurl_rule_1(mode):
     pr.settings.output_to_file = False
     pr.settings.store_interpretation_changes = True
     pr.settings.save_graph_attributes_to_trace = True
+    pr.settings.parallel_computing = False
+
+    if mode == "fp":
+        pr.settings.fp_version = True
+    elif mode == "parallel":
+        pr.settings.parallel_computing = True
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
+def test_anyBurl_rule_1(mode):
+    """Test anyBurl rule 1: isConnectedTo(A, Y) <- isConnectedTo(Y, B), Amsterdam_Airport_Schiphol(B), Vnukovo_International_Airport(A)"""
+    graph_path = './tests/functional/knowledge_graph_test_subset.graphml'
+    setup_mode(mode)
+
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
     pr.add_rule(pr.Rule('isConnectedTo(A, Y) <-1  isConnectedTo(Y, B), Amsterdam_Airport_Schiphol(B), Vnukovo_International_Airport(A)', 'connected_rule_1', infer_edges=True))
 
     # Run the program for two timesteps to see the diffusion take place
     interpretation = pr.reason(timesteps=1)
-    # pr.save_rule_trace(interpretation)
 
     # Display the changes in the interpretation for each timestep
     dataframes = pr.filter_and_sort_edges(interpretation, ['isConnectedTo'])
@@ -50,27 +55,16 @@ def test_anyBurl_rule_1(mode):
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_anyBurl_rule_2(mode):
+    """Test anyBurl rule 2: isConnectedTo(Y, A) <- isConnectedTo(Y, B), Amsterdam_Airport_Schiphol(B), Vnukovo_International_Airport(A)"""
     graph_path = './tests/functional/knowledge_graph_test_subset.graphml'
     setup_mode(mode)
-    # Modify pyreason settings to make verbose and to save the rule trace to a file
-    pr.settings.verbose = True
-    pr.settings.atom_trace = True
-    pr.settings.memory_profile = False
-    pr.settings.canonical = True
-    pr.settings.inconsistency_check = False
-    pr.settings.static_graph_facts = False
-    pr.settings.output_to_file = False
-    pr.settings.store_interpretation_changes = True
-    pr.settings.save_graph_attributes_to_trace = True
-    pr.settings.parallel_computing = False
+
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
-
     pr.add_rule(pr.Rule('isConnectedTo(Y, A) <-1  isConnectedTo(Y, B), Amsterdam_Airport_Schiphol(B), Vnukovo_International_Airport(A)', 'connected_rule_2', infer_edges=True))
 
     # Run the program for two timesteps to see the diffusion take place
     interpretation = pr.reason(timesteps=1)
-    # pr.save_rule_trace(interpretation)
 
     # Display the changes in the interpretation for each timestep
     dataframes = pr.filter_and_sort_edges(interpretation, ['isConnectedTo'])
@@ -86,27 +80,16 @@ def test_anyBurl_rule_2(mode):
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_anyBurl_rule_3(mode):
+    """Test anyBurl rule 3: isConnectedTo(A, Y) <- isConnectedTo(B, Y), Amsterdam_Airport_Schiphol(B), Vnukovo_International_Airport(A)"""
     graph_path = './tests/functional/knowledge_graph_test_subset.graphml'
     setup_mode(mode)
-    # Modify pyreason settings to make verbose and to save the rule trace to a file
-    pr.settings.verbose = True
-    pr.settings.atom_trace = True
-    pr.settings.memory_profile = False
-    pr.settings.canonical = True
-    pr.settings.inconsistency_check = False
-    pr.settings.static_graph_facts = False
-    pr.settings.output_to_file = False
-    pr.settings.store_interpretation_changes = True
-    pr.settings.save_graph_attributes_to_trace = True
-    pr.settings.parallel_computing = False
+
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
-
     pr.add_rule(pr.Rule('isConnectedTo(A, Y) <-1  isConnectedTo(B, Y), Amsterdam_Airport_Schiphol(B), Vnukovo_International_Airport(A)', 'connected_rule_3', infer_edges=True))
 
     # Run the program for two timesteps to see the diffusion take place
     interpretation = pr.reason(timesteps=1)
-    # pr.save_rule_trace(interpretation)
 
     # Display the changes in the interpretation for each timestep
     dataframes = pr.filter_and_sort_edges(interpretation, ['isConnectedTo'])
@@ -122,27 +105,16 @@ def test_anyBurl_rule_3(mode):
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_anyBurl_rule_4(mode):
+    """Test anyBurl rule 4: isConnectedTo(Y, A) <- isConnectedTo(B, Y), Amsterdam_Airport_Schiphol(B), Vnukovo_International_Airport(A)"""
     graph_path = './tests/functional/knowledge_graph_test_subset.graphml'
     setup_mode(mode)
-    # Modify pyreason settings to make verbose and to save the rule trace to a file
-    pr.settings.verbose = True
-    pr.settings.atom_trace = True
-    pr.settings.memory_profile = False
-    pr.settings.canonical = True
-    pr.settings.inconsistency_check = False
-    pr.settings.static_graph_facts = False
-    pr.settings.output_to_file = False
-    pr.settings.store_interpretation_changes = True
-    pr.settings.save_graph_attributes_to_trace = True
-    pr.settings.parallel_computing = False
+
     # Load all the files into pyreason
     pr.load_graphml(graph_path)
-
     pr.add_rule(pr.Rule('isConnectedTo(Y, A) <-1  isConnectedTo(B, Y), Amsterdam_Airport_Schiphol(B), Vnukovo_International_Airport(A)', 'connected_rule_4', infer_edges=True))
 
     # Run the program for two timesteps to see the diffusion take place
     interpretation = pr.reason(timesteps=1)
-    # pr.save_rule_trace(interpretation)
 
     # Display the changes in the interpretation for each timestep
     dataframes = pr.filter_and_sort_edges(interpretation, ['isConnectedTo'])

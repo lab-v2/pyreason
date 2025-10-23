@@ -35,13 +35,13 @@ jobs:
         python -m ruff check pyreason/scripts
     - name: Pytest Unit Tests with JIT Disabled
       run: |
-        pytest tests/unit/disable_jit -m "not slow" --tb=short -q
+        pytest tests/unit/disable_jit --tb=short -q
     - name: Pytest Unit Tests with JIT Enabled
       run: |
-        pytest tests/unit/dont_disable_jit -m "not slow" --tb=short -q
+        pytest tests/unit/dont_disable_jit --tb=short -q
     - name: Pytest API Tests
       run: |
-        pytest tests/unit/api_tests --tb=short -q
+        pytest tests/api_tests --tb=short -q
     - name: Pytest Functional Tests
       run: |
-        pytest tests/functional/ --tb=short
+        pytest tests/functional/ --tb=short -q

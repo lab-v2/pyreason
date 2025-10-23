@@ -5,7 +5,6 @@ Install the project requirements and the pre-commit framework:
 
 ```bash
 pip install -r requirements.txt
-pip install pre-commit
 ```
 
 ## Setting up Pre-Commit Hooks
@@ -36,7 +35,7 @@ this command to view linting results:
 
 PyReason uses a unified test runner that handles multiple test configurations automatically. The test suite is organized into four directories:
 
-- **`tests/unit/api_tests/`** - Tests for main pyreason.py API functions (JIT enabled, real pyreason)
+- **`tests/api_tests/`** - Tests for main pyreason.py API functions (JIT enabled, real pyreason)
 - **`tests/unit/disable_jit/`** - Tests for internal interpretation logic (JIT disabled, stubbed environment)
 - **`tests/unit/dont_disable_jit/`** - Tests for components that benefit from JIT (JIT enabled, lightweight stubs)
 - **`tests/functional/`** - End-to-end functional tests (JIT enabled, real pyreason, longer running)
@@ -57,33 +56,12 @@ make test-fast
 make coverage-html
 ```
 
-### Individual Test Suites
-
-```bash
-# API tests (real pyreason, JIT enabled)
-make test-api
-
-# JIT disabled tests (stubbed environment)
-make test-jit
-
-# JIT enabled tests (lightweight stubs)
-make test-no-jit
-
-# Consistency tests
-make test-consistency
-
-# Functional/end-to-end tests
-make test-functional
-```
-
 ### Advanced Options
 
 ```bash
-# Run with parallel execution where possible
-make test-parallel
+# Run with sequential execution 
+make make test-sequential
 
-# Run without coverage collection (faster)
-python run_tests.py --no-coverage
 
 # Run specific suites
 python run_tests.py --suite api_tests --suite dont_disable_jit
@@ -99,10 +77,7 @@ You can still run pytest directly on individual directories:
 
 ```bash
 # API tests
-pytest tests/unit/api_tests/ -v
-
-# JIT disabled tests
-NUMBA_DISABLE_JIT=1 pytest tests/unit/disable_jit/ -v
+pytest tests/api_tests/ -v
 
 # JIT enabled tests
 pytest tests/unit/dont_disable_jit/ -v
@@ -138,10 +113,3 @@ pytest tests/functional/test_hello_world.py -v
 # Clean up generated files
 make clean
 ```
-
-**Common Issues:**
-- **Functional tests fail with warnings**: The pytest.ini has been updated to ignore expected warnings from numba and networkx
-- **Tests time out**: Functional tests have longer timeouts (600s) and global timeout is disabled
-- **Import errors**: Ensure pytest and dependencies are installed with `make install-deps`
-
-Running tests locally before committing or pushing helps catch issues early and speeds up code review. The unified test runner ensures consistent behavior across different development environments.
