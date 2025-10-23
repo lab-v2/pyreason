@@ -6,7 +6,7 @@ def setup_mode(mode):
     pr.reset()
     pr.reset_rules()
     pr.reset_settings()
-    pr.settings.verbose = Tru
+    pr.settings.verbose = True
 
     if mode == "fp":
         pr.settings.fp_version = True
@@ -14,6 +14,7 @@ def setup_mode(mode):
         pr.settings.parallel_computing = True
 
 @pytest.mark.slow
+@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_anyBurl_rule_1(mode):
     graph_path = './tests/functional/knowledge_graph_test_subset.graphml'
     setup_mode(mode)
@@ -47,6 +48,7 @@ def test_anyBurl_rule_1(mode):
 
 
 @pytest.mark.slow
+@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_anyBurl_rule_2(mode):
     graph_path = './tests/functional/knowledge_graph_test_subset.graphml'
     setup_mode(mode)
@@ -82,6 +84,7 @@ def test_anyBurl_rule_2(mode):
 
 
 @pytest.mark.slow
+@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_anyBurl_rule_3(mode):
     graph_path = './tests/functional/knowledge_graph_test_subset.graphml'
     setup_mode(mode)
@@ -117,6 +120,7 @@ def test_anyBurl_rule_3(mode):
 
 
 @pytest.mark.slow
+@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_anyBurl_rule_4(mode):
     graph_path = './tests/functional/knowledge_graph_test_subset.graphml'
     setup_mode(mode)

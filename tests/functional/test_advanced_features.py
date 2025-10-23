@@ -1,5 +1,4 @@
 # Advanced feature tests for PyReason (annotation functions, custom thresholds, classifier integration)
-import faulthandler
 import pyreason as pr
 from pyreason import Threshold
 import torch
