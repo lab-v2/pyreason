@@ -248,8 +248,6 @@ class TestAddInconsistentPredicate:
 
     def test_add_inconsistent_predicate_same_predicates(self):
         """Test adding the same predicate as inconsistent with itself."""
-        
-
         # This might be an edge case, but should be handled gracefully
         pr.add_inconsistent_predicate('pred1', 'pred1')
 

@@ -43,7 +43,7 @@ repos:
       # --- PUSH STAGE: Complete test suite ---
       - id: pytest-unit-api
         name: Run pyreason api unit tests
-        entry: .venv/bin/python -m pytest tests/unit/api_tests --tb=short -q
+        entry: .venv/bin/python -m pytest tests/functional/api_tests --tb=short -q
         language: system
         pass_filenames: false
         stages: [pre-push]

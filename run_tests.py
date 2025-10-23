@@ -263,6 +263,7 @@ omit =
     */conftest.py
     */__pycache__/*
     */setup.py
+    */interpretation_parallel.py
 
 [report]
 exclude_lines =

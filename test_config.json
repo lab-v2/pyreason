@@ -3,7 +3,7 @@
     "api_tests": {
       "name": "API Tests",
       "description": "Tests for main pyreason.py API functions",
-      "path": "tests/unit/api_tests",
+      "path": "tests/functional/api_tests",
       "coverage_source": "pyreason",
       "jit_disabled": false,
       "uses_real_pyreason": true,
@@ -43,7 +43,7 @@
       "jit_disabled": false,
       "uses_real_pyreason": true,
       "environment_vars": {},
-      "pytest_args": ["-v", "-m", "not slow"],
+      "pytest_args": ["-v"],
       "timeout": 600
     }
   },

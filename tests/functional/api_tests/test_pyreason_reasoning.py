@@ -314,20 +314,6 @@ class TestReasoningFunction:
             interpretation = pr.reason(timesteps=1)
             assert interpretation is not None
 
-    @pytest.mark.skip(reason="This test is very slow and we already test this extensively")
-    def test_reason_with_different_fp_versions(self):
-        """Test reasoning with different fixed point versions."""
-        graph = nx.DiGraph()
-        graph.add_edge('A', 'B')
-        pr.load_graph(graph)
-        pr.add_rule(Rule("friend(A, B) <- connected(A, B)", "test_rule", False))
-
-        # Test different fp versions (boolean)
-        for fp_version in [True, False]:
-            pr.settings.fp_version = fp_version
-            interpretation = pr.reason(timesteps=1)
-            assert interpretation is not None
-
     def test_reason_with_complex_rule_structure(self):
         """Test reasoning with complex rules that might trigger clause reordering."""
         graph = nx.DiGraph()
