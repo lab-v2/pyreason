@@ -36,7 +36,7 @@ this command to view linting results:
 
 PyReason uses a unified test runner that handles multiple test configurations automatically. The test suite is organized into four directories:
 
-- **`tests/functional/api_tests/`** - Tests for main pyreason.py API functions (JIT enabled, real pyreason)
+- **`tests/api_tests/`** - Tests for main pyreason.py API functions (JIT enabled, real pyreason)
 - **`tests/unit/disable_jit/`** - Tests for internal interpretation logic (JIT disabled, stubbed environment)
 - **`tests/unit/dont_disable_jit/`** - Tests for components that benefit from JIT (JIT enabled, lightweight stubs)
 - **`tests/functional/`** - End-to-end functional tests (JIT enabled, real pyreason, longer running)
@@ -99,7 +99,7 @@ You can still run pytest directly on individual directories:
 
 ```bash
 # API tests
-pytest tests/functional/api_tests/ -v
+pytest tests/api_tests/ -v
 
 # JIT disabled tests
 NUMBA_DISABLE_JIT=1 pytest tests/unit/disable_jit/ -v

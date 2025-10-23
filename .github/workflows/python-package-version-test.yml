@@ -41,7 +41,7 @@ jobs:
         pytest tests/unit/dont_disable_jit --tb=short -q
     - name: Pytest API Tests
       run: |
-        pytest tests/functional/api_tests --tb=short -q
+        pytest tests/api_tests --tb=short -q
     - name: Pytest Functional Tests
       run: |
         pytest tests/functional/ --tb=short -q

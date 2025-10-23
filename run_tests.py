@@ -264,6 +264,8 @@ omit =
     */__pycache__/*
     */setup.py
     */interpretation_parallel.py
+    */yaml_parser.py
+    
 
 [report]
 exclude_lines =

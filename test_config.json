@@ -3,7 +3,7 @@
     "api_tests": {
       "name": "API Tests",
       "description": "Tests for main pyreason.py API functions",
-      "path": "tests/functional/api_tests",
+      "path": "tests/api_tests",
       "coverage_source": "pyreason",
       "jit_disabled": false,
       "uses_real_pyreason": true,
