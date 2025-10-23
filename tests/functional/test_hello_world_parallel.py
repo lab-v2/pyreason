@@ -1,4 +1,4 @@
-# Test if the simple hello world program works
+# Test if the simple hello world program works.
 import pyreason as pr
 
 

@@ -27,7 +27,7 @@ We are working to update the codebase to comply with `ruff` linting rules. Run
 this command to view linting results:
 
 ```bash
-ruff check .
+.venv/bin/python -m ruff check pyreason/scripts
 ```
 
 ## Running Tests
