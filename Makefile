@@ -79,7 +79,7 @@ test-no-coverage: ## Run all tests without coverage collection
 	$(RUN_TESTS) --no-coverage
 
 # Individual test suite targets
-test-api: ## Run only API tests (tests/unit/api_tests)
+test-api: ## Run only API tests (tests/functional/api_tests)
 	@echo "$(BOLD)$(BLUE)Running API tests...$(RESET)"
 	$(RUN_TESTS) --suite api_tests
 
