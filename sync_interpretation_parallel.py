@@ -3,8 +3,8 @@
 Pre-commit hook script to synchronize interpretation_parallel.py from interpretation.py.
 
 This script ensures that interpretation_parallel.py is always an exact copy of
-interpretation.py, except for line 226 which should have parallel=True instead of
-parallel=False in the @numba.njit decorator.
+interpretation.py, except for the @numba.njit decorator which should have
+parallel=True instead of parallel=False.
 """
 
 import sys
@@ -39,23 +39,38 @@ def sync_interpretation_files():
         print(f"Error reading {interpretation_file}: {e}", file=sys.stderr)
         return 1
 
-    # Verify we have at least 226 lines
-    if len(lines) < 226:
-        print(f"Error: {interpretation_file} has fewer than 226 lines", file=sys.stderr)
+    # Find the line with the @numba.njit decorator that needs to be changed
+    target_line = "@numba.njit(cache=True, parallel=False)"
+    replacement_line = "@numba.njit(cache=True, parallel=True)"
+
+    found_indices = []
+    for i, line in enumerate(lines):
+        if line.strip() == target_line:
+            found_indices.append(i)
+
+    # Validate we found exactly one occurrence
+    if len(found_indices) == 0:
+        print(f"Error: Could not find the expected decorator in {interpretation_file}", file=sys.stderr)
+        print(f"  Looking for: {target_line}", file=sys.stderr)
         return 1
 
-    # Expected line 226 (index 225) in source file
-    expected_line = "\t@numba.njit(cache=True, parallel=False)\n"
+    if len(found_indices) > 1:
+        print(f"Error: Found multiple occurrences of the decorator in {interpretation_file}", file=sys.stderr)
+        print(f"  Found on lines: {[i + 1 for i in found_indices]}", file=sys.stderr)
+        print(f"  Expected exactly one occurrence", file=sys.stderr)
+        return 1
 
-    if lines[225] != expected_line:
-        print(f"Warning: Line 226 in {interpretation_file} is not as expected.", file=sys.stderr)
-        print(f"  Expected: {expected_line.strip()}", file=sys.stderr)
-        print(f"  Got: {lines[225].strip()}", file=sys.stderr)
-        print(f"  Proceeding with replacement anyway...", file=sys.stderr)
+    # Found exactly one occurrence - replace it
+    line_index = found_indices[0]
+    line_num = line_index + 1
 
-    # Replace line 226 for parallel version
+    # Preserve the original indentation
+    original_line = lines[line_index]
+    indentation = original_line[:len(original_line) - len(original_line.lstrip())]
+
+    # Create modified lines with the replacement
     modified_lines = lines.copy()
-    modified_lines[225] = "\t@numba.njit(cache=True, parallel=True)\n"
+    modified_lines[line_index] = f"{indentation}{replacement_line}\n"
 
     # Write to parallel file
     try:
@@ -66,7 +81,7 @@ def sync_interpretation_files():
         return 1
 
     print(f"✓ Successfully synced {interpretation_parallel_file.name} from {interpretation_file.name}")
-    print(f"  Modified line 226: parallel=False → parallel=True")
+    print(f"  Modified line {line_num}: parallel=False → parallel=True")
 
     return 0
 
