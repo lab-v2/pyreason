@@ -703,22 +703,23 @@ enemy(A, B) <- ~friend(A, B)"""
         finally:
             os.unlink(tmp_path)
 
-    def test_add_rules_from_file_with_comments(self):
-        """Test loading rules from file with comments."""
-        rules_content = """# This is a comment
-friend(A, B) <- knows(A, B)
-# Another comment
-enemy(A, B) <- ~friend(A, B)
-# Final comment"""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
-            tmp.write(rules_content)
-            tmp_path = tmp.name
+    def test_add_rules_from_file_with_comments_and_empty_lines(self):
+        """Test rule file parsing handles comments and empty lines"""
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
+            f.write("# This is a comment\n")
+            f.write("\n")  # Empty line
+            f.write("   \n")  # Whitespace-only line
+            f.write("test_rule(x) <-1 other_rule(x)\n")
+            f.write("# Another comment\n")
+            f.write("another_rule(y) <-1 test_rule(y)\n")
+            temp_path = f.name
 
         try:
-            pr.add_rules_from_file(tmp_path)
+            pr.add_rules_from_file(temp_path)
+            rules = pr.get_rules()
+            assert len(rules) == 2  # Should only include the 2 actual rules
         finally:
-            os.unlink(tmp_path)
+            os.unlink(temp_path)
 
     def test_add_rules_from_file_with_empty_lines(self):
         """Test loading rules from file with empty lines."""
@@ -840,6 +841,13 @@ enemy(A, B) <- ~friend(A, B)
             pr.add_rules_from_file(tmp_path)
         finally:
             os.unlink(tmp_path)
+
+
+    def test_add_inconsistent_predicates(self):
+        """Test adding inconsistent predicate pairs"""
+        pr.add_inconsistent_predicate("pred1", "pred2")
+        pr.add_inconsistent_predicate("pred3", "pred4")
+        # Should not raise exceptions
 
 
 class TestRuleTrace:
