@@ -76,7 +76,8 @@ def test_interpretation_init_neighbors(shim_types):
         False,
         False,
         False,
-        0,
+        False,
+        "intersection",
         False,
     )
     assert set(interp.neighbors["n1"]) == {"n2"}
@@ -211,7 +212,8 @@ def build_interp():
         False,
         False,
         False,
-        0,
+        False,
+        "intersection",
         False,
     )
     interp.time = 5

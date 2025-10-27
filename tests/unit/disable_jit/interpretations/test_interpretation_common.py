@@ -69,12 +69,16 @@ def get_interpretation_helpers(module_name: str = "interpretation_fp"):
     ns.add_edge = add_edge
 
     _ground_rule_fn = _py(interpretation._ground_rule)
-    if "num_ga" in inspect.signature(_ground_rule_fn).parameters:
-        def ground_rule(*args, **kwargs):
-            return _ground_rule_fn(*args, num_ga=[0], **kwargs)
-    else:
-        def ground_rule(*args, **kwargs):
-            return _ground_rule_fn(*args, **kwargs)
+    sig = inspect.signature(_ground_rule_fn)
+    has_num_ga = "num_ga" in sig.parameters
+    
+    def ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules):
+        args = (rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules)
+        if has_num_ga:
+            return _ground_rule_fn(*args, num_ga=[0], t=0, head_functions=())
+        else:
+            return _ground_rule_fn(*args, t=0, head_functions=())
+    
     ns.ground_rule = ground_rule
     ns.update_rule_trace = _py(interpretation._update_rule_trace)
     ns.are_satisfied_node = _py(interpretation.are_satisfied_node)
