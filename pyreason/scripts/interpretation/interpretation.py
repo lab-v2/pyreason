@@ -2056,7 +2056,7 @@ def _determine_edge_head_vars(head_fns, head_fns_vars, groundings, head_function
 	head_groundings.append(numba.typed.List.empty_list(node_type))  # For target
 	is_func = numba.typed.List([False, False])
 
-	# For node rule only two elements
+	# For edge rule only two elements
 	for i in range(2):
 		fn_name = head_fns[i]
 		fn_vars = head_fns_vars[i]
