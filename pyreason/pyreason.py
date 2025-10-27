@@ -470,6 +470,7 @@ __specific_graph_node_labels: Optional[numba.typed.List] = None
 __specific_graph_edge_labels: Optional[numba.typed.List] = None
 
 __annotation_functions = []
+__head_functions = []
 
 __timestamp = ''
 __program: Optional[Program] = None
@@ -510,9 +511,10 @@ def reset_rules():
     """
     Resets rules to none
     """
-    global __rules, __annotation_functions
+    global __rules, __annotation_functions, __head_functions
     __rules = None
     __annotation_functions = []
+    __head_functions = []
     if __program is not None:
         __program.reset_rules()
 
@@ -660,6 +662,19 @@ def add_annotation_function(function: Callable) -> None:
     __annotation_functions.append(function)
 
 
+def add_head_function(function: Callable) -> None:
+    """Function to add head functions to PyReason. The added functions can be used in rules
+
+    :param function: Function to be added. This has to be under a numba `njit` decorator. function has signature: one parameter as input -- annotations
+    :type function: Callable
+    :return: None
+    """
+    # Make sure that the functions are jitted so that they can be passed around in other jitted functions
+    # TODO: Remove if necessary
+    # assert hasattr(function, 'nopython_signatures'), 'The function to be added has to be under a `numba.njit` decorator'
+    __head_functions.append(function)
+
+
 def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bound_threshold: float = -1, queries: List[Query] = None, again: bool = False, restart: bool = True):
     """Function to start the main reasoning process. Graph and rules must already be loaded.
 
@@ -752,6 +767,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
 
     # Convert list of annotation functions into tuple to be numba compatible
     annotation_functions = tuple(__annotation_functions)
+    head_functions = tuple(__head_functions)
 
     # Filter rules based on queries
     if settings.verbose:
@@ -771,7 +787,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
             __rules.append(r)
 
     # Setup logical program
-    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.persistent, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.allow_ground_rules, settings.fp_version)
+    __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, head_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.persistent, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.allow_ground_rules, settings.fp_version)
     __program.specific_node_labels = __specific_node_labels
     __program.specific_edge_labels = __specific_edge_labels
 

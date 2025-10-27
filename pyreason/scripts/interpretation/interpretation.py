@@ -55,10 +55,11 @@ class Interpretation:
 	specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(node_type))
 	specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(edge_type))
 
-	def __init__(self, graph, ipl, annotation_functions, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, persistent, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules):
+	def __init__(self, graph, ipl, annotation_functions, head_functions, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, persistent, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules):
 		self.graph = graph
 		self.ipl = ipl
 		self.annotation_functions = annotation_functions
+		self.head_functions = head_functions
 		self.reverse_graph = reverse_graph
 		self.atom_trace = atom_trace
 		self.save_graph_attributes_to_rule_trace = save_graph_attributes_to_rule_trace
@@ -214,7 +215,7 @@ class Interpretation:
 			if restart:
 				self.time = 0
 				self.prev_reasoning_data[0] = 0
-		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.predicate_map_node, self.predicate_map_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.persistent, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, self.allow_ground_rules, max_facts_time, self.annotation_functions, self._convergence_mode, self._convergence_delta, self.num_ga, verbose, again)
+		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.predicate_map_node, self.predicate_map_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.persistent, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, self.allow_ground_rules, max_facts_time, self.annotation_functions, self.head_functions, self._convergence_mode, self._convergence_delta, self.num_ga, verbose, again)
 		self.time = t - 1
 		# If we need to reason again, store the next timestep to start from
 		self.prev_reasoning_data[0] = t
@@ -224,7 +225,7 @@ class Interpretation:
 
 	@staticmethod
 	@numba.njit(cache=True, parallel=False)
-	def reason(interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, persistent, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules, max_facts_time, annotation_functions, convergence_mode, convergence_delta, num_ga, verbose, again):
+	def reason(interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, persistent, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules, max_facts_time, annotation_functions, head_functions, convergence_mode, convergence_delta, num_ga, verbose, again):
 		t = prev_reasoning_data[0]
 		fp_cnt = prev_reasoning_data[1]
 		max_rules_time = 0
@@ -557,7 +558,7 @@ class Interpretation:
 						# Only go through if the rule can be applied within the given timesteps, or we're running until convergence
 						delta_t = rule.get_delta()
 						if t + delta_t <= tmax or tmax == -1 or again:
-							applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, num_ga, t)
+							applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, num_ga, t, head_functions)
 
 							# Loop through applicable rules and add them to the rules to be applied for later or next fp operation
 							for applicable_rule in applicable_node_rules:
@@ -780,10 +781,12 @@ class Interpretation:
 
 
 @numba.njit(cache=True)
-def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, num_ga, t):
+def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, num_ga, t, head_functions):
 	# Extract rule params
 	rule_type = rule.get_type()
 	head_variables = rule.get_head_variables()
+	head_fns = rule.get_head_function()
+	head_fns_vars = rule.get_head_function_vars()
 	clauses = rule.get_clauses()
 	thresholds = rule.get_thresholds()
 	ann_fn = rule.get_annotation_function()
@@ -922,6 +925,11 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 			# Loop through all the head variable groundings and add it to the rules to be applied
 			# Loop through the clauses and add appropriate trace data and annotations
 
+			# Apply any function in the head to determine the head grounding
+			head_var_groundings, is_func = _determine_node_head_vars(head_fns, head_fns_vars, groundings, head_functions)
+			if is_func:
+				groundings[head_var_1] = head_var_groundings
+
 			# If there is no grounding for head_var_1, we treat it as a ground atom and add it to the graph
 			head_var_1_in_nodes = head_var_1 in nodes
 			add_head_var_node_to_graph = False
@@ -1011,6 +1019,13 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 		elif rule_type == 'edge':
 			head_var_1 = head_variables[0]
 			head_var_2 = head_variables[1]
+			
+			# Apply any function in the head to determine the head grounding
+			head_var_groundings, is_func = _determine_edge_head_vars(head_fns, head_fns_vars, groundings, head_functions)
+			if is_func[0]:
+				groundings[head_var_1] = head_var_groundings[0]
+			if is_func[1]:
+				groundings[head_var_2] = head_var_groundings[1]
 
 			# If there is no grounding for head_var_1 or head_var_2, we treat it as a ground atom and add it to the graph
 			head_var_1_in_nodes = head_var_1 in nodes
@@ -1979,3 +1994,114 @@ def str_to_int(value):
 		result += (ord(v) - 48) * (10 ** (final_index - i))
 	result = -result if negative else result
 	return result
+
+
+@numba.njit(cache=True)
+def _determine_node_head_vars(head_fns, head_fns_vars, groundings, head_functions):
+	"""
+	Determine the actual head groundings by applying head functions if needed.
+	
+	Args:
+		head_fns: List of function names for each head variable (empty string if no function)
+		head_fns_vars: List of variable names that are arguments to each function
+		groundings: Dictionary mapping variable names to their grounded node values
+		head_functions: Tuple of available head functions
+	
+	Returns:
+		List of head groundings
+	"""
+	# head_var_groundings = numba.typed.Dict.empty(key_type=numba.types.string, value_type=list_of_nodes)
+	head_groundings = numba.typed.List.empty_list(node_type)
+	is_func = False
+
+	# For node rule only one element
+	fn_name = head_fns[0]
+	fn_vars = head_fns_vars[0]
+
+	# If there's no function, just use the variable's grounding
+	if fn_name != '' and len(fn_vars) > 0:
+		# Apply the function to compute the grounding
+		# First, collect the grounded values for the function's arguments
+		fn_arg_values = numba.typed.List.empty_list(list_of_nodes)
+		for fn_var in fn_vars:
+			if fn_var in groundings:
+				fn_arg_values.append(groundings[fn_var])
+			else:
+				# If variable not grounded, treat it as itself
+				fn_arg_values.append(numba.typed.List([fn_var]))
+
+		# Call the head function and get result
+		head_groundings = _call_head_function(fn_name, fn_arg_values, head_functions)
+		is_func = True
+
+	return head_groundings, is_func
+
+
+@numba.njit(cache=True)
+def _determine_edge_head_vars(head_fns, head_fns_vars, groundings, head_functions):
+	"""
+	Determine the actual head groundings by applying head functions if needed.
+
+	Args:
+		head_fns: List of function names for each head variable (empty string if no function)
+		head_fns_vars: List of variable names that are arguments to each function
+		groundings: Dictionary mapping variable names to their grounded node values
+		head_functions: Tuple of available head functions
+
+	Returns:
+		List of head groundings
+	"""
+	head_groundings = numba.typed.List.empty_list(list_of_nodes)
+	head_groundings.append(numba.typed.List.empty_list(node_type))  # For source
+	head_groundings.append(numba.typed.List.empty_list(node_type))  # For target
+	is_func = numba.typed.List([False, False])
+
+	# For node rule only two elements
+	for i in range(2):
+		fn_name = head_fns[i]
+		fn_vars = head_fns_vars[i]
+
+		# If there's no function, just use the variable's grounding
+		if fn_name != '' and len(fn_vars) > 0:
+			# Apply the function to compute the grounding
+			# First, collect the grounded values for the function's arguments
+			fn_arg_values = numba.typed.List.empty_list(list_of_nodes)
+			for fn_var in fn_vars:
+				if fn_var in groundings:
+					fn_arg_values.append(groundings[fn_var])
+				else:
+					# If variable not grounded, treat it as itself
+					fn_arg_values.append(numba.typed.List([fn_var]))
+
+			# Call the head function and get result
+			head_grounding = _call_head_function(fn_name, fn_arg_values, head_functions)
+			head_groundings[i] = head_grounding
+			is_func[i] = True
+
+	return head_groundings, is_func
+
+
+@numba.njit(cache=True)
+def _call_head_function(fn_name, fn_arg_values, head_functions):
+	"""
+	Call a head function with the given arguments.
+	
+	Args:
+		fn_name: Name of the function to call
+		fn_arg_values: List of arguments (each is a list of node strings)
+		head_functions: Tuple of available head functions
+	
+	Returns:
+		Flattened list of node strings from the function result
+	"""
+	# Use objmode to call the Python function and get raw Python result
+	# We need to return a numba typed list, so we return it via objmode
+	func_result = numba.typed.List.empty_list(node_type)
+	
+	with numba.objmode(func_result='types.ListType(types.unicode_type)'):
+		for func in head_functions:
+			if hasattr(func, '__name__') and func.__name__ == fn_name:
+				func_result = func(fn_arg_values)
+				break
+	
+	return func_result

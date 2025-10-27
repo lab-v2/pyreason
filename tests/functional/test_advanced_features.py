@@ -1,8 +1,12 @@
 # Advanced feature tests for PyReason (annotation functions, custom thresholds, classifier integration)
 import pyreason as pr
 from pyreason import Threshold
-import torch
-import torch.nn as nn
+try:
+    import torch
+    import torch.nn as nn
+    torch_available = True
+except ImportError:
+    torch_available = False
 import networkx as nx
 import numba
 import numpy as np
@@ -43,6 +47,72 @@ def test_probability_func_consistency(mode):
     jit_res = probability_func(annotations, weights)
     py_res = probability_func.py_func(annotations, weights)
     assert jit_res == py_res
+
+
+@numba.njit
+def identity_func(annotations):
+    """Head function that returns the input node lists as-is."""
+    result = numba.typed.List.empty_list(numba.types.ListType(numba.types.string))
+    for annot_list in annotations:
+        result.append(annot_list)
+    return result
+
+
+@numba.njit
+def reverse_func(annotations):
+    """Head function that reverses the order of node lists."""
+    result = numba.typed.List.empty_list(numba.types.ListType(numba.types.string))
+    for i in range(len(annotations) - 1, -1, -1):
+        result.append(annotations[i])
+    return result
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
+def test_head_functions(mode):
+    """Test head function usage in rules for node and edge rules."""
+    setup_mode(mode)
+
+    pr.settings.allow_ground_rules = True
+
+    # Add head functions
+    pr.add_head_function(identity_func)
+    pr.add_head_function(reverse_func)
+
+    # Create a simple graph
+    graph = nx.DiGraph()
+    graph.add_node("A")
+    graph.add_node("B")
+    graph.add_edge("A", "B")
+    pr.load_graph(graph)
+
+    # Test 1: Node rule with function in head
+    pr.add_fact(pr.Fact('HasProperty(A) : [0.5, 0.5]'))
+    pr.add_rule(pr.Rule('Processed(identity_func(A)) <- HasProperty(A):[0, 1]', 'node_rule_with_func'))
+    
+    # Test 2: Edge rule with function in first variable
+    pr.add_fact(pr.Fact('Connected(A, B) : [0.7, 0.7]'))
+    pr.add_rule(pr.Rule('Route(identity_func(A), B) <- Connected(A, B):[0, 1]', 'edge_rule_func_first'))
+    
+    # Test 3: Edge rule with function in second variable
+    pr.add_fact(pr.Fact('Linked(A, B) : [0.6, 0.6]'))
+    pr.add_rule(pr.Rule('Path(A, identity_func(B)) <- Linked(A, B):[0, 1]', 'edge_rule_func_second'))
+
+    interpretation = pr.reason(timesteps=1)
+
+    # Check node rule results
+    node_query = pr.Query('Processed(A)')
+    assert interpretation.query(node_query, return_bool=True), "Node with function should be processed"
+    
+    # Check edge rule with function in first variable
+    edge_query1 = pr.Query('Route(A, B)')
+    assert interpretation.query(edge_query1, return_bool=True), "Edge route should exist"
+    
+    # Check edge rule with function in second variable
+    edge_query2 = pr.Query('Path(A, B)')
+    assert interpretation.query(edge_query2, return_bool=True), "Edge path should exist"
+    
+    print("\nHead function test passed for all variants!")
 
 
 @pytest.mark.slow
@@ -129,6 +199,7 @@ def test_custom_thresholds(mode):
     ], "TextMessage should have ViewedByAll bounds [1,1] for t=2 timesteps"
 
 
+@pytest.mark.skipif(not torch_available, reason="torch not installed")
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_classifier_integration(mode):
     """Test classifier integration with PyReason."""

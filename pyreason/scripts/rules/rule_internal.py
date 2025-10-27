@@ -1,6 +1,6 @@
 class Rule:
 
-    def __init__(self, rule_name, rule_type, target, head_variables, delta, clauses, bnd, thresholds, ann_fn, weights, edges, static):
+    def __init__(self, rule_name, rule_type, target, head_variables, delta, clauses, bnd, thresholds, ann_fn, weights, head_fns, head_fns_vars, edges, static):
         self._rule_name = rule_name
         self._type = rule_type
         self._target = target
@@ -11,6 +11,8 @@ class Rule:
         self._thresholds = thresholds
         self._ann_fn = ann_fn
         self._weights = weights
+        self._head_fns = head_fns
+        self._head_fns_vars = head_fns_vars
         self._edges = edges
         self._static = static
 
@@ -55,6 +57,12 @@ class Rule:
 
     def get_weights(self):
         return self._weights
+
+    def get_head_function(self):
+        return self._head_fns
+
+    def get_head_function_vars(self):
+        return self._head_fns_vars
 
     def is_static(self):
         return self._static

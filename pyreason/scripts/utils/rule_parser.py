@@ -111,9 +111,13 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
     target = head[:idx]
     target = label.Label(target)
 
-    # Variable(s) in the head of the rule
-    end_idx = head.find(')')
-    head_variables = head[idx + 1:end_idx].split(',')
+    # Variable(s) in the head of the rule - now supports functions like f(X, Y)
+    # Find the last ')' to handle nested function calls
+    end_idx = head.rfind(')')
+    head_args_str = head[idx + 1:end_idx]
+    
+    # Parse head arguments which can be variables or function calls
+    head_variables, head_fns, head_fns_vars = _parse_head_arguments(head_args_str)
 
     # Assign type of rule
     rule_type = 'node' if len(head_variables) == 1 else 'edge'
@@ -200,9 +204,87 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
         raise Exception(f'Number of weights {len(weights)} is not equal to number of clauses {len(body_predicates)}')
 
     head_variables = numba.typed.List(head_variables)
+    
+    # Convert head functions and their variables to numba types
+    head_fns_numba = numba.typed.List(head_fns)
+    head_fns_vars_numba = numba.typed.List.empty_list(numba.types.ListType(numba.types.string))
+    for vars_list in head_fns_vars:
+        typed_vars_list = numba.typed.List.empty_list(numba.types.string)
+        for var in vars_list:
+            typed_vars_list.append(var)
+        head_fns_vars_numba.append(typed_vars_list)
 
-    r = rule.Rule(name, rule_type, target, head_variables, numba.types.uint16(t), clauses, target_bound, thresholds, ann_fn, weights, edges, set_static)
+    r = rule.Rule(name, rule_type, target, head_variables, numba.types.uint16(t), clauses, target_bound, thresholds, ann_fn, weights, head_fns_numba, head_fns_vars_numba, edges, set_static)
     return r
+
+
+def _parse_head_arguments(head_args_str):
+    """
+    Parse head arguments which can be either simple variables or function calls.
+    
+    Examples:
+        "X" -> head_variables=['X'], head_fns=[''], head_fns_vars=[[]]
+        "X, Y" -> head_variables=['X', 'Y'], head_fns=['', ''], head_fns_vars=[[], []]
+        "f(X, Y)" -> head_variables=['__temp_var_0'], head_fns=['f'], head_fns_vars=[['X', 'Y']]
+        "f(X, Y), Z" -> head_variables=['__temp_var_0', 'Z'], head_fns=['f', ''], head_fns_vars=[['X', 'Y'], []]
+        "f(X, Y), g(A, B)" -> head_variables=['__temp_var_0', '__temp_var_1'], head_fns=['f', 'g'], head_fns_vars=[['X', 'Y'], ['A', 'B']]
+    """
+    head_variables = []
+    head_fns = []
+    head_fns_vars = []
+    
+    if not head_args_str:
+        return head_variables, head_fns, head_fns_vars
+    
+    # Split arguments by comma, being careful about nested parentheses
+    args_list = []
+    current_arg = ''
+    paren_count = 0
+    
+    for char in head_args_str:
+        if char == '(':
+            paren_count += 1
+            current_arg += char
+        elif char == ')':
+            paren_count -= 1
+            current_arg += char
+        elif char == ',' and paren_count == 0:
+            args_list.append(current_arg.strip())
+            current_arg = ''
+        else:
+            current_arg += char
+    
+    # Add the last argument
+    if current_arg.strip():
+        args_list.append(current_arg.strip())
+    
+    # Parse each argument
+    for arg in args_list:
+        arg = arg.strip()
+        
+        # Check if it's a function call (contains '(' and ')')
+        if '(' in arg and ')' in arg:
+            # Extract function name and arguments
+            paren_idx = arg.find('(')
+            fn_name = arg[:paren_idx]
+            
+            # Extract arguments inside the function
+            fn_args_str = arg[paren_idx + 1:arg.rfind(')')]
+            fn_args = [a.strip() for a in fn_args_str.split(',') if a.strip()]
+            
+            # Create a temporary variable name for this function result
+            temp_var = f'__temp_var_{len(head_variables)}'
+            
+            head_variables.append(temp_var)
+            head_fns.append(fn_name)
+            head_fns_vars.append(fn_args)
+        else:
+            # It's a simple variable
+            head_variables.append(arg)
+            head_fns.append('')
+            head_fns_vars.append([])
+    
+    return head_variables, head_fns, head_fns_vars
 
 
 def _str_bound_to_bound(str_bound):
