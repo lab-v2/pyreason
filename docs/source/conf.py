@@ -38,9 +38,9 @@ autoapi_dirs = [os.path.join(project_root)]  # Only include the pyreason directo
 #autoapi_dirs = ['../pyreason/pyreason']
 
 autoapi_root = 'pyreason'
-autoapi_ignore = ['*/scripts/*', '*/examples/*', '*/pyreason.pyreason/*']
+autoapi_ignore = ['*/examples/*', '*/pyreason.pyreason/*']
 
-# Ignore modules in the 'scripts' folder
+# Scripts folder is now included in documentation
 # autoapi_ignore_modules = ['pyreason.scripts']
 
 

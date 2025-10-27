@@ -22,25 +22,13 @@ class TestReasoningFunction:
         pr.reset()
         pr.reset_settings()
 
-    def test_reason_with_no_graph_loads_empty_graph(self):
-        """Test reasoning without loading a graph (should load empty graph with warning)."""
-        # Don't load any graph
-        pr.add_rule(Rule("test(A) <- test(A)", "test_rule", False))
+    def test_reason_without_graph_uses_empty_graph(self):
+        """Test reasoning without graph uses empty graph and warns"""
+        pr.add_rule(pr.Rule('test(x) <- test2(x)', 'test_rule'))
 
-        # Capture stdout to check for warning
-        captured_output = StringIO()
-        original_stdout = sys.stdout
-        pr.settings.verbose = True
-
-        try:
-            sys.stdout = captured_output
-            interpretation = pr.reason(timesteps=1)
-            output = captured_output.getvalue()
-
-            # Should contain warning about no graph
-            assert "Graph not loaded" in output or interpretation is not None
-        finally:
-            sys.stdout = original_stdout
+        with pytest.warns(UserWarning, match='Graph not loaded'):
+            interpretation = pr.reason()
+            # Should complete without crashing
 
     def test_reason_with_no_rules_raises_exception(self):
         """Test reasoning without any rules raises exception."""
@@ -50,6 +38,27 @@ class TestReasoningFunction:
 
         with pytest.raises(Exception, match="There are no rules"):
             pr.reason(timesteps=1)
+
+    def test_reason_auto_names_rules(self):
+        """Test that rules get auto-named when no name provided"""
+        pr.add_rule(pr.Rule('test1(x) <- test2(x)'))  # No name
+        pr.add_rule(pr.Rule('test3(x) <- test4(x)'))  # No name
+
+        rules = pr.get_rules()
+        assert rules[0].get_rule_name() == 'rule_0'
+        assert rules[1].get_rule_name() == 'rule_1'
+
+    def test_reason_auto_names_facts(self):
+        """Test that facts get auto-named when no name provided"""
+        fact1 = pr.Fact('test(node1)')  # No name
+        fact2 = pr.Fact('test(node1, node2)')  # No name
+
+        pr.add_fact(fact1)
+        pr.add_fact(fact2)
+
+        # Names should be auto-generated
+        assert fact1.name.startswith('fact_')
+        assert fact2.name.startswith('fact_')
 
     def test_reason_with_output_to_file(self):
         """Test reasoning with output_to_file setting."""
@@ -302,20 +311,6 @@ class TestReasoningFunction:
         # Test different update modes
         for update_mode in ['Synchronous', 'Asynchronous']:
             pr.settings.update_mode = update_mode
-            interpretation = pr.reason(timesteps=1)
-            assert interpretation is not None
-
-    @pytest.mark.skip(reason="This test is very slow and we already test this extensively")
-    def test_reason_with_different_fp_versions(self):
-        """Test reasoning with different fixed point versions."""
-        graph = nx.DiGraph()
-        graph.add_edge('A', 'B')
-        pr.load_graph(graph)
-        pr.add_rule(Rule("friend(A, B) <- connected(A, B)", "test_rule", False))
-
-        # Test different fp versions (boolean)
-        for fp_version in [True, False]:
-            pr.settings.fp_version = fp_version
             interpretation = pr.reason(timesteps=1)
             assert interpretation is not None
 
