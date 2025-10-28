@@ -71,9 +71,11 @@ def get_interpretation_helpers(module_name: str = "interpretation_fp"):
     _ground_rule_fn = _py(interpretation._ground_rule)
     if "num_ga" in inspect.signature(_ground_rule_fn).parameters:
         def ground_rule(*args, **kwargs):
+            kwargs.setdefault('head_functions', ())
             return _ground_rule_fn(*args, num_ga=[0], **kwargs)
     else:
         def ground_rule(*args, **kwargs):
+            kwargs.setdefault('head_functions', ())
             return _ground_rule_fn(*args, **kwargs)
     ns.ground_rule = ground_rule
     ns.update_rule_trace = _py(interpretation._update_rule_trace)

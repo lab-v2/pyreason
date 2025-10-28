@@ -76,8 +76,9 @@ def test_interpretation_init_neighbors(shim_types):
         False,
         False,
         False,
-        0,
         False,
+        "",
+        True,
     )
     assert set(interp.neighbors["n1"]) == {"n2"}
     assert set(interp.neighbors["n2"]) == {"n1"}
@@ -211,8 +212,9 @@ def build_interp():
         False,
         False,
         False,
-        0,
         False,
+        "",
+        True,
     )
     interp.time = 5
     interp.prev_reasoning_data = [2, 0]

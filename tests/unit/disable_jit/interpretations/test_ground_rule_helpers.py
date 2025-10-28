@@ -919,6 +919,8 @@ class DummyRule:
     def get_thresholds(self): return self._thresholds
     def get_annotation_function(self): return self._ann_fn
     def get_edges(self): return self._rule_edges
+    def get_head_function(self): return ["", ""]
+    def get_head_function_vars(self): return [[], []]
 
 def _shim_typed_list(monkeypatch):
     class _ListShim:
