@@ -189,6 +189,79 @@ Then you can create rules of the following format:
 The annotation function will be called when all clauses in the rule have been satisfied and the head of the rule is to be annotated.
 The ``annotations`` parameter in the annotation function will contain the bounds of the grounded atoms for each of the 4 clauses in the rule.
 
+Head Functions and Functional Arguments
+---------------------------------------
+
+PyReason also supports applying user-defined functions directly within the **arguments of a rule head**. These head functions make it
+possible to transform the node or edge identifiers that will receive the rule's annotation. Common use cases include normalising IDs,
+mapping relationships, or selecting a subset of grounded nodes before the head is produced.
+
+Registering a Head Function
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Head functions, just like annotation functions, must be compiled with ``numba.njit`` and registered with PyReason before they can be
+used by rules. A head function receives a list of grounded variable bindings (each binding is a ``numba.typed.List`` of strings) and
+returns a new list containing the head substitutions that should be produced for that argument.
+
+.. code-block:: python
+
+    import numba
+    import pyreason as pr
+
+    @numba.njit
+    def identity_func(groundings):
+        """
+        Return the same grounded values that were passed in.
+        `groundings` is a list where each element is the list of nodes bound to a variable.
+        For example, if the rule body binds ``X`` to ``[a, b]`` and ``Y`` to ``[c, d]``, 
+        then ``groundings`` will be ``[[a, b], [c, d]]``.
+        """
+        return numba.typed.List([groundings[0][0]])
+
+    pr.add_head_function(identity_func)
+
+Using Functions in the Rule Head
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once registered, a head function can be referenced in the textual rule by replacing a head argument with a function call. The parser
+automatically rewrites the argument to use an internal placeholder variable and associates the call with the registered function.
+
+.. code-block:: text
+
+    Processed(identity_func(X)) <- property(X), property(Y), connected(X, Y)
+
+During grounding, the rule body binds ``X`` and ``Y`` exactly as usual. Before emitting the head atom, PyReason invokes
+``identity_func`` with the grounded values for ``X`` (and any additional arguments if the function requires them). The function's return
+value determines which nodes (or edges) will receive the ``Processed`` label.
+
+Edge Rules with Head Functions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Head functions may be used for either argument of an edge rule. Each head argument is handled independently, so you can transform the
+source, the target, or both.
+
+.. code-block:: text
+
+    Route(identity_func(A), B) <- property(X), property(Y), connected(X, Y)
+    Path(A, identity_func(B)) <- property(X), property(Y), connected(X, Y)
+    Link(identity_func(A), identity_func(B)) <- property(X), property(Y), connected(X, Y)
+
+In the example above, every head argument that uses ``identity_func`` will receive the transformed grounding returned by the function.
+If both arguments reference a function, each function call is resolved separately before the head edge is emitted.
+
+Guidelines and Best Practices
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Head functions must be decorated with ``@numba.njit`` so that they can execute inside PyReason's JIT-compiled reasoning loop.
+* Each argument supplied to the function corresponds to a grounded variable from the rule body; that argument is represented as a
+  ``numba.typed.List`` of strings containing all candidate nodes for that variable.
+* The function must return a ``numba.typed.List`` of strings that represent the substituted values for the head argument.
+* Multiple head functions can be registered, and you can mix plain variables and function calls within the same rule head.
+* If you need the original grounding unchanged, simply return it from the function (as shown in ``identity_func``).
+
+By leveraging head functions you can encapsulate common transformations and keep your rule text concise while still benefitting from
+PyReason's compiled execution path.
+
 
 Custom Thresholds
 -----------------
