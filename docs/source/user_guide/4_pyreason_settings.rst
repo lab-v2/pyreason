@@ -45,6 +45,16 @@ To reset all settings to their default values, use the following code:
    - True
    - | Whether graph will be
      | parsed for attributes.
+ * - ``abort_on_inconsistency``
+   - False
+   - | Whether to abort reasoning as soon as an inconsistency
+     | is detected in the interpretation instead of attempting
+     | to resolve it automatically.
+ * - ``memory_profile``
+   - False
+   - | Whether to profile PyReason's maximum memory usage during
+     | reasoning. When enabled, the run will print peak memory
+     | consumption after completion.
  * - ``reverse_digraph``
    - False
    - | Whether the directed edges in the graph
@@ -74,6 +84,11 @@ To reset all settings to their default values, use the following code:
    - | Whether to make graph facts static. In other words, the
      | attributes in the graph remain constant throughout
      | the reasoning process.
+ * - ``store_interpretation_changes``
+   - True
+   - | Whether to keep track of every change in the interpretation
+     | so that helper APIs (rule trace, filtering utilities, queries)
+     | can report the final state. Turning this off disables atom traces.
  * - ``parallel_computing``
    - False
    - | Whether to use multiple CPU cores for inference.
@@ -85,6 +100,16 @@ To reset all settings to their default values, use the following code:
      | or ``'override'``. When using ``'intersection'``, the resulting bound
      | is the intersection of the new bound and the old bound. When using
      | ``'override'``, the resulting bound is the new bound.
+ * - ``allow_ground_rules``
+   - False
+   - | Whether rules are allowed to contain ground atoms directly.
+     | Enable this when using functions or literals that should bypass
+     | standard grounding of variables.
+ * - ``fp_version``
+   - False
+   - | Whether to run the fixed-point (FP) reasoning engine instead of
+     | the optimised incremental engine. The FP engine follows the
+     | original PyReason semantics and is useful for validation.
 
 
 Notes on Parallelism
