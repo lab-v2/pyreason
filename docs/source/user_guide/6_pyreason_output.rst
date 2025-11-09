@@ -374,3 +374,57 @@ Using ``.get_dict()``, the expected output is:
 
 
 ``interpretation.get_dict()`` first goes through each time step, then the components of the graph, and finally the predicates and bounds.
+
+
+Querying Individual Atoms
+-------------------------
+
+The ``interpretation.query()`` helper lets you inspect the final interpretation for a specific node or edge without iterating through
+the full trace. It evaluates a :class:`~pyreason.Query` object against the stored interpretation and can either return a boolean answer
+or the numerical bounds that were inferred.
+
+How ``interpretation.query()`` Works
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#. Build a ``Query`` instance with the component (node or edge), predicate, and optional bound to check.
+#. Call ``interpretation.query(query)`` to get a boolean answer. The method returns ``True`` when the component exists,
+   the predicate was produced during reasoning, and its final bound lies inside the query's interval.
+#. Pass ``return_bool=False`` to retrieve the lower and upper bounds instead of a boolean. When the component or predicate is missing,
+   the method returns ``(0.0, 1.0)`` by default.
+
+
+.. code:: python
+
+    import pyreason as pr
+
+    # After running reasoning
+    interpretation = pr.reason(timesteps=1)
+
+    # Construct a query for a node
+    node_query = pr.Query('popular(Mary) : [0.9, 1.0]')
+    is_popular = interpretation.query(node_query)  # returns True/False
+
+    # Retrieve the numeric bounds instead of a boolean
+    popularity_bounds = interpretation.query(node_query, return_bool=False)  # (lower, upper)
+    print(f"Mary's popularity bounds: {popularity_bounds}")
+
+
+Edge Queries
+~~~~~~~~~~~~
+
+Queries can reference edges using the two-component syntax inside the query string. The interpretation returns the bound on that edge
+label (and optionally, the inferred value).
+
+
+.. code:: python
+
+    # Query an edge label
+    edge_query = pr.Query('isConnectedTo(A, B)')
+    if interpretation.query(edge_query):
+        print("A and B remain connected in the final interpretation")
+    else:
+        print("The connection between A and B was not maintained")
+
+
+Use ``interpretation.query()`` when you need a quick, programmatic check of the reasoning result for a single atom, or when you want to
+control how the answer is surfaced in your application code.
