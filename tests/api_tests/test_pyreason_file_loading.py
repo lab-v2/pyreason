@@ -850,6 +850,234 @@ enemy(A, B) <- ~friend(A, B)"""
         # Should not raise exceptions
 
 
+class TestAddFactInBulk:
+    """Test add_fact_in_bulk() function for loading facts from CSV."""
+
+    def setup_method(self):
+        """Clean state before each test."""
+        pr.reset()
+        pr.reset_settings()
+
+    def test_add_fact_in_bulk_with_header(self):
+        """Test loading facts from CSV with header row."""
+        csv_content = """fact_text,name,start_time,end_time,static
+Viewed(Zach),seen-fact-zach,0,3,False
+Viewed(Justin),seen-fact-justin,0,3,False
+"HaveAccess(Amy,TextMessage)",access-fact,0,5,True"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+            tmp.write(csv_content)
+            tmp_path = tmp.name
+
+        try:
+            pr.add_fact_in_bulk(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_in_bulk_without_header(self):
+        """Test loading facts from CSV without header row."""
+        csv_content = """Viewed(Alice),fact-alice,0,5,False
+Viewed(Bob),fact-bob,1,5,False
+"Connected(Alice,Bob):[0.7,0.9]",connection-fact,0,10,True"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+            tmp.write(csv_content)
+            tmp_path = tmp.name
+
+        try:
+            pr.add_fact_in_bulk(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_in_bulk_minimal_columns(self):
+        """Test loading facts with only fact_text column."""
+        csv_content = """Viewed(Charlie)
+Viewed(Dave)
+"Connected(X,Y):True\""""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+            tmp.write(csv_content)
+            tmp_path = tmp.name
+
+        try:
+            pr.add_fact_in_bulk(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_in_bulk_empty_optional_fields(self):
+        """Test loading facts with empty optional fields."""
+        csv_content = """fact_text,name,start_time,end_time,static
+Viewed(Eve),,,,
+Viewed(Frank),frank-fact,,,
+"Connected(A,B):[0.2,0.9]",,5,10,"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+            tmp.write(csv_content)
+            tmp_path = tmp.name
+
+        try:
+            pr.add_fact_in_bulk(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_in_bulk_with_invalid_facts(self):
+        """Test that invalid facts show warnings but don't crash."""
+        csv_content = """fact_text,name,start_time,end_time,static
+Viewed(Valid),valid-fact,0,3,False
+,empty-fact-text,0,3,False
+InvalidSyntax,bad-syntax,0,3,False
+"Viewed(Another):[2.5,3.0]",out-of-range,0,3,False"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+            tmp.write(csv_content)
+            tmp_path = tmp.name
+
+        try:
+            # Should not raise exception, only warnings
+            pr.add_fact_in_bulk(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_in_bulk_nonexistent_file(self):
+        """Test add_fact_in_bulk() with nonexistent file."""
+        with pytest.raises(FileNotFoundError):
+            pr.add_fact_in_bulk('nonexistent_facts.csv')
+
+    def test_add_fact_in_bulk_empty_file(self):
+        """Test loading facts from empty CSV file."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+            tmp.write('')
+            tmp_path = tmp.name
+
+        try:
+            # Empty file should raise an error
+            with pytest.raises(ValueError):
+                pr.add_fact_in_bulk(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_in_bulk_node_facts(self):
+        """Test loading node facts (no commas in components)."""
+        csv_content = """fact_text,name,start_time,end_time,static
+Viewed(Node1),fact1,0,5,False
+Viewed(Node2),fact2,1,5,True
+"Processed(Node3):[0.5,0.8]",fact3,0,10,False"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+            tmp.write(csv_content)
+            tmp_path = tmp.name
+
+        try:
+            pr.add_fact_in_bulk(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_in_bulk_edge_facts(self):
+        """Test loading edge facts (with commas, properly quoted)."""
+        csv_content = """fact_text,name,start_time,end_time,static
+"Connected(A,B)",edge1,0,5,False
+"Related(X,Y):True",edge2,1,5,True
+"Knows(Person1,Person2):[0.7,0.9]",edge3,0,10,False"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+            tmp.write(csv_content)
+            tmp_path = tmp.name
+
+        try:
+            pr.add_fact_in_bulk(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_in_bulk_mixed_fact_types(self):
+        """Test loading both node and edge facts in same file."""
+        csv_content = """fact_text,name,start_time,end_time,static
+Viewed(Alice),node-fact,0,3,False
+"Connected(Alice,Bob)",edge-fact,0,3,False
+"Processed(Charlie):[0.5,0.8]",node-interval,1,5,True
+"Knows(X,Y):[0.3,0.7]",edge-interval,2,5,False"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+            tmp.write(csv_content)
+            tmp_path = tmp.name
+
+        try:
+            pr.add_fact_in_bulk(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_in_bulk_various_static_values(self):
+        """Test loading facts with various static value formats."""
+        csv_content = """fact_text,name,start_time,end_time,static
+Viewed(A),fact1,0,5,True
+Viewed(B),fact2,0,5,true
+Viewed(C),fact3,0,5,FALSE
+Viewed(D),fact4,0,5,0
+Viewed(E),fact5,0,5,1
+Viewed(F),fact6,0,5,yes
+Viewed(G),fact7,0,5,no"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+            tmp.write(csv_content)
+            tmp_path = tmp.name
+
+        try:
+            pr.add_fact_in_bulk(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_in_bulk_invalid_start_end_times(self):
+        """Test loading facts with invalid start/end time values."""
+        csv_content = """fact_text,name,start_time,end_time,static
+Viewed(A),fact1,abc,5,False
+Viewed(B),fact2,0,xyz,False"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+            tmp.write(csv_content)
+            tmp_path = tmp.name
+
+        try:
+            # Should load facts with warnings about invalid times (using defaults)
+            pr.add_fact_in_bulk(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_in_bulk_multiple_calls(self):
+        """Test multiple calls to add_fact_in_bulk accumulate facts."""
+        csv1_content = """Viewed(User1),fact1,0,3,False"""
+        csv2_content = """Viewed(User2),fact2,0,3,False"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp1:
+            tmp1.write(csv1_content)
+            tmp1_path = tmp1.name
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp2:
+            tmp2.write(csv2_content)
+            tmp2_path = tmp2.name
+
+        try:
+            pr.add_fact_in_bulk(tmp1_path)
+            pr.add_fact_in_bulk(tmp2_path)
+        finally:
+            os.unlink(tmp1_path)
+            os.unlink(tmp2_path)
+
+    def test_add_fact_in_bulk_example_file_with_header(self):
+        """Test loading facts from example CSV file with header."""
+        csv_path = 'tests/api_tests/test_files/example_facts.csv'
+
+        # Only run if example file exists
+        if os.path.exists(csv_path):
+            pr.add_fact_in_bulk(csv_path)
+
+    def test_add_fact_in_bulk_example_file_without_header(self):
+        """Test loading facts from example CSV file without header."""
+        csv_path = 'tests/api_tests/test_files/example_facts_no_header.csv'
+
+        # Only run if example file exists
+        if os.path.exists(csv_path):
+            pr.add_fact_in_bulk(csv_path)
+
+
 class TestRuleTrace:
     """Test save_rule_trace() and get_rule_trace() functions."""
 

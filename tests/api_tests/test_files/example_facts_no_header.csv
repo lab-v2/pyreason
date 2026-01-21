@@ -1,0 +1,3 @@
+Viewed(Alice),fact-alice,0,5,False
+Viewed(Bob),fact-bob,1,5,False
+"Connected(Alice,Bob):[0.7,0.9]",connection-fact,0,10,True

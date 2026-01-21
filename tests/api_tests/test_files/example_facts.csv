@@ -1,0 +1,9 @@
+fact_text,name,start_time,end_time,static
+Viewed(Zach),seen-fact-zach,0,3,False
+Viewed(Justin),seen-fact-justin,0,3,False
+Viewed(Michelle),seen-fact-michelle,1,3,False
+Viewed(Amy),seen-fact-amy,2,3,False
+"HaveAccess(Zach,TextMessage)",access-zach,0,5,True
+"HaveAccess(Justin,TextMessage)",access-justin,0,5,True
+"HaveAccess(Michelle,TextMessage)",access-michelle,0,5,True
+"HaveAccess(Amy,TextMessage)",access-amy,0,5,True
