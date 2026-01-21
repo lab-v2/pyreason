@@ -911,6 +911,49 @@ class TestAddFactInBulk:
         assert any("Invalid static value" in msg for msg in warning_messages), \
             "Expected warning about invalid static value"
 
+    def test_add_fact_in_bulk_no_header_file(self):
+        """Test loading facts from CSV file without header using example_facts_no_header.csv.
+
+        This test verifies that:
+        - CSV without header is detected correctly (no header row skipped)
+        - Valid facts are loaded (node facts, edge facts with intervals)
+        - Invalid facts produce appropriate warnings
+
+        The example_facts_no_header.csv contains:
+        - Row 1: Viewed(Alice) - valid node fact
+        - Row 2: Viewed(Bob) - valid node fact
+        - Row 3: Connected(Alice,Bob):[0.7,0.9] - valid edge fact with interval
+        - Row 4: empty fact_text - should warn
+        - Row 5: InvalidNoParens - missing parentheses, should warn
+        - Row 6: Viewed(Charlie) with bad start_time - should warn
+        """
+        csv_path = os.path.join(os.path.dirname(__file__), 'test_files', 'example_facts_no_header.csv')
+
+        # Expect warnings for rows with invalid data:
+        # - Row 4: empty fact_text -> "Missing required 'fact_text'"
+        # - Row 5: invalid syntax (missing parentheses) -> "Failed to parse fact"
+        # - Row 6: invalid start_time -> "Invalid start_time"
+        with pytest.warns(UserWarning) as warning_list:
+            pr.add_fact_in_bulk(csv_path)
+
+        # Verify we got at least 3 warnings from the invalid rows
+        assert len(warning_list) >= 3, f"Expected at least 3 warnings, got {len(warning_list)}: {[str(w.message) for w in warning_list]}"
+
+        # Check that specific warning messages appear
+        warning_messages = [str(w.message) for w in warning_list]
+
+        # Verify warning for empty fact_text
+        assert any("Missing required 'fact_text'" in msg for msg in warning_messages), \
+            "Expected warning about missing fact_text"
+
+        # Verify warning for invalid syntax (missing parentheses)
+        assert any("Failed to parse fact" in msg for msg in warning_messages), \
+            "Expected warning about invalid syntax"
+
+        # Verify warning for invalid start_time
+        assert any("Invalid start_time" in msg for msg in warning_messages), \
+            "Expected warning about invalid start_time"
+
     def test_add_fact_in_bulk_without_header(self):
         """Test loading facts from CSV without header row."""
         csv_content = """Viewed(Alice),fact-alice,0,5,False
