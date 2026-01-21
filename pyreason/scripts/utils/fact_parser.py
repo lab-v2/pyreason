@@ -27,7 +27,7 @@ def parse_fact(fact_text):
     if ':' in f:
         parts = f.split(':')
         if len(parts) != 2:
-            raise ValueError(f"Invalid fact format: expected at most one colon separator")
+            raise ValueError("Invalid fact format: expected at most one colon separator")
         pred_comp, bound = parts
 
         # Check for negation with explicit bound (ambiguous)
