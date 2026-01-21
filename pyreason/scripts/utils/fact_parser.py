@@ -2,6 +2,7 @@ import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 import re
 
 
+# Input validation work was implemented with the help of Claude Sonnet 4.5.
 def parse_fact(fact_text):
     # Validate input is not empty or whitespace only
     if not fact_text or not fact_text.strip():
@@ -76,8 +77,12 @@ def parse_fact(fact_text):
         raise ValueError("Predicate cannot be empty")
 
     # Validate predicate contains only valid characters (alphanumeric and underscore)
+    # Predicates must start with a letter or underscore (like Python identifiers)
     if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', pred):
-        raise ValueError(f"Predicate '{pred}' contains invalid characters. Only alphanumeric and underscore allowed")
+        if pred[0].isdigit():
+            raise ValueError(f"Predicate '{pred}' cannot start with a digit. Must start with a letter or underscore")
+        else:
+            raise ValueError(f"Predicate '{pred}' contains invalid characters. Only letters, digits, and underscores allowed, must start with letter or underscore")
 
     # Validate component is not empty
     if not component:

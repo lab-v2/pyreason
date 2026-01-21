@@ -3,6 +3,7 @@ from pyreason.scripts.utils.fact_parser import parse_fact
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 
 
+# Tests in this class were generated with Claude Sonnet 4.5.
 class TestValidFactParsing:
     """Test cases for valid fact inputs that should parse successfully."""
 
@@ -85,6 +86,20 @@ class TestValidFactParsing:
         assert component == "node_1"
         assert fact_type == "node"
 
+    def test_predicate_with_trailing_numbers(self):
+        """Test that predicates can contain digits after the first character."""
+        pred, component, bound, fact_type = parse_fact("pred123(node)")
+        assert pred == "pred123"
+        assert component == "node"
+        assert fact_type == "node"
+
+    def test_predicate_starting_with_underscore(self):
+        """Test that predicates can start with an underscore."""
+        pred, component, bound, fact_type = parse_fact("_pred(node)")
+        assert pred == "_pred"
+        assert component == "node"
+        assert fact_type == "node"
+
     def test_interval_with_zeros(self):
         """Test parsing interval bounds with zero values."""
         pred, component, bound, fact_type = parse_fact("pred(node):[0.0,0.0]")
@@ -98,6 +113,7 @@ class TestValidFactParsing:
         assert bound.lower == 1.0 and bound.upper == 1.0
 
 
+# Tests in this class were generated with Claude Sonnet 4.5.
 class TestInvalidFactParsing:
     """Test cases for invalid fact inputs that should raise validation errors."""
 
@@ -236,6 +252,16 @@ class TestInvalidFactParsing:
         with pytest.raises(ValueError):
             parse_fact("pred@#$(node)")
 
+    def test_predicate_starting_with_digit(self):
+        """Test that predicate starting with a digit raises an error."""
+        with pytest.raises(ValueError):
+            parse_fact("123pred(node)")
+
+    def test_predicate_starting_with_single_digit(self):
+        """Test that predicate that is just a digit raises an error."""
+        with pytest.raises(ValueError):
+            parse_fact("1(node)")
+
     def test_colon_in_component(self):
         """Test that colon in component raises an error."""
         with pytest.raises(ValueError):
@@ -257,6 +283,7 @@ class TestInvalidFactParsing:
             parse_fact("   (node)")
 
 
+# Tests in this class were generated with Claude Sonnet 4.5.
 class TestEdgeCasesAndBoundaryConditions:
     """Test edge cases and boundary conditions."""
 
