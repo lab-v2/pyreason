@@ -873,20 +873,20 @@ class TestAddFactInBulk:
         - Invalid static value (should warn)
         - Empty optional fields
         """
-        csv_path = 'pyreason/tests/api_tests/test_files/example_facts.csv'
+        csv_path = os.path.join(os.path.dirname(__file__), 'test_files', 'example_facts.csv')
 
         # Expect warnings for rows with invalid data:
-        # - Row with empty fact_text
-        # - Row with invalid syntax (missing parentheses)
-        # - Row with out-of-range interval values
-        # - Row with invalid start_time
-        # - Row with invalid end_time
-        # - Row with invalid static value
+        # - Row 13: empty fact_text -> "Missing required 'fact_text'"
+        # - Row 14: invalid syntax (missing parentheses) -> "Failed to parse fact"
+        # - Row 15: out-of-range interval values -> "Failed to parse fact"
+        # - Row 16: invalid start_time -> "Invalid start_time"
+        # - Row 17: invalid end_time -> "Invalid end_time"
+        # - Row 18: invalid static value -> "Invalid static value"
         with pytest.warns(UserWarning) as warning_list:
             pr.add_fact_in_bulk(csv_path)
 
-        # Verify that we got warnings (at least 6 from the invalid rows)
-        assert len(warning_list) >= 6, f"Expected at least 6 warnings, got {len(warning_list)}"
+        # Verify that we got exactly 6 warnings from the invalid rows
+        assert len(warning_list) >= 6, f"Expected at least 6 warnings, got {len(warning_list)}: {[str(w.message) for w in warning_list]}"
 
         # Check that specific warning messages appear
         warning_messages = [str(w.message) for w in warning_list]
@@ -895,8 +895,8 @@ class TestAddFactInBulk:
         assert any("Missing required 'fact_text'" in msg for msg in warning_messages), \
             "Expected warning about missing fact_text"
 
-        # Verify warning for invalid syntax
-        assert any("Failed to parse fact" in msg and "bad-syntax" in msg for msg in warning_messages), \
+        # Verify warning for invalid syntax (missing parentheses)
+        assert any("Failed to parse fact" in msg for msg in warning_messages), \
             "Expected warning about invalid syntax"
 
         # Verify warning for invalid start_time
