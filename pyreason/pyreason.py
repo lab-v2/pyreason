@@ -718,15 +718,15 @@ def add_fact_in_bulk(csv_path: str) -> None:
             name = row[1].strip() if len(row) > 1 and row[1].strip() else None
 
             try:
-                start_time = int(row[2]) if len(row) > 2 and row[2].strip() else 0
+                start_time = int(row[2]) if len(row) > 2 and row[2].strip() else None
             except ValueError:
-                warnings.warn(f"Row {idx + 1}: Invalid start_time '{row[2]}', using default 0")
+                warnings.warn(f"Row {idx + 1}: Invalid start_time '{row[2]}', using default value")
                 start_time = 0
 
             try:
-                end_time = int(row[3]) if len(row) > 3 and row[3].strip() else 0
+                end_time = int(row[3]) if len(row) > 3 and row[3].strip() else None
             except ValueError:
-                warnings.warn(f"Row {idx + 1}: Invalid end_time '{row[3]}', using default 0")
+                warnings.warn(f"Row {idx + 1}: Invalid end_time '{row[3]}', using default value")
                 end_time = 0
 
             # Parse static as boolean
@@ -738,7 +738,7 @@ def add_fact_in_bulk(csv_path: str) -> None:
                 elif static_str in ('false', '0', 'no', 'f', 'n'):
                     static = False
                 else:
-                    warnings.warn(f"Row {idx + 1}: Invalid static value '{row[4]}', using default False")
+                    warnings.warn(f"Row {idx + 1}: Invalid static value '{row[4]}', using default value")
 
             # Create and add the fact
             fact = Fact(fact_text=fact_text, name=name, start_time=start_time, end_time=end_time, static=static)
