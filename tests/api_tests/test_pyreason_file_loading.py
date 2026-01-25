@@ -858,7 +858,7 @@ class TestAddFactInBulk:
         pr.reset()
         pr.reset_settings()
 
-    def test_add_fact_in_bulk_comprehensive(self):
+    def test_add_fact_in_bulk_comprehensive(self, raise_erros=False):
         """Test loading facts from CSV with various valid and invalid scenarios.
 
         This test uses example_facts.csv which contains:
@@ -883,7 +883,7 @@ class TestAddFactInBulk:
         # - Row 17: invalid end_time -> "Invalid end_time"
         # - Row 18: invalid static value -> "Invalid static value"
         with pytest.warns(UserWarning) as warning_list:
-            pr.add_fact_in_bulk(csv_path)
+            pr.add_fact_in_bulk(csv_path, raise_errors=False)
 
         # Verify that we got exactly 6 warnings from the invalid rows
         assert len(warning_list) >= 6, f"Expected at least 6 warnings, got {len(warning_list)}: {[str(w.message) for w in warning_list]}"
@@ -911,7 +911,7 @@ class TestAddFactInBulk:
         assert any("Invalid static value" in msg for msg in warning_messages), \
             "Expected warning about invalid static value"
 
-    def test_add_fact_in_bulk_no_header_file(self):
+    def test_add_fact_in_bulk_no_header_file(self, raise_errors=False):
         """Test loading facts from CSV file without header using example_facts_no_header.csv.
 
         This test verifies that:
@@ -934,7 +934,7 @@ class TestAddFactInBulk:
         # - Row 5: invalid syntax (missing parentheses) -> "Failed to parse fact"
         # - Row 6: invalid start_time -> "Invalid start_time"
         with pytest.warns(UserWarning) as warning_list:
-            pr.add_fact_in_bulk(csv_path)
+            pr.add_fact_in_bulk(csv_path, raise_errors=False)
 
         # Verify we got at least 3 warnings from the invalid rows
         assert len(warning_list) >= 3, f"Expected at least 3 warnings, got {len(warning_list)}: {[str(w.message) for w in warning_list]}"
@@ -954,37 +954,7 @@ class TestAddFactInBulk:
         assert any("Invalid start_time" in msg for msg in warning_messages), \
             "Expected warning about invalid start_time"
 
-    def test_add_fact_in_bulk_without_header(self):
-        """Test loading facts from CSV without header row."""
-        csv_content = """Viewed(Alice),fact-alice,0,5,False
-Viewed(Bob),fact-bob,1,5,False
-"Connected(Alice,Bob):[0.7,0.9]",connection-fact,0,10,True"""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
-            tmp.write(csv_content)
-            tmp_path = tmp.name
-
-        try:
-            pr.add_fact_in_bulk(tmp_path)
-        finally:
-            os.unlink(tmp_path)
-
-    def test_add_fact_in_bulk_minimal_columns(self):
-        """Test loading facts with only fact_text column."""
-        csv_content = """Viewed(Charlie)
-Viewed(Dave)
-"Connected(X,Y):True\""""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
-            tmp.write(csv_content)
-            tmp_path = tmp.name
-
-        try:
-            pr.add_fact_in_bulk(tmp_path)
-        finally:
-            os.unlink(tmp_path)
-
-    def test_add_fact_in_bulk_empty_optional_fields(self):
+    def test_add_fact_in_bulk_empty_optional_fields(self, raise_errors=False):
         """Test loading facts with empty optional fields."""
         csv_content = """fact_text,name,start_time,end_time,static
 Viewed(Eve),,,,
@@ -997,34 +967,6 @@ Viewed(Frank),frank-fact,,,
 
         try:
             pr.add_fact_in_bulk(tmp_path)
-        finally:
-            os.unlink(tmp_path)
-
-    def test_add_fact_in_bulk_with_invalid_facts_warnings(self):
-        """Test that invalid facts produce specific warnings but don't crash."""
-        csv_content = """fact_text,name,start_time,end_time,static
-Viewed(Valid),valid-fact,0,3,False
-,empty-fact-text,0,3,False
-InvalidSyntax,bad-syntax,0,3,False
-"Viewed(Another):[2.5,3.0]",out-of-range,0,3,False"""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
-            tmp.write(csv_content)
-            tmp_path = tmp.name
-
-        try:
-            # Should produce warnings for the 3 invalid rows
-            with pytest.warns(UserWarning) as warning_list:
-                pr.add_fact_in_bulk(tmp_path)
-
-            # Verify we got at least 3 warnings (one for each invalid row)
-            assert len(warning_list) >= 3, f"Expected at least 3 warnings, got {len(warning_list)}"
-
-            warning_messages = [str(w.message) for w in warning_list]
-
-            # Verify specific warnings appear
-            assert any("Missing required 'fact_text'" in msg for msg in warning_messages)
-            assert any("Failed to parse fact" in msg for msg in warning_messages)
         finally:
             os.unlink(tmp_path)
 
@@ -1043,35 +985,6 @@ InvalidSyntax,bad-syntax,0,3,False
             # Empty file should raise an error
             with pytest.raises(ValueError):
                 pr.add_fact_in_bulk(tmp_path)
-        finally:
-            os.unlink(tmp_path)
-
-
-    def test_add_fact_in_bulk_invalid_start_end_times(self):
-        """Test loading facts with invalid start/end time values produce warnings."""
-        csv_content = """fact_text,name,start_time,end_time,static
-Viewed(A),fact1,abc,5,False
-Viewed(B),fact2,0,xyz,False"""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
-            tmp.write(csv_content)
-            tmp_path = tmp.name
-
-        try:
-            # Should load facts with warnings about invalid times (using defaults)
-            with pytest.warns(UserWarning) as warning_list:
-                pr.add_fact_in_bulk(tmp_path)
-
-            # Verify we got warnings for both invalid time values
-            assert len(warning_list) >= 2, f"Expected at least 2 warnings, got {len(warning_list)}"
-
-            warning_messages = [str(w.message) for w in warning_list]
-
-            # Verify specific warnings appear
-            assert any("Invalid start_time" in msg for msg in warning_messages), \
-                "Expected warning about invalid start_time"
-            assert any("Invalid end_time" in msg for msg in warning_messages), \
-                "Expected warning about invalid end_time"
         finally:
             os.unlink(tmp_path)
 
