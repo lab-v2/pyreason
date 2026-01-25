@@ -10,10 +10,6 @@ def parse_fact(fact_text):
 
     f = fact_text.replace(' ', '')
 
-    # Validate no empty string after whitespace removal
-    if not f:
-        raise ValueError("Fact text cannot be empty after removing whitespace")
-
     # Check for multiple colons
     colon_count = f.count(':')
     if colon_count > 1:
@@ -32,7 +28,7 @@ def parse_fact(fact_text):
 
         # Check for negation with explicit bound (ambiguous)
         if pred_comp.startswith('~'):
-            raise ValueError("Cannot use negation (~) with explicit bound - ambiguous syntax")
+            raise ValueError("Cannot use negation (~) with explicit bound")
     else:
         pred_comp = f
         if pred_comp.startswith('~'):

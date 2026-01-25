@@ -648,7 +648,7 @@ def add_fact(pyreason_fact: Fact) -> None:
         __edge_facts.append(f)
 
 
-def add_fact_in_bulk(csv_path: str) -> None:
+def add_fact_in_bulk(csv_path: str, raise_errors = True) -> None:
     """Load multiple facts from a CSV file.
 
     The CSV should have columns representing Fact attributes in this order:
@@ -687,12 +687,10 @@ def add_fact_in_bulk(csv_path: str) -> None:
         warnings.warn(f"CSV file {csv_path} is empty, no facts loaded")
         return
 
-    # Detect if first row is a header by checking if first column matches common header keywords
-    # Valid facts must contain parentheses, so if first column doesn't have them and
-    # matches common header names, it's likely a header
+    # Detect if first row is a header by checking if first column matches a variable name and doesn't have parenthesis like a fact-text should
     first_row = df.iloc[0] if len(df) > 0 else pd.Series()
     first_col_val = str(first_row[0]).lower().strip() if len(first_row) > 0 else ''
-    header_keywords = {'fact_text', 'fact', 'predicate', 'text', 'statement'}
+    header_keywords = {'fact_text', 'fact'}
     # It's a header if: the first column is a header keyword AND doesn't look like a valid fact
     has_header = first_col_val in header_keywords and '(' not in first_col_val
 
@@ -707,25 +705,31 @@ def add_fact_in_bulk(csv_path: str) -> None:
     for idx, row in df.iloc[start_idx:].iterrows():
         try:
             # Extract fact_text (required, column 0)
-            if len(row) < 1 or not row[0].strip():
+            if len(row) < 1 or not str(row[0]).strip():
+                if raise_errors:
+                    raise ValueError(f"Row {idx + 1}: Missing required 'fact_text'")
                 warnings.warn(f"Row {idx + 1}: Missing required 'fact_text', skipping row")
                 error_count += 1
                 continue
 
-            fact_text = row[0].strip()
+            fact_text = str(row[0]).strip()
 
             # Extract optional parameters with defaults
             name = row[1].strip() if len(row) > 1 and row[1].strip() else None
 
             try:
-                start_time = int(row[2]) if len(row) > 2 and row[2].strip() else None
-            except ValueError:
+                start_time = int(row[2]) if len(row) > 2 and row[2].strip() else 0
+            except (ValueError, AttributeError, TypeError):
+                if raise_errors:
+                    raise ValueError(f"Row {idx + 1}: Invalid start_time '{row[2]}'") from None
                 warnings.warn(f"Row {idx + 1}: Invalid start_time '{row[2]}', using default value")
                 start_time = 0
 
             try:
-                end_time = int(row[3]) if len(row) > 3 and row[3].strip() else None
-            except ValueError:
+                end_time = int(row[3]) if len(row) > 3 and row[3].strip() else 0
+            except (ValueError, AttributeError, TypeError):
+                if raise_errors:
+                    raise ValueError(f"Row {idx + 1}: Invalid end_time '{row[3]}'") from None
                 warnings.warn(f"Row {idx + 1}: Invalid end_time '{row[3]}', using default value")
                 end_time = 0
 
@@ -738,17 +742,23 @@ def add_fact_in_bulk(csv_path: str) -> None:
                 elif static_str in ('false', '0', 'no', 'f', 'n'):
                     static = False
                 else:
+                    if raise_errors:
+                        raise ValueError(f"Row {idx + 1}: Invalid static value '{row[4]}'")
                     warnings.warn(f"Row {idx + 1}: Invalid static value '{row[4]}', using default value")
 
             # Create and add the fact
             fact = Fact(fact_text=fact_text, name=name, start_time=start_time, end_time=end_time, static=static)
             add_fact(fact)
             loaded_count += 1
-
+    
         except ValueError as e:
+            if raise_errors:
+                raise ValueError(f"Row {idx + 1}: Failed to parse fact - {e}") from e
             error_count += 1
             warnings.warn(f"Row {idx + 1}: Failed to parse fact - {e}")
         except Exception as e:
+            if raise_errors:
+                raise Exception(f"Row {idx + 1}: Unexpected error - {e}") from e
             error_count += 1
             warnings.warn(f"Row {idx + 1}: Unexpected error - {e}")
 

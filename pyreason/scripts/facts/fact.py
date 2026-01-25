@@ -41,7 +41,7 @@ class Fact:
             - `'pred@name(node)'` - invalid characters in predicate
             - `'pred(node1,node2,node3)'` - more than 2 components
             - `'pred(node):[1.5,2.0]'` - values out of range [0,1]
-            - `'~pred(node):True'` - negation with explicit bound (ambiguous)
+            - `'~pred(node):[0.2,0.8]'` - negation with explicit bound
 
         :type fact_text: str
         :param name: The name of the fact. This will appear in the trace so that you know when it was applied
