@@ -1717,6 +1717,147 @@ def test_check_all_clause_satisfaction_total_threshold_bug138(monkeypatch):
     )
 
 
+def test_check_all_clause_satisfaction_edge_available_threshold_bug138(monkeypatch):
+    """
+    BUG-138: Tests that 'available' threshold quantifier works correctly for EDGES.
+
+    This test creates a scenario where:
+    - 5 edges total being considered as candidates
+    - 4 edges have the 'connected' label (available)
+    - 2 edges satisfy the clause bound [0.8, 1.0] (qualified)
+    - Threshold is ">= 60% available"
+
+    Expected behavior: 2/4 = 50% >= 60% → FALSE
+    With bug: Doesn't filter by bound, so wrong calculation → TRUE (WRONG!)
+
+    This test SHOULD FAIL until BUG-138 is fixed.
+    """
+    print("Hello world from bug 138 (edge available quantifier)")
+    # Patch interval.closed to return a simple tuple instead of Interval object
+    monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: ("closed", lo, up))
+
+    # Create 5 edges with different connection strengths
+    interpretations_edge = {
+        ('n1', 'n2'): FakeWorld(name="connected,[0.9,1.0]", bounds_by_label={'connected': [0.9, 1.0]}),   # satisfies [0.8,1.0]
+        ('n2', 'n3'): FakeWorld(name="connected,[0.5,0.6]", bounds_by_label={'connected': [0.5, 0.6]}),  # has label, doesn't satisfy
+        ('n3', 'n4'): FakeWorld(name="connected,[0.85,0.95]", bounds_by_label={'connected': [0.85, 0.95]}), # satisfies [0.8,1.0]
+        ('n4', 'n5'): FakeWorld(name="connected,[0.7,0.75]", bounds_by_label={'connected': [0.7, 0.75]}), # has label, doesn't satisfy
+        ('n5', 'n6'): FakeWorld(name="", bounds_by_label={}),                                      # no connected label at all
+    }
+
+    interpretations_node = {}
+
+    # Clause structure: (type, label, variables, bound, operator)
+    clauses = [
+        ('edge', 'connected', ('X', 'Y'), [0.8, 1.0], 'greater_equal'),
+    ]
+
+    # Threshold: >= 60% of available edges (those with 'connected' label)
+    thresholds = [
+        ('greater_equal', ('percent', 'available'), 60),
+    ]
+
+    # Total grounding: all edges being considered as candidates
+    groundings = {}
+    groundings_edges = {
+        ('X', 'Y'): [('n1', 'n2'), ('n2', 'n3'), ('n3', 'n4'), ('n4', 'n5'), ('n5', 'n6')]
+    }
+
+    # Correct calculation:
+    # - Available (have 'connected' label): 4 edges
+    # - Qualified (satisfy [0.8, 1.0]): 2 edges
+    # - Percentage: 2/4 = 50% >= 60%? → FALSE
+    #
+    # With BUG-138:
+    # - Passes groundings_edges[('X','Y')] twice (all 5 edges)
+    # - available = 4, qualified = 5 (WRONG!)
+    # - 5/4 = 125% >= 60%? → TRUE (WRONG!)
+
+    result = check_all_clause_satisfaction(
+        interpretations_node,
+        interpretations_edge,
+        clauses,
+        thresholds,
+        groundings,
+        groundings_edges
+    )
+
+    # This assertion expects CORRECT behavior (will fail due to bug)
+    assert result is False, (
+        "Expected False: Only 2 out of 4 available edges satisfy the clause (50% < 60%). "
+        "If this returns True, BUG-138 is still present (not filtering by clause bound)."
+    )
+
+
+def test_check_all_clause_satisfaction_edge_total_threshold_bug138(monkeypatch):
+    """
+    BUG-138: Tests that 'total' threshold quantifier is also broken for EDGES.
+
+    Same scenario but using 'total' instead of 'available':
+    - 5 edges total being considered
+    - 2 edges satisfy the clause bound [0.8, 1.0] (qualified)
+    - Threshold is ">= 60% total"
+
+    Expected behavior: 2/5 = 40% >= 60% → FALSE
+    With bug: Doesn't filter by bound, so 5/5 = 100% >= 60% → TRUE (WRONG!)
+
+    This test SHOULD FAIL until BUG-138 is fixed.
+    """
+    print("Hello world from bug 138 (edge total quantifier)")
+    # Patch interval.closed to return a simple tuple instead of Interval object
+    monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: ("closed", lo, up))
+
+    # Same 5 edges as the available test
+    interpretations_edge = {
+        ('n1', 'n2'): FakeWorld(name="connected,[0.9,1.0]", bounds_by_label={'connected': [0.9, 1.0]}),
+        ('n2', 'n3'): FakeWorld(name="connected,[0.5,0.6]", bounds_by_label={'connected': [0.5, 0.6]}),
+        ('n3', 'n4'): FakeWorld(name="connected,[0.85,0.95]", bounds_by_label={'connected': [0.85, 0.95]}),
+        ('n4', 'n5'): FakeWorld(name="connected,[0.7,0.75]", bounds_by_label={'connected': [0.7, 0.75]}),
+        ('n5', 'n6'): FakeWorld(name="", bounds_by_label={}),
+    }
+
+    interpretations_node = {}
+
+    clauses = [
+        ('edge', 'connected', ('X', 'Y'), [0.8, 1.0], 'greater_equal'),
+    ]
+
+    # Threshold: >= 60% of TOTAL edges
+    thresholds = [
+        ('greater_equal', ('percent', 'total'), 60),
+    ]
+
+    groundings = {}
+    groundings_edges = {
+        ('X', 'Y'): [('n1', 'n2'), ('n2', 'n3'), ('n3', 'n4'), ('n4', 'n5'), ('n5', 'n6')]
+    }
+
+    # Correct calculation:
+    # - Total: 5 edges
+    # - Qualified (satisfy [0.8, 1.0]): 2 edges
+    # - Percentage: 2/5 = 40% >= 60%? → FALSE
+    #
+    # With BUG-138:
+    # - Passes groundings_edges[('X','Y')] twice (all 5 edges)
+    # - total = 5, qualified = 5 (WRONG!)
+    # - 5/5 = 100% >= 60%? → TRUE (WRONG!)
+
+    result = check_all_clause_satisfaction(
+        interpretations_node,
+        interpretations_edge,
+        clauses,
+        thresholds,
+        groundings,
+        groundings_edges
+    )
+
+    # This assertion expects CORRECT behavior (will fail due to bug)
+    assert result is False, (
+        "Expected False: Only 2 out of 5 total edges satisfy the clause (40% < 60%). "
+        "If this returns True, BUG-138 is still present (not filtering by clause bound)."
+    )
+
+
 def test_ground_rule_node_clause_filters_edge_groundings(monkeypatch):
     _shim_typed_list(monkeypatch)
     mock_add_node = _mock_add_node(monkeypatch)
