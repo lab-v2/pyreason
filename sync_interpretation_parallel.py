@@ -7,6 +7,8 @@ interpretation.py, except for the @numba.njit decorator which should have
 parallel=True instead of parallel=False.
 """
 
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -30,6 +32,20 @@ def sync_interpretation_files():
     if not interpretation_file.exists():
         print(f"Error: Source file not found: {interpretation_file}", file=sys.stderr)
         return 1
+
+    # Check if interpretation_parallel.py has unstaged changes that might conflict
+    if os.environ.get('PRE_COMMIT'):
+        try:
+            result = subprocess.run(
+                ['git', 'diff', '--name-only', str(interpretation_parallel_file)],
+                capture_output=True,
+                text=True,
+                cwd=project_root
+            )
+            if result.stdout.strip():
+                print(f"✓ {interpretation_parallel_file.name} has unstaged changes, will sync and stage", file=sys.stderr)
+        except Exception:
+            pass  # If git command fails, continue anyway
 
     # Read the source file
     try:
@@ -82,6 +98,24 @@ def sync_interpretation_files():
 
     print(f"✓ Successfully synced {interpretation_parallel_file.name} from {interpretation_file.name}")
     print(f"  Modified line {line_num}: parallel=False → parallel=True")
+
+    # Check if we're in a git pre-commit hook (PRE_COMMIT environment variable is set)
+    if os.environ.get('PRE_COMMIT'):
+        # Stage the synced file so pre-commit includes it in the commit
+        try:
+            subprocess.run(
+                ['git', 'add', str(interpretation_parallel_file)],
+                check=True,
+                capture_output=True,
+                text=True,
+                cwd=project_root
+            )
+            print(f"✓ Staged {interpretation_parallel_file.name} for commit")
+        except subprocess.CalledProcessError as e:
+            # Non-fatal: warn but don't fail
+            print(f"Warning: Could not stage {interpretation_parallel_file.name}: {e.stderr}", file=sys.stderr)
+        except Exception as e:
+            print(f"Warning: Could not run git add: {e}", file=sys.stderr)
 
     return 0
 

@@ -1235,7 +1235,6 @@ def check_all_clause_satisfaction(interpretations_node, interpretations_edge, cl
 		clause_label = clause[1]
 		clause_variables = clause[2]
 		clause_bnd = clause[3]
-		print("Clause type:", clause_type)
 
 		if clause_type == 'node':
 			clause_var_1 = clause_variables[0]
@@ -1318,8 +1317,6 @@ def check_node_grounding_threshold_satisfaction(interpretations_node, grounding,
 
 
 	qualified_neigh_len = len(qualified_grounding)
-	print("Qualified length:", qualified_neigh_len)
-	print("Neighbor length:", neigh_len)
 	satisfaction = _satisfies_threshold(neigh_len, qualified_neigh_len, threshold)
 	return satisfaction
 
@@ -1421,9 +1418,6 @@ def get_qualified_edge_groundings(interpretations_edge, grounding, clause_l, cla
 @numba.njit(cache=True)
 def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
 	# Checks if qualified neighbors satisfy threshold. This is for one clause
-	print("Number of neighbors:", num_neigh)
-	print("Number of qualified components:", num_qualified_component)
-	print("Threshold:", threshold)
 	if threshold[1][0]=='number':
 		if threshold[0]=='greater_equal':
 			result = True if num_qualified_component >= threshold[2] else False
@@ -1450,7 +1444,6 @@ def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
 		elif threshold[0]=='equal':
 			result = True if num_qualified_component/num_neigh == threshold[2]*0.01 else False
 
-	print("Result of threshold check:", result)
 	return result
 
 
@@ -2096,7 +2089,7 @@ def _determine_edge_head_vars(head_fns, head_fns_vars, groundings, head_function
 @numba.njit(cache=True)
 def _call_head_function(fn_name, fn_arg_values, head_functions):
 	"""
-	Call a head function with the given arguments.
+	Call a head function with the given arguments
 	
 	Args:
 		fn_name: Name of the function to call

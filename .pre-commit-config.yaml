@@ -17,21 +17,14 @@ repos:
         types: [python]
         pass_filenames: false
         stages: [pre-commit]
-
-      - id: sync-interpretation-parallel
-        name: Sync interpretation_parallel.py from interpretation.py
-        entry: sync_interpretation_parallel.py
-        language: system
-        pass_filenames: false
-        files: 'pyreason/scripts/interpretation/interpretation\.py'
-        stages: [pre-commit]
-
+        
       - id: pytest-unit-no-jit
         name: Run JIT-disabled unit tests
         entry:  pytest tests/unit/disable_jit --tb=short -q
         language: system
         pass_filenames: false
         stages: [pre-commit]
+        require_serial: true
 
       - id: pytest-unit-jit
         name: Run JIT-enabled unit tests
@@ -39,6 +32,7 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit]
+        require_serial: true
 
       # --- PUSH STAGE: Complete test suite ---
       - id: pytest-unit-api
