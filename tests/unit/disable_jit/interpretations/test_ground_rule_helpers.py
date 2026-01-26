@@ -21,13 +21,29 @@ def helpers_fixture(request):
 
 class FakeWorld:
     """Minimal stand-in for World."""
-    def __init__(self, truth_by_label=None, name=""):
+    def __init__(self, truth_by_label=None, name="", bounds_by_label=None):
         self.truth_by_label = truth_by_label or {}
         self.name = name
+        # bounds_by_label maps label -> [lower, upper] interval bounds
+        self.bounds_by_label = bounds_by_label or {}
 
     def is_satisfied(self, label, interval):
-        # interval content isn't important to the edge function; we key by label.
-        return self.truth_by_label.get(label, False)
+        # Check if this world has the label and if its bounds are within the required interval
+        if label not in self.bounds_by_label:
+            return False
+
+        # For our patched interval (tuple like ("closed", lo, up)), extract bounds
+        if isinstance(interval, tuple) and len(interval) >= 3:
+            req_lower, req_upper = interval[1], interval[2]
+        else:
+            # Fallback for actual Interval objects
+            req_lower, req_upper = interval
+
+        actual_lower, actual_upper = self.bounds_by_label[label]
+
+        # Check if actual interval is contained within required interval
+        # [actual_lower, actual_upper] ⊆ [req_lower, req_upper]
+        return actual_lower >= req_lower and actual_upper <= req_upper
 
 
 @pytest.fixture
@@ -1550,6 +1566,158 @@ def test_ground_rule_edge_head_vars_use_existing_nodes_when_allowed(monkeypatch)
     assert edges_to_add == ([], [], "HEADLBL")
     mock_add_node.assert_not_called()
     mock_add_edge.assert_not_called()
+
+
+# ---- BUG-138: Integration test for broken threshold checking ----
+
+def test_check_all_clause_satisfaction_available_threshold_bug138(monkeypatch):
+    """
+    BUG-138: Tests that 'available' threshold quantifier works correctly.
+
+    This test creates a scenario where:
+    - 5 nodes total being considered as candidates
+    - 4 nodes have the 'infected' label (available)
+    - 2 nodes satisfy the clause bound [0.8, 1.0] (qualified)
+    - Threshold is ">= 60% available"
+
+    Expected behavior: 2/4 = 50% >= 60% → FALSE
+    With bug: check_all_clause_satisfaction passes groundings[X] twice instead of:
+      - Computing qualified groundings first using get_qualified_node_groundings
+      - Passing total groundings and qualified groundings separately
+    Result: The function doesn't filter by the bound, compares wrong values → TRUE (WRONG!)
+
+    This test SHOULD FAIL until BUG-138 is fixed.
+    """
+    print("Hello world from bug 138")
+    # Patch interval.closed to return a simple tuple instead of Interval object
+    monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: ("closed", lo, up))
+
+    # Create 5 nodes with different infection levels
+    # FakeWorld.is_satisfied will check if interval bounds match
+    interpretations_node = {
+        'n1': FakeWorld(name="infected,[0.9,1.0]", bounds_by_label={'infected': [0.9, 1.0]}),   # satisfies [0.8,1.0]
+        'n2': FakeWorld(name="infected,[0.5,0.6]", bounds_by_label={'infected': [0.5, 0.6]}),  # has label, doesn't satisfy
+        'n3': FakeWorld(name="infected,[0.85,0.95]", bounds_by_label={'infected': [0.85, 0.95]}), # satisfies [0.8,1.0]
+        'n4': FakeWorld(name="infected,[0.7,0.75]", bounds_by_label={'infected': [0.7, 0.75]}), # has label, doesn't satisfy
+        'n5': FakeWorld(name="", bounds_by_label={}),                                      # no infected label at all
+    }
+
+    interpretations_edge = {}
+
+    # Clause structure: (type, label, variables, bound, operator)
+    # The bound [0.8, 1.0] specifies which nodes are "qualified"
+    clauses = [
+        ('node', 'infected', ('X',), [0.8, 1.0], 'greater_equal'),
+    ]
+
+    # Threshold: >= 60% of available nodes (those with 'infected' label)
+    thresholds = [
+        ('greater_equal', ('percent', 'available'), 60),
+    ]
+
+    # Total grounding: all nodes being considered as candidates
+    groundings = {
+        'X': ['n1', 'n2', 'n3', 'n4', 'n5']
+    }
+
+    groundings_edges = {}
+
+    # Correct calculation:
+    # - Available (have 'infected' label): get_qualified_node_groundings(..., [0,1]) = [n1, n2, n3, n4] = 4
+    # - Qualified (satisfy [0.8, 1.0]): get_qualified_node_groundings(..., [0.8,1.0]) = [n1, n3] = 2
+    # - Percentage: 2/4 = 50% >= 60%? → FALSE
+    #
+    # With BUG-138:
+    # - check_all_clause_satisfaction passes groundings['X'] twice (all 5 nodes)
+    # - available = get_qualified_node_groundings([n1,n2,n3,n4,n5], ..., [0,1]) = [n1,n2,n3,n4] = 4
+    # - qualified_neigh_len = len([n1,n2,n3,n4,n5]) = 5  (WRONG! should be filtered by bound)
+    # - 5/4 = 125% >= 60%? → TRUE (WRONG!)
+
+    result = check_all_clause_satisfaction(
+        interpretations_node,
+        interpretations_edge,
+        clauses,
+        thresholds,
+        groundings,
+        groundings_edges
+    )
+
+    # This assertion expects CORRECT behavior (will fail due to bug)
+    assert result is False, (
+        "Expected False: Only 2 out of 4 available nodes satisfy the clause (50% < 60%). "
+        "If this returns True, BUG-138 is still present (not filtering by clause bound)."
+    )
+
+
+def test_check_all_clause_satisfaction_total_threshold_bug138(monkeypatch):
+    """
+    BUG-138: Tests that 'total' threshold quantifier is also broken.
+
+    Same scenario but using 'total' instead of 'available':
+    - 5 nodes total being considered
+    - 2 nodes satisfy the clause bound [0.8, 1.0] (qualified)
+    - Threshold is ">= 60% total"
+
+    Expected behavior: 2/5 = 40% >= 60% → FALSE
+    With bug: Doesn't filter by bound, so 5/5 = 100% >= 60% → TRUE (WRONG!)
+
+    This test SHOULD FAIL until BUG-138 is fixed.
+    """
+    print("Hello world from bug 138 (total quantifier)")
+    # Patch interval.closed to return a simple tuple instead of Interval object
+    monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: ("closed", lo, up))
+
+    # Same 5 nodes as the available test
+    interpretations_node = {
+        'n1': FakeWorld(name="infected,[0.9,1.0]", bounds_by_label={'infected': [0.9, 1.0]}),
+        'n2': FakeWorld(name="infected,[0.5,0.6]", bounds_by_label={'infected': [0.5, 0.6]}),
+        'n3': FakeWorld(name="infected,[0.85,0.95]", bounds_by_label={'infected': [0.85, 0.95]}),
+        'n4': FakeWorld(name="infected,[0.7,0.75]", bounds_by_label={'infected': [0.7, 0.75]}),
+        'n5': FakeWorld(name="", bounds_by_label={}),
+    }
+
+    interpretations_edge = {}
+
+    clauses = [
+        ('node', 'infected', ('X',), [0.8, 1.0], 'greater_equal'),
+    ]
+
+    # Threshold: >= 60% of TOTAL nodes
+    thresholds = [
+        ('greater_equal', ('percent', 'total'), 60),
+    ]
+
+    groundings = {
+        'X': ['n1', 'n2', 'n3', 'n4', 'n5']
+    }
+
+    groundings_edges = {}
+
+    # Correct calculation:
+    # - Total: 5 nodes
+    # - Qualified (satisfy [0.8, 1.0]): [n1, n3] = 2 nodes
+    # - Percentage: 2/5 = 40% >= 60%? → FALSE
+    #
+    # With BUG-138:
+    # - check_all_clause_satisfaction passes groundings['X'] twice (all 5 nodes)
+    # - total = len([n1,n2,n3,n4,n5]) = 5
+    # - qualified_neigh_len = len([n1,n2,n3,n4,n5]) = 5  (WRONG! should be filtered)
+    # - 5/5 = 100% >= 60%? → TRUE (WRONG!)
+
+    result = check_all_clause_satisfaction(
+        interpretations_node,
+        interpretations_edge,
+        clauses,
+        thresholds,
+        groundings,
+        groundings_edges
+    )
+
+    # This assertion expects CORRECT behavior (will fail due to bug)
+    assert result is False, (
+        "Expected False: Only 2 out of 5 total nodes satisfy the clause (40% < 60%). "
+        "If this returns True, BUG-138 is still present (not filtering by clause bound)."
+    )
 
 
 def test_ground_rule_node_clause_filters_edge_groundings(monkeypatch):

@@ -1355,13 +1355,16 @@ def check_all_clause_satisfaction(interpretations_node, interpretations_edge, cl
 		clause_type = clause[0]
 		clause_label = clause[1]
 		clause_variables = clause[2]
+		clause_bnd = clause[3]
 
 		if clause_type == 'node':
 			clause_var_1 = clause_variables[0]
-			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, groundings[clause_var_1], groundings[clause_var_1], clause_label, thresholds[i]) and satisfaction
+			qualified_groundings = get_qualified_node_groundings(interpretations_node, groundings[clause_var_1], clause_label, clause_bnd)
+			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, groundings[clause_var_1], qualified_groundings, clause_label, thresholds[i]) and satisfaction
 		elif clause_type == 'edge':
 			clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
-			satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], groundings_edges[(clause_var_1, clause_var_2)], clause_label, thresholds[i]) and satisfaction
+			qualified_groundings = get_qualified_edge_groundings(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], clause_label, clause_bnd)
+			satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], qualified_groundings, clause_label, thresholds[i]) and satisfaction
 	return satisfaction
 
 
