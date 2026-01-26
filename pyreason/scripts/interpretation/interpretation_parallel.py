@@ -2089,7 +2089,7 @@ def _determine_edge_head_vars(head_fns, head_fns_vars, groundings, head_function
 @numba.njit(cache=True)
 def _call_head_function(fn_name, fn_arg_values, head_functions):
 	"""
-	Call a head function with the given arguments
+	Call a head function with the given arguments.
 	
 	Args:
 		fn_name: Name of the function to call
