@@ -1582,10 +1582,7 @@ def test_check_all_clause_satisfaction_available_threshold_bug138(monkeypatch):
       - Computing qualified groundings first using get_qualified_node_groundings
       - Passing total groundings and qualified groundings separately
     Result: The function doesn't filter by the bound, compares wrong values → TRUE (WRONG!)
-
-    This test SHOULD FAIL until BUG-138 is fixed.
     """
-    print("Hello world from bug 138")
     # Patch interval.closed to return a simple tuple instead of Interval object
     monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: ("closed", lo, up))
 
@@ -1647,20 +1644,6 @@ def test_check_all_clause_satisfaction_available_threshold_bug138(monkeypatch):
 
 
 def test_check_all_clause_satisfaction_total_threshold_bug138(monkeypatch):
-    """
-    BUG-138: Tests that 'total' threshold quantifier is also broken.
-
-    Same scenario but using 'total' instead of 'available':
-    - 5 nodes total being considered
-    - 2 nodes satisfy the clause bound [0.8, 1.0] (qualified)
-    - Threshold is ">= 60% total"
-
-    Expected behavior: 2/5 = 40% >= 60% → FALSE
-    With bug: Doesn't filter by bound, so 5/5 = 100% >= 60% → TRUE (WRONG!)
-
-    This test SHOULD FAIL until BUG-138 is fixed.
-    """
-    print("Hello world from bug 138 (total quantifier)")
     # Patch interval.closed to return a simple tuple instead of Interval object
     monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: ("closed", lo, up))
 
@@ -1718,21 +1701,6 @@ def test_check_all_clause_satisfaction_total_threshold_bug138(monkeypatch):
 
 
 def test_check_all_clause_satisfaction_edge_available_threshold_bug138(monkeypatch):
-    """
-    BUG-138: Tests that 'available' threshold quantifier works correctly for EDGES.
-
-    This test creates a scenario where:
-    - 5 edges total being considered as candidates
-    - 4 edges have the 'connected' label (available)
-    - 2 edges satisfy the clause bound [0.8, 1.0] (qualified)
-    - Threshold is ">= 60% available"
-
-    Expected behavior: 2/4 = 50% >= 60% → FALSE
-    With bug: Doesn't filter by bound, so wrong calculation → TRUE (WRONG!)
-
-    This test SHOULD FAIL until BUG-138 is fixed.
-    """
-    print("Hello world from bug 138 (edge available quantifier)")
     # Patch interval.closed to return a simple tuple instead of Interval object
     monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: ("closed", lo, up))
 
@@ -1790,20 +1758,6 @@ def test_check_all_clause_satisfaction_edge_available_threshold_bug138(monkeypat
 
 
 def test_check_all_clause_satisfaction_edge_total_threshold_bug138(monkeypatch):
-    """
-    BUG-138: Tests that 'total' threshold quantifier is also broken for EDGES.
-
-    Same scenario but using 'total' instead of 'available':
-    - 5 edges total being considered
-    - 2 edges satisfy the clause bound [0.8, 1.0] (qualified)
-    - Threshold is ">= 60% total"
-
-    Expected behavior: 2/5 = 40% >= 60% → FALSE
-    With bug: Doesn't filter by bound, so 5/5 = 100% >= 60% → TRUE (WRONG!)
-
-    This test SHOULD FAIL until BUG-138 is fixed.
-    """
-    print("Hello world from bug 138 (edge total quantifier)")
     # Patch interval.closed to return a simple tuple instead of Interval object
     monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: ("closed", lo, up))
 
