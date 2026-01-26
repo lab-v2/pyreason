@@ -956,6 +956,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 					clause_label = clause[1]
 					clause_variables = clause[2]
 
+
 					if clause_type == 'node':
 						clause_var_1 = clause_variables[0]
 
@@ -1233,13 +1234,17 @@ def check_all_clause_satisfaction(interpretations_node, interpretations_edge, cl
 		clause_type = clause[0]
 		clause_label = clause[1]
 		clause_variables = clause[2]
+		clause_bnd = clause[3]
+		print("Clause type:", clause_type)
 
 		if clause_type == 'node':
 			clause_var_1 = clause_variables[0]
-			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, groundings[clause_var_1], groundings[clause_var_1], clause_label, thresholds[i]) and satisfaction
+			qualified_groundings = get_qualified_node_groundings(interpretations_node, groundings[clause_var_1], clause_label, clause_bnd)
+			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, groundings[clause_var_1], qualified_groundings, clause_label, thresholds[i]) and satisfaction
 		elif clause_type == 'edge':
 			clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
-			satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], groundings_edges[(clause_var_1, clause_var_2)], clause_label, thresholds[i]) and satisfaction
+			qualified_groundings = get_qualified_edge_groundings(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], clause_label, clause_bnd)
+			satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], qualified_groundings, clause_label, thresholds[i]) and satisfaction
 	return satisfaction
 
 
@@ -1311,7 +1316,10 @@ def check_node_grounding_threshold_satisfaction(interpretations_node, grounding,
 	elif threshold_quantifier_type == 'available':
 		neigh_len = len(get_qualified_node_groundings(interpretations_node, grounding, clause_label, interval.closed(0, 1)))
 
+
 	qualified_neigh_len = len(qualified_grounding)
+	print("Qualified length:", qualified_neigh_len)
+	print("Neighbor length:", neigh_len)
 	satisfaction = _satisfies_threshold(neigh_len, qualified_neigh_len, threshold)
 	return satisfaction
 
@@ -1413,6 +1421,9 @@ def get_qualified_edge_groundings(interpretations_edge, grounding, clause_l, cla
 @numba.njit(cache=True)
 def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
 	# Checks if qualified neighbors satisfy threshold. This is for one clause
+	print("Number of neighbors:", num_neigh)
+	print("Number of qualified components:", num_qualified_component)
+	print("Threshold:", threshold)
 	if threshold[1][0]=='number':
 		if threshold[0]=='greater_equal':
 			result = True if num_qualified_component >= threshold[2] else False
@@ -1439,6 +1450,7 @@ def _satisfies_threshold(num_neigh, num_qualified_component, threshold):
 		elif threshold[0]=='equal':
 			result = True if num_qualified_component/num_neigh == threshold[2]*0.01 else False
 
+	print("Result of threshold check:", result)
 	return result
 
 

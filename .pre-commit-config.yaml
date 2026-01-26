@@ -12,7 +12,7 @@ repos:
       # --- COMMIT STAGE: Fast unit tests only ---
       - id: ruff-check
         name: Run ruff linter
-        entry: .venv/bin/python -m ruff check pyreason/scripts
+        entry:  ruff check pyreason/scripts
         language: system
         types: [python]
         pass_filenames: false
@@ -20,7 +20,7 @@ repos:
 
       - id: sync-interpretation-parallel
         name: Sync interpretation_parallel.py from interpretation.py
-        entry: .venv/bin/python sync_interpretation_parallel.py
+        entry: sync_interpretation_parallel.py
         language: system
         pass_filenames: false
         files: 'pyreason/scripts/interpretation/interpretation\.py'
@@ -28,14 +28,14 @@ repos:
 
       - id: pytest-unit-no-jit
         name: Run JIT-disabled unit tests
-        entry: .venv/bin/python -m pytest tests/unit/disable_jit -m "not slow" --tb=short -q
+        entry:  pytest tests/unit/disable_jit --tb=short -q
         language: system
         pass_filenames: false
         stages: [pre-commit]
 
       - id: pytest-unit-jit
         name: Run JIT-enabled unit tests
-        entry: .venv/bin/python -m pytest tests/unit/dont_disable_jit -m "not slow" --tb=short -q
+        entry: pytest tests/unit/dont_disable_jit --tb=short -q
         language: system
         pass_filenames: false
         stages: [pre-commit]
@@ -43,14 +43,14 @@ repos:
       # --- PUSH STAGE: Complete test suite ---
       - id: pytest-unit-api
         name: Run pyreason api tests
-        entry: .venv/bin/python -m pytest tests/api_tests --tb=short -q
+        entry:  pytest tests/api_tests --tb=short -q
         language: system
         pass_filenames: false
         stages: [pre-push]
 
       - id: pytest-functional-complete
         name: Run functional test suite
-        entry: .venv/bin/python -m pytest tests/functional/ --tb=short -q
+        entry:  pytest tests/functional/ --tb=short -q
         language: system
         pass_filenames: false
         stages: [pre-push]
