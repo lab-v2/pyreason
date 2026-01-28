@@ -64,7 +64,7 @@ Trademark Permission PyReason™ and PyReason Design Logo <img src="https://raw.
 
 
 ## 6. Contact
-Dyuman Aditya - daditya@syr.edu
+Colton Payne - crpayne@syr.edu
 
 Kaustuv Mukherji - kmukherj@syr.edu
 
