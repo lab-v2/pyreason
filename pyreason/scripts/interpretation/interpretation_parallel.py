@@ -1535,8 +1535,10 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 			if current_bnd != prev_t_bnd:
 				if convergence_mode=='delta_bound':
 					for i in updated_bnds:
-						lower_delta = abs(i.lower-prev_t_bnd.lower)
-						upper_delta = abs(i.upper-prev_t_bnd.upper)
+						# Use each bound's own previous values instead of L's previous
+						prev_i_bnd = interval.closed(i.prev_lower, i.prev_upper)
+						lower_delta = abs(i.lower - prev_i_bnd.lower)
+						upper_delta = abs(i.upper - prev_i_bnd.upper)
 						max_delta = max(lower_delta, upper_delta)
 						change = max(change, max_delta)
 				else:
@@ -1551,6 +1553,11 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 @numba.njit(cache=True)
 def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_cnt, t_cnt, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_trace, idx, facts_to_be_applied_trace, rule_trace_atoms, store_interpretation_changes, num_ga, mode, override=False):
 	updated = False
+	print("Interpretations: ", interpretations)
+	print("Predicatae Map: ", predicate_map)
+	print("Component: ", comp)
+	print("NA: [", na[0], ", ", na[1], "]")
+	print("IPL: ", ipl)
 	# This is to prevent a key error in case the label is a specific label
 	try:
 		world = interpretations[comp]
@@ -1598,6 +1605,8 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 			ip_update_cnt = 0
 			for p1, p2 in ipl:
 				if p1 == l:
+					print("Branch p1")
+					print("Updating IPL for p1:", p1, "  p2:", p2)
 					if p2 not in world.world:
 						world.world[p2] = interval.closed(0, 1)
 						if p2 in predicate_map:
@@ -1608,6 +1617,8 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p2], f'IPL: {l.get_value()}')
 					lower = max(world.world[p2].lower, 1 - world.world[p1].upper)
 					upper = min(world.world[p2].upper, 1 - world.world[p1].lower)
+					print("Updated lower for p2:", lower)
+					print("Updated upper for p2:", upper)
 					world.world[p2].set_lower_upper(lower, upper)
 					world.world[p2].set_static(static)
 					ip_update_cnt += 1
@@ -1615,6 +1626,8 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 					if store_interpretation_changes:
 						rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, p2, interval.closed(lower, upper)))
 				if p2 == l:
+					print("Branch p2")
+					print("Updating IPL for p1:", p1, "  p2:", p2)
 					if p1 not in world.world:
 						world.world[p1] = interval.closed(0, 1)
 						if p1 in predicate_map:
@@ -1625,10 +1638,12 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 						_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p1], f'IPL: {l.get_value()}')
 					lower = max(world.world[p1].lower, 1 - world.world[p2].upper)
 					upper = min(world.world[p1].upper, 1 - world.world[p2].lower)
+					print("Updated lower for p1:", lower)
+					print("Updated upper for p1:", upper)
 					world.world[p1].set_lower_upper(lower, upper)
 					world.world[p1].set_static(static)
 					ip_update_cnt += 1
-					updated_bnds.append(world.world[p2])
+					updated_bnds.append(world.world[p1])
 					if store_interpretation_changes:
 						rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, p1, interval.closed(lower, upper)))
 
@@ -1637,14 +1652,24 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 		if updated:
 			# Find out if it has changed from previous interp
 			current_bnd = world.world[l]
+			print("Current Bnd: [", current_bnd.lower, ",", current_bnd.upper, "]")
 			prev_t_bnd = interval.closed(world.world[l].prev_lower, world.world[l].prev_upper)
+			print("Prev T Bnd: [", prev_t_bnd.lower, ",", prev_t_bnd.upper, "]")
 			if current_bnd != prev_t_bnd:
 				if convergence_mode=='delta_bound':
 					for i in updated_bnds:
-						lower_delta = abs(i.lower-prev_t_bnd.lower)
-						upper_delta = abs(i.upper-prev_t_bnd.upper)
+						# Use each bound's own previous values instead of L's previous
+						prev_i_bnd = interval.closed(i.prev_lower, i.prev_upper)
+						print("Updated Bnd: [", i.lower, ",", i.upper, "]")
+						print("  Prev Bnd: [", prev_i_bnd.lower, ",", prev_i_bnd.upper, "]")
+						lower_delta = abs(i.lower - prev_i_bnd.lower)
+						print("  Lower Delta: ", lower_delta)
+						upper_delta = abs(i.upper - prev_i_bnd.upper)
+						print("  Upper Delta: ", upper_delta)
 						max_delta = max(lower_delta, upper_delta)
+						print("  Max Delta: ", max_delta)
 						change = max(change, max_delta)
+						print("  Change: ", change)
 				else:
 					change = 1 + ip_update_cnt
 
