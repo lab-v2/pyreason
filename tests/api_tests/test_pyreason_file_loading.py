@@ -851,7 +851,7 @@ enemy(A, B) <- ~friend(A, B)"""
 
 
 class TestAddFactInBulk:
-    """Test add_fact_in_bulk() function for loading facts from CSV."""
+    """Test add_fact_in_bulk() function for loading facts from JSON."""
 
     def setup_method(self):
         """Clean state before each test."""
@@ -859,9 +859,9 @@ class TestAddFactInBulk:
         pr.reset_settings()
 
     def test_add_fact_in_bulk_comprehensive(self, raise_erros=False):
-        """Test loading facts from CSV with various valid and invalid scenarios.
+        """Test loading facts from JSON with various valid and invalid scenarios.
 
-        This test uses example_facts.csv which contains:
+        This test uses example_facts.json which contains:
         - Valid node facts with various boolean formats
         - Valid edge facts with various boolean formats
         - Node and edge facts with interval bounds
@@ -873,19 +873,19 @@ class TestAddFactInBulk:
         - Invalid static value (should warn)
         - Empty optional fields
         """
-        csv_path = os.path.join(os.path.dirname(__file__), 'test_files', 'example_facts.csv')
+        json_path = os.path.join(os.path.dirname(__file__), 'test_files', 'example_facts.json')
 
-        # Expect warnings for rows with invalid data:
-        # - Row 13: empty fact_text -> "Missing required 'fact_text'"
-        # - Row 14: invalid syntax (missing parentheses) -> "Failed to parse fact"
-        # - Row 15: out-of-range interval values -> "Failed to parse fact"
-        # - Row 16: invalid start_time -> "Invalid start_time"
-        # - Row 17: invalid end_time -> "Invalid end_time"
-        # - Row 18: invalid static value -> "Invalid static value"
+        # Expect warnings for items with invalid data:
+        # - Item 11: empty fact_text -> "Missing required 'fact_text'"
+        # - Item 12: invalid syntax (missing parentheses) -> "Failed to parse fact"
+        # - Item 13: out-of-range interval values -> "Failed to parse fact"
+        # - Item 14: invalid start_time -> "Invalid start_time"
+        # - Item 15: invalid end_time -> "Invalid end_time"
+        # - Item 16: invalid static value -> "Invalid static value"
         with pytest.warns(UserWarning) as warning_list:
-            pr.add_fact_in_bulk(csv_path, raise_errors=False)
+            pr.add_fact_in_bulk(json_path, raise_errors=False)
 
-        # Verify that we got exactly 6 warnings from the invalid rows
+        # Verify that we got at least 6 warnings from the invalid items
         assert len(warning_list) >= 6, f"Expected at least 6 warnings, got {len(warning_list)}: {[str(w.message) for w in warning_list]}"
 
         # Check that specific warning messages appear
@@ -911,58 +911,25 @@ class TestAddFactInBulk:
         assert any("Invalid static value" in msg for msg in warning_messages), \
             "Expected warning about invalid static value"
 
-    def test_add_fact_in_bulk_no_header_file(self, raise_errors=False):
-        """Test loading facts from CSV file without header using example_facts_no_header.csv.
-
-        This test verifies that:
-        - CSV without header is detected correctly (no header row skipped)
-        - Valid facts are loaded (node facts, edge facts with intervals)
-        - Invalid facts produce appropriate warnings
-
-        The example_facts_no_header.csv contains:
-        - Row 1: Viewed(Alice) - valid node fact
-        - Row 2: Viewed(Bob) - valid node fact
-        - Row 3: Connected(Alice,Bob):[0.7,0.9] - valid edge fact with interval
-        - Row 4: empty fact_text - should warn
-        - Row 5: InvalidNoParens - missing parentheses, should warn
-        - Row 6: Viewed(Charlie) with bad start_time - should warn
-        """
-        csv_path = os.path.join(os.path.dirname(__file__), 'test_files', 'example_facts_no_header.csv')
-
-        # Expect warnings for rows with invalid data:
-        # - Row 4: empty fact_text -> "Missing required 'fact_text'"
-        # - Row 5: invalid syntax (missing parentheses) -> "Failed to parse fact"
-        # - Row 6: invalid start_time -> "Invalid start_time"
-        with pytest.warns(UserWarning) as warning_list:
-            pr.add_fact_in_bulk(csv_path, raise_errors=False)
-
-        # Verify we got at least 3 warnings from the invalid rows
-        assert len(warning_list) >= 3, f"Expected at least 3 warnings, got {len(warning_list)}: {[str(w.message) for w in warning_list]}"
-
-        # Check that specific warning messages appear
-        warning_messages = [str(w.message) for w in warning_list]
-
-        # Verify warning for empty fact_text
-        assert any("Missing required 'fact_text'" in msg for msg in warning_messages), \
-            "Expected warning about missing fact_text"
-
-        # Verify warning for invalid syntax (missing parentheses)
-        assert any("Failed to parse fact" in msg for msg in warning_messages), \
-            "Expected warning about invalid syntax"
-
-        # Verify warning for invalid start_time
-        assert any("Invalid start_time" in msg for msg in warning_messages), \
-            "Expected warning about invalid start_time"
-
     def test_add_fact_in_bulk_empty_optional_fields(self, raise_errors=False):
         """Test loading facts with empty optional fields."""
-        csv_content = """fact_text,name,start_time,end_time,static
-Viewed(Eve),,,,
-Viewed(Frank),frank-fact,,,
-"Connected(A,B):[0.2,0.9]",,5,10,"""
+        json_content = """[
+    {
+        "fact_text": "Viewed(Eve)"
+    },
+    {
+        "fact_text": "Viewed(Frank)",
+        "name": "frank-fact"
+    },
+    {
+        "fact_text": "Connected(A,B):[0.2,0.9]",
+        "start_time": 5,
+        "end_time": 10
+    }
+]"""
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
-            tmp.write(csv_content)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
+            tmp.write(json_content)
             tmp_path = tmp.name
 
         try:
@@ -973,32 +940,56 @@ Viewed(Frank),frank-fact,,,
     def test_add_fact_in_bulk_nonexistent_file(self):
         """Test add_fact_in_bulk() with nonexistent file."""
         with pytest.raises(FileNotFoundError):
-            pr.add_fact_in_bulk('nonexistent_facts.csv')
+            pr.add_fact_in_bulk('nonexistent_facts.json')
 
-    def test_add_fact_in_bulk_empty_file(self):
-        """Test loading facts from empty CSV file."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
-            tmp.write('')
+    def test_add_fact_in_bulk_empty_array(self):
+        """Test loading facts from JSON file with empty array."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
+            tmp.write('[]')
             tmp_path = tmp.name
 
         try:
-            # Empty file should raise an error
-            with pytest.raises(ValueError):
+            # Empty array should trigger a warning
+            with pytest.warns(UserWarning, match="contains an empty array"):
+                pr.add_fact_in_bulk(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_in_bulk_invalid_json(self):
+        """Test loading facts from invalid JSON file."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
+            tmp.write('{ invalid json }')
+            tmp_path = tmp.name
+
+        try:
+            with pytest.raises(ValueError, match="Invalid JSON format"):
+                pr.add_fact_in_bulk(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_in_bulk_not_array(self):
+        """Test loading facts from JSON file that's not an array."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
+            tmp.write('{"fact_text": "Viewed(Alice)"}')
+            tmp_path = tmp.name
+
+        try:
+            with pytest.raises(ValueError, match="must contain an array"):
                 pr.add_fact_in_bulk(tmp_path)
         finally:
             os.unlink(tmp_path)
 
     def test_add_fact_in_bulk_multiple_calls(self):
         """Test multiple calls to add_fact_in_bulk accumulate facts."""
-        csv1_content = """Viewed(User1),fact1,0,3,False"""
-        csv2_content = """Viewed(User2),fact2,0,3,False"""
+        json1_content = """[{"fact_text": "Viewed(User1)", "name": "fact1", "start_time": 0, "end_time": 3, "static": false}]"""
+        json2_content = """[{"fact_text": "Viewed(User2)", "name": "fact2", "start_time": 0, "end_time": 3, "static": false}]"""
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp1:
-            tmp1.write(csv1_content)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp1:
+            tmp1.write(json1_content)
             tmp1_path = tmp1.name
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp2:
-            tmp2.write(csv2_content)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp2:
+            tmp2.write(json2_content)
             tmp2_path = tmp2.name
 
         try:
