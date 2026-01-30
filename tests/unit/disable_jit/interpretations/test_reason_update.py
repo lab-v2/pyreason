@@ -1611,31 +1611,7 @@ Test cases for BUG-127: Delta Bound Convergence with IPL Complements
 These tests demonstrate that delta_bound convergence mode was incorrectly
 comparing IPL complement bounds against the original label's previous bound
 instead of the complement's own previous bound.
-
-Example scenario from bug_log_2.md:
-    Timestep t-1:
-      infected(Alice) = [0.1, 0.2]
-      healthy(Alice) = [0.8, 0.9]
-
-    Timestep t:
-      Update: infected(Alice) = [0.7, 0.9]
-      IPL triggers: healthy(Alice) = [0.1, 0.3]
-
-    WRONG calculation (BUG-127):
-      Comparing healthy [0.1, 0.3] vs infected's previous [0.1, 0.2]
-      delta = max(|0.1-0.1|, |0.3-0.2|) = 0.1
-
-    CORRECT calculation:
-      Comparing healthy [0.1, 0.3] vs healthy's previous [0.8, 0.9]
-      delta = max(|0.1-0.8|, |0.3-0.9|) = 0.7
 """
-
-import pytest
-from unittest.mock import Mock
-import inspect
-
-pytestmark = pytest.mark.usefixtures("helpers_fixture")
-
 
 def test_update_node_ipl_complement_delta_bound_bug127(monkeypatch, helpers_fixture):
     """
@@ -1943,25 +1919,22 @@ def test_update_edge_ipl_two_complements_bug125(monkeypatch, helpers_fixture):
     assert world.world[recovered].lower == pytest.approx(0.7)
     assert world.world[recovered].upper == pytest.approx(0.75)
 
-    # THE CRITICAL ASSERTION for BUG-125 + BUG-127:
-    # Correct (all three bounds calculated correctly):
-    #   infected: max(|0.25-0.2|, |0.3-0.3|) = 0.05
-    #   healthy: max(|0.7-0.7|, |0.75-0.8|) = 0.05
-    #   recovered: max(|0.7-0.7|, |0.75-0.8|) = 0.05
-    #   Overall: 0.05
-    #
-    # WITH THE BUGS (what actually happens on old code):
-    # BUG-125: In p2 == l branch, appends world.world[p2] instead of world.world[p1]
-    #   updated_bnds should be: [infected, healthy, recovered]
-    #   updated_bnds actually is: [infected, healthy, infected]  ← infected duplicated, recovered missing!
-    #
-    # BUG-127: All bounds compared against infected's previous [0.2, 0.3]
-    #   infected: max(|0.25-0.2|, |0.3-0.3|) = 0.05
-    #   healthy: max(|0.7-0.2|, |0.75-0.3|) = max(0.5, 0.45) = 0.5  ← WRONG! Should compare to [0.7, 0.8]
-    #   infected (duplicate): max(|0.25-0.2|, |0.3-0.3|) = 0.05
-    #   Overall (WRONG): max(0.05, 0.5, 0.05) = 0.5
-    #
-    # The 0.5 comes from BUG-127 comparing healthy [0.7, 0.75] against infected's previous [0.2, 0.3]
-    # BUG-125 causes recovered's delta to be completely missed (replaced with infected's duplicate)
+    '''
+    THE CRITICAL ASSERTION for BUG-125 + BUG-127:
+    Correct (all three bounds calculated correctly):
+      infected: max(|0.25-0.2|, |0.3-0.3|) = 0.05
+      healthy: max(|0.7-0.7|, |0.75-0.8|) = 0.05
+      recovered: max(|0.7-0.7|, |0.75-0.8|) = 0.05
+      Overall: 0.05
+    
+    BUG-127: All bounds compared against infected's previous [0.2, 0.3]
+      infected: max(|0.25-0.2|, |0.3-0.3|) = 0.05
+      healthy: max(|0.7-0.2|, |0.75-0.3|) = max(0.5, 0.45) = 0.5  ← WRONG! Should compare to [0.7, 0.8]
+      infected (duplicate): max(|0.25-0.2|, |0.3-0.3|) = 0.05
+      Overall (WRONG): max(0.05, 0.5, 0.05) = 0.5
+    
+    The 0.5 comes from BUG-127 comparing healthy [0.7, 0.75] against infected's previous [0.2, 0.3]
+    BUG-125 causes recovered's delta to be completely missed (replaced with infected's duplicate)
+    '''
     assert change2 == pytest.approx(0.05), \
         f"Expected change=0.05, got {change2}. BUG-125+BUG-127 give 0.5."
