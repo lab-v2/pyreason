@@ -480,7 +480,117 @@ class TestEdgeCasesAndBoundary:
         assert edges[1] == ""
 
     def test_negation_with_explicit_bound(self):
-        """Negation with an explicit bound produces a malformed clause (double colon)
-        and raises ValueError. This is expected: use negation OR explicit bounds, not both."""
-        with pytest.raises(ValueError):
-            parse_rule("p(X) <- ~body(X):[0.5,0.8]", "r", None)
+        """Negation with explicit bound computes ~[l,u] = [1-u, 1-l]."""
+        r = parse_rule("p(X) <- ~body(X):[0.5,0.8]", "r", None)
+        clause = r.get_clauses()[0]
+        assert abs(clause[3].lower - 0.2) < 1e-9
+        assert abs(clause[3].upper - 0.5) < 1e-9
+
+    def test_negation_with_explicit_bound_head(self):
+        """Negated head with explicit bound computes ~[l,u] = [1-u, 1-l]."""
+        r = parse_rule("~p(X):[0.5,0.8] <- cond(X)", "r", None)
+        bnd = r.get_bnd()
+        assert abs(bnd.lower - 0.2) < 1e-9
+        assert abs(bnd.upper - 0.5) < 1e-9
+
+    def test_negation_body_no_bound(self):
+        """Negated body without explicit bound still gives [0,0]."""
+        r = parse_rule("p(X) <- ~body(X)", "r", None)
+        clause = r.get_clauses()[0]
+        assert clause[3].lower == 0.0
+        assert clause[3].upper == 0.0
+
+    def test_negation_with_one_one_bound(self):
+        """~body(X):[1,1] -> [1-1, 1-1] = [0,0]."""
+        r = parse_rule("p(X) <- ~body(X):[1,1]", "r", None)
+        clause = r.get_clauses()[0]
+        assert clause[3].lower == 0.0
+        assert clause[3].upper == 0.0
+
+    def test_negation_with_zero_zero_bound(self):
+        """~body(X):[0,0] -> [1-0, 1-0] = [1,1]."""
+        r = parse_rule("p(X) <- ~body(X):[0,0]", "r", None)
+        clause = r.get_clauses()[0]
+        assert clause[3].lower == 1.0
+        assert clause[3].upper == 1.0
+
+    def test_bound_nan_head(self):
+        """NaN in head bound raises ValueError."""
+        with pytest.raises(ValueError, match="finite"):
+            parse_rule("p(X):[nan,1.0] <- b(X)", "r", None)
+
+    def test_bound_nan_body(self):
+        """NaN in body bound raises ValueError."""
+        with pytest.raises(ValueError, match="finite"):
+            parse_rule("p(X) <- b(X):[0.5,nan]", "r", None)
+
+    def test_bound_inf_head(self):
+        """Inf in head bound raises ValueError."""
+        with pytest.raises(ValueError, match="finite"):
+            parse_rule("p(X):[inf,1.0] <- b(X)", "r", None)
+
+    def test_bound_negative_inf_body(self):
+        """Negative inf in body bound raises ValueError."""
+        with pytest.raises(ValueError, match="finite"):
+            parse_rule("p(X) <- b(X):[-inf,1.0]", "r", None)
+
+    def test_head_predicate_starts_with_digit(self):
+        """Head predicate starting with digit raises ValueError."""
+        with pytest.raises(ValueError, match="digit"):
+            parse_rule("1pred(X) <- b(X)", "r", None)
+
+    def test_head_predicate_invalid_chars(self):
+        """Head predicate with invalid chars raises ValueError."""
+        with pytest.raises(ValueError, match="invalid characters"):
+            parse_rule("pred-name(X) <- b(X)", "r", None)
+
+    def test_body_predicate_starts_with_digit(self):
+        """Body predicate starting with digit raises ValueError."""
+        with pytest.raises(ValueError, match="digit"):
+            parse_rule("p(X) <- a(X), 2body(X)", "r", None)
+
+    def test_body_predicate_invalid_chars(self):
+        """Body predicate with invalid chars raises ValueError."""
+        with pytest.raises(ValueError, match="invalid characters"):
+            parse_rule("p(X) <- body-name(X)", "r", None)
+
+    def test_double_negation_head(self):
+        """Double negation in head raises ValueError."""
+        with pytest.raises(ValueError, match="Double negation"):
+            parse_rule("~~p(X) <- b(X)", "r", None)
+
+    def test_double_negation_body(self):
+        """Double negation in body raises ValueError."""
+        with pytest.raises(ValueError, match="Double negation"):
+            parse_rule("p(X) <- ~~b(X)", "r", None)
+
+    def test_head_variable_starts_with_digit(self):
+        """Head variable starting with digit raises ValueError."""
+        with pytest.raises(ValueError, match="digit"):
+            parse_rule("p(1X) <- b(Y)", "r", None)
+
+    def test_body_variable_invalid_chars(self):
+        """Body variable with invalid chars raises ValueError."""
+        with pytest.raises(ValueError, match="invalid characters"):
+            parse_rule("p(X) <- b(X-Y)", "r", None)
+
+    def test_empty_head_parentheses(self):
+        """Empty head parentheses raises ValueError."""
+        with pytest.raises(ValueError, match="at least one variable"):
+            parse_rule("p() <- b(X)", "r", None)
+
+    def test_head_missing_closing_paren(self):
+        """Head missing closing paren raises ValueError."""
+        with pytest.raises(ValueError, match="closing parenthesis"):
+            parse_rule("p(X <- b(X)", "r", None)
+
+    def test_threshold_dict_negative_key(self):
+        """Negative threshold dict key raises ValueError."""
+        thresholds = {-1: Threshold("greater_equal", ("number", "total"), 1.0)}
+        with pytest.raises(ValueError, match="non-negative"):
+            parse_rule("p(X) <- a(X), b(X)", "r", thresholds)
+
+    def test_forall_no_inner_predicate(self):
+        """forall without inner predicate parens raises ValueError."""
+        with pytest.raises(ValueError, match="inner predicate"):
+            parse_rule("p(X) <- forall(dept)", "r", None)

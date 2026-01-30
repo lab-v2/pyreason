@@ -1,3 +1,5 @@
+import math
+import re
 import numba
 import numpy as np
 from typing import Union
@@ -7,6 +9,8 @@ import pyreason.scripts.numba_wrapper.numba_types.rule_type as rule
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 from pyreason.scripts.threshold.threshold import Threshold
+
+_IDENTIFIER_RE = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
 
 
 def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, dict], infer_edges: bool = False, set_static: bool = False, weights: Union[None, np.ndarray] = None) -> rule.Rule:
@@ -63,10 +67,14 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
             # V14: Validate forall syntax — must end with ')' (the outer forall paren)
             if not clause_str.endswith(')'):
                 raise ValueError(f"Malformed forall expression: '{clause_str}'. Expected 'forall(pred(vars))'")
+            # Extract inner expression and validate it contains a predicate with variables
+            inner = clause_str[:-1].replace('forall(', '', 1)
+            if '(' not in inner or ')' not in inner:
+                raise ValueError(f"forall expression must contain an inner predicate with variables, got 'forall({inner})'")
             if not custom_thresholds:
                 custom_thresholds = {}
             custom_thresholds[i] = Threshold("greater_equal", ("percent", "total"), 100)
-            body_clauses[i] = clause_str[:-1].replace('forall(', '')
+            body_clauses[i] = inner
 
     # Parse the head: target predicate, bound, and annotation function
     head, target_bound, ann_fn = _parse_head(head)
@@ -77,6 +85,7 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
         raise ValueError(f"Rule head '{head}' must contain parentheses around variables")
 
     target = head[:idx]
+    _validate_predicate_name(target, "Head")
     target = label.Label(target)
 
     # Variable(s) in the head of the rule - now supports functions like f(X, Y)
@@ -86,6 +95,14 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
 
     # Parse head arguments which can be variables or function calls
     head_variables, head_fns, head_fns_vars = _parse_head_arguments(head_args_str)
+
+    # Validate head has at least one variable
+    if len(head_variables) < 1:
+        raise ValueError("Rule head must contain at least one variable inside parentheses")
+
+    # Validate head variable names
+    for var in head_variables:
+        _validate_variable_name(var, "Head")
 
     # Assign type of rule
     rule_type = 'node' if len(head_variables) == 1 else 'edge'
@@ -101,7 +118,9 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
             raise ValueError(f"Body clause '{clause_str}' must contain parentheses around variables")
 
         end_idx = clause_str.find(')')
-        body_predicates.append(clause_str[:start_idx])
+        pred_name = clause_str[:start_idx]
+        _validate_predicate_name(pred_name, "Body")
+        body_predicates.append(pred_name)
 
         # Add body variables depending on whether there's an operator or not
         variables = clause_str[start_idx+1:end_idx].split(',')
@@ -109,6 +128,9 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
         end_idx = clause_str.find(')', end_idx+1)
         if start_idx != -1 and end_idx != -1:
             variables += clause_str[start_idx+1:end_idx].split(',')
+        # Validate body variable names
+        for var in variables:
+            _validate_variable_name(var, "Body")
         body_variables.append(variables)
 
     # Change infer edge parameter if it's a node rule
@@ -137,6 +159,8 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
         # V12: Empty dict is not allowed
         if len(custom_thresholds) == 0:
             raise ValueError("custom_thresholds dict cannot be empty. Use None for default thresholds")
+        if any(k < 0 for k in custom_thresholds.keys()):
+            raise ValueError("custom_thresholds dict keys must be non-negative integers")
         if max(custom_thresholds.keys()) >= num_clauses:
             raise ValueError(f'The max clause index in the custom thresholds map {max(custom_thresholds.keys())} is greater than number of clauses {num_clauses}')
         for i in range(num_clauses):
@@ -230,10 +254,23 @@ def _split_body_into_clauses(body):
         if stripped != part:
             raise ValueError(f"Body clause {i} is empty. Check for trailing commas or double commas in the rule body")
 
+    # Check for double negation in body clauses
+    for part in split_body:
+        if part.startswith('~~'):
+            raise ValueError(f"Double negation '~~' is not allowed in body clause '{part}'")
+
     # Attach default bounds: negated clauses get [0,0], others get [1,1]
+    # Track which clauses are negated with explicit bounds (need [1-u, 1-l] transform)
+    negate_body_flags = [False] * len(split_body)
     for i in range(len(split_body)):
         if split_body[i][0] == '~':
-            split_body[i] = split_body[i][1:] + ':[0,0]'
+            if split_body[i][-1] == ']':
+                # ~pred(X):[l,u] — strip negation, keep explicit bound, flag for inversion
+                split_body[i] = split_body[i][1:]
+                negate_body_flags[i] = True
+            else:
+                # ~pred(X) — strip negation, assign [0,0]
+                split_body[i] = split_body[i][1:] + ':[0,0]'
         elif split_body[i][-1] != ']':
             split_body[i] += ':[1,1]'
 
@@ -253,6 +290,9 @@ def _split_body_into_clauses(body):
     for i in range(len(body_bounds)):
         bound_str = body_bounds[i]
         lower, upper = _str_bound_to_bound(bound_str)
+        # Apply negation inversion: ~[l,u] = [1-u, 1-l]
+        if negate_body_flags[i]:
+            lower, upper = round(1 - upper, 10), round(1 - lower, 10)
         body_bounds[i] = [lower, upper]
 
     return body_clauses, body_bounds
@@ -267,9 +307,15 @@ def _parse_head(head):
       - pred(x):[l,u]      → explicit bound
       - pred(x):fn_name    → annotation function with default bound [0,1]
     """
-    # V5 (preliminary): head must contain '('
+    # Check for double negation in head
+    if head.startswith('~~'):
+        raise ValueError(f"Double negation '~~' is not allowed in rule head '{head}'")
+
+    # V5 (preliminary): head must contain '(' and ')'
     if '(' not in head:
         raise ValueError(f"Rule head '{head}' must contain parentheses around variables")
+    if ')' not in head:
+        raise ValueError(f"Rule head '{head}' is missing closing parenthesis")
 
     # V6: At most one colon allowed in head
     colon_count = head.count(':')
@@ -277,17 +323,24 @@ def _parse_head(head):
         raise ValueError(f"Rule head contains {colon_count} colons, expected at most 1")
 
     # If no colon present, attach default bound
+    negate_head_interval = False
     if head[-1] == ')':
         if head[0] == '~':
             head = head[1:] + ':[0,0]'
         else:
             head += ':[1,1]'
+    elif head[0] == '~' and head[-1] == ']':
+        # ~pred(X):[l,u] — strip negation, keep explicit bound, flag for inversion
+        head = head[1:]
+        negate_head_interval = True
 
     head_str, head_bound_str = head.split(':')
 
     # Determine if head_bound_str is a numeric bound or an annotation function name
     if _is_bound(head_bound_str):
         target_bound = list(_str_bound_to_bound(head_bound_str))
+        if negate_head_interval:
+            target_bound = [round(1 - target_bound[1], 10), round(1 - target_bound[0], 10)]
         target_bound = interval.closed(*target_bound)
         ann_fn = ''
     else:
@@ -369,6 +422,25 @@ def _parse_head_arguments(head_args_str):
     return head_variables, head_fns, head_fns_vars
 
 
+def _validate_predicate_name(pred, context):
+    """Validate that a predicate name matches ^[a-zA-Z_][a-zA-Z0-9_]*$."""
+    if not _IDENTIFIER_RE.match(pred):
+        if pred and pred[0].isdigit():
+            raise ValueError(f"{context} predicate name '{pred}' cannot start with a digit")
+        raise ValueError(f"{context} predicate name '{pred}' contains invalid characters. Must match [a-zA-Z_][a-zA-Z0-9_]*")
+
+
+def _validate_variable_name(var, context):
+    """Validate that a variable name matches ^[a-zA-Z_][a-zA-Z0-9_]*$.
+    Exempts internal __temp_var_* names used by head function parsing."""
+    if var.startswith('__temp_var_'):
+        return
+    if not _IDENTIFIER_RE.match(var):
+        if var and var[0].isdigit():
+            raise ValueError(f"{context} variable name '{var}' cannot start with a digit")
+        raise ValueError(f"{context} variable name '{var}' contains invalid characters. Must match [a-zA-Z_][a-zA-Z0-9_]*")
+
+
 def _str_bound_to_bound(str_bound):
     """Convert a string bound like '[0.5,0.8]' to (float, float).
 
@@ -397,6 +469,12 @@ def _str_bound_to_bound(str_bound):
         upper = float(upper_str)
     except ValueError:
         raise ValueError(f"Bound upper value must be numeric, got '{upper_str}'")
+
+    # V10: Values must be finite numbers
+    if math.isnan(lower) or math.isinf(lower):
+        raise ValueError(f"Bound lower value must be a finite number, got '{lower_str}'")
+    if math.isnan(upper) or math.isinf(upper):
+        raise ValueError(f"Bound upper value must be a finite number, got '{upper_str}'")
 
     # V10: Values must be in [0, 1]
     if lower < 0 or lower > 1:
