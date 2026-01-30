@@ -1540,8 +1540,10 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 			if current_bnd != prev_t_bnd:
 				if convergence_mode=='delta_bound':
 					for i in updated_bnds:
-						lower_delta = abs(i.lower-prev_t_bnd.lower)
-						upper_delta = abs(i.upper-prev_t_bnd.upper)
+						# Use each bound's own previous values instead of L's previous
+						prev_i_bnd = interval.closed(i.prev_lower, i.prev_upper)
+						lower_delta = abs(i.lower - prev_i_bnd.lower)
+						upper_delta = abs(i.upper - prev_i_bnd.upper)
 						max_delta = max(lower_delta, upper_delta)
 						change = max(change, max_delta)
 				else:
@@ -1633,7 +1635,7 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 					world.world[p1].set_lower_upper(lower, upper)
 					world.world[p1].set_static(static)
 					ip_update_cnt += 1
-					updated_bnds.append(world.world[p2])
+					updated_bnds.append(world.world[p1])
 					if store_interpretation_changes:
 						rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, p1, interval.closed(lower, upper)))
 
@@ -1646,8 +1648,10 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 			if current_bnd != prev_t_bnd:
 				if convergence_mode=='delta_bound':
 					for i in updated_bnds:
-						lower_delta = abs(i.lower-prev_t_bnd.lower)
-						upper_delta = abs(i.upper-prev_t_bnd.upper)
+						# Use each bound's own previous values instead of L's previous
+						prev_i_bnd = interval.closed(i.prev_lower, i.prev_upper)
+						lower_delta = abs(i.lower - prev_i_bnd.lower)
+						upper_delta = abs(i.upper - prev_i_bnd.upper)
 						max_delta = max(lower_delta, upper_delta)
 						change = max(change, max_delta)
 				else:
