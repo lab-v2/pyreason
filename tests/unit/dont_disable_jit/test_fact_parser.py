@@ -3,7 +3,7 @@ from pyreason.scripts.utils.fact_parser import parse_fact
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 
 
-# Tests in this class were generated with Claude Sonnet 4.5.
+# Tests in this class were partially generated with Claude Sonnet 4.5.
 class TestValidFactParsing:
     """Test cases for valid fact inputs that should parse successfully."""
 
@@ -112,8 +112,26 @@ class TestValidFactParsing:
         assert pred == "pred"
         assert bound.lower == 1.0 and bound.upper == 1.0
 
+    def test_negation_with_interval_bound(self):
+        """Test that negation with interval bound."""
+        pred, component, bound, fact_type = parse_fact("~pred(node):[0.5,0.8]")
+        assert pred == "pred"
+        assert bound.lower == 0.2 and bound.upper == 0.5
 
-# Tests in this class were generated with Claude Sonnet 4.5.
+    def test_negation_with_explicit_bound_true(self):
+        """Test that negation with an explicit bound true."""
+        pred, component, bound, fact_type = parse_fact("~pred(node):True")
+        assert pred == "pred"
+        assert bound.lower == 0.0 and bound.upper == 0.0
+
+    def test_negation_with_explicit_bound_false(self):
+        """Test that negation with an explicit bound false."""
+        pred, component, bound, fact_type = parse_fact("~pred(node):False")
+        assert pred == "pred"
+        assert bound.lower == 1.0 and bound.upper == 1.0
+
+
+# Tests in this class were partially generated with Claude Sonnet 4.5.
 class TestInvalidFactParsing:
     """Test cases for invalid fact inputs that should raise validation errors."""
 
@@ -193,7 +211,7 @@ class TestInvalidFactParsing:
             parse_fact("pred(node):0.5,0.8]")
 
     def test_interval_lower_greater_than_upper(self):
-        """Test that interval with lower > upper raises an error or warning."""
+        """Test that interval with lower > upper raises an error."""
         with pytest.raises(ValueError):
             parse_fact("pred(node):[0.9,0.1]")
 
@@ -206,6 +224,11 @@ class TestInvalidFactParsing:
         """Test that interval values > 1 raise an error."""
         with pytest.raises(ValueError):
             parse_fact("pred(node):[0.5,1.5]")
+
+    def test_interval_out_of_range_greater_than_one_with_negation(self):
+        """Test that interval values > 1 for a negated predicate raises an error."""
+        with pytest.raises(ValueError):
+            parse_fact("~pred(node):[0.5,1.5]")
 
     def test_empty_component_in_edge(self):
         """Test that empty component in edge fact raises an error."""
@@ -227,15 +250,15 @@ class TestInvalidFactParsing:
         with pytest.raises(ValueError):
             parse_fact("pred(node1,node2,node3)")
 
-    def test_negation_with_explicit_bound(self):
-        """Test that negation with explicit bound raises an error (ambiguous)."""
+    def test_negation_with_invalid_bound(self):
+        """Test that negation with invalid bound raises an error."""
         with pytest.raises(ValueError):
-            parse_fact("~pred(node):True")
+            parse_fact("~pred(node):Undefined")
 
-    def test_negation_with_interval_bound(self):
-        """Test that negation with interval bound raises an error (ambiguous)."""
+    def test_negation_with_invalid_interval_bound(self):
+        """Test that negation with invalid bound raises an error."""
         with pytest.raises(ValueError):
-            parse_fact("~pred(node):[0.5,0.8]")
+            parse_fact("~pred(node):[ham, sandwitch]")
 
     def test_double_negation(self):
         """Test that double negation raises an error."""

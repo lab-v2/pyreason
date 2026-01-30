@@ -20,17 +20,24 @@ def parse_fact(fact_text):
         raise ValueError("Double negation is not allowed")
 
     # Separate into predicate-component and bound. If there is no bound it means it's true
+    negate_interval = False
     if ':' in f:
         parts = f.split(':')
         if len(parts) != 2:
             raise ValueError("Invalid fact format: expected at most one colon separator")
         pred_comp, bound = parts
 
-        # Check for negation with explicit bound (ambiguous)
+        # Check for negation with explicit bound 
         if pred_comp.startswith('~'):
-            raise ValueError("Cannot use negation (~) with explicit bound")
+            pred_comp = pred_comp[1:]
+            if bound.lower() == 'true':
+                bound = 'False'
+            elif bound.lower() == 'false':
+                bound = 'True'
+            else:
+                negate_interval = True
     else:
-        pred_comp = f
+        pred_comp = f   
         if pred_comp.startswith('~'):
             bound = 'False'
             pred_comp = pred_comp[1:]
@@ -109,10 +116,9 @@ def parse_fact(fact_text):
         fact_type = 'node'
 
     # Check if bound is a boolean or a list of floats
-    bound_lower = bound.lower()
-    if bound_lower == 'true':
+    if bound.lower() == 'true':
         bound = interval.closed(1, 1)
-    elif bound_lower == 'false':
+    elif bound.lower() == 'false':
         bound = interval.closed(0, 0)
     else:
         # Validate interval format
@@ -137,7 +143,6 @@ def parse_fact(fact_text):
             raise ValueError(f"Invalid interval values: {e}")
 
         lower, upper = bound_values
-
         # Validate bounds are in valid range [0, 1]
         if lower < 0 or lower > 1:
             raise ValueError(f"Interval lower bound {lower} is out of valid range [0, 1]")
@@ -148,6 +153,11 @@ def parse_fact(fact_text):
         if lower > upper:
             raise ValueError(f"Interval lower bound {lower} cannot be greater than upper bound {upper}")
 
-        bound = interval.closed(*bound_values)
+        # We calculate ~[l,u] = [1-u, 1-l]
+        # Round to eliminate floating point precision errors (e.g., 1 - 0.8 = 0.19999999...)
+        if negate_interval:
+            lower, upper = round(1 - upper, 10), round(1 - lower, 10)
+
+        bound = interval.closed(lower, upper)
 
     return pred, component, bound, fact_type
