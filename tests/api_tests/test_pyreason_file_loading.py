@@ -911,32 +911,6 @@ class TestAddFactInBulk:
         assert any("Invalid static value" in msg for msg in warning_messages), \
             "Expected warning about invalid static value"
 
-    def test_add_fact_in_bulk_empty_optional_fields(self, raise_errors=False):
-        """Test loading facts with empty optional fields."""
-        json_content = """[
-    {
-        "fact_text": "Viewed(Eve)"
-    },
-    {
-        "fact_text": "Viewed(Frank)",
-        "name": "frank-fact"
-    },
-    {
-        "fact_text": "Connected(A,B):[0.2,0.9]",
-        "start_time": 5,
-        "end_time": 10
-    }
-]"""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
-            tmp.write(json_content)
-            tmp_path = tmp.name
-
-        try:
-            pr.add_fact_in_bulk(tmp_path)
-        finally:
-            os.unlink(tmp_path)
-
     def test_add_fact_in_bulk_nonexistent_file(self):
         """Test add_fact_in_bulk() with nonexistent file."""
         with pytest.raises(FileNotFoundError):

@@ -37,7 +37,7 @@ def parse_fact(fact_text):
             else:
                 negate_interval = True
     else:
-        pred_comp = f   
+        pred_comp = f
         if pred_comp.startswith('~'):
             bound = 'False'
             pred_comp = pred_comp[1:]

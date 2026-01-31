@@ -57,10 +57,7 @@
     },
     {
         "fact_text": "Processed(Node1):[0.5,0.8]",
-        "name": "interval-node",
-        "start_time": 0,
-        "end_time": 10,
-        "static": false
+        "name": "interval-node"
     },
     {
         "fact_text": "Knows(Person1,Person2):[0.7,0.9]",

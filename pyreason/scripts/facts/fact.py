@@ -25,7 +25,7 @@ class Fact:
             - If omitted, defaults to True (1.0)
             - Boolean: `True` or `False` (case-insensitive)
             - Interval: `[lower,upper]` where both values are in range [0, 1]
-            - Negation: `~predicate(component)` (equivalent to False, cannot be combined with explicit bound)
+            - Negation: `~predicate(component)` 
 
             **Valid examples:**
             - `'viewed(Zach)'` - defaults to True
