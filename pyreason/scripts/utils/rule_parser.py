@@ -118,6 +118,8 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
             raise ValueError(f"Body clause '{clause_str}' must contain parentheses around variables")
 
         end_idx = clause_str.find(')')
+        if end_idx == -1:
+            raise ValueError(f"Body clause '{clause_str}' is missing closing parenthesis")
         pred_name = clause_str[:start_idx]
         _validate_predicate_name(pred_name, "Body")
         body_predicates.append(pred_name)
@@ -199,8 +201,32 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
 
     if weights is None:
         weights = np.ones(len(body_predicates), dtype=np.float64)
-    elif len(weights) != len(body_predicates):
-        raise ValueError(f'Number of weights {len(weights)} is not equal to number of clauses {len(body_predicates)}')
+    else:
+        # V13: Validate weights array
+        # Check if it's array-like
+        if not isinstance(weights, np.ndarray):
+            try:
+                weights = np.array(weights, dtype=np.float64)
+            except (ValueError, TypeError) as e:
+                raise TypeError(f"weights must be a numpy array or convertible to one, got {type(weights).__name__}")
+
+        # Check length matches number of clauses
+        if len(weights) != len(body_predicates):
+            raise ValueError(f'Number of weights {len(weights)} is not equal to number of clauses {len(body_predicates)}')
+
+        # Check all values are numeric and finite
+        if not np.issubdtype(weights.dtype, np.number):
+            raise TypeError(f"weights must contain numeric values, got dtype {weights.dtype}")
+
+        if not np.all(np.isfinite(weights)):
+            raise ValueError("weights must contain only finite values (no NaN or Inf)")
+
+        # Check all values are non-negative
+        if np.any(weights < 0):
+            raise ValueError("weights must be non-negative")
+
+        # Ensure correct dtype for numba compatibility
+        weights = weights.astype(np.float64)
 
     head_variables = numba.typed.List(head_variables)
 
@@ -346,7 +372,12 @@ def _parse_head(head):
     else:
         # If it looks like a bound (has brackets) but failed _is_bound, it's malformed
         if '[' in head_bound_str and ']' in head_bound_str:
-            _str_bound_to_bound(head_bound_str)
+            try:
+                _str_bound_to_bound(head_bound_str)
+            except ValueError as e:
+                raise ValueError(
+                    f"{e}. Note: Annotation function names cannot contain brackets '[' or ']'"
+                )
         target_bound = interval.closed(0, 1)
         ann_fn = head_bound_str
 
@@ -471,10 +502,10 @@ def _str_bound_to_bound(str_bound):
         raise ValueError(f"Bound upper value must be numeric, got '{upper_str}'")
 
     # V10: Values must be finite numbers
-    if math.isnan(lower) or math.isinf(lower):
-        raise ValueError(f"Bound lower value must be a finite number, got '{lower_str}'")
-    if math.isnan(upper) or math.isinf(upper):
-        raise ValueError(f"Bound upper value must be a finite number, got '{upper_str}'")
+    if math.isnan(lower):
+        raise ValueError(f"Bound lower value must be a number, got '{lower_str}'")
+    if math.isnan(upper):
+        raise ValueError(f"Bound upper value must be a number, got '{upper_str}'")
 
     # V10: Values must be in [0, 1]
     if lower < 0 or lower > 1:

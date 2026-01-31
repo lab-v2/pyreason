@@ -17,14 +17,15 @@ print("RULE PARSING EXAMPLES WITH ALL OPTIONAL PARAMETERS")
 print("=" * 80)
 
 # ==============================================================================
-# Example 1: Basic rule (no optional parameters)
+# Example 1: Rule with comparison operator (demonstrates two-predicate parsing)
 # ==============================================================================
-print("\n1. Basic Node Rule (no optional params)")
+print("\n1. Rule with comparison operator (two predicates)")
 rule1 = Rule(
-    rule_text="friend(X) <- person(X), nice(X)",
-    name="basic_rule"
+    rule_text="same_class(X, Y) <- c_id(X) == c_id(Y)",
+    name="comparison_rule"
 )
 print(f"   Created: {rule1.rule.get_rule_name()}")
+print(f"   Demonstrates: Line 132 extracts variables from both c_id(X) and c_id(Y)")
 
 # ==============================================================================
 # Example 2: Rule with infer_edges=True

@@ -3,6 +3,8 @@ import numpy as np
 from pyreason.scripts.utils.rule_parser import parse_rule
 from pyreason.scripts.threshold.threshold import Threshold
 
+#TODO: Add test with ~pred(comp):True win head or body or both
+#TODO: Add tests for rules with ground atoms in head
 
 # Tests in this class were partially generated with Claude Opus 4.5.
 class TestValidRuleParsing:
@@ -410,8 +412,74 @@ class TestInvalidRuleParsing:
     def test_weights_wrong_length(self):
         """Weights array with wrong length raises ValueError."""
         weights = np.array([0.5, 0.3, 0.2], dtype=np.float64)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Number of weights"):
             parse_rule("p(X) <- a(X), b(X)", "r", None, weights=weights)
+
+    def test_weights_not_array(self):
+        """Non-array weights that can't be converted raises TypeError."""
+        with pytest.raises(TypeError, match="numpy array"):
+            parse_rule("p(X) <- a(X), b(X)", "r", None, weights="invalid")
+
+    def test_weights_list_converted(self):
+        """List of weights is automatically converted to numpy array."""
+        weights = [0.5, 0.5]
+        r = parse_rule("p(X) <- a(X), b(X)", "r", None, weights=weights)
+        np.testing.assert_array_almost_equal(r.get_weights(), [0.5, 0.5])
+
+    def test_weights_non_numeric(self):
+        """Non-numeric weights raise TypeError."""
+        weights = np.array(['a', 'b'], dtype=object)
+        with pytest.raises(TypeError, match="numeric values"):
+            parse_rule("p(X) <- a(X), b(X)", "r", None, weights=weights)
+
+    def test_weights_nan(self):
+        """Weights containing NaN raise ValueError."""
+        weights = np.array([0.5, np.nan], dtype=np.float64)
+        with pytest.raises(ValueError, match="finite"):
+            parse_rule("p(X) <- a(X), b(X)", "r", None, weights=weights)
+
+    def test_weights_inf(self):
+        """Weights containing Inf raise ValueError."""
+        weights = np.array([0.5, np.inf], dtype=np.float64)
+        with pytest.raises(ValueError, match="finite"):
+            parse_rule("p(X) <- a(X), b(X)", "r", None, weights=weights)
+
+    def test_weights_negative(self):
+        """Negative weights raise ValueError."""
+        weights = np.array([0.5, -0.3], dtype=np.float64)
+        with pytest.raises(ValueError, match="non-negative"):
+            parse_rule("p(X) <- a(X), b(X)", "r", None, weights=weights)
+
+    def test_weights_zero_allowed(self):
+        """Zero weights are allowed."""
+        weights = np.array([0.0, 1.0], dtype=np.float64)
+        r = parse_rule("p(X) <- a(X), b(X)", "r", None, weights=weights)
+        np.testing.assert_array_almost_equal(r.get_weights(), [0.0, 1.0])
+
+    def test_weights_integer_converted(self):
+        """Integer weights are converted to float64."""
+        weights = np.array([1, 2, 3], dtype=np.int32)
+        r = parse_rule("p(X) <- a(X), b(X), c(X)", "r", None, weights=weights)
+        np.testing.assert_array_almost_equal(r.get_weights(), [1.0, 2.0, 3.0])
+        assert r.get_weights().dtype == np.float64
+
+    def test_weights_single_clause(self):
+        """Single weight for single clause."""
+        weights = np.array([0.7], dtype=np.float64)
+        r = parse_rule("p(X) <- a(X)", "r", None, weights=weights)
+        np.testing.assert_array_almost_equal(r.get_weights(), [0.7])
+
+    def test_weights_greater_than_one(self):
+        """Weights greater than 1.0 are allowed."""
+        weights = np.array([2.5, 3.0], dtype=np.float64)
+        r = parse_rule("p(X) <- a(X), b(X)", "r", None, weights=weights)
+        np.testing.assert_array_almost_equal(r.get_weights(), [2.5, 3.0])
+
+    def test_weights_not_summing_to_one(self):
+        """Weights that don't sum to 1.0 are allowed."""
+        weights = np.array([0.3, 0.4], dtype=np.float64)
+        r = parse_rule("p(X) <- a(X), b(X)", "r", None, weights=weights)
+        np.testing.assert_array_almost_equal(r.get_weights(), [0.3, 0.4])
 
     def test_malformed_forall(self):
         """Malformed forall expression (missing closing paren) raises ValueError."""

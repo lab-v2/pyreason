@@ -85,7 +85,7 @@ test-api: ## Run only API tests (tests/api_tests)
 
 test-jit: ## Run only JIT-disabled tests (tests/unit/disable_jit)
 	@echo "$(BOLD)$(BLUE)Running JIT-disabled tests...$(RESET)"
-	$(RUN_TESTS) --suite don_disable_jit
+	$(RUN_TESTS) --suite dont_disable_jit
 
 test-no-jit: ## Run only JIT-enabled tests (tests/unit/dont_disable_jit)
 	@echo "$(BOLD)$(BLUE)Running JIT-enabled tests...$(RESET)"
