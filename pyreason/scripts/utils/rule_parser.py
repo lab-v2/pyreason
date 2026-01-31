@@ -207,7 +207,7 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
         if not isinstance(weights, np.ndarray):
             try:
                 weights = np.array(weights, dtype=np.float64)
-            except (ValueError, TypeError) as e:
+            except (ValueError, TypeError):
                 raise TypeError(f"weights must be a numpy array or convertible to one, got {type(weights).__name__}")
 
         # Check length matches number of clauses

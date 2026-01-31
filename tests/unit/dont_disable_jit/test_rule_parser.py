@@ -584,22 +584,22 @@ class TestEdgeCasesAndBoundary:
 
     def test_bound_nan_head(self):
         """NaN in head bound raises ValueError."""
-        with pytest.raises(ValueError, match="finite"):
+        with pytest.raises(ValueError, match="number"):
             parse_rule("p(X):[nan,1.0] <- b(X)", "r", None)
 
     def test_bound_nan_body(self):
         """NaN in body bound raises ValueError."""
-        with pytest.raises(ValueError, match="finite"):
+        with pytest.raises(ValueError, match="number"):
             parse_rule("p(X) <- b(X):[0.5,nan]", "r", None)
 
     def test_bound_inf_head(self):
         """Inf in head bound raises ValueError."""
-        with pytest.raises(ValueError, match="finite"):
+        with pytest.raises(ValueError, match="range"):
             parse_rule("p(X):[inf,1.0] <- b(X)", "r", None)
 
     def test_bound_negative_inf_body(self):
         """Negative inf in body bound raises ValueError."""
-        with pytest.raises(ValueError, match="finite"):
+        with pytest.raises(ValueError, match="range"):
             parse_rule("p(X) <- b(X):[-inf,1.0]", "r", None)
 
     def test_head_predicate_starts_with_digit(self):
