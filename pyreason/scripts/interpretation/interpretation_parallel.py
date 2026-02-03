@@ -956,6 +956,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 					clause_label = clause[1]
 					clause_variables = clause[2]
 
+
 					if clause_type == 'node':
 						clause_var_1 = clause_variables[0]
 
@@ -1233,13 +1234,16 @@ def check_all_clause_satisfaction(interpretations_node, interpretations_edge, cl
 		clause_type = clause[0]
 		clause_label = clause[1]
 		clause_variables = clause[2]
+		clause_bnd = clause[3]
 
 		if clause_type == 'node':
 			clause_var_1 = clause_variables[0]
-			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, groundings[clause_var_1], groundings[clause_var_1], clause_label, thresholds[i]) and satisfaction
+			qualified_groundings = get_qualified_node_groundings(interpretations_node, groundings[clause_var_1], clause_label, clause_bnd)
+			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, groundings[clause_var_1], qualified_groundings, clause_label, thresholds[i]) and satisfaction
 		elif clause_type == 'edge':
 			clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
-			satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], groundings_edges[(clause_var_1, clause_var_2)], clause_label, thresholds[i]) and satisfaction
+			qualified_groundings = get_qualified_edge_groundings(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], clause_label, clause_bnd)
+			satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], qualified_groundings, clause_label, thresholds[i]) and satisfaction
 	return satisfaction
 
 
@@ -1310,6 +1314,7 @@ def check_node_grounding_threshold_satisfaction(interpretations_node, grounding,
 	# Available is all neighbors that have a particular label with bound inside [0,1]
 	elif threshold_quantifier_type == 'available':
 		neigh_len = len(get_qualified_node_groundings(interpretations_node, grounding, clause_label, interval.closed(0, 1)))
+
 
 	qualified_neigh_len = len(qualified_grounding)
 	satisfaction = _satisfies_threshold(neigh_len, qualified_neigh_len, threshold)
@@ -1535,8 +1540,10 @@ def _update_node(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 			if current_bnd != prev_t_bnd:
 				if convergence_mode=='delta_bound':
 					for i in updated_bnds:
-						lower_delta = abs(i.lower-prev_t_bnd.lower)
-						upper_delta = abs(i.upper-prev_t_bnd.upper)
+						# Use each bound's own previous values instead of L's previous
+						prev_i_bnd = interval.closed(i.prev_lower, i.prev_upper)
+						lower_delta = abs(i.lower - prev_i_bnd.lower)
+						upper_delta = abs(i.upper - prev_i_bnd.upper)
 						max_delta = max(lower_delta, upper_delta)
 						change = max(change, max_delta)
 				else:
@@ -1628,7 +1635,7 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 					world.world[p1].set_lower_upper(lower, upper)
 					world.world[p1].set_static(static)
 					ip_update_cnt += 1
-					updated_bnds.append(world.world[p2])
+					updated_bnds.append(world.world[p1])
 					if store_interpretation_changes:
 						rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, p1, interval.closed(lower, upper)))
 
@@ -1641,8 +1648,10 @@ def _update_edge(interpretations, predicate_map, comp, na, ipl, rule_trace, fp_c
 			if current_bnd != prev_t_bnd:
 				if convergence_mode=='delta_bound':
 					for i in updated_bnds:
-						lower_delta = abs(i.lower-prev_t_bnd.lower)
-						upper_delta = abs(i.upper-prev_t_bnd.upper)
+						# Use each bound's own previous values instead of L's previous
+						prev_i_bnd = interval.closed(i.prev_lower, i.prev_upper)
+						lower_delta = abs(i.lower - prev_i_bnd.lower)
+						upper_delta = abs(i.upper - prev_i_bnd.upper)
 						max_delta = max(lower_delta, upper_delta)
 						change = max(change, max_delta)
 				else:
