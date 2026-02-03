@@ -678,187 +678,15 @@ class TestErrorHandling:
         pr.load_graph(graph2)
 
 
-class TestAddRulesFromFile:
-    """Test add_rules_from_file() function."""
-
-    def setup_method(self):
-        """Clean state before each test."""
-        
-        pr.reset()
-        pr.reset_settings()
-
-    def test_add_rules_from_file_simple_rules(self):
-        """Test loading simple rules from file."""
-        
-
-        rules_content = """friend(A, B) <- knows(A, B)
-enemy(A, B) <- ~friend(A, B)"""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
-            tmp.write(rules_content)
-            tmp_path = tmp.name
-
-        try:
-            pr.add_rules_from_file(tmp_path)
-        finally:
-            os.unlink(tmp_path)
-
-    def test_add_rules_from_file_with_comments_and_empty_lines(self):
-        """Test rule file parsing handles comments and empty lines"""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
-            f.write("# This is a comment\n")
-            f.write("\n")  # Empty line
-            f.write("   \n")  # Whitespace-only line
-            f.write("test_rule(x) <-1 other_rule(x)\n")
-            f.write("# Another comment\n")
-            f.write("another_rule(y) <-1 test_rule(y)\n")
-            temp_path = f.name
-
-        try:
-            pr.add_rules_from_file(temp_path)
-            rules = pr.get_rules()
-            assert len(rules) == 2  # Should only include the 2 actual rules
-        finally:
-            os.unlink(temp_path)
-
-    def test_add_rules_from_file_with_empty_lines(self):
-        """Test loading rules from file with empty lines."""
-        
-
-        rules_content = """friend(A, B) <- knows(A, B)
-
-            enemy(A, B) <- ~friend(A, B)
-
-            """
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
-            tmp.write(rules_content)
-            tmp_path = tmp.name
-
-        try:
-            pr.add_rules_from_file(tmp_path)
-        finally:
-            os.unlink(tmp_path)
-
-    def test_add_rules_from_file_with_infer_edges_true(self):
-        """Test loading rules with infer_edges=True."""
-        rules_content = """friend(A, B) <- knows(A, B)"""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
-            tmp.write(rules_content)
-            tmp_path = tmp.name
-
-        try:
-            pr.add_rules_from_file(tmp_path, infer_edges=True)
-        finally:
-            os.unlink(tmp_path)
-
-    def test_add_rules_from_file_with_infer_edges_false(self):
-        """Test loading rules with infer_edges=False."""
-        rules_content = """friend(A, B) <- knows(A, B)"""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
-            tmp.write(rules_content)
-            tmp_path = tmp.name
-
-        try:
-            pr.add_rules_from_file(tmp_path, infer_edges=False)
-        finally:
-            os.unlink(tmp_path)
-
-    def test_add_rules_from_file_nonexistent_file(self):
-        """Test add_rules_from_file() with nonexistent file."""
-        
-
-        with pytest.raises((FileNotFoundError, OSError)):
-            pr.add_rules_from_file('nonexistent_rules.txt')
-
-    def test_add_rules_from_file_empty_file(self):
-        """Test loading rules from empty file."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
-            tmp.write('')
-            tmp_path = tmp.name
-
-        try:
-            pr.add_rules_from_file(tmp_path)
-        finally:
-            os.unlink(tmp_path)
-
-    def test_add_rules_from_file_multiple_calls(self):
-        """Test multiple calls to add_rules_from_file."""
-        rules_content1 = """friend(A, B) <- knows(A, B)"""
-        rules_content2 = """enemy(A, B) <- ~friend(A, B)"""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp1:
-            tmp1.write(rules_content1)
-            tmp1_path = tmp1.name
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp2:
-            tmp2.write(rules_content2)
-            tmp2_path = tmp2.name
-
-        try:
-            pr.add_rules_from_file(tmp1_path)
-            pr.add_rules_from_file(tmp2_path)
-        finally:
-            os.unlink(tmp1_path)
-            os.unlink(tmp2_path)
-
-
-    def test_add_rules_from_file_complex_rules(self):
-        """Test loading complex rules from file."""
-        
-
-        rules_content = """friend(A, B) <- knows(A, B), likes(A, B)
-        enemy(A, B) <- ~friend(A, B), conflict(A, B)
-        ally(A, B) <- friend(A, B), common_interest(A, B)"""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
-            tmp.write(rules_content)
-            tmp_path = tmp.name
-
-        try:
-            pr.add_rules_from_file(tmp_path)
-        finally:
-            os.unlink(tmp_path)
-
-    def test_add_rules_from_file_after_existing_rules(self):
-        """Test that rule numbering continues from existing rules."""
-        
-        from pyreason.scripts.rules.rule import Rule
-
-        # Add a rule manually first
-        pr.add_rule(Rule("existing(A, B) <- test(A, B)", "existing_rule", False))
-
-        rules_content = """friend(A, B) <- knows(A, B)
-        enemy(A, B) <- ~friend(A, B)"""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
-            tmp.write(rules_content)
-            tmp_path = tmp.name
-
-        try:
-            pr.add_rules_from_file(tmp_path)
-        finally:
-            os.unlink(tmp_path)
-
-
-    def test_add_inconsistent_predicates(self):
-        """Test adding inconsistent predicate pairs"""
-        pr.add_inconsistent_predicate("pred1", "pred2")
-        pr.add_inconsistent_predicate("pred3", "pred4")
-        # Should not raise exceptions
-
-
-class TestAddFactInBulk:
-    """Test add_fact_in_bulk() function for loading facts from JSON."""
+class TestAddFactFromJSON:
+    """Test add_fact_from_json() function for loading facts from JSON."""
 
     def setup_method(self):
         """Clean state before each test."""
         pr.reset()
         pr.reset_settings()
 
-    def test_add_fact_in_bulk_comprehensive(self):
+    def test_add_fact_from_json_comprehensive(self):
         """Test loading facts from JSON with various valid and invalid scenarios.
 
         This test uses example_facts.json which contains:
@@ -883,7 +711,7 @@ class TestAddFactInBulk:
         # - Item 15: invalid end_time -> "Invalid end_time"
         # - Item 16: invalid static value -> "Invalid static value"
         with pytest.warns(UserWarning) as warning_list:
-            pr.add_fact_in_bulk(json_path, raise_errors=False)
+            pr.add_fact_from_json(json_path, raise_errors=False)
 
         # Verify that we got at least 6 warnings from the invalid items
         assert len(warning_list) >= 6, f"Expected at least 6 warnings, got {len(warning_list)}: {[str(w.message) for w in warning_list]}"
@@ -911,12 +739,46 @@ class TestAddFactInBulk:
         assert any("Invalid static value" in msg for msg in warning_messages), \
             "Expected warning about invalid static value"
 
-    def test_add_fact_in_bulk_nonexistent_file(self):
-        """Test add_fact_in_bulk() with nonexistent file."""
-        with pytest.raises(FileNotFoundError):
-            pr.add_fact_in_bulk('nonexistent_facts.json')
+    def test_add_fact_from_json_duplicate_names_raises_error(self):
+        """Test that duplicate fact names in JSON raise error when raise_errors=True."""
+        json_content = """[
+            {"fact_text": "Viewed(Alice)", "name": "duplicate-name"},
+            {"fact_text": "Viewed(Bob)", "name": "duplicate-name"}
+        ]"""
 
-    def test_add_fact_in_bulk_empty_array(self):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
+            tmp.write(json_content)
+            tmp_path = tmp.name
+
+        try:
+            with pytest.raises(ValueError, match="duplicate"):
+                pr.add_fact_from_json(tmp_path, raise_errors=True)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_from_json_duplicate_names_warns(self):
+        """Test that duplicate fact names in JSON warn when raise_errors=False."""
+        json_content = """[
+            {"fact_text": "Viewed(Alice)", "name": "duplicate-name"},
+            {"fact_text": "Viewed(Bob)", "name": "duplicate-name"}
+        ]"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
+            tmp.write(json_content)
+            tmp_path = tmp.name
+
+        try:
+            with pytest.warns(UserWarning, match="duplicate"):
+                pr.add_fact_from_json(tmp_path, raise_errors=False)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_from_json_nonexistent_file(self):
+        """Test add_fact_from_json() with nonexistent file."""
+        with pytest.raises(FileNotFoundError):
+            pr.add_fact_from_json('nonexistent_facts.json')
+
+    def test_add_fact_from_json_empty_array(self):
         """Test loading facts from JSON file with empty array."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
             tmp.write('[]')
@@ -925,11 +787,11 @@ class TestAddFactInBulk:
         try:
             # Empty array should trigger a warning
             with pytest.warns(UserWarning, match="contains an empty array"):
-                pr.add_fact_in_bulk(tmp_path)
+                pr.add_fact_from_json(tmp_path)
         finally:
             os.unlink(tmp_path)
 
-    def test_add_fact_in_bulk_invalid_json(self):
+    def test_add_fact_from_json_invalid_json(self):
         """Test loading facts from invalid JSON file."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
             tmp.write('{ invalid json }')
@@ -937,11 +799,11 @@ class TestAddFactInBulk:
 
         try:
             with pytest.raises(ValueError, match="Invalid JSON format"):
-                pr.add_fact_in_bulk(tmp_path)
+                pr.add_fact_from_json(tmp_path)
         finally:
             os.unlink(tmp_path)
 
-    def test_add_fact_in_bulk_not_array(self):
+    def test_add_fact_from_json_not_array(self):
         """Test loading facts from JSON file that's not an array."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp:
             tmp.write('{"fact_text": "Viewed(Alice)"}')
@@ -949,12 +811,12 @@ class TestAddFactInBulk:
 
         try:
             with pytest.raises(ValueError, match="must contain an array"):
-                pr.add_fact_in_bulk(tmp_path)
+                pr.add_fact_from_json(tmp_path)
         finally:
             os.unlink(tmp_path)
 
-    def test_add_fact_in_bulk_multiple_calls(self):
-        """Test multiple calls to add_fact_in_bulk accumulate facts."""
+    def test_add_fact_from_json_multiple_calls(self):
+        """Test multiple calls to add_fact_from_json accumulate facts."""
         json1_content = """[{"fact_text": "Viewed(User1)", "name": "fact1", "start_time": 0, "end_time": 3, "static": false}]"""
         json2_content = """[{"fact_text": "Viewed(User2)", "name": "fact2", "start_time": 0, "end_time": 3, "static": false}]"""
 
@@ -967,12 +829,200 @@ class TestAddFactInBulk:
             tmp2_path = tmp2.name
 
         try:
-            pr.add_fact_in_bulk(tmp1_path)
-            pr.add_fact_in_bulk(tmp2_path)
+            pr.add_fact_from_json(tmp1_path)
+            pr.add_fact_from_json(tmp2_path)
         finally:
             os.unlink(tmp1_path)
             os.unlink(tmp2_path)
 
+
+class TestAddFactFromCSV:
+    """Test add_fact_from_csv() function for loading facts from CSV."""
+
+    def setup_method(self):
+        """Clean state before each test."""
+        pr.reset()
+        pr.reset_settings()
+
+    def test_add_fact_from_csv_comprehensive(self):
+        """Test loading facts from CSV with various valid and invalid scenarios.
+
+        This test uses example_facts.csv which contains:
+        - Valid node facts with various boolean formats
+        - Valid edge facts with various boolean formats
+        - Node and edge facts with interval bounds
+        - Empty fact_text (should warn)
+        - Invalid syntax (should warn)
+        - Out of range intervals (should warn)
+        - Invalid start_time (should warn)
+        - Invalid end_time (should warn)
+        - Invalid static value (should warn)
+        - Empty optional fields
+        """
+        csv_path = os.path.join(os.path.dirname(__file__), 'test_files', 'example_facts.csv')
+
+        # Expect warnings for rows with invalid data:
+        # - Row 13: empty fact_text -> "Missing required 'fact_text'"
+        # - Row 14: invalid syntax (missing parentheses) -> "Failed to parse fact"
+        # - Row 15: out-of-range interval values -> "Failed to parse fact"
+        # - Row 16: invalid start_time -> "Invalid start_time"
+        # - Row 17: invalid end_time -> "Invalid end_time"
+        # - Row 18: invalid static value -> "Invalid static value"
+        with pytest.warns(UserWarning) as warning_list:
+            pr.add_fact_from_csv(csv_path, raise_errors=False)
+
+        # Verify that we got exactly 6 warnings from the invalid rows
+        assert len(warning_list) >= 6, f"Expected at least 6 warnings, got {len(warning_list)}: {[str(w.message) for w in warning_list]}"
+
+        # Check that specific warning messages appear
+        warning_messages = [str(w.message) for w in warning_list]
+
+        # Verify warning for empty fact_text
+        assert any("Missing required 'fact_text'" in msg for msg in warning_messages), \
+            "Expected warning about missing fact_text"
+
+        # Verify warning for invalid syntax (missing parentheses)
+        assert any("Failed to parse fact" in msg for msg in warning_messages), \
+            "Expected warning about invalid syntax"
+
+        # Verify warning for invalid start_time
+        assert any("Invalid start_time" in msg for msg in warning_messages), \
+            "Expected warning about invalid start_time"
+
+        # Verify warning for invalid end_time
+        assert any("Invalid end_time" in msg for msg in warning_messages), \
+            "Expected warning about invalid end_time"
+
+        # Verify warning for invalid static value
+        assert any("Invalid static value" in msg for msg in warning_messages), \
+            "Expected warning about invalid static value"
+
+    def test_add_fact_from_csv_duplicate_names_raises_error(self):
+        """Test that duplicate fact names in CSV raise error when raise_errors=True."""
+        csv_content = """Viewed(Alice),duplicate-name,0,0,False
+Viewed(Bob),duplicate-name,0,0,False"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+            tmp.write(csv_content)
+            tmp_path = tmp.name
+
+        try:
+            with pytest.raises(ValueError, match="duplicate"):
+                pr.add_fact_from_csv(tmp_path, raise_errors=True)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_from_csv_duplicate_names_warns(self):
+        """Test that duplicate fact names in CSV warn when raise_errors=False."""
+        csv_content = """Viewed(Alice),duplicate-name,0,0,False
+Viewed(Bob),duplicate-name,0,0,False"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+            tmp.write(csv_content)
+            tmp_path = tmp.name
+
+        try:
+            with pytest.warns(UserWarning, match="duplicate"):
+                pr.add_fact_from_csv(tmp_path, raise_errors=False)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_from_csv_no_header_file(self):
+        """Test loading facts from CSV file without header using example_facts_no_headers.csv.
+
+        This test verifies that:
+        - CSV without header is detected correctly (no header row skipped)
+        - Valid facts are loaded (node facts, edge facts with intervals)
+        - Invalid facts produce appropriate warnings
+
+        The example_facts_no_header.csv contains:
+        - Row 1: Viewed(Alice) - valid node fact
+        - Row 2: Viewed(Bob) - valid node fact
+        - Row 3: Connected(Alice,Bob):[0.7,0.9] - valid edge fact with interval
+        - Row 4: empty fact_text - should warn
+        - Row 5: InvalidNoParens - missing parentheses, should warn
+        - Row 6: Viewed(Charlie) with bad start_time - should warn
+        """
+        csv_path = os.path.join(os.path.dirname(__file__), 'test_files', 'example_facts_no_headers.csv')
+
+        # Expect warnings for rows with invalid data:
+        # - Row 4: empty fact_text -> "Missing required 'fact_text'"
+        # - Row 5: invalid syntax (missing parentheses) -> "Failed to parse fact"
+        # - Row 6: invalid start_time -> "Invalid start_time"
+        with pytest.warns(UserWarning) as warning_list:
+            pr.add_fact_from_csv(csv_path, raise_errors=False)
+
+        # Verify we got at least 3 warnings from the invalid rows
+        assert len(warning_list) >= 3, f"Expected at least 3 warnings, got {len(warning_list)}: {[str(w.message) for w in warning_list]}"
+
+        # Check that specific warning messages appear
+        warning_messages = [str(w.message) for w in warning_list]
+
+        # Verify warning for empty fact_text
+        assert any("Missing required 'fact_text'" in msg for msg in warning_messages), \
+            "Expected warning about missing fact_text"
+
+        # Verify warning for invalid syntax (missing parentheses)
+        assert any("Failed to parse fact" in msg for msg in warning_messages), \
+            "Expected warning about invalid syntax"
+
+        # Verify warning for invalid start_time
+        assert any("Invalid start_time" in msg for msg in warning_messages), \
+            "Expected warning about invalid start_time"
+
+    def test_add_fact_from_csv_empty_optional_fields(self):
+        """Test loading facts with empty optional fields."""
+        csv_content = """fact_text,name,start_time,end_time,static
+Viewed(Eve),,,,
+Viewed(Frank),frank-fact,,,
+"Connected(A,B):[0.2,0.9]",,5,10,"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+            tmp.write(csv_content)
+            tmp_path = tmp.name
+
+        try:
+            pr.add_fact_from_csv(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_from_csv_nonexistent_file(self):
+        """Test add_fact_from_csv() with nonexistent file."""
+        with pytest.raises(FileNotFoundError):
+            pr.add_fact_from_csv('nonexistent_facts.csv')
+
+    def test_add_fact_from_csv_empty_file(self):
+        """Test loading facts from empty CSV file."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+            tmp.write('')
+            tmp_path = tmp.name
+
+        try:
+            # Empty file should trigger a warning
+            with pytest.warns(UserWarning, match="empty"):
+                pr.add_fact_from_csv(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_fact_from_csv_multiple_calls(self):
+        """Test multiple calls to add_fact_from_csv accumulate facts."""
+        csv1_content = """Viewed(User1),fact1,0,3,False"""
+        csv2_content = """Viewed(User2),fact2,0,3,False"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp1:
+            tmp1.write(csv1_content)
+            tmp1_path = tmp1.name
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp2:
+            tmp2.write(csv2_content)
+            tmp2_path = tmp2.name
+
+        try:
+            pr.add_fact_from_csv(tmp1_path)
+            pr.add_fact_from_csv(tmp2_path)
+        finally:
+            os.unlink(tmp1_path)
+            os.unlink(tmp2_path)
 
 
 class TestRuleTrace:

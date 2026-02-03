@@ -460,6 +460,7 @@ __graph: Optional[nx.DiGraph] = None
 __rules: Optional[numba.typed.List] = None
 __clause_maps: Optional[dict] = None
 __node_facts: Optional[numba.typed.List] = None
+__node_facts_name_set = set() # We want to warn the user if they add multiple facts with the same name
 __edge_facts: Optional[numba.typed.List] = None
 __ipl: Optional[numba.typed.List] = None
 __specific_node_labels: Optional[numba.typed.List] = None
@@ -484,11 +485,12 @@ def reset():
     """Resets certain variables to None to be able to do pr.reason() multiple times in a program
     without memory blowing up
     """
-    global __node_facts, __edge_facts, __graph
+    global __node_facts, __edge_facts, __graph, __node_facts_name_set
 
     # Facts
     __node_facts = None
     __edge_facts = None
+    __node_facts_name_set.clear()
     if __program is not None:
         __program.reset_facts()
 
@@ -624,6 +626,69 @@ def add_rules_from_file(file_path: str, infer_edges: bool = False) -> None:
         add_rule(Rule(r, f'rule_{i+rule_offset}', infer_edges))
 
 
+def _parse_and_validate_fact_params(idx, name_raw, start_time_raw, end_time_raw, static_raw, raise_errors, item_label="Item"):
+    """Private helper to parse and validate fact parameters.
+
+    :param idx: Index of the item being parsed (for error messages)
+    :param name_raw: Raw name value (can be None, str, or other types)
+    :param start_time_raw: Raw start_time value
+    :param end_time_raw: Raw end_time value
+    :param static_raw: Raw static value
+    :param raise_errors: Whether to raise errors or just warn
+    :param item_label: Label for error messages (e.g., "Item", "Row")
+    :return: Tuple of (name, start_time, end_time, static) or None if validation fails
+    :raises ValueError: If validation fails and raise_errors is True
+    """
+    # Parse name
+    name = None
+    if name_raw is not None:
+        name = str(name_raw).strip() if str(name_raw).strip() else None
+
+    # Parse start_time
+    try:
+        start_time = int(start_time_raw) if start_time_raw is not None and str(start_time_raw).strip() else 0
+    except (ValueError, TypeError, AttributeError):
+        if raise_errors:
+            raise ValueError(f"{item_label} {idx}: Invalid start_time '{start_time_raw}'")
+        warnings.warn(f"{item_label} {idx}: Invalid start_time '{start_time_raw}', using default value")
+        start_time = 0
+
+    # Parse end_time
+    try:
+        end_time = int(end_time_raw) if end_time_raw is not None and str(end_time_raw).strip() else 0
+    except (ValueError, TypeError, AttributeError):
+        if raise_errors:
+            raise ValueError(f"{item_label} {idx}: Invalid end_time '{end_time_raw}'")
+        warnings.warn(f"{item_label} {idx}: Invalid end_time '{end_time_raw}', using default value")
+        end_time = 0
+
+    # Parse static as boolean
+    static = False
+    if static_raw is not None:
+        if isinstance(static_raw, bool):
+            static = static_raw
+        elif isinstance(static_raw, str):
+            static_str = static_raw.strip().lower()
+            if static_str in ('true', '1', 'yes', 't', 'y'):
+                static = True
+            elif static_str in ('false', '0', 'no', 'f', 'n', ''):
+                static = False
+            else:
+                if raise_errors:
+                    raise ValueError(f"{item_label} {idx}: Invalid static value '{static_raw}'")
+                warnings.warn(f"{item_label} {idx}: Invalid static value '{static_raw}', using default value")
+                static = False
+        elif isinstance(static_raw, (int, float)):
+            static = bool(static_raw)
+        else:
+            if raise_errors:
+                raise ValueError(f"{item_label} {idx}: Invalid static value type '{type(static_raw).__name__}'")
+            warnings.warn(f"{item_label} {idx}: Invalid static value type '{type(static_raw).__name__}', using default value")
+            static = False
+
+    return name, start_time, end_time, static
+
+
 def add_fact(pyreason_fact: Fact) -> None:
     """Add a PyReason fact to the program.
 
@@ -640,16 +705,26 @@ def add_fact(pyreason_fact: Fact) -> None:
     if pyreason_fact.type == 'node':
         if pyreason_fact.name is None:
             pyreason_fact.name = f'fact_{len(__node_facts)+len(__edge_facts)}'
+
+        if pyreason_fact.name in __node_facts_name_set:
+            warnings.warn(f"Fact {pyreason_fact.name} has already been added. Duplicate fact names will lead to an ambiguous node and atom traces.")
+
         f = fact_node.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.pred, pyreason_fact.bound, pyreason_fact.start_time, pyreason_fact.end_time, pyreason_fact.static)
+        __node_facts_name_set.add(pyreason_fact.name)
         __node_facts.append(f)
     else:
         if pyreason_fact.name is None:
             pyreason_fact.name = f'fact_{len(__node_facts)+len(__edge_facts)}'
+
+        if pyreason_fact.name in __node_facts_name_set:
+            warnings.warn(f"Fact {pyreason_fact.name} has already been added. Duplicate fact names will lead to an ambiguous node and atom traces.")
+
         f = fact_edge.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.pred, pyreason_fact.bound, pyreason_fact.start_time, pyreason_fact.end_time, pyreason_fact.static)
+        __node_facts_name_set.add(pyreason_fact.name)
         __edge_facts.append(f)
 
 
-def add_fact_in_bulk(json_path: str, raise_errors = True) -> None:
+def add_fact_from_json(json_path: str, raise_errors = True) -> None:
     """Load multiple facts from a JSON file.
 
     The JSON should be an array of objects, where each object represents a Fact with these fields:
@@ -710,6 +785,7 @@ def add_fact_in_bulk(json_path: str, raise_errors = True) -> None:
     # Track loaded facts for reporting
     loaded_count = 0
     error_count = 0
+    loaded_name_set = set()
 
     # Process each fact object
     for idx, fact_obj in enumerate(data):
@@ -732,53 +808,26 @@ def add_fact_in_bulk(json_path: str, raise_errors = True) -> None:
 
             fact_text = str(fact_text).strip()
 
-            # Extract optional parameters with defaults
-            name = fact_obj.get('name')
-            if name is not None:
-                name = str(name).strip() if str(name).strip() else None
+            # Parse and validate parameters using shared helper
+            name, start_time, end_time, static = _parse_and_validate_fact_params(
+                idx,
+                fact_obj.get('name'),
+                fact_obj.get('start_time', 0),
+                fact_obj.get('end_time', 0),
+                fact_obj.get('static', False),
+                raise_errors,
+                "Item"
+            )
 
-            # Parse start_time
-            try:
-                start_time = fact_obj.get('start_time', 0)
-                start_time = int(start_time) if start_time is not None else 0
-            except (ValueError, TypeError):
+            # Check for duplicate names
+            if name and name in loaded_name_set:
                 if raise_errors:
-                    raise ValueError(f"Item {idx}: Invalid start_time '{fact_obj.get('start_time')}'") from None
-                warnings.warn(f"Item {idx}: Invalid start_time '{fact_obj.get('start_time')}', using default value")
-                start_time = 0
-
-            # Parse end_time
-            try:
-                end_time = fact_obj.get('end_time', 0)
-                end_time = int(end_time) if end_time is not None else 0
-            except (ValueError, TypeError):
-                if raise_errors:
-                    raise ValueError(f"Item {idx}: Invalid end_time '{fact_obj.get('end_time')}'") from None
-                warnings.warn(f"Item {idx}: Invalid end_time '{fact_obj.get('end_time')}', using default value")
-                end_time = 0
-
-            # Parse static as boolean
-            static = fact_obj.get('static', False)
-            if isinstance(static, bool):
-                pass  # Already a boolean
-            elif isinstance(static, str):
-                static_str = static.strip().lower()
-                if static_str in ('true', '1', 'yes', 't', 'y'):
-                    static = True
-                elif static_str in ('false', '0', 'no', 'f', 'n'):
-                    static = False
-                else:
-                    if raise_errors:
-                        raise ValueError(f"Item {idx}: Invalid static value '{static}'")
-                    warnings.warn(f"Item {idx}: Invalid static value '{static}', using default value")
-                    static = False
-            elif isinstance(static, (int, float)):
-                static = bool(static)
-            else:
-                if raise_errors:
-                    raise ValueError(f"Item {idx}: Invalid static value type '{type(static).__name__}'")
-                warnings.warn(f"Item {idx}: Invalid static value type '{type(static).__name__}', using default value")
-                static = False
+                    raise ValueError(f"Item {idx}: Loaded name '{name}' is a duplicate - all fact names must be unique.")
+                warnings.warn(f"Item {idx}: Loaded name '{name}' is a duplicate - all fact names must be unique.")
+                error_count += 1
+                continue
+            if name:
+                loaded_name_set.add(name)
 
             # Create and add the fact
             fact = Fact(fact_text=fact_text, name=name, start_time=start_time, end_time=end_time, static=static)
@@ -800,6 +849,120 @@ def add_fact_in_bulk(json_path: str, raise_errors = True) -> None:
     print(f"Loaded {loaded_count} facts from {json_path}")
     if error_count > 0:
         print(f"Failed to load {error_count} facts due to errors")
+
+def add_fact_from_csv(csv_path: str, raise_errors = True) -> None:
+    """Load multiple facts from a CSV file.
+
+    The CSV should have columns representing Fact attributes in this order:
+    - fact_text (required): The fact in text format, e.g., 'pred(x,y) : [0.2, 1]' or 'pred(x) : True'
+    - name (optional): The name of the fact (can be empty)
+    - start_time (optional): The timestep at which this fact becomes active (default: 0)
+    - end_time (optional): The last timestep this fact is active (default: 0)
+    - static (optional): Whether the fact is static for the entire program (default: False)
+
+    The CSV may optionally include a header row. The function will detect common header names
+    like 'fact_text', 'name', 'start_time', 'end_time', 'static' and skip the header if found.
+
+    Example CSV format:
+    ```
+    fact_text,name,start_time,end_time,static
+    Viewed(Zach),seen-fact-zach,0,3,False
+    Viewed(Justin),seen-fact-justin,0,3,False
+    Viewed(Michelle),,1,3,
+    ```
+
+    :param csv_path: Path to the CSV file containing facts
+    :type csv_path: str
+    :return: None
+    :raises FileNotFoundError: If the CSV file doesn't exist
+    :raises ValueError: If fact parsing fails or CSV format is invalid
+    """
+    try:
+        # Read CSV file - don't assume there's a header
+        df = pd.read_csv(csv_path, header=None, dtype=str, keep_default_na=False)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"CSV file not found: {csv_path}")
+    except pd.errors.EmptyDataError:
+        # Handle completely empty files
+        warnings.warn(f"CSV file {csv_path} is empty, no facts loaded")
+        return
+    except Exception as e:
+        raise ValueError(f"Error reading CSV file {csv_path}: {e}")
+
+    if df.empty:
+        warnings.warn(f"CSV file {csv_path} is empty, no facts loaded")
+        return
+
+    # Detect if first row is a header by checking if first column matches a variable name and doesn't have parenthesis like a fact-text should
+    first_row = df.iloc[0] if len(df) > 0 else pd.Series()
+    first_col_val = str(first_row[0]).lower().strip() if len(first_row) > 0 else ''
+    header_keywords = {'fact_text', 'fact'}
+    # It's a header if: the first column is a header keyword AND doesn't look like a valid fact
+    has_header = first_col_val in header_keywords and '(' not in first_col_val
+
+    # Skip first row if it's a header
+    start_idx = 1 if has_header else 0
+
+    # Track loaded facts for reporting
+    loaded_count = 0
+    error_count = 0
+    loaded_name_set = set()
+
+    # Process each row
+    for idx, row in df.iloc[start_idx:].iterrows():
+        try:
+            # Extract fact_text (required, column 0)
+            if len(row) < 1 or not str(row[0]).strip():
+                if raise_errors:
+                    raise ValueError(f"Row {idx + 1}: Missing required 'fact_text'")
+                warnings.warn(f"Row {idx + 1}: Missing required 'fact_text', skipping row")
+                error_count += 1
+                continue
+
+            fact_text = str(row[0]).strip()
+
+            # Parse and validate parameters using shared helper
+            name, start_time, end_time, static = _parse_and_validate_fact_params(
+                idx + 1,
+                row[1] if len(row) > 1 else None,
+                row[2] if len(row) > 2 else None,
+                row[3] if len(row) > 3 else None,
+                row[4] if len(row) > 4 else None,
+                raise_errors,
+                "Row"
+            )
+
+            # Check for duplicate names
+            if name and name in loaded_name_set:
+                if raise_errors:
+                    raise ValueError(f"Row {idx + 1}: Loaded name '{name}' is a duplicate - all fact names must be unique.")
+                warnings.warn(f"Row {idx + 1}: Loaded name '{name}' is a duplicate - all fact names must be unique.")
+                error_count += 1
+                continue
+            if name:
+                loaded_name_set.add(name)
+
+            # Create and add the fact
+            fact = Fact(fact_text=fact_text, name=name, start_time=start_time, end_time=end_time, static=static)
+            add_fact(fact)
+            loaded_count += 1
+
+        except ValueError as e:
+            if raise_errors:
+                raise ValueError(f"Row {idx + 1}: Failed to parse fact - {e}") from e
+            error_count += 1
+            warnings.warn(f"Row {idx + 1}: Failed to parse fact - {e}")
+        except Exception as e:
+            if raise_errors:
+                raise Exception(f"Row {idx + 1}: Unexpected error - {e}") from e
+            error_count += 1
+            warnings.warn(f"Row {idx + 1}: Unexpected error - {e}")
+
+    # Report results
+    if settings.verbose:
+        print(f"Loaded {loaded_count} facts from {csv_path}")
+        if error_count > 0:
+            print(f"Failed to load {error_count} facts due to errors")
 
 
 def add_annotation_function(function: Callable) -> None:
