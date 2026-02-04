@@ -853,26 +853,36 @@ def add_fact_from_json(json_path: str, raise_errors = True) -> None:
 def add_fact_from_csv(csv_path: str, raise_errors = True) -> None:
     """Load multiple facts from a CSV file.
 
-    The CSV should have columns representing Fact attributes in this order:
-    - fact_text (required): The fact in text format, e.g., 'pred(x,y) : [0.2, 1]' or 'pred(x) : True'
-    - name (optional): The name of the fact (can be empty)
-    - start_time (optional): The timestep at which this fact becomes active (default: 0)
-    - end_time (optional): The last timestep this fact is active (default: 0)
-    - static (optional): Whether the fact is static for the entire program (default: False)
+    Each row should have up to 5 comma-separated values in this order:
+    ``fact_text, name, start_time, end_time, static``
 
-    The CSV may optionally include a header row. The function will detect common header names
-    like 'fact_text', 'name', 'start_time', 'end_time', 'static' and skip the header if found.
+    - **fact_text** (required): The fact in text format, e.g., ``Viewed(Zach)`` or ``"HaveAccess(Zach,TextMessage)"``
+      or ``"Processed(Node1):[0.5,0.8]"`` for interval bounds.
+    - **name** (optional): A unique name for the fact (can be empty).
+    - **start_time** (optional): The timestep at which this fact becomes active (default: 0).
+    - **end_time** (optional): The last timestep this fact is active (default: 0).
+    - **static** (optional): Whether the fact is static for the entire program (default: False).
+      Accepts: True/False, 1/0, yes/no (case-insensitive).
 
-    Example CSV format:
-    ```
-    fact_text,name,start_time,end_time,static
-    Viewed(Zach),seen-fact-zach,0,3,False
-    Viewed(Justin),seen-fact-justin,0,3,False
-    Viewed(Michelle),,1,3,
-    ```
+    A header row is optional. If included, it must be exactly::
+
+        fact_text,name,start_time,end_time,static
+
+    Any other header format will be treated as a data row and will likely raise a parsing error.
+
+    Example CSV::
+
+        fact_text,name,start_time,end_time,static
+        Viewed(Zach),seen-fact-zach,0,3,False
+        Viewed(Justin),seen-fact-justin,0,3,true
+        "HaveAccess(Zach,TextMessage)",access-zach,0,5,True
+        "Processed(Node1):[0.5,0.8]",interval-node,0,10,False
+        Viewed(Eve),,,,
 
     :param csv_path: Path to the CSV file containing facts
     :type csv_path: str
+    :param raise_errors: If True, raise on invalid rows. If False, warn and skip them.
+    :type raise_errors: bool
     :return: None
     :raises FileNotFoundError: If the CSV file doesn't exist
     :raises ValueError: If fact parsing fails or CSV format is invalid
@@ -893,14 +903,10 @@ def add_fact_from_csv(csv_path: str, raise_errors = True) -> None:
         warnings.warn(f"CSV file {csv_path} is empty, no facts loaded")
         return
 
-    # Detect if first row is a header by checking if first column matches a variable name and doesn't have parenthesis like a fact-text should
-    first_row = df.iloc[0] if len(df) > 0 else pd.Series()
-    first_col_val = str(first_row[0]).lower().strip() if len(first_row) > 0 else ''
-    header_keywords = {'fact_text', 'fact'}
-    # It's a header if: the first column is a header keyword AND doesn't look like a valid fact
-    has_header = first_col_val in header_keywords and '(' not in first_col_val
-
-    # Skip first row if it's a header
+    # Skip first row if it exactly matches the expected header
+    expected_header = ['fact_text', 'name', 'start_time', 'end_time', 'static']
+    first_row = [str(v).strip() for v in df.iloc[0]] if len(df) > 0 else []
+    has_header = first_row == expected_header
     start_idx = 1 if has_header else 0
 
     # Track loaded facts for reporting
