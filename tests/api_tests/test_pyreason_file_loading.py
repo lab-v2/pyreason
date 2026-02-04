@@ -1147,3 +1147,174 @@ class TestRuleTrace:
         # (exact columns depend on implementation, but they should be valid DataFrames)
         assert hasattr(node_trace, 'columns')
         assert hasattr(edge_trace, 'columns')
+
+class TestAddRulesFromFile:
+    """Test add_rules_from_file() function."""
+
+    def setup_method(self):
+        """Clean state before each test."""
+        
+        pr.reset()
+        pr.reset_settings()
+
+    def test_add_rules_from_file_simple_rules(self):
+        """Test loading simple rules from file."""
+        
+
+        rules_content = """friend(A, B) <- knows(A, B)
+enemy(A, B) <- ~friend(A, B)"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
+            tmp.write(rules_content)
+            tmp_path = tmp.name
+
+        try:
+            pr.add_rules_from_file(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_rules_from_file_with_comments_and_empty_lines(self):
+        """Test rule file parsing handles comments and empty lines"""
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
+            f.write("# This is a comment\n")
+            f.write("\n")  # Empty line
+            f.write("   \n")  # Whitespace-only line
+            f.write("test_rule(x) <-1 other_rule(x)\n")
+            f.write("# Another comment\n")
+            f.write("another_rule(y) <-1 test_rule(y)\n")
+            temp_path = f.name
+
+        try:
+            pr.add_rules_from_file(temp_path)
+            rules = pr.get_rules()
+            assert len(rules) == 2  # Should only include the 2 actual rules
+        finally:
+            os.unlink(temp_path)
+
+    def test_add_rules_from_file_with_empty_lines(self):
+        """Test loading rules from file with empty lines."""
+        
+
+        rules_content = """friend(A, B) <- knows(A, B)
+
+            enemy(A, B) <- ~friend(A, B)
+
+            """
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
+            tmp.write(rules_content)
+            tmp_path = tmp.name
+
+        try:
+            pr.add_rules_from_file(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_rules_from_file_with_infer_edges_true(self):
+        """Test loading rules with infer_edges=True."""
+        rules_content = """friend(A, B) <- knows(A, B)"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
+            tmp.write(rules_content)
+            tmp_path = tmp.name
+
+        try:
+            pr.add_rules_from_file(tmp_path, infer_edges=True)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_rules_from_file_with_infer_edges_false(self):
+        """Test loading rules with infer_edges=False."""
+        rules_content = """friend(A, B) <- knows(A, B)"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
+            tmp.write(rules_content)
+            tmp_path = tmp.name
+
+        try:
+            pr.add_rules_from_file(tmp_path, infer_edges=False)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_rules_from_file_nonexistent_file(self):
+        """Test add_rules_from_file() with nonexistent file."""
+        
+
+        with pytest.raises((FileNotFoundError, OSError)):
+            pr.add_rules_from_file('nonexistent_rules.txt')
+
+    def test_add_rules_from_file_empty_file(self):
+        """Test loading rules from empty file."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
+            tmp.write('')
+            tmp_path = tmp.name
+
+        try:
+            pr.add_rules_from_file(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_rules_from_file_multiple_calls(self):
+        """Test multiple calls to add_rules_from_file."""
+        rules_content1 = """friend(A, B) <- knows(A, B)"""
+        rules_content2 = """enemy(A, B) <- ~friend(A, B)"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp1:
+            tmp1.write(rules_content1)
+            tmp1_path = tmp1.name
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp2:
+            tmp2.write(rules_content2)
+            tmp2_path = tmp2.name
+
+        try:
+            pr.add_rules_from_file(tmp1_path)
+            pr.add_rules_from_file(tmp2_path)
+        finally:
+            os.unlink(tmp1_path)
+            os.unlink(tmp2_path)
+
+
+    def test_add_rules_from_file_complex_rules(self):
+        """Test loading complex rules from file."""
+        
+
+        rules_content = """friend(A, B) <- knows(A, B), likes(A, B)
+        enemy(A, B) <- ~friend(A, B), conflict(A, B)
+        ally(A, B) <- friend(A, B), common_interest(A, B)"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
+            tmp.write(rules_content)
+            tmp_path = tmp.name
+
+        try:
+            pr.add_rules_from_file(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_add_rules_from_file_after_existing_rules(self):
+        """Test that rule numbering continues from existing rules."""
+        
+        from pyreason.scripts.rules.rule import Rule
+
+        # Add a rule manually first
+        pr.add_rule(Rule("existing(A, B) <- test(A, B)", "existing_rule", False))
+
+        rules_content = """friend(A, B) <- knows(A, B)
+        enemy(A, B) <- ~friend(A, B)"""
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tmp:
+            tmp.write(rules_content)
+            tmp_path = tmp.name
+
+        try:
+            pr.add_rules_from_file(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+
+    def test_add_inconsistent_predicates(self):
+        """Test adding inconsistent predicate pairs"""
+        pr.add_inconsistent_predicate("pred1", "pred2")
+        pr.add_inconsistent_predicate("pred3", "pred4")
+        # Should not raise exceptions
