@@ -14,7 +14,7 @@ An explainable inference software supporting annotated, real valued, graph based
 
 [📽️ Video](https://www.youtube.com/watch?v=E1PSl3KQCmo)
 
-[🌐 Website](https://pyreason-staging.sites.syr.edu)
+[🌐 Website](https://pyreason.syracuse.edu/)
 
 [🏋️‍♂️ PyReason Gym](https://github.com/lab-v2/pyreason-gym)
 
@@ -64,7 +64,7 @@ Trademark Permission PyReason™ and PyReason Design Logo <img src="https://raw.
 
 
 ## 6. Contact
-Dyuman Aditya - daditya@syr.edu
+Colton Payne - crpayne@syr.edu
 
 Kaustuv Mukherji - kmukherj@syr.edu
 
