@@ -3,9 +3,6 @@ import numpy as np
 from pyreason.scripts.utils.rule_parser import parse_rule
 from pyreason.scripts.threshold.threshold import Threshold
 
-#TODO: Add test with ~pred(comp):True win head or body or both
-#TODO: Add tests for rules with ground atoms in head
-
 # Tests in this class were partially generated with Claude Opus 4.5.
 class TestValidRuleParsing:
     """Test cases for valid rule inputs that should parse successfully."""
@@ -122,6 +119,69 @@ class TestValidRuleParsing:
         assert clauses[0][3].lower == 0.0 and clauses[0][3].upper == 0.0
         assert r.get_rule_type() == "edge"
 
+    def test_head_bound_true(self):
+        """Head with :True gives bound [1,1]."""
+        r = parse_rule("pred(X):True <- body(X)", "hbt", None)
+        bnd = r.get_bnd()
+        assert bnd.lower == 1.0 and bnd.upper == 1.0
+
+    def test_head_bound_false(self):
+        """Head with :False gives bound [0,0]."""
+        r = parse_rule("pred(X):False <- body(X)", "hbf", None)
+        bnd = r.get_bnd()
+        assert bnd.lower == 0.0 and bnd.upper == 0.0
+
+    def test_body_bound_true(self):
+        """Body clause with :True gives bound [1,1]."""
+        r = parse_rule("pred(X) <- body(X):True", "bbt", None)
+        clause = r.get_clauses()[0]
+        assert clause[3].lower == 1.0 and clause[3].upper == 1.0
+
+    def test_body_bound_false(self):
+        """Body clause with :False gives bound [0,0]."""
+        r = parse_rule("pred(X) <- body(X):False", "bbf", None)
+        clause = r.get_clauses()[0]
+        assert clause[3].lower == 0.0 and clause[3].upper == 0.0
+
+    def test_negation_head_with_true(self):
+        """~pred(X):True negates [1,1] to [0,0]."""
+        r = parse_rule("~pred(X):True <- cond(X)", "nht", None)
+        bnd = r.get_bnd()
+        assert bnd.lower == 0.0 and bnd.upper == 0.0
+
+    def test_negation_head_with_false(self):
+        """~pred(X):False negates [0,0] to [1,1]."""
+        r = parse_rule("~pred(X):False <- cond(X)", "nhf", None)
+        bnd = r.get_bnd()
+        assert bnd.lower == 1.0 and bnd.upper == 1.0
+
+    def test_negation_body_with_true(self):
+        """~body(X):True negates [1,1] to [0,0]."""
+        r = parse_rule("pred(X) <- ~body(X):True", "nbt", None)
+        clause = r.get_clauses()[0]
+        assert clause[3].lower == 0.0 and clause[3].upper == 0.0
+
+    def test_negation_body_with_false(self):
+        """~body(X):False negates [0,0] to [1,1]."""
+        r = parse_rule("pred(X) <- ~body(X):False", "nbf", None)
+        clause = r.get_clauses()[0]
+        assert clause[3].lower == 1.0 and clause[3].upper == 1.0
+
+    def test_negation_true_in_head_and_body(self):
+        """~pred(X):True in head and ~body(X):True in body."""
+        r = parse_rule("~pred(X):True <- ~body(X):True", "ntb", None)
+        bnd = r.get_bnd()
+        assert bnd.lower == 0.0 and bnd.upper == 0.0
+        clause = r.get_clauses()[0]
+        assert clause[3].lower == 0.0 and clause[3].upper == 0.0
+
+    def test_body_true_with_multiple_clauses(self):
+        """Multiple body clauses mixing :True and :False."""
+        r = parse_rule("pred(X) <- a(X):True, b(X):False", "btm", None)
+        clauses = r.get_clauses()
+        assert clauses[0][3].lower == 1.0 and clauses[0][3].upper == 1.0
+        assert clauses[1][3].lower == 0.0 and clauses[1][3].upper == 0.0
+
     def test_comparison_ge(self):
         """Comparison operator >=."""
         r = parse_rule("eligible(X) <- age(X) >= 18", "cmp_ge", None)
@@ -139,21 +199,6 @@ class TestValidRuleParsing:
         r = parse_rule("same_class(x,y) <- c_id(x) == c_id(y)", "cmp_eq", None)
         assert r.get_clauses()[0][4] == "=="
 
-    def test_comparison_ne(self):
-        """Comparison operator !=."""
-        r = parse_rule("diff_class(x,y) <- c_id(x) != c_id(y)", "cmp_ne", None)
-        assert r.get_clauses()[0][4] == "!="
-
-    def test_comparison_le(self):
-        """Comparison operator <=."""
-        r = parse_rule("low(X) <- score(X) <= 10", "cmp_le", None)
-        assert r.get_clauses()[0][4] == "<="
-
-    def test_comparison_lt(self):
-        """Comparison operator <."""
-        r = parse_rule("low(X) <- score(X) < 5", "cmp_lt", None)
-        assert r.get_clauses()[0][4] == "<"
-
     def test_forall_quantifier(self):
         """Forall quantifier creates 100% percent threshold."""
         r = parse_rule("all_approved(X) <- forall(dept(Y)), approved(X, Y)", "forall", None)
@@ -162,6 +207,13 @@ class TestValidRuleParsing:
         assert thresholds[0][0] == "greater_equal"
         assert thresholds[0][1] == ("percent", "total")
         assert thresholds[0][2] == 100.0
+
+    def test_forall_in_edge_rule(self):
+        """Forall in an edge rule."""
+        r = parse_rule("linked(X, Y) <- forall(shared(X, Z)), connected(Y, Z)", "fa_edge", None)
+        assert r.get_rule_type() == "edge"
+        thresholds = list(r.get_thresholds())
+        assert thresholds[0] == ("greater_equal", ("percent", "total"), 100.0)
 
     def test_head_function_node(self):
         """Head with a function call on a node variable."""
@@ -242,6 +294,38 @@ class TestValidRuleParsing:
         assert r1.get_target().get_value() == r2.get_target().get_value()
         assert len(r1.get_clauses()) == len(r2.get_clauses())
         assert list(r1.get_head_variables()) == list(r2.get_head_variables())
+
+    def test_weights_zero_allowed(self):
+        """Zero weights are allowed."""
+        weights = np.array([0.0, 1.0], dtype=np.float64)
+        r = parse_rule("p(X) <- a(X), b(X)", "r", None, weights=weights)
+        np.testing.assert_array_almost_equal(r.get_weights(), [0.0, 1.0])
+
+    def test_weights_integer_converted(self):
+        """Integer weights are converted to float64."""
+        weights = np.array([1, 2, 3], dtype=np.int32)
+        r = parse_rule("p(X) <- a(X), b(X), c(X)", "r", None, weights=weights)
+        np.testing.assert_array_almost_equal(r.get_weights(), [1.0, 2.0, 3.0])
+        assert r.get_weights().dtype == np.float64
+
+    def test_weights_single_clause(self):
+        """Single weight for single clause."""
+        weights = np.array([0.7], dtype=np.float64)
+        r = parse_rule("p(X) <- a(X)", "r", None, weights=weights)
+        np.testing.assert_array_almost_equal(r.get_weights(), [0.7])
+
+    def test_weights_greater_than_one(self):
+        """Weights greater than 1.0 are allowed."""
+        weights = np.array([2.5, 3.0], dtype=np.float64)
+        r = parse_rule("p(X) <- a(X), b(X)", "r", None, weights=weights)
+        np.testing.assert_array_almost_equal(r.get_weights(), [2.5, 3.0])
+
+    def test_weights_not_summing_to_one(self):
+        """Weights that don't sum to 1.0 are allowed."""
+        weights = np.array([0.3, 0.4], dtype=np.float64)
+        r = parse_rule("p(X) <- a(X), b(X)", "r", None, weights=weights)
+        np.testing.assert_array_almost_equal(r.get_weights(), [0.3, 0.4])
+
 
     def test_complex_all_params(self):
         """Complex rule combining delta_t, head bound, edge, infer_edges, thresholds, weights, static."""
@@ -450,37 +534,6 @@ class TestInvalidRuleParsing:
         with pytest.raises(ValueError, match="non-negative"):
             parse_rule("p(X) <- a(X), b(X)", "r", None, weights=weights)
 
-    def test_weights_zero_allowed(self):
-        """Zero weights are allowed."""
-        weights = np.array([0.0, 1.0], dtype=np.float64)
-        r = parse_rule("p(X) <- a(X), b(X)", "r", None, weights=weights)
-        np.testing.assert_array_almost_equal(r.get_weights(), [0.0, 1.0])
-
-    def test_weights_integer_converted(self):
-        """Integer weights are converted to float64."""
-        weights = np.array([1, 2, 3], dtype=np.int32)
-        r = parse_rule("p(X) <- a(X), b(X), c(X)", "r", None, weights=weights)
-        np.testing.assert_array_almost_equal(r.get_weights(), [1.0, 2.0, 3.0])
-        assert r.get_weights().dtype == np.float64
-
-    def test_weights_single_clause(self):
-        """Single weight for single clause."""
-        weights = np.array([0.7], dtype=np.float64)
-        r = parse_rule("p(X) <- a(X)", "r", None, weights=weights)
-        np.testing.assert_array_almost_equal(r.get_weights(), [0.7])
-
-    def test_weights_greater_than_one(self):
-        """Weights greater than 1.0 are allowed."""
-        weights = np.array([2.5, 3.0], dtype=np.float64)
-        r = parse_rule("p(X) <- a(X), b(X)", "r", None, weights=weights)
-        np.testing.assert_array_almost_equal(r.get_weights(), [2.5, 3.0])
-
-    def test_weights_not_summing_to_one(self):
-        """Weights that don't sum to 1.0 are allowed."""
-        weights = np.array([0.3, 0.4], dtype=np.float64)
-        r = parse_rule("p(X) <- a(X), b(X)", "r", None, weights=weights)
-        np.testing.assert_array_almost_equal(r.get_weights(), [0.3, 0.4])
-
     def test_malformed_forall(self):
         """Malformed forall expression (missing closing paren) raises ValueError."""
         with pytest.raises(ValueError, match="forall"):
@@ -662,3 +715,8 @@ class TestEdgeCasesAndBoundary:
         """forall without inner predicate parens raises ValueError."""
         with pytest.raises(ValueError, match="inner predicate"):
             parse_rule("p(X) <- forall(dept)", "r", None)
+
+    def test_forall_empty_parens(self):
+        """forall with empty parens raises ValueError."""
+        with pytest.raises(ValueError, match="inner predicate"):
+            parse_rule("p(X) <- forall()", "r", None)

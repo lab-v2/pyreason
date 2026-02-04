@@ -79,11 +79,7 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
     # Parse the head: target predicate, bound, and annotation function
     head, target_bound, ann_fn = _parse_head(head)
 
-    # V5: Head must contain parentheses
     idx = head.find('(')
-    if idx == -1:
-        raise ValueError(f"Rule head '{head}' must contain parentheses around variables")
-
     target = head[:idx]
     _validate_predicate_name(target, "Head")
     target = label.Label(target)
@@ -124,7 +120,7 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
         _validate_predicate_name(pred_name, "Body")
         body_predicates.append(pred_name)
 
-        # Add body variables depending on whether there's an operator or not
+        # Add body variables
         variables = clause_str[start_idx+1:end_idx].split(',')
         start_idx = clause_str.find('(', start_idx+1)
         end_idx = clause_str.find(')', end_idx+1)
@@ -256,6 +252,23 @@ def _split_body_into_clauses(body):
       4. Attach default bounds :[1,1] (or :[0,0] for negated clauses).
       5. Split each clause on ':' to separate predicate from bound.
     """
+    # Convert :True/:False shorthand to numeric bounds before splitting (case-insensitive)
+    # Must happen before delimiter doubling so clauses end with ']' for correct splitting
+    body_lower = body.lower()
+    new_body = []
+    i = 0
+    while i < len(body):
+        if body_lower[i:i + 5] == ':true' and (i + 5 >= len(body) or body[i + 5] in ',)'):
+            new_body.append(':[1,1]')
+            i += 5
+        elif body_lower[i:i + 6] == ':false' and (i + 6 >= len(body) or body[i + 6] in ',)'):
+            new_body.append(':[0,0]')
+            i += 6
+        else:
+            new_body.append(body[i])
+            i += 1
+    body = ''.join(new_body)
+
     # Double-up closing delimiters so splitting on ")," / "]," is safe
     body = body.replace(')', '))')
     body = body.replace(']', ']]')
@@ -331,6 +344,7 @@ def _parse_head(head):
       - pred(x)            → default bound [1,1], no annotation
       - ~pred(x)           → negated bound [0,0]
       - pred(x):[l,u]      → explicit bound
+      - ~pred(x):[l,u]      → negated explicit bound
       - pred(x):fn_name    → annotation function with default bound [0,1]
     """
     # Check for double negation in head
@@ -348,11 +362,21 @@ def _parse_head(head):
     if colon_count > 1:
         raise ValueError(f"Rule head contains {colon_count} colons, expected at most 1")
 
+    # Convert :True/:False shorthand to numeric bounds (case-insensitive)
+    if colon_count == 1:
+        colon_idx = head.index(':')
+        suffix = head[colon_idx + 1:]
+        if suffix.lower() == 'true':
+            head = head[:colon_idx] + ':[1,1]'
+        elif suffix.lower() == 'false':
+            head = head[:colon_idx] + ':[0,0]'
+
     # If no colon present, attach default bound
     negate_head_interval = False
     if head[-1] == ')':
         if head[0] == '~':
-            head = head[1:] + ':[0,0]'
+            head += ':[0,0]'
+            head = head[1:]
         else:
             head += ':[1,1]'
     elif head[0] == '~' and head[-1] == ']':
@@ -462,10 +486,7 @@ def _validate_predicate_name(pred, context):
 
 
 def _validate_variable_name(var, context):
-    """Validate that a variable name matches ^[a-zA-Z_][a-zA-Z0-9_]*$.
-    Exempts internal __temp_var_* names used by head function parsing."""
-    if var.startswith('__temp_var_'):
-        return
+    """Validate that a variable name matches ^[a-zA-Z_][a-zA-Z0-9_]*$."""
     if not _IDENTIFIER_RE.match(var):
         if var and var[0].isdigit():
             raise ValueError(f"{context} variable name '{var}' cannot start with a digit")
