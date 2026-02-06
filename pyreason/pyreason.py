@@ -460,9 +460,9 @@ __graph: Optional[nx.DiGraph] = None
 __rules: Optional[numba.typed.List] = None
 __clause_maps: Optional[dict] = None
 __node_facts: Optional[numba.typed.List] = None
-__node_facts_name_set = set() # We want to warn the user if they add multiple facts with the same name
-__rules_name_set = set() # We want to warn the user if they add multiple rules with the same name
 __edge_facts: Optional[numba.typed.List] = None
+__facts_name_set = set() # We want to warn the user if they add multiple facts with the same name
+__rules_name_set = set() # We want to warn the user if they add multiple rules with the same name
 __ipl: Optional[numba.typed.List] = None
 __specific_node_labels: Optional[numba.typed.List] = None
 __specific_edge_labels: Optional[numba.typed.List] = None
@@ -486,12 +486,12 @@ def reset():
     """Resets certain variables to None to be able to do pr.reason() multiple times in a program
     without memory blowing up
     """
-    global __node_facts, __edge_facts, __graph, __node_facts_name_set
+    global __node_facts, __edge_facts, __graph, __facts_name_set
 
     # Facts
     __node_facts = None
     __edge_facts = None
-    __node_facts_name_set.clear()
+    __facts_name_set.clear()
     if __program is not None:
         __program.reset_facts()
 
@@ -1032,28 +1032,7 @@ def _parse_and_validate_fact_params(idx, name_raw, start_time_raw, end_time_raw,
         end_time = 0
 
     # Parse static as boolean
-    static = False
-    if static_raw is not None:
-        if isinstance(static_raw, bool):
-            static = static_raw
-        elif isinstance(static_raw, str):
-            static_str = static_raw.strip().lower()
-            if static_str in ('true', '1', 'yes', 't', 'y'):
-                static = True
-            elif static_str in ('false', '0', 'no', 'f', 'n', ''):
-                static = False
-            else:
-                if raise_errors:
-                    raise ValueError(f"{item_label} {idx}: Invalid static value '{static_raw}'")
-                warnings.warn(f"{item_label} {idx}: Invalid static value '{static_raw}', using default value")
-                static = False
-        elif isinstance(static_raw, (int, float)):
-            static = bool(static_raw)
-        else:
-            if raise_errors:
-                raise ValueError(f"{item_label} {idx}: Invalid static value type '{type(static_raw).__name__}'")
-            warnings.warn(f"{item_label} {idx}: Invalid static value type '{type(static_raw).__name__}', using default value")
-            static = False
+    static = _parse_bool_param(static_raw, 'static', idx, raise_errors, item_label, default=False)
 
     return name, start_time, end_time, static
 
@@ -1075,21 +1054,21 @@ def add_fact(pyreason_fact: Fact) -> None:
         if pyreason_fact.name is None:
             pyreason_fact.name = f'fact_{len(__node_facts)+len(__edge_facts)}'
 
-        if pyreason_fact.name in __node_facts_name_set:
+        if pyreason_fact.name in __facts_name_set:
             warnings.warn(f"Fact {pyreason_fact.name} has already been added. Duplicate fact names will lead to an ambiguous node and atom traces.")
 
         f = fact_node.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.pred, pyreason_fact.bound, pyreason_fact.start_time, pyreason_fact.end_time, pyreason_fact.static)
-        __node_facts_name_set.add(pyreason_fact.name)
+        __facts_name_set.add(pyreason_fact.name)
         __node_facts.append(f)
     else:
         if pyreason_fact.name is None:
             pyreason_fact.name = f'fact_{len(__node_facts)+len(__edge_facts)}'
 
-        if pyreason_fact.name in __node_facts_name_set:
+        if pyreason_fact.name in __facts_name_set:
             warnings.warn(f"Fact {pyreason_fact.name} has already been added. Duplicate fact names will lead to an ambiguous node and atom traces.")
 
         f = fact_edge.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.pred, pyreason_fact.bound, pyreason_fact.start_time, pyreason_fact.end_time, pyreason_fact.static)
-        __node_facts_name_set.add(pyreason_fact.name)
+        __facts_name_set.add(pyreason_fact.name)
         __edge_facts.append(f)
 
 
