@@ -1,0 +1,121 @@
+[
+    {
+        "fact_text": "Viewed(Zach)",
+        "name": "seen-fact-zach",
+        "start_time": 0,
+        "end_time": 3,
+        "static": false
+    },
+    {
+        "fact_text": "Viewed(Justin)",
+        "name": "seen-fact-justin",
+        "start_time": 0,
+        "end_time": 3,
+        "static": true
+    },
+    {
+        "fact_text": "Viewed(Michelle)",
+        "name": "seen-fact-michelle",
+        "start_time": 1,
+        "end_time": 3,
+        "static": false
+    },
+    {
+        "fact_text": "Viewed(Amy)",
+        "name": "seen-fact-amy",
+        "start_time": 2,
+        "end_time": 3,
+        "static": 0
+    },
+    {
+        "fact_text": "HaveAccess(Zach,TextMessage)",
+        "name": "access-zach",
+        "start_time": 0,
+        "end_time": 5,
+        "static": true
+    },
+    {
+        "fact_text": "HaveAccess(Justin,TextMessage)",
+        "name": "access-justin",
+        "start_time": 0,
+        "end_time": 5,
+        "static": 1
+    },
+    {
+        "fact_text": "HaveAccess(Michelle,TextMessage)",
+        "name": "access-michelle",
+        "start_time": 0,
+        "end_time": 5,
+        "static": "yes"
+    },
+    {
+        "fact_text": "HaveAccess(Amy,TextMessage)",
+        "name": "access-amy",
+        "start_time": 0,
+        "end_time": 5,
+        "static": "no"
+    },
+    {
+        "fact_text": "Processed(Node1):[0.5,0.8]",
+        "name": "interval-node"
+    },
+    {
+        "fact_text": "Knows(Person1,Person2):[0.7,0.9]",
+        "name": "interval-edge",
+        "start_time": 0,
+        "end_time": 10,
+        "static": true
+    },
+    {
+        "fact_text": "Viewed(Valid)",
+        "name": "valid-fact",
+        "start_time": 0,
+        "end_time": 3,
+        "static": false
+    },
+    {
+        "fact_text": "",
+        "name": "empty-fact-text",
+        "start_time": 0,
+        "end_time": 3,
+        "static": false
+    },
+    {
+        "fact_text": "InvalidSyntax",
+        "name": "bad-syntax",
+        "start_time": 0,
+        "end_time": 3,
+        "static": false
+    },
+    {
+        "fact_text": "Viewed(OutOfRange):[2.5,3.0]",
+        "name": "out-of-range",
+        "start_time": 0,
+        "end_time": 3,
+        "static": false
+    },
+    {
+        "fact_text": "Viewed(BadStartTime)",
+        "name": "bad-start",
+        "start_time": "abc",
+        "end_time": 5,
+        "static": false
+    },
+    {
+        "fact_text": "Viewed(BadEndTime)",
+        "name": "bad-end",
+        "start_time": 0,
+        "end_time": "xyz",
+        "static": false
+    },
+    {
+        "fact_text": "Viewed(BadStaticValue)",
+        "name": "bad-static",
+        "start_time": 0,
+        "end_time": 5,
+        "static": "invalid"
+    },
+    {
+        "fact_text": "Viewed(EmptyOptionals)"
+    }
+]
