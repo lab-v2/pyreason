@@ -840,8 +840,9 @@ def add_rule_from_json(json_path: str, raise_errors: bool = True) -> None:
     - **name** (optional): The name of the rule. This will appear in the rule trace.
     - **infer_edges** (optional): Whether to infer new edges after edge rule fires (default: false).
     - **set_static** (optional): Whether to set the atom in the head as static if the rule fires (default: false).
-    - **custom_thresholds** (optional): A list of custom thresholds for the rule, or a mapping of
-      clause index to threshold. If not specified, the default thresholds for ANY are used.
+    - **custom_thresholds** (optional): A list of threshold objects (one per clause), or a dict
+      mapping clause index to threshold object (unspecified clauses get defaults). Each threshold
+      object has ``quantifier``, ``quantifier_type``, and ``thresh`` fields.
     - **weights** (optional): A list of weights for the rule clauses. This is passed to an annotation function.
 
     Example JSON format::
@@ -855,9 +856,19 @@ def add_rule_from_json(json_path: str, raise_errors: bool = True) -> None:
             },
             {
                 "rule_text": "ally(A, B) <- friend(A, B), common_interest(A, B)",
-                "name": "ally-rule",
-                "custom_thresholds": [0.5, 0.8],
+                "name": "ally-rule-list",
+                "custom_thresholds": [
+                    {"quantifier": "greater_equal", "quantifier_type": ["number", "total"], "thresh": 1},
+                    {"quantifier": "greater_equal", "quantifier_type": ["percent", "total"], "thresh": 100}
+                ],
                 "weights": [1.0, 2.0]
+            },
+            {
+                "rule_text": "ally(A, B) <- friend(A, B), common_interest(A, B)",
+                "name": "ally-rule-dict",
+                "custom_thresholds": {
+                    "0": {"quantifier": "greater_equal", "quantifier_type": ["percent", "total"], "thresh": 50}
+                }
             }
         ]
 
@@ -925,12 +936,9 @@ def add_rule_from_json(json_path: str, raise_errors: bool = True) -> None:
             # Extract advanced params (JSON-only)
             custom_thresholds_raw = rule_obj.get('custom_thresholds')
             custom_thresholds = None
+            found_threshold_error = False
             if custom_thresholds_raw is not None:
-                if not isinstance(custom_thresholds_raw, list):
-                    if raise_errors:
-                        raise ValueError(f"Item {idx}: 'custom_thresholds' must be a list of threshold objects")
-                    warnings.warn(f"Item {idx}: 'custom_thresholds' must be a list of threshold objects, ignoring")
-                else:
+                if isinstance(custom_thresholds_raw, list):
                     custom_thresholds = []
                     for t_idx, t_obj in enumerate(custom_thresholds_raw):
                         if isinstance(t_obj, dict):
@@ -943,15 +951,53 @@ def add_rule_from_json(json_path: str, raise_errors: bool = True) -> None:
                             except (KeyError, ValueError, TypeError) as te:
                                 if raise_errors:
                                     raise ValueError(f"Item {idx}, threshold {t_idx}: Invalid threshold - {te}")
-                                warnings.warn(f"Item {idx}, threshold {t_idx}: Invalid threshold - {te}, ignoring")
-                                custom_thresholds = None
+                                warnings.warn(f"Item {idx}, threshold {t_idx}: Invalid threshold - {te}, skipping rule")
+                                found_threshold_error = True
                                 break
                         else:
                             if raise_errors:
                                 raise ValueError(f"Item {idx}, threshold {t_idx}: Expected object, got {type(t_obj).__name__}")
-                            warnings.warn(f"Item {idx}, threshold {t_idx}: Expected object, got {type(t_obj).__name__}, ignoring all thresholds")
-                            custom_thresholds = None
+                            warnings.warn(f"Item {idx}, threshold {t_idx}: Expected object, got {type(t_obj).__name__}, skipping rule")
+                            found_threshold_error = True
                             break
+                elif isinstance(custom_thresholds_raw, dict):
+                    custom_thresholds = {}
+                    for key_str, t_obj in custom_thresholds_raw.items():
+                        try:
+                            clause_idx = int(key_str)
+                        except (ValueError, TypeError):
+                            if raise_errors:
+                                raise ValueError(f"Item {idx}: custom_thresholds dict key '{key_str}' must be an integer clause index")
+                            warnings.warn(f"Item {idx}: custom_thresholds dict key '{key_str}' must be an integer clause index, skipping rule")
+                            found_threshold_error = True
+                            break
+                        if isinstance(t_obj, dict):
+                            try:
+                                custom_thresholds[clause_idx] = Threshold(
+                                    t_obj['quantifier'],
+                                    tuple(t_obj['quantifier_type']),
+                                    t_obj['thresh']
+                                )
+                            except (KeyError, ValueError, TypeError) as te:
+                                if raise_errors:
+                                    raise ValueError(f"Item {idx}, threshold key '{key_str}': Invalid threshold - {te}")
+                                warnings.warn(f"Item {idx}, threshold key '{key_str}': Invalid threshold - {te}, skipping rule")
+                                found_threshold_error = True
+                                break
+                        else:
+                            if raise_errors:
+                                raise ValueError(f"Item {idx}, threshold key '{key_str}': Expected object, got {type(t_obj).__name__}")
+                            warnings.warn(f"Item {idx}, threshold key '{key_str}': Expected object, got {type(t_obj).__name__}, skipping rule")
+                            found_threshold_error = True
+                            break
+                else:
+                    if raise_errors:
+                        raise ValueError(f"Item {idx}: 'custom_thresholds' must be a list or dict of threshold objects")
+                    warnings.warn(f"Item {idx}: 'custom_thresholds' must be a list or dict of threshold objects, skipping rule")
+                    found_threshold_error = True
+            if found_threshold_error:
+                error_count += 1
+                continue
 
             weights_raw = rule_obj.get('weights')
             weights = None
@@ -959,7 +1005,9 @@ def add_rule_from_json(json_path: str, raise_errors: bool = True) -> None:
                 if not isinstance(weights_raw, list):
                     if raise_errors:
                         raise ValueError(f"Item {idx}: 'weights' must be a list of numeric values")
-                    warnings.warn(f"Item {idx}: 'weights' must be a list of numeric values, ignoring")
+                    warnings.warn(f"Item {idx}: 'weights' must be a list of numeric values, skipping rule")
+                    error_count += 1
+                    continue
                 else:
                     weights = weights_raw
 

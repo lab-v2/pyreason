@@ -677,7 +677,129 @@ class TestErrorHandling:
         graph2.add_edge('C', 'D')
         pr.load_graph(graph2)
 
+class TestRuleTrace:
+    """Test save_rule_trace() and get_rule_trace() functions."""
 
+    def setup_method(self):
+        """Clean state before each test."""
+        pr.reset()
+        pr.reset_settings()
+
+    def test_save_rule_trace_with_store_interpretation_changes_disabled(self):
+        """Test save_rule_trace() with store_interpretation_changes disabled."""
+        pr.settings.store_interpretation_changes = False
+
+        # Create a simple interpretation (empty for this test)
+        interpretation = {}
+
+        with pytest.raises(AssertionError, match='store interpretation changes setting is off'):
+            pr.save_rule_trace(interpretation)
+
+    def test_get_rule_trace_with_store_interpretation_changes_disabled(self):
+        """Test get_rule_trace() with store_interpretation_changes disabled."""
+        pr.settings.store_interpretation_changes = False
+
+        # Create a simple interpretation (empty for this test)
+        interpretation = {}
+
+        with pytest.raises(AssertionError, match='store interpretation changes setting is off'):
+            pr.get_rule_trace(interpretation)
+
+    def test_save_rule_trace_with_store_interpretation_changes_enabled(self):
+        """Test save_rule_trace() with store_interpretation_changes enabled."""
+        pr.settings.store_interpretation_changes = True
+
+        # Create a simple graph and run reasoning to get an interpretation
+        graph = nx.DiGraph()
+        graph.add_edge('A', 'B')
+        pr.load_graph(graph)
+
+        # Add a simple fact and rule
+        pr.add_fact(pr.Fact('person(A)', 'A', 1, 1))
+        pr.add_rule(Rule('friend(A, B) <- person(A)', 'test_rule', False))
+
+        # Run reasoning to get interpretation
+        interpretation = pr.reason(1)
+
+        # Test save_rule_trace with default folder
+        with tempfile.TemporaryDirectory() as temp_dir:
+            pr.save_rule_trace(interpretation, temp_dir)
+            # Check that files were created (exact files depend on implementation)
+            files_created = os.listdir(temp_dir)
+            assert len(files_created) > 0, "Expected files to be created in the trace folder"
+
+    def test_save_rule_trace_with_custom_folder(self):
+        """Test save_rule_trace() with custom folder path."""
+        pr.settings.store_interpretation_changes = True
+
+        # Create a simple graph and run reasoning
+        graph = nx.DiGraph()
+        graph.add_edge('A', 'B')
+        pr.load_graph(graph)
+
+        pr.add_fact(pr.Fact('person(A)', 'A', 1, 1))
+        pr.add_rule(Rule('friend(A, B) <- person(A)', 'test_rule', False))
+
+        interpretation = pr.reason(1)
+
+        # Test with custom folder
+        with tempfile.TemporaryDirectory() as temp_dir:
+            custom_folder = os.path.join(temp_dir, 'custom_trace')
+            os.makedirs(custom_folder, exist_ok=True)
+
+            pr.save_rule_trace(interpretation, custom_folder)
+            files_created = os.listdir(custom_folder)
+            assert len(files_created) > 0, "Expected files to be created in the custom trace folder"
+
+    def test_get_rule_trace_with_store_interpretation_changes_enabled(self):
+        """Test get_rule_trace() with store_interpretation_changes enabled."""
+        pr.settings.store_interpretation_changes = True
+
+        # Create a simple graph and run reasoning
+        graph = nx.DiGraph()
+        graph.add_edge('A', 'B')
+        pr.load_graph(graph)
+
+        pr.add_fact(pr.Fact('person(A)', 'A', 1, 1))
+        pr.add_rule(Rule('friend(A, B) <- person(A)', 'test_rule', False))
+
+        interpretation = pr.reason(1)
+
+        # Test get_rule_trace
+        node_trace, edge_trace = pr.get_rule_trace(interpretation)
+
+        # Verify return types are DataFrames
+        assert isinstance(node_trace, pd.DataFrame), "Expected node_trace to be a pandas DataFrame"
+        assert isinstance(edge_trace, pd.DataFrame), "Expected edge_trace to be a pandas DataFrame"
+
+    def test_get_rule_trace_returns_dataframes(self):
+        """Test that get_rule_trace() returns proper DataFrame structures."""
+        pr.settings.store_interpretation_changes = True
+
+        # Create a more complex scenario
+        graph = nx.DiGraph()
+        graph.add_edges_from([('A', 'B'), ('B', 'C'), ('C', 'A')])
+        pr.load_graph(graph)
+
+        # Add multiple facts and rules
+        pr.add_fact(pr.Fact('person(A)', 'A', 1, 1))
+        pr.add_fact(pr.Fact('person(B)', 'B', 1, 1))
+        pr.add_rule(Rule('friend(A, B) <- person(A)', 'rule1', False))
+        pr.add_rule(Rule('likes(A, B) <- friend(A, B)', 'rule2', False))
+
+        interpretation = pr.reason(2)
+
+        node_trace, edge_trace = pr.get_rule_trace(interpretation)
+
+        # Basic structure verification
+        assert isinstance(node_trace, pd.DataFrame)
+        assert isinstance(edge_trace, pd.DataFrame)
+
+        # DataFrames should have some basic expected structure
+        # (exact columns depend on implementation, but they should be valid DataFrames)
+        assert hasattr(node_trace, 'columns')
+        assert hasattr(edge_trace, 'columns')
+        
 class TestAddFactFromJSON:
     """Test add_fact_from_json() function for loading facts from JSON."""
 
@@ -986,129 +1108,6 @@ Viewed(Frank),frank-fact,,,
         finally:
             os.unlink(tmp_path)
 
-
-class TestRuleTrace:
-    """Test save_rule_trace() and get_rule_trace() functions."""
-
-    def setup_method(self):
-        """Clean state before each test."""
-        pr.reset()
-        pr.reset_settings()
-
-    def test_save_rule_trace_with_store_interpretation_changes_disabled(self):
-        """Test save_rule_trace() with store_interpretation_changes disabled."""
-        pr.settings.store_interpretation_changes = False
-
-        # Create a simple interpretation (empty for this test)
-        interpretation = {}
-
-        with pytest.raises(AssertionError, match='store interpretation changes setting is off'):
-            pr.save_rule_trace(interpretation)
-
-    def test_get_rule_trace_with_store_interpretation_changes_disabled(self):
-        """Test get_rule_trace() with store_interpretation_changes disabled."""
-        pr.settings.store_interpretation_changes = False
-
-        # Create a simple interpretation (empty for this test)
-        interpretation = {}
-
-        with pytest.raises(AssertionError, match='store interpretation changes setting is off'):
-            pr.get_rule_trace(interpretation)
-
-    def test_save_rule_trace_with_store_interpretation_changes_enabled(self):
-        """Test save_rule_trace() with store_interpretation_changes enabled."""
-        pr.settings.store_interpretation_changes = True
-
-        # Create a simple graph and run reasoning to get an interpretation
-        graph = nx.DiGraph()
-        graph.add_edge('A', 'B')
-        pr.load_graph(graph)
-
-        # Add a simple fact and rule
-        pr.add_fact(pr.Fact('person(A)', 'A', 1, 1))
-        pr.add_rule(Rule('friend(A, B) <- person(A)', 'test_rule', False))
-
-        # Run reasoning to get interpretation
-        interpretation = pr.reason(1)
-
-        # Test save_rule_trace with default folder
-        with tempfile.TemporaryDirectory() as temp_dir:
-            pr.save_rule_trace(interpretation, temp_dir)
-            # Check that files were created (exact files depend on implementation)
-            files_created = os.listdir(temp_dir)
-            assert len(files_created) > 0, "Expected files to be created in the trace folder"
-
-    def test_save_rule_trace_with_custom_folder(self):
-        """Test save_rule_trace() with custom folder path."""
-        pr.settings.store_interpretation_changes = True
-
-        # Create a simple graph and run reasoning
-        graph = nx.DiGraph()
-        graph.add_edge('A', 'B')
-        pr.load_graph(graph)
-
-        pr.add_fact(pr.Fact('person(A)', 'A', 1, 1))
-        pr.add_rule(Rule('friend(A, B) <- person(A)', 'test_rule', False))
-
-        interpretation = pr.reason(1)
-
-        # Test with custom folder
-        with tempfile.TemporaryDirectory() as temp_dir:
-            custom_folder = os.path.join(temp_dir, 'custom_trace')
-            os.makedirs(custom_folder, exist_ok=True)
-
-            pr.save_rule_trace(interpretation, custom_folder)
-            files_created = os.listdir(custom_folder)
-            assert len(files_created) > 0, "Expected files to be created in the custom trace folder"
-
-    def test_get_rule_trace_with_store_interpretation_changes_enabled(self):
-        """Test get_rule_trace() with store_interpretation_changes enabled."""
-        pr.settings.store_interpretation_changes = True
-
-        # Create a simple graph and run reasoning
-        graph = nx.DiGraph()
-        graph.add_edge('A', 'B')
-        pr.load_graph(graph)
-
-        pr.add_fact(pr.Fact('person(A)', 'A', 1, 1))
-        pr.add_rule(Rule('friend(A, B) <- person(A)', 'test_rule', False))
-
-        interpretation = pr.reason(1)
-
-        # Test get_rule_trace
-        node_trace, edge_trace = pr.get_rule_trace(interpretation)
-
-        # Verify return types are DataFrames
-        assert isinstance(node_trace, pd.DataFrame), "Expected node_trace to be a pandas DataFrame"
-        assert isinstance(edge_trace, pd.DataFrame), "Expected edge_trace to be a pandas DataFrame"
-
-    def test_get_rule_trace_returns_dataframes(self):
-        """Test that get_rule_trace() returns proper DataFrame structures."""
-        pr.settings.store_interpretation_changes = True
-
-        # Create a more complex scenario
-        graph = nx.DiGraph()
-        graph.add_edges_from([('A', 'B'), ('B', 'C'), ('C', 'A')])
-        pr.load_graph(graph)
-
-        # Add multiple facts and rules
-        pr.add_fact(pr.Fact('person(A)', 'A', 1, 1))
-        pr.add_fact(pr.Fact('person(B)', 'B', 1, 1))
-        pr.add_rule(Rule('friend(A, B) <- person(A)', 'rule1', False))
-        pr.add_rule(Rule('likes(A, B) <- friend(A, B)', 'rule2', False))
-
-        interpretation = pr.reason(2)
-
-        node_trace, edge_trace = pr.get_rule_trace(interpretation)
-
-        # Basic structure verification
-        assert isinstance(node_trace, pd.DataFrame)
-        assert isinstance(edge_trace, pd.DataFrame)
-
-        # DataFrames should have some basic expected structure
-        # (exact columns depend on implementation, but they should be valid DataFrames)
-        assert hasattr(node_trace, 'columns')
-        assert hasattr(edge_trace, 'columns')
 
 class TestAddRulesFromFile:
     """Test add_rules_from_file() function."""
