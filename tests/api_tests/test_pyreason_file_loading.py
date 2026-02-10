@@ -1024,7 +1024,6 @@ Viewed(Frank),frank-fact,,,
             os.unlink(tmp1_path)
             os.unlink(tmp2_path)
 
-
 class TestRuleTrace:
     """Test save_rule_trace() and get_rule_trace() functions."""
 
