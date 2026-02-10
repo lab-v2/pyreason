@@ -671,7 +671,7 @@ def _parse_and_validate_fact_params(idx, name_raw, start_time_raw, end_time_raw,
             static_str = static_raw.strip().lower()
             if static_str in ('true', 'yes', 't', 'y'):
                 static = True
-            elif static_str in ('false', 'no', 'f', 'n'):
+            elif static_str in ('false', 'no', 'f', 'n', ''):
                 static = False
             else:
                 if raise_errors:
