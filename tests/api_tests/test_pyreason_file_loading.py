@@ -849,7 +849,6 @@ enemy(A, B) <- ~friend(A, B)"""
         pr.add_inconsistent_predicate("pred3", "pred4")
         # Should not raise exceptions
 
-
 class TestRuleTrace:
     """Test save_rule_trace() and get_rule_trace() functions."""
 
