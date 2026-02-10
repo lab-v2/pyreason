@@ -37,29 +37,33 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
     # Separate into head and body
     head, body = rule_str.split('<-')
 
-    # V4: Head and body cannot be empty after split
+    # V4: Head cannot be empty after split
     if not head:
         raise ValueError("Rule head cannot be empty")
+
+    # Handle empty body (valid rule - always fires unconditionally)
     if not body:
-        raise ValueError("Rule body cannot be empty")
-
-    # Extract delta_t of rule if it exists else set it to 0
-    delta_t = ''
-    is_digit = True
-    while is_digit:
-        if body[0].isdigit():
-            delta_t += body[0]
-            body = body[1:]
-        else:
-            is_digit = False
-
-    if delta_t == '':
         delta_t = 0
+        body_clauses = []
+        body_bounds = []
     else:
-        delta_t = int(delta_t)
+        # Extract delta_t of rule if it exists else set it to 0
+        delta_t = ''
+        is_digit = True
+        while is_digit:
+            if body[0].isdigit():
+                delta_t += body[0]
+                body = body[1:]
+            else:
+                is_digit = False
 
-    # Split the body into clauses and their bounds
-    body_clauses, body_bounds = _split_body_into_clauses(body)
+        if delta_t == '':
+            delta_t = 0
+        else:
+            delta_t = int(delta_t)
+
+        # Split the body into clauses and their bounds
+        body_clauses, body_bounds = _split_body_into_clauses(body)
 
     # Handle forall quantifier in body clauses
     for i, clause_str in enumerate(body_clauses.copy()):
@@ -94,7 +98,7 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
 
     # Validate head has at least one variable
     if len(head_variables) < 1:
-        raise ValueError("Rule head must contain at least one variable inside parentheses")
+        raise ValueError("Rule head must contain at least one argument inside parentheses")
 
     # Validate head variable names
     for var in head_variables:
@@ -111,7 +115,7 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
         # V8: Body clause must contain parentheses
         start_idx = clause_str.find('(')
         if start_idx == -1:
-            raise ValueError(f"Body clause '{clause_str}' must contain parentheses around variables")
+            raise ValueError(f"Body clause '{clause_str}' must contain parentheses around argument")
 
         end_idx = clause_str.find(')')
         if end_idx == -1:
