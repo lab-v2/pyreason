@@ -579,9 +579,48 @@ def test_annotate_calls_named_function():
 
 def test_float_to_str_and_str_to_int():
     assert float_to_str(12.345) == "12.345"
-    assert float_to_str(3.0) == "3.0"
+    assert float_to_str(3.0) == "3.000"
     assert str_to_int("123") == 123
     assert str_to_int("-45") == -45
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        (-3.456, "-3.456"),
+        (-0.123, "-0.123"),
+        (-1.0, "-1.000"),
+    ],
+)
+def test_float_to_str_negative_values(value, expected):
+    """BUG-102: negative floats must preserve correct decimal digits."""
+    assert float_to_str(value) == expected
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        (3.001, "3.001"),
+        (0.009, "0.009"),
+        (5.050, "5.050"),
+        (0.0, "0.000"),
+    ],
+)
+def test_float_to_str_zero_padding(value, expected):
+    """BUG-103: leading zeros in fractional part must be preserved."""
+    assert float_to_str(value) == expected
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        (-0.001, "-0.001"),
+        (-3.010, "-3.010"),
+    ],
+)
+def test_float_to_str_negative_with_zero_padding(value, expected):
+    """BUG-102 + BUG-103 combined: negative values with leading-zero decimals."""
+    assert float_to_str(value) == expected
 
 
 @pytest.mark.parametrize(
