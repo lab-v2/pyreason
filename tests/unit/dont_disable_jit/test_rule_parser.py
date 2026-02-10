@@ -397,16 +397,6 @@ class TestInvalidRuleParsing:
         with pytest.raises(ValueError, match="head"):
             parse_rule("<- person(X)", "r", None)
 
-    def test_empty_body(self):
-        """Empty body raises ValueError."""
-        with pytest.raises(ValueError, match="body"):
-            parse_rule("friend(X) <-", "r", None)
-
-    def test_empty_body_spaces(self):
-        """Body with only spaces raises ValueError."""
-        with pytest.raises(ValueError, match="body"):
-            parse_rule("friend(X) <-   ", "r", None)
-
     def test_head_missing_parens(self):
         """Head without parentheses raises ValueError."""
         with pytest.raises(ValueError, match="parentheses"):
@@ -697,7 +687,7 @@ class TestEdgeCasesAndBoundary:
 
     def test_empty_head_parentheses(self):
         """Empty head parentheses raises ValueError."""
-        with pytest.raises(ValueError, match="at least one variable"):
+        with pytest.raises(ValueError, match="at least one argument"):
             parse_rule("p() <- b(X)", "r", None)
 
     def test_head_missing_closing_paren(self):

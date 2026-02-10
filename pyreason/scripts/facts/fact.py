@@ -8,42 +8,42 @@ class Fact:
 
         :param fact_text: The fact in text format. Must follow these formatting rules:
 
-            **Format:** `predicate(component)` or `predicate(component):bound`
+            **Format:** `Predicate(component)` or `Predicate(component):bound`
 
             **Predicate rules:**
             - Must start with a letter (a-z, A-Z) or underscore (_)
             - Can contain letters, digits (0-9), and underscores
             - Cannot start with a digit
-            - Examples: `viewed`, `has_access`, `_internal`, `pred123`
+            - Examples: `Viewed`, `Has_access`, `_Internal`, `Pred123`
 
             **Component rules:**
-            - Node fact: Single component `predicate(node1)`
-            - Edge fact: Two components separated by comma `predicate(node1,node2)`
+            - Node fact: Single component `Predicate(node1)`
+            - Edge fact: Two components separated by comma `Predicate(node1,node2)`
             - Cannot contain parentheses, colons, or nested structures
 
             **Bound rules:**
             - If omitted, defaults to True (1.0)
             - Boolean: `True` or `False` (case-insensitive)
             - Interval: `[lower,upper]` where both values are in range [0, 1]
-            - Negation: `~predicate(component)` 
+            - Negation: `~Predicate(component)` 
 
             **Valid examples:**
-            - `'viewed(Zach)'` - defaults to True
-            - `'viewed(Zach):True'` - explicit True
-            - `'viewed(Zach):False'` - explicit False
-            - `'~viewed(Zach)'` - negation (False)
-            - `'viewed(Zach):[0.5,0.8]'` - interval bound
-            - `'connected(Alice,Bob)'` - edge fact
-            - `'connected(Alice,Bob):[0.7,0.9]'` - edge fact with interval
-            - `'~pred(node):[0.2,0.8]'` - negation with explicit bound
+            - `'Viewed(zach)'` - defaults to True
+            - `'Viewed(zach):True'` - explicit True
+            - `'Viewed(zach):False'` - explicit False
+            - `'~Viewed(zach)'` - negation (False)
+            - `'Viewed(zach):[0.5,0.8]'` - interval bound
+            - `'Connected(alice,bob)'` - edge fact
+            - `'Connected(alice,bob):[0.7,0.9]'` - edge fact with interval
+            - `'~Pred(node):[0.2,0.8]'` - negation with explicit bound
             NOTE: Negating an explicit bound will round the upper and lower bounds to 10 decimal places before taking the negation
             This is needed to avoid floating point precision errors.
 
             **Invalid examples:**
             - `'123pred(node)'` - predicate starts with digit
-            - `'pred@name(node)'` - invalid characters in predicate
-            - `'pred(node1,node2,node3)'` - more than 2 components
-            - `'pred(node):[1.5,2.0]'` - values out of range [0,1]
+            - `'Pred@name(node)'` - invalid characters in predicate
+            - `'Pred(node1,node2,node3)'` - more than 2 components
+            - `'Pred(node):[1.5,2.0]'` - values out of range [0,1]
 
         :type fact_text: str
         :param name: The name of the fact. This will appear in the trace so that you know when it was applied
