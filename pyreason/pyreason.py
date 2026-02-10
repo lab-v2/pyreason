@@ -660,7 +660,7 @@ def _parse_and_validate_fact_params(idx, name_raw, start_time_raw, end_time_raw,
         if raise_errors:
             raise ValueError(f"{item_label} {idx}: Invalid end_time '{end_time_raw}'")
         warnings.warn(f"{item_label} {idx}: Invalid end_time '{end_time_raw}', using default value")
-        end_time = 0
+        end_time = start_time
 
     # Parse static as boolean
     static = False
