@@ -2091,8 +2091,22 @@ def _delete_node(node, neighbors, reverse_neighbors, nodes, interpretations_node
 @numba.njit(cache=True)
 def float_to_str(value):
 	number = int(value)
-	decimal = int(value % 1 * 1000)
-	float_str = f'{number}.{decimal}'
+	decimal = int(round(abs(value) % 1 * 1000))
+
+	# Manual zero-padding (numba may not support :03d in f-strings)
+	if decimal < 10:
+		decimal_str = f'00{decimal}'
+	elif decimal < 100:
+		decimal_str = f'0{decimal}'
+	else:
+		decimal_str = f'{decimal}'
+
+	# Handle negative values where int() truncates to 0 (e.g., -0.123)
+	if value < 0 and number == 0:
+		float_str = f'-{number}.{decimal_str}'
+	else:
+		float_str = f'{number}.{decimal_str}'
+
 	return float_str
 
 
