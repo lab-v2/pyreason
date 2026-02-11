@@ -27,6 +27,7 @@ from pyreason.scripts.query.query import Query
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
+from pyreason.scripts.interpretation.interpretation_parallel import Interpretation
 from pyreason.scripts.utils.reorder_clauses import reorder_clauses
 if importlib.util.find_spec("torch") is not None:
     from pyreason.scripts.learning.classification.classifier import LogicIntegratedClassifier
@@ -520,6 +521,37 @@ def reset_rules():
     __head_functions = []
     if __program is not None:
         __program.reset_rules()
+
+def get_logic_program() -> Optional[Program]:
+    """Get the logic program object
+
+    :return: Logic program object
+    """
+    global __program
+    return __program
+
+
+def get_interpretation() -> Optional[Interpretation]:
+    """Get the current interpretation
+
+    :return: Current interpretation
+    """
+    global __program
+    if __program is None:
+        raise Exception('No interpretation found. Please run `pr.reason()` first')
+    return __program.interp
+
+
+def get_time() -> int:
+    """Get the current time
+
+    :return: Current time
+    """
+    try:
+        i = get_interpretation()
+    except Exception:
+        return 0
+    return i.time + 1
 
 
 def reset_settings():

@@ -40,12 +40,15 @@ class HuggingFaceLogicIntegratedClassifier(LogicIntegrationBase):
         probabilities = F.softmax(raw_output, dim=1).squeeze()
 
         if self.limit_classes:
-            probabilities = self._filter_to_allowed_classes(probabilities)
+            probabilities, self._filtered_labels = self._filter_to_allowed_classes(probabilities)
+        else:
+            self._filtered_labels = None
 
         return probabilities
 
-    def _filter_to_allowed_classes(self, probabilities: torch.Tensor) -> torch.Tensor:
-        """Filter probabilities to only the allowed class_names using model.config.id2label."""
+    def _filter_to_allowed_classes(self, probabilities: torch.Tensor):
+        """Filter probabilities to only the allowed class_names using model.config.id2label.
+        Returns (top_probs, top_labels) without mutating self.class_names."""
         id2label = self.model.config.id2label
 
         allowed_indices = [
@@ -59,13 +62,11 @@ class HuggingFaceLogicIntegratedClassifier(LogicIntegrationBase):
 
         top_labels = []
         top_probs, top_indices = filtered_probs.topk(len(self.class_names))
-        for prob, idx in zip(top_probs, top_indices):
+        for idx in top_indices:
             label = id2label[idx.item()].split(",")[0]
-            print(f"{label}: {prob.item():.4f}")
             top_labels.append(label)
 
-        self.class_names = top_labels
-        return top_probs
+        return top_probs, top_labels
 
     def _pred_to_facts(
         self,
@@ -90,12 +91,14 @@ class HuggingFaceLogicIntegratedClassifier(LogicIntegrationBase):
         lower_bounds = torch.where(condition, lower_val, torch.zeros_like(probabilities))
         upper_bounds = torch.where(condition, upper_val, torch.ones_like(probabilities))
 
+        labels = self._filtered_labels if self._filtered_labels is not None else self.class_names
+
         facts = []
-        for i in range(len(self.class_names)):
+        for i in range(len(labels)):
             lower = lower_bounds[i].item()
             upper = upper_bounds[i].item()
-            fact_str = f'{self.class_names[i]}({self.identifier}) : [{lower:.3f}, {upper:.3f}]'
-            fact = Fact(fact_str, name=f'{self.identifier}-{self.class_names[i]}-fact', start_time=t1, end_time=t2)
+            fact_str = f'{labels[i]}({self.identifier}) : [{lower:.3f}, {upper:.3f}]'
+            fact = Fact(fact_str, name=f'{self.identifier}-{labels[i]}-fact', start_time=t1, end_time=t2)
             facts.append(fact)
 
         return facts

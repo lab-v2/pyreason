@@ -85,8 +85,8 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
         self,
         raw_output: Any,
         result: List,
-        t1: int = None,
-        t2: int = None
+        t1: int,
+        t2: int
     ) -> List[Fact]:
         """
         Given a [N, C] probability tensor, build a flat List[Fact],
