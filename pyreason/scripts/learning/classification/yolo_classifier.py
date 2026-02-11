@@ -45,6 +45,7 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
         self.poll_interval = poll_interval
         self.poll_condition = poll_condition
         self.input_fn = input_fn
+        #TODO: Use the logic program?
         self.logic_program = None  # Get the current logic program
 
         # normalize poll_interval
@@ -62,7 +63,6 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
             t.start()
 
     def _infer(self, x: Any) -> Any:
-        print("Running YOLO model inference...")
         # resized_image = cv2.resize(image, (640, 640))  # Direct resize
         # normalized_image = resized_image / 255.0  # Normalize
         result_predict = self.model.predict(source = x, imgsz=(640), conf=0.1) #the default image size
@@ -78,7 +78,6 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
         label_id = int(box.cls)
         confidence = float(box.conf)
         label_name = result.names[label_id]  # Get the label name from the names dictionary
-        print(f"Predicted label: {label_name}, Confidence: {confidence:.2f}")
         return [label_name, confidence]
     
     def _pred_to_facts(
@@ -164,14 +163,10 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
                         x = self.input_fn()
                         _, _, facts = self.forward(x, t1, t2)
                         for f in facts:
-                            print(f)
                             pr.add_fact(f)
 
                         # run the reasoning
                         pr.reason(again=True, restart=True)
-                        print("reasoning done")
-                        trace = pr.get_rule_trace(self.logic_program.interp)
-                        print(trace[0])
 
                 else:
                     step_interval = self.poll_interval
@@ -195,5 +190,3 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
 
                         # run the reasoning
                         pr.reason(again=True, restart=False)
-                        trace = pr.get_rule_trace(self.logic_program.interp)
-                        print(trace[0])
