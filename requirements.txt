@@ -1,8 +1,8 @@
 networkx
 pyyaml
 pandas
-numba>=0.60
-numpy>=2
+numba==0.59.1
+numpy==1.26.4
 memory_profiler
 pytest
 setuptools_scm
