@@ -1,31 +1,35 @@
-from datetime import timedelta
+import asyncio
 import threading
 import time
+from datetime import timedelta
+from datetime import datetime
+from typing import List, Tuple, Optional, Union, Callable, Any
+
+import torch.nn
+import torch.nn.functional as F
 
 import pyreason as pr
 from pyreason.scripts.facts.fact import Fact
 from pyreason.scripts.learning.classification.logic_integration_base import LogicIntegrationBase
 from pyreason.scripts.learning.utils.model_interface import ModelInterfaceOptions
 
-from typing import List, Optional, Union, Callable, Any
 
-class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
+class TemporalLogicIntegratedClassifier(LogicIntegrationBase):
     """
-    Class to integrate a YOLO model with PyReason. The output of the model is returned to the
-    user in the form of PyReason facts. The user can then add these facts to the logic program and reason using them.
-    Wraps a YOLO model whose forward(x) returns bounding boxes with class probabilities.
-    Implements _infer, _postprocess, and _pred_to_facts to replace the original forward().
+    Wraps any torch.nn.Module whose forward(x) returns [N, C] logits (multi‐class),
+    but additionally polls in the background (either every N timesteps or every N seconds)
+    and injects new Facts into a PyReason logic program.
     """
-
     def __init__(
-        self,
-        model,
-        class_names: List[str],
-        identifier: str = 'yolo_classifier',
-        interface_options: ModelInterfaceOptions = None,
-        poll_interval: Optional[Union[int, timedelta]] = None,
-        poll_condition: Optional[str] = None,
-        input_fn: Optional[Callable[[], Any]] = None
+            self,
+            model,
+            class_names: List[str],
+            identifier: str = 'classifier',
+            interface_options: ModelInterfaceOptions = None,
+            logic_program=None,
+            poll_interval: Optional[Union[int, timedelta]] = None,
+            poll_condition: Optional[str] = None,
+            input_fn: Optional[Callable[[], Any]] = None,
     ):
         """
         :param model: PyTorch model to be integrated.
@@ -42,10 +46,14 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
         :param input_fn: Function to call to get the input to the model. This function should return a tensor.
         """
         super().__init__(model, class_names, interface_options, identifier)
+        self.model = model
+        self.class_names = class_names
+        self.identifier = identifier
+        self.interface_options = interface_options
+        self.logic_program = logic_program
         self.poll_interval = poll_interval
         self.poll_condition = poll_condition
         self.input_fn = input_fn
-        self.logic_program = None  # Get the current logic program
 
         # normalize poll_interval
         if isinstance(poll_interval, int):
@@ -61,61 +69,6 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
             t = threading.Thread(target=self._poll_loop, daemon=True)
             t.start()
 
-    def _infer(self, x: Any) -> Any:
-        print("Running YOLO model inference...")
-        # resized_image = cv2.resize(image, (640, 640))  # Direct resize
-        # normalized_image = resized_image / 255.0  # Normalize
-        result_predict = self.model.predict(source = x, imgsz=(640), conf=0.1) #the default image size
-        #print("Predicted output:", result_predict)
-        return result_predict
-
-    def _postprocess(self, raw_output: Any) -> Any:
-        """
-        Process the raw output from the YOLO model to extract bounding boxes and class probabilities.
-        """
-        result = raw_output[0]  # Get the first result from the prediction
-        box = result.boxes[0]  # Get the first bounding box from the result
-        label_id = int(box.cls)
-        confidence = float(box.conf)
-        label_name = result.names[label_id]  # Get the label name from the names dictionary
-        print(f"Predicted label: {label_name}, Confidence: {confidence:.2f}")
-        return [label_name, confidence]
-    
-    def _pred_to_facts(
-        self,
-        raw_output: Any,
-        result: List,
-        t1: int = None,
-        t2: int = None
-    ) -> List[Fact]:
-        """
-        Given a [N, C] probability tensor, build a flat List[Fact],
-        using threshold, snap_value, set_lower_bound, set_upper_bound.
-        Returns N * C facts.
-        """
-        opts = self.interface_options
-        label = result[0]
-        confidence = result[1]
-        # Determine lower/upper for "true" entries
-        if opts.snap_value is not None:
-            snap_val = opts.snap_value
-            lower_if_true = (snap_val if opts.set_lower_bound
-                             else 0)
-            upper_if_true = (snap_val if opts.set_upper_bound
-                             else 1.0)
-        else:
-            lower_if_true = confidence if opts.set_lower_bound else 0
-            upper_if_true = confidence if opts.set_upper_bound else 1.0
-
-        all_facts: List[Fact] = []
-
-        fact_str = f"_{label}({self.identifier}) : [{lower_if_true:.3f}, {upper_if_true:.3f}]"
-        fact_name = f"{self.identifier}-{label}-fact"
-        f = Fact(fact_str, name=fact_name, start_time=t1, end_time=t2)
-        all_facts.append(f)
-
-        return all_facts
-    
     def _get_current_timestep(self):
         """
         Get the current timestep from the PyReason logic program.
@@ -133,7 +86,7 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
         else:
             # raise ValueError("No PyReason logic program provided.")
             return -1
-    
+
     def _poll_loop(self) -> None:
         """
         Background async loop that polls every self.poll_interval.
@@ -144,11 +97,14 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
         # check if we have a logic program yet or not
         while True:
             current_time = self._get_current_timestep()
+            # print("here")
             if current_time != -1:
+                print("current time", current_time)
                 # determine mode
                 if isinstance(self.poll_interval, timedelta):
                     interval_secs = self.poll_interval.total_seconds()
                     while True:
+                        print("in loop")
                         time.sleep(interval_secs)
                         current_time = self._get_current_timestep()
                         t1 = current_time + 1
@@ -158,9 +114,8 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
                             print(f"{self.poll_condition}({self.identifier})")
                             print(self.logic_program.interp.query(pr.Query(f"{self.poll_condition}({self.identifier})")))
                             if not self.logic_program.interp.query(pr.Query(f"{self.poll_condition}({self.identifier})")):
-                                print(f"Condition {self.poll_condition} not met, skipping poll.")
                                 continue
-                        print("Condition met, polling model...")           
+
                         x = self.input_fn()
                         _, _, facts = self.forward(x, t1, t2)
                         for f in facts:
@@ -168,7 +123,7 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
                             pr.add_fact(f)
 
                         # run the reasoning
-                        pr.reason(again=True, restart=True)
+                        pr.reason(again=True, restart=False)
                         print("reasoning done")
                         trace = pr.get_rule_trace(self.logic_program.interp)
                         print(trace[0])
@@ -195,5 +150,93 @@ class YoloLogicIntegratedTemporalClassifier(LogicIntegrationBase):
 
                         # run the reasoning
                         pr.reason(again=True, restart=False)
+                        print("reasoning done")
                         trace = pr.get_rule_trace(self.logic_program.interp)
                         print(trace[0])
+
+                # # run the reasoning
+                # pr.reason(again=True, restart=False)
+                # print("reasoning done")
+                # trace = pr.get_rule_trace(interpretation)
+                # print(trace[0])
+
+    def get_class_facts(self, t1: int, t2: int) -> List[Fact]:
+        """
+        Return PyReason facts to create nodes for each class. Each class node will have bounds `[1,1]` with the
+         predicate corresponding to the model name.
+        :param t1: Start time for the facts
+        :param t2: End time for the facts
+        :return: List of PyReason facts
+        """
+        facts = []
+        for c in self.class_names:
+            fact = Fact(f'{c}({self.identifier})', name=f'{self.identifier}-{c}-fact', start_time=t1, end_time=t2)
+            facts.append(fact)
+        return facts
+
+    def _infer(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Run the underlying model to get raw logits [N, C].
+        """
+        return self.model(x)
+
+    def _postprocess(self, raw_output: torch.Tensor) -> torch.Tensor:
+        """
+        raw_output should be a [N, C] logits tensor.  Assert C == len(class_names),
+        then apply softmax over dim=1 → [N, C] probabilities.
+        """
+        logits = raw_output
+        if logits.dim() != 2 or logits.size(1) != len(self.class_names):
+            raise ValueError(
+                f"Expected logits of shape [N, C] with C={len(self.class_names)}, got {tuple(logits.shape)}"
+            )
+        return F.softmax(logits, dim=1)
+
+    def _pred_to_facts(
+        self,
+        raw_output: torch.Tensor,
+        probabilities: torch.Tensor,
+        t1: int,
+        t2: int
+    ) -> List[Fact]:
+        """
+        Given a [N, C] probability tensor, build a flat List[Fact],
+        using threshold, snap_value, set_lower_bound, set_upper_bound.
+        Returns N * C facts.
+        """
+        opts = self.interface_options
+        prob = probabilities  # [N, C]
+
+        # Build a threshold tensor
+        threshold = torch.tensor(opts.threshold, dtype=prob.dtype, device=prob.device)
+        condition = prob > threshold  # [N, C] boolean mask
+
+        # Determine lower/upper for “true” entries
+        if opts.snap_value is not None:
+            snap_val = torch.tensor(opts.snap_value, dtype=prob.dtype, device=prob.device)
+            lower_if_true = (snap_val if opts.set_lower_bound
+                             else torch.tensor(0.0, dtype=prob.dtype, device=prob.device))
+            upper_if_true = (snap_val if opts.set_upper_bound
+                             else torch.tensor(1.0, dtype=prob.dtype, device=prob.device))
+        else:
+            lower_if_true = prob if opts.set_lower_bound else torch.zeros_like(prob)
+            upper_if_true = prob if opts.set_upper_bound else torch.ones_like(prob)
+
+        zeros = torch.zeros_like(prob)
+        ones = torch.ones_like(prob)
+        lower_bounds = torch.where(condition, lower_if_true, zeros)  # [N, C]
+        upper_bounds = torch.where(condition, upper_if_true, ones)   # [N, C]
+
+        N, C = prob.shape
+        all_facts: List[Fact] = []
+
+        for i in range(N):
+            for j, class_name in enumerate(self.class_names):
+                lower_val = lower_bounds[i, j].item()
+                upper_val = upper_bounds[i, j].item()
+                fact_str = f"{class_name}({self.identifier}) : [{lower_val:.3f}, {upper_val:.3f}]"
+                fact_name = f"{self.identifier}-{class_name}-fact"
+                f = Fact(fact_str, name=fact_name, start_time=t1, end_time=t2)
+                all_facts.append(f)
+
+        return all_facts

@@ -32,7 +32,7 @@ fraud_interface_options = pr.ModelInterfaceOptions(
 fraud_detector = pr.LogicIntegratedClassifier(
     fraud_model,
     fraud_class_names,
-    model_name="fraud_detector",
+    identifier="fraud_detector",
     interface_options=fraud_interface_options
 )
 
@@ -106,7 +106,7 @@ risk_interface_options = pr.ModelInterfaceOptions(
 risk_evaluator = pr.LogicIntegratedClassifier(
     risk_model,
     risk_class_names, # document len
-    model_name="risk_evaluator", # binded constant
+    identifier="risk_evaluator", # binded constant
     interface_options=risk_interface_options
 )
 
