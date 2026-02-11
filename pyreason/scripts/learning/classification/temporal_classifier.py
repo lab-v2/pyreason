@@ -95,36 +95,27 @@ class TemporalLogicIntegratedClassifier(LogicIntegrationBase):
         # check if we have a logic program yet or not
         while True:
             current_time = self._get_current_timestep()
-            # print("here")
             if current_time != -1:
-                print("current time", current_time)
                 # determine mode
                 if isinstance(self.poll_interval, timedelta):
                     interval_secs = self.poll_interval.total_seconds()
                     while True:
-                        print("in loop")
                         time.sleep(interval_secs)
                         current_time = self._get_current_timestep()
                         t1 = current_time + 1
                         t2 = t1
 
                         if self.poll_condition:
-                            print(f"{self.poll_condition}({self.identifier})")
-                            print(self.logic_program.interp.query(pr.Query(f"{self.poll_condition}({self.identifier})")))
                             if not self.logic_program.interp.query(pr.Query(f"{self.poll_condition}({self.identifier})")):
                                 continue
 
                         x = self.input_fn()
                         _, _, facts = self.forward(x, t1, t2)
                         for f in facts:
-                            print(f)
                             pr.add_fact(f)
 
                         # run the reasoning
                         pr.reason(again=True, restart=False)
-                        print("reasoning done")
-                        trace = pr.get_rule_trace(self.logic_program.interp)
-                        print(trace[0])
 
                 else:
                     step_interval = self.poll_interval
@@ -148,15 +139,7 @@ class TemporalLogicIntegratedClassifier(LogicIntegrationBase):
 
                         # run the reasoning
                         pr.reason(again=True, restart=False)
-                        print("reasoning done")
-                        trace = pr.get_rule_trace(self.logic_program.interp)
-                        print(trace[0])
 
-                # # run the reasoning
-                # pr.reason(again=True, restart=False)
-                # print("reasoning done")
-                # trace = pr.get_rule_trace(interpretation)
-                # print(trace[0])
 
     def get_class_facts(self, t1: int, t2: int) -> List[Fact]:
         """
