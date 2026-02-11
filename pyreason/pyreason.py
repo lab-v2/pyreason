@@ -27,6 +27,7 @@ from pyreason.scripts.query.query import Query
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
+from pyreason.scripts.interpretation.interpretation_parallel import Interpretation
 from pyreason.scripts.utils.reorder_clauses import reorder_clauses
 if importlib.util.find_spec("torch") is not None:
     from pyreason.scripts.learning.classification.classifier import LogicIntegratedClassifier
@@ -521,6 +522,37 @@ def reset_rules():
     if __program is not None:
         __program.reset_rules()
 
+def get_logic_program() -> Optional[Program]:
+    """Get the logic program object
+
+    :return: Logic program object
+    """
+    global __program
+    return __program
+
+
+def get_interpretation() -> Optional[Interpretation]:
+    """Get the current interpretation
+
+    :return: Current interpretation
+    """
+    global __program
+    if __program is None:
+        raise Exception('No interpretation found. Please run `pr.reason()` first')
+    return __program.interp
+
+
+def get_time() -> int:
+    """Get the current time
+
+    :return: Current time
+    """
+    try:
+        i = get_interpretation()
+    except Exception:
+        return 0
+    return i.time + 1
+
 
 def reset_settings():
     """
@@ -707,7 +739,7 @@ def add_fact(pyreason_fact: Fact) -> None:
             pyreason_fact.name = f'fact_{len(__node_facts)+len(__edge_facts)}'
 
         if pyreason_fact.name in __node_facts_name_set:
-            warnings.warn(f"Fact {pyreason_fact.name} has already been added. Duplicate fact names will lead to an ambiguous node and atom traces.")
+            warnings.warn(f"Fact {pyreason_fact.name} has already been added. Duplicate fact names will lead to an ambiguous node and atom traces.", stacklevel=2)
 
         f = fact_node.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.pred, pyreason_fact.bound, pyreason_fact.start_time, pyreason_fact.end_time, pyreason_fact.static)
         __node_facts_name_set.add(pyreason_fact.name)
@@ -717,7 +749,7 @@ def add_fact(pyreason_fact: Fact) -> None:
             pyreason_fact.name = f'fact_{len(__node_facts)+len(__edge_facts)}'
 
         if pyreason_fact.name in __node_facts_name_set:
-            warnings.warn(f"Fact {pyreason_fact.name} has already been added. Duplicate fact names will lead to an ambiguous node and atom traces.")
+            warnings.warn(f"Fact {pyreason_fact.name} has already been added. Duplicate fact names will lead to an ambiguous node and atom traces.", stacklevel=2)
 
         f = fact_edge.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.pred, pyreason_fact.bound, pyreason_fact.start_time, pyreason_fact.end_time, pyreason_fact.static)
         __node_facts_name_set.add(pyreason_fact.name)
