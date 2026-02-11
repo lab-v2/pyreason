@@ -89,6 +89,3 @@ interpretation = reason()
 trace = get_rule_trace(interpretation)
 print(f"NODE RULE TRACE: \n\n{trace[0]}\n")
 print(f"EDGE RULE TRACE: \n\n{trace[1]}\n")
-
-# TODO:
-# Ask Dyuman about how to connect all the edges of a graph within the LogicIntegratedClassifier
