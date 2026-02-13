@@ -1,0 +1,14 @@
+rule_text,name,infer_edges,set_static
+"friend(A, B) <- knows(A, B)",friendship-rule,False,False
+"enemy(A, B) <- ~friend(A, B)",enemy-rule,false,false
+"ally(A, B) <- friend(A, B), common_interest(A, B)",ally-rule,0,0
+"likes(A, B) <- knows(A, B), friend(A, B)",likes-rule,True,False
+"connected(A, B) <- link(A, B)",connected-rule,true,false
+"trusted(A, B) <- friend(A, B), ally(A, B)",trusted-rule,1,0
+"close(A, B) <- friend(A, B), likes(A, B)",close-rule,yes,no
+"popular(x) <- friend(x, y)",popular-rule,False,True
+,empty-rule-text,False,False
+InvalidRuleSyntax,bad-syntax,False,False
+"friend(A, B) <- knows(A, B)",bad-infer,invalid,False
+"friend(A, B) <- knows(A, B)",bad-static,False,invalid
+"friend(A, B) <- knows(A, B)",,,
