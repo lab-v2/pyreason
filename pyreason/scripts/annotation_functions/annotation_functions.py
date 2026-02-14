@@ -3,8 +3,6 @@
 import numba
 import numpy as np
 
-import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
-
 @numba.njit
 def _get_weighted_sum(annotations, weights, mode='lower'):
     """
@@ -49,7 +47,7 @@ def average(annotations, weights):
 
     lower, upper = _check_bound(avg_lower, avg_upper)
 
-    return interval.closed(lower, upper)
+    return (lower, upper)
 
 @numba.njit
 def average_lower(annotations, weights):
@@ -67,7 +65,7 @@ def average_lower(annotations, weights):
 
     lower, upper = _check_bound(avg_lower, max_upper)
 
-    return interval.closed(lower, upper)
+    return (lower, upper)
 
 @numba.njit
 def maximum(annotations, weights):
@@ -82,7 +80,7 @@ def maximum(annotations, weights):
 
     lower, upper = _check_bound(max_lower, max_upper)
 
-    return interval.closed(lower, upper)
+    return (lower, upper)
 
 
 @numba.njit
@@ -98,4 +96,4 @@ def minimum(annotations, weights):
 
     lower, upper = _check_bound(min_lower, min_upper)
 
-    return interval.closed(lower, upper)
+    return (lower, upper)
