@@ -1,0 +1,100 @@
+[
+    {
+        "rule_text": "friend(A, B) <- knows(A, B)",
+        "name": "friendship-rule",
+        "infer_edges": false,
+        "set_static": false
+    },
+    {
+        "rule_text": "enemy(A, B) <- ~friend(A, B)",
+        "name": "enemy-rule",
+        "infer_edges": false,
+        "set_static": false
+    },
+    {
+        "rule_text": "ally(A, B) <- friend(A, B), common_interest(A, B)",
+        "name": "ally-rule",
+        "infer_edges": false,
+        "set_static": false
+    },
+    {
+        "rule_text": "likes(A, B) <- knows(A, B), friend(A, B)",
+        "name": "likes-rule",
+        "infer_edges": true,
+        "set_static": false
+    },
+    {
+        "rule_text": "connected(A, B) <- link(A, B)",
+        "name": "connected-rule",
+        "infer_edges": true,
+        "set_static": false
+    },
+    {
+        "rule_text": "trusted(A, B) <- friend(A, B), ally(A, B)",
+        "name": "trusted-rule",
+        "infer_edges": false,
+        "set_static": true
+    },
+    {
+        "rule_text": "popular(x) <- friend(x, y)",
+        "name": "popular-rule",
+        "infer_edges": false,
+        "set_static": true
+    },
+    {
+        "rule_text": "close(A, B) <- friend(A, B), likes(A, B)",
+        "name": "close-rule",
+        "custom_thresholds": [
+            {"quantifier": "greater_equal", "quantifier_type": ["number", "total"], "thresh": 1},
+            {"quantifier": "greater_equal", "quantifier_type": ["percent", "total"], "thresh": 100}
+        ],
+        "weights": [1.0, 2.0]
+    },
+    {
+        "rule_text": "ViewedByAll(y) <- HaveAccess(x,y), Viewed(x)",
+        "name": "threshold-rule",
+        "custom_thresholds": [
+            {"quantifier": "greater_equal", "quantifier_type": ["number", "total"], "thresh": 1},
+            {"quantifier": "greater_equal", "quantifier_type": ["percent", "total"], "thresh": 100}
+        ]
+    },
+    {
+        "rule_text": "",
+        "name": "empty-rule-text"
+    },
+    {
+        "rule_text": "InvalidRuleSyntax",
+        "name": "bad-syntax"
+    },
+    {
+        "rule_text": "friend(A, B) <- knows(A, B)",
+        "name": "bad-infer",
+        "infer_edges": "invalid"
+    },
+    {
+        "rule_text": "friend(A, B) <- knows(A, B)",
+        "name": "bad-static",
+        "set_static": "invalid"
+    },
+    {
+        "rule_text": "friend(A, B) <- knows(A, B)",
+        "name": "bad-thresholds",
+        "custom_thresholds": "not-a-list"
+    },
+    {
+        "rule_text": "friend(A, B) <- knows(A, B)",
+        "name": "bad-threshold-item",
+        "custom_thresholds": [
+            {"quantifier": "invalid_quantifier", "quantifier_type": ["number", "total"], "thresh": 1}
+        ]
+    },
+    {
+        "rule_text": "friend(A, B) <- knows(A, B)",
+        "name": "bad-weights",
+        "weights": "not-a-list"
+    },
+    {
+        "rule_text": "friend(A, B) <- knows(A, B)"
+    },
+    "not-an-object"
+]
