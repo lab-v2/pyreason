@@ -32,9 +32,16 @@ from pyreason.scripts.utils.reorder_clauses import reorder_clauses
 if importlib.util.find_spec("torch") is not None:
     from pyreason.scripts.learning.classification.classifier import LogicIntegratedClassifier
     from pyreason.scripts.learning.utils.model_interface import ModelInterfaceOptions
+    if importlib.util.find_spec("lnn") is not None:
+        from pyreason.scripts.learning.classification.lnn_classifier import LNNClassifier, LNNInterfaceOptions
+    else:
+        LNNClassifier = None
+        LNNInterfaceOptions = None
 else:
     LogicIntegratedClassifier = None
     ModelInterfaceOptions = None
+    LNNClassifier = None
+    LNNInterfaceOptions = None
     print('torch is not installed, model integration is disabled')
 
 
