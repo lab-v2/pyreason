@@ -1,0 +1,6 @@
+"friend(A, B) <- knows(A, B)",friendship-rule,False,False
+"enemy(A, B) <- ~friend(A, B)",enemy-rule,False,False
+"ally(A, B) <- friend(A, B), common_interest(A, B)",ally-rule,False,False
+,empty-rule,False,False
+InvalidRuleSyntax,bad-syntax,False,False
+"friend(A, B) <- knows(A, B)",good-rule,invalid,False

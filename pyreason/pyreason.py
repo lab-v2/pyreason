@@ -460,8 +460,9 @@ __graph: Optional[nx.DiGraph] = None
 __rules: Optional[numba.typed.List] = None
 __clause_maps: Optional[dict] = None
 __node_facts: Optional[numba.typed.List] = None
-__node_facts_name_set = set() # We want to warn the user if they add multiple facts with the same name
 __edge_facts: Optional[numba.typed.List] = None
+__facts_name_set = set() # We want to warn the user if they add multiple facts with the same name
+__rules_name_set = set() # We want to warn the user if they add multiple rules with the same name
 __ipl: Optional[numba.typed.List] = None
 __specific_node_labels: Optional[numba.typed.List] = None
 __specific_edge_labels: Optional[numba.typed.List] = None
@@ -485,12 +486,12 @@ def reset():
     """Resets certain variables to None to be able to do pr.reason() multiple times in a program
     without memory blowing up
     """
-    global __node_facts, __edge_facts, __graph, __node_facts_name_set
+    global __node_facts, __edge_facts, __graph, __facts_name_set
 
     # Facts
     __node_facts = None
     __edge_facts = None
-    __node_facts_name_set.clear()
+    __facts_name_set.clear()
     if __program is not None:
         __program.reset_facts()
 
@@ -516,6 +517,7 @@ def reset_rules():
     """
     global __rules, __annotation_functions, __head_functions
     __rules = None
+    __rules_name_set.clear()
     __annotation_functions = []
     __head_functions = []
     if __program is not None:
@@ -606,24 +608,439 @@ def add_rule(pr_rule: Rule) -> None:
     if pr_rule.rule.get_rule_name() is None:
         pr_rule.rule.set_rule_name(f'rule_{len(__rules)}')
 
+    if pr_rule.rule.get_rule_name() in __rules_name_set:
+        warnings.warn(f"Rule {pr_rule.rule.get_rule_name()} has already been added. Duplicate rule names will lead to an ambiguous rule trace.")
+
+    __rules_name_set.add(pr_rule.rule.get_rule_name())
     __rules.append(pr_rule.rule)
 
 
-def add_rules_from_file(file_path: str, infer_edges: bool = False) -> None:
-    """ Add a set of rules from a text file
+def add_rules_from_file(file_path: str, infer_edges: bool = False, raise_errors: bool = False) -> None:
+    """Add a set of rules from a text file.
+
+    Each non-empty, non-comment line is treated as a rule in text format.
+    Lines starting with ``#`` are treated as comments and skipped.
+    The ``infer_edges`` parameter is applied uniformly to all rules loaded from the file.
 
     :param file_path: Path to the text file containing rules
     :type file_path: str
     :param infer_edges: Whether to infer edges on these rules if an edge doesn't exist between head variables and the body of the rule is satisfied
     :type infer_edges: bool
+    :param raise_errors: If True, raise on invalid rules. If False, warn and skip them.
+    :type raise_errors: bool
     :return: None
+    :raises FileNotFoundError: If the text file doesn't exist
+    :raises ValueError: If rule parsing fails and raise_errors is True
     """
     with open(file_path, 'r') as file:
         rules = [line.rstrip() for line in file if line.rstrip() != '' and line.rstrip()[0] != '#']
 
+    loaded_count = 0
+    error_count = 0
+
     rule_offset = 0 if __rules is None else len(__rules)
     for i, r in enumerate(rules):
-        add_rule(Rule(r, f'rule_{i+rule_offset}', infer_edges))
+        try:
+            add_rule(Rule(r, f'rule_{i+rule_offset}', infer_edges))
+            loaded_count += 1
+        except Exception as e:
+            if raise_errors:
+                raise ValueError(f"Line {i + 1}: Failed to parse rule '{r}' - {e}") from e
+            error_count += 1
+            warnings.warn(f"Line {i + 1}: Failed to parse rule '{r}' - {e}")
+
+    if settings.verbose:
+        print(f"Loaded {loaded_count} rules from {file_path}")
+        if error_count > 0:
+            print(f"Failed to load {error_count} rules due to errors")
+
+
+def _parse_bool_param(raw_value, param_name, idx, raise_errors, item_label="Item", default=False):
+    """Private helper to parse a raw value as a boolean.
+
+    :param raw_value: Raw value to parse (can be None, str, bool, int, float)
+    :param param_name: Name of the parameter (for error messages)
+    :param idx: Index of the item being parsed (for error messages)
+    :param raise_errors: Whether to raise errors or just warn
+    :param item_label: Label for error messages (e.g., "Item", "Row")
+    :param default: Default value if raw_value is None or empty
+    :return: Parsed boolean value
+    :raises ValueError: If validation fails and raise_errors is True
+    """
+    if raw_value is None:
+        return default
+    if isinstance(raw_value, bool):
+        return raw_value
+    if isinstance(raw_value, str):
+        val_str = raw_value.strip().lower()
+        if val_str in ('true', '1', 'yes', 't', 'y'):
+            return True
+        elif val_str in ('false', '0', 'no', 'f', 'n', ''):
+            return default if val_str == '' else False
+        else:
+            if raise_errors:
+                raise ValueError(f"{item_label} {idx}: Invalid {param_name} value '{raw_value}'")
+            warnings.warn(f"{item_label} {idx}: Invalid {param_name} value '{raw_value}', using default value")
+            return default
+    if isinstance(raw_value, (int, float)):
+        return bool(raw_value)
+    if raise_errors:
+        raise ValueError(f"{item_label} {idx}: Invalid {param_name} value type '{type(raw_value).__name__}'")
+    warnings.warn(f"{item_label} {idx}: Invalid {param_name} value type '{type(raw_value).__name__}', using default value")
+    return default
+
+
+def _parse_and_validate_rule_params(idx, name_raw, infer_edges_raw, set_static_raw, raise_errors, item_label="Item"):
+    """Private helper to parse and validate rule parameters.
+
+    :param idx: Index of the item being parsed (for error messages)
+    :param name_raw: Raw name value (can be None, str, or other types)
+    :param infer_edges_raw: Raw infer_edges value
+    :param set_static_raw: Raw set_static value
+    :param raise_errors: Whether to raise errors or just warn
+    :param item_label: Label for error messages (e.g., "Item", "Row")
+    :return: Tuple of (name, infer_edges, set_static)
+    :raises ValueError: If validation fails and raise_errors is True
+    """
+    # Parse name
+    name = None
+    if name_raw is not None:
+        name = str(name_raw).strip() if str(name_raw).strip() else None
+
+    # Parse infer_edges
+    infer_edges = _parse_bool_param(infer_edges_raw, 'infer_edges', idx, raise_errors, item_label, default=False)
+
+    # Parse set_static
+    set_static = _parse_bool_param(set_static_raw, 'set_static', idx, raise_errors, item_label, default=False)
+
+    return name, infer_edges, set_static
+
+
+def add_rule_from_csv(csv_path: str, raise_errors: bool = True) -> None:
+    """Load multiple rules from a CSV file.
+
+    Each row should have up to 4 comma-separated values in this order:
+    ``rule_text, name, infer_edges, set_static``
+
+    - **rule_text** (required): The rule in text format, e.g., ``friend(A, B) <- knows(A, B)``
+      or ``"ally(A, B) <- friend(A, B), common_interest(A, B)"`` for rules with commas.
+    - **name** (optional): A unique name for the rule (can be empty).
+    - **infer_edges** (optional): Whether to infer new edges after edge rule fires (default: False).
+      Accepts: True/False, 1/0, yes/no (case-insensitive).
+    - **set_static** (optional): Whether to set the atom in the head as static if the rule fires (default: False).
+      Accepts: True/False, 1/0, yes/no (case-insensitive).
+
+    A header row is optional. If included, it must be exactly::
+
+        rule_text,name,infer_edges,set_static
+
+    Any other header format will be treated as a data row and will likely raise a parsing error.
+
+    Example CSV::
+
+        rule_text,name,infer_edges,set_static
+        friend(A, B) <- knows(A, B),friendship-rule,False,False
+        "ally(A, B) <- friend(A, B), common_interest(A, B)",ally-rule,False,False
+        connected(A, B) <- link(A, B),connected-rule,True,False
+
+    :param csv_path: Path to the CSV file containing rules
+    :type csv_path: str
+    :param raise_errors: If True, raise on invalid rows. If False, warn and skip them.
+    :type raise_errors: bool
+    :return: None
+    :raises FileNotFoundError: If the CSV file doesn't exist
+    :raises ValueError: If rule parsing fails or CSV format is invalid
+    """
+    try:
+        df = pd.read_csv(csv_path, header=None, dtype=str, keep_default_na=False)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"CSV file not found: {csv_path}")
+    except pd.errors.EmptyDataError:
+        warnings.warn(f"CSV file {csv_path} is empty, no rules loaded")
+        return
+    except Exception as e:
+        raise ValueError(f"Error reading CSV file {csv_path}: {e}")
+
+    if df.empty:
+        warnings.warn(f"CSV file {csv_path} is empty, no rules loaded")
+        return
+
+    # Skip first row if it exactly matches the expected header
+    expected_header = ['rule_text', 'name', 'infer_edges', 'set_static']
+    first_row = [str(v).strip() for v in df.iloc[0]] if len(df) > 0 else []
+    has_header = first_row == expected_header
+    start_idx = 1 if has_header else 0
+
+    # Track loaded rules for reporting
+    loaded_count = 0
+    error_count = 0
+    loaded_name_set = set()
+
+    # Process each row
+    for idx, row in df.iloc[start_idx:].iterrows():
+        try:
+            # Extract rule_text (required, column 0)
+            if len(row) < 1 or not str(row[0]).strip():
+                if raise_errors:
+                    raise ValueError(f"Row {idx + 1}: Missing required 'rule_text'")
+                warnings.warn(f"Row {idx + 1}: Missing required 'rule_text', skipping row")
+                error_count += 1
+                continue
+
+            rule_text = str(row[0]).strip()
+
+            # Parse and validate parameters using shared helper
+            name, infer_edges, set_static = _parse_and_validate_rule_params(
+                idx + 1,
+                row[1] if len(row) > 1 else None,
+                row[2] if len(row) > 2 else None,
+                row[3] if len(row) > 3 else None,
+                raise_errors,
+                "Row"
+            )
+
+            # Check for duplicate names
+            if name and name in loaded_name_set:
+                if raise_errors:
+                    raise ValueError(f"Row {idx + 1}: Loaded name '{name}' is a duplicate - all rule names must be unique.")
+                warnings.warn(f"Row {idx + 1}: Loaded name '{name}' is a duplicate - all rule names must be unique.")
+                error_count += 1
+                continue
+            if name:
+                loaded_name_set.add(name)
+
+            # Create and add the rule
+            r = Rule(rule_text=rule_text, name=name, infer_edges=infer_edges, set_static=set_static)
+            add_rule(r)
+            loaded_count += 1
+
+        except ValueError as e:
+            if raise_errors:
+                raise ValueError(f"Row {idx + 1}: Failed to parse rule - {e}") from e
+            error_count += 1
+            warnings.warn(f"Row {idx + 1}: Failed to parse rule - {e}")
+        except Exception as e:
+            if raise_errors:
+                raise Exception(f"Row {idx + 1}: Unexpected error - {e}") from e
+            error_count += 1
+            warnings.warn(f"Row {idx + 1}: Unexpected error - {e}")
+
+    if settings.verbose:
+        print(f"Loaded {loaded_count} rules from {csv_path}")
+        if error_count > 0:
+            print(f"Failed to load {error_count} rules due to errors")
+
+
+def add_rule_from_json(json_path: str, raise_errors: bool = True) -> None:
+    """Load multiple rules from a JSON file.
+
+    The JSON should be an array of objects, where each object represents a Rule with these fields:
+
+    - **rule_text** (required): The rule in text format, e.g., ``"friend(A, B) <- knows(A, B)"``
+    - **name** (optional): The name of the rule. This will appear in the rule trace.
+    - **infer_edges** (optional): Whether to infer new edges after edge rule fires (default: false).
+    - **set_static** (optional): Whether to set the atom in the head as static if the rule fires (default: false).
+    - **custom_thresholds** (optional): A list of threshold objects (one per clause), or a dict
+      mapping clause index to threshold object (unspecified clauses get defaults). Each threshold
+      object has ``quantifier``, ``quantifier_type``, and ``thresh`` fields.
+    - **weights** (optional): A list of weights for the rule clauses. This is passed to an annotation function.
+
+    Example JSON format::
+
+        [
+            {
+                "rule_text": "friend(A, B) <- knows(A, B)",
+                "name": "friendship-rule",
+                "infer_edges": false,
+                "set_static": false
+            },
+            {
+                "rule_text": "ally(A, B) <- friend(A, B), common_interest(A, B)",
+                "name": "ally-rule-list",
+                "custom_thresholds": [
+                    {"quantifier": "greater_equal", "quantifier_type": ["number", "total"], "thresh": 1},
+                    {"quantifier": "greater_equal", "quantifier_type": ["percent", "total"], "thresh": 100}
+                ],
+                "weights": [1.0, 2.0]
+            },
+            {
+                "rule_text": "ally(A, B) <- friend(A, B), common_interest(A, B)",
+                "name": "ally-rule-dict",
+                "custom_thresholds": {
+                    "0": {"quantifier": "greater_equal", "quantifier_type": ["percent", "total"], "thresh": 50}
+                }
+            }
+        ]
+
+    :param json_path: Path to the JSON file containing rules
+    :type json_path: str
+    :param raise_errors: If True, raise on invalid items. If False, warn and skip them.
+    :type raise_errors: bool
+    :return: None
+    :raises FileNotFoundError: If the JSON file doesn't exist
+    :raises ValueError: If rule parsing fails or JSON format is invalid
+    """
+    try:
+        with open(json_path, 'r') as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"JSON file not found: {json_path}")
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON format in file {json_path}: {e}")
+    except Exception as e:
+        raise ValueError(f"Error reading JSON file {json_path}: {e}")
+
+    if not isinstance(data, list):
+        raise ValueError(f"JSON file must contain an array of rule objects, got {type(data).__name__}")
+
+    if len(data) == 0:
+        warnings.warn(f"JSON file {json_path} contains an empty array, no rules loaded")
+        return
+
+    # Track loaded rules for reporting
+    loaded_count = 0
+    error_count = 0
+    loaded_name_set = set()
+
+    # Process each rule object
+    for idx, rule_obj in enumerate(data):
+        try:
+            if not isinstance(rule_obj, dict):
+                if raise_errors:
+                    raise ValueError(f"Item {idx}: Expected object, got {type(rule_obj).__name__}")
+                warnings.warn(f"Item {idx}: Expected object, got {type(rule_obj).__name__}, skipping item")
+                error_count += 1
+                continue
+
+            # Extract rule_text (required)
+            rule_text = rule_obj.get('rule_text')
+            if not rule_text or not str(rule_text).strip():
+                if raise_errors:
+                    raise ValueError(f"Item {idx}: Missing required 'rule_text'")
+                warnings.warn(f"Item {idx}: Missing required 'rule_text', skipping item")
+                error_count += 1
+                continue
+
+            rule_text = str(rule_text).strip()
+
+            # Parse and validate parameters using shared helper
+            name, infer_edges, set_static = _parse_and_validate_rule_params(
+                idx,
+                rule_obj.get('name'),
+                rule_obj.get('infer_edges', False),
+                rule_obj.get('set_static', False),
+                raise_errors,
+                "Item"
+            )
+
+            # Extract advanced params (JSON-only)
+            custom_thresholds_raw = rule_obj.get('custom_thresholds')
+            custom_thresholds = None
+            found_threshold_error = False
+            if custom_thresholds_raw is not None:
+                if isinstance(custom_thresholds_raw, list):
+                    custom_thresholds = []
+                    for t_idx, t_obj in enumerate(custom_thresholds_raw):
+                        if isinstance(t_obj, dict):
+                            try:
+                                custom_thresholds.append(Threshold(
+                                    t_obj['quantifier'],
+                                    tuple(t_obj['quantifier_type']),
+                                    t_obj['thresh']
+                                ))
+                            except (KeyError, ValueError, TypeError) as te:
+                                if raise_errors:
+                                    raise ValueError(f"Item {idx}, threshold {t_idx}: Invalid threshold - {te}")
+                                warnings.warn(f"Item {idx}, threshold {t_idx}: Invalid threshold - {te}, skipping rule")
+                                found_threshold_error = True
+                                break
+                        else:
+                            if raise_errors:
+                                raise ValueError(f"Item {idx}, threshold {t_idx}: Expected object, got {type(t_obj).__name__}")
+                            warnings.warn(f"Item {idx}, threshold {t_idx}: Expected object, got {type(t_obj).__name__}, skipping rule")
+                            found_threshold_error = True
+                            break
+                elif isinstance(custom_thresholds_raw, dict):
+                    custom_thresholds = {}
+                    for key_str, t_obj in custom_thresholds_raw.items():
+                        try:
+                            clause_idx = int(key_str)
+                        except (ValueError, TypeError):
+                            if raise_errors:
+                                raise ValueError(f"Item {idx}: custom_thresholds dict key '{key_str}' must be an integer clause index")
+                            warnings.warn(f"Item {idx}: custom_thresholds dict key '{key_str}' must be an integer clause index, skipping rule")
+                            found_threshold_error = True
+                            break
+                        if isinstance(t_obj, dict):
+                            try:
+                                custom_thresholds[clause_idx] = Threshold(
+                                    t_obj['quantifier'],
+                                    tuple(t_obj['quantifier_type']),
+                                    t_obj['thresh']
+                                )
+                            except (KeyError, ValueError, TypeError) as te:
+                                if raise_errors:
+                                    raise ValueError(f"Item {idx}, threshold key '{key_str}': Invalid threshold - {te}")
+                                warnings.warn(f"Item {idx}, threshold key '{key_str}': Invalid threshold - {te}, skipping rule")
+                                found_threshold_error = True
+                                break
+                        else:
+                            if raise_errors:
+                                raise ValueError(f"Item {idx}, threshold key '{key_str}': Expected object, got {type(t_obj).__name__}")
+                            warnings.warn(f"Item {idx}, threshold key '{key_str}': Expected object, got {type(t_obj).__name__}, skipping rule")
+                            found_threshold_error = True
+                            break
+                else:
+                    if raise_errors:
+                        raise ValueError(f"Item {idx}: 'custom_thresholds' must be a list or dict of threshold objects")
+                    warnings.warn(f"Item {idx}: 'custom_thresholds' must be a list or dict of threshold objects, skipping rule")
+                    found_threshold_error = True
+            if found_threshold_error:
+                error_count += 1
+                continue
+
+            weights_raw = rule_obj.get('weights')
+            weights = None
+            if weights_raw is not None:
+                if not isinstance(weights_raw, list):
+                    if raise_errors:
+                        raise ValueError(f"Item {idx}: 'weights' must be a list of numeric values")
+                    warnings.warn(f"Item {idx}: 'weights' must be a list of numeric values, skipping rule")
+                    error_count += 1
+                    continue
+                else:
+                    weights = weights_raw
+
+            # Check for duplicate names
+            if name and name in loaded_name_set:
+                if raise_errors:
+                    raise ValueError(f"Item {idx}: Loaded name '{name}' is a duplicate - all rule names must be unique.")
+                warnings.warn(f"Item {idx}: Loaded name '{name}' is a duplicate - all rule names must be unique.")
+                error_count += 1
+                continue
+            if name:
+                loaded_name_set.add(name)
+
+            # Create and add the rule
+            r = Rule(rule_text=rule_text, name=name, infer_edges=infer_edges, set_static=set_static, custom_thresholds=custom_thresholds, weights=weights)
+            add_rule(r)
+            loaded_count += 1
+
+        except ValueError as e:
+            if raise_errors:
+                raise ValueError(f"Item {idx}: Failed to parse rule - {e}") from e
+            error_count += 1
+            warnings.warn(f"Item {idx}: Failed to parse rule - {e}")
+        except Exception as e:
+            if raise_errors:
+                raise Exception(f"Item {idx}: Unexpected error - {e}") from e
+            error_count += 1
+            warnings.warn(f"Item {idx}: Unexpected error - {e}")
+
+    if settings.verbose:
+        print(f"Loaded {loaded_count} rules from {json_path}")
+        if error_count > 0:
+            print(f"Failed to load {error_count} rules due to errors")
 
 
 def _parse_and_validate_fact_params(idx, name_raw, start_time_raw, end_time_raw, static_raw, raise_errors, item_label="Item"):
@@ -663,28 +1080,7 @@ def _parse_and_validate_fact_params(idx, name_raw, start_time_raw, end_time_raw,
         end_time = start_time
 
     # Parse static as boolean
-    static = False
-    if static_raw is not None:
-        if isinstance(static_raw, bool):
-            static = static_raw
-        elif isinstance(static_raw, str):
-            static_str = static_raw.strip().lower()
-            if static_str in ('true', 'yes', 't', 'y'):
-                static = True
-            elif static_str in ('false', 'no', 'f', 'n', ''):
-                static = False
-            else:
-                if raise_errors:
-                    raise ValueError(f"{item_label} {idx}: Invalid static value '{static_raw}'")
-                warnings.warn(f"{item_label} {idx}: Invalid static value '{static_raw}', using default value")
-                static = False
-        elif isinstance(static_raw, (int, float)):
-            static = bool(static_raw)
-        else:
-            if raise_errors:
-                raise ValueError(f"{item_label} {idx}: Invalid static value type '{type(static_raw).__name__}'")
-            warnings.warn(f"{item_label} {idx}: Invalid static value type '{type(static_raw).__name__}', using default value")
-            static = False
+    static = _parse_bool_param(static_raw, 'static', idx, raise_errors, item_label, default=False)
 
     return name, start_time, end_time, static
 
@@ -706,21 +1102,21 @@ def add_fact(pyreason_fact: Fact) -> None:
         if pyreason_fact.name is None:
             pyreason_fact.name = f'fact_{len(__node_facts)+len(__edge_facts)}'
 
-        if pyreason_fact.name in __node_facts_name_set:
+        if pyreason_fact.name in __facts_name_set:
             warnings.warn(f"Fact {pyreason_fact.name} has already been added. Duplicate fact names will lead to an ambiguous node and atom traces.")
 
         f = fact_node.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.pred, pyreason_fact.bound, pyreason_fact.start_time, pyreason_fact.end_time, pyreason_fact.static)
-        __node_facts_name_set.add(pyreason_fact.name)
+        __facts_name_set.add(pyreason_fact.name)
         __node_facts.append(f)
     else:
         if pyreason_fact.name is None:
             pyreason_fact.name = f'fact_{len(__node_facts)+len(__edge_facts)}'
 
-        if pyreason_fact.name in __node_facts_name_set:
+        if pyreason_fact.name in __facts_name_set:
             warnings.warn(f"Fact {pyreason_fact.name} has already been added. Duplicate fact names will lead to an ambiguous node and atom traces.")
 
         f = fact_edge.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.pred, pyreason_fact.bound, pyreason_fact.start_time, pyreason_fact.end_time, pyreason_fact.static)
-        __node_facts_name_set.add(pyreason_fact.name)
+        __facts_name_set.add(pyreason_fact.name)
         __edge_facts.append(f)
 
 
