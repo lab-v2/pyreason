@@ -1809,23 +1809,32 @@ def check_consistent_edge(interpretations, comp, na):
 @numba.njit(cache=True)
 def resolve_inconsistency_node(interpretations, comp, na, ipl, t_cnt, fp_cnt, idx, atom_trace, rule_trace, rule_trace_atoms, rules_to_be_applied_trace, facts_to_be_applied_trace, store_interpretation_changes, mode):
 	world = interpretations[comp]
+	# Build descriptive message before any trace calls
+	msg = ''
+	if atom_trace:
+		comp_label_value = ''
+		for _p1, _p2 in ipl:
+			if _p1 == na[0]:
+				comp_label_value = _p2.value
+				break
+			if _p2 == na[0]:
+				comp_label_value = _p1.value
+				break
+		if comp_label_value != '':
+			msg = f'Inconsistency occurred. Grounding {na[0].value}({comp}) conflicts with grounding {comp_label_value}({comp}). Setting bounds to [0,1] and static=True for this timestep.'
+		else:
+			msg = f'Inconsistency occurred. Conflicting bounds for {na[0].value}({comp}). Update from [{float_to_str(world.world[na[0]].lower)}, {float_to_str(world.world[na[0]].upper)}] to [{float_to_str(na[1].lower)}, {float_to_str(na[1].upper)}] is not allowed. Setting bounds to [0,1] and static=True for this timestep.'
 	if store_interpretation_changes:
 		rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, na[0], interval.closed(0,1)))
-		if mode == 'fact' or mode == 'graph-attribute-fact' and atom_trace:
-			name = facts_to_be_applied_trace[idx]
-		elif mode == 'rule' and atom_trace:
-			name = rules_to_be_applied_trace[idx][2]
-		else:
-			name = '-'
 		if atom_trace:
-			_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[na[0]], f'Inconsistency due to {name}')
+			_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[na[0]], msg)
 	# Resolve inconsistency and set static
 	world.world[na[0]].set_lower_upper(0, 1)
 	world.world[na[0]].set_static(True)
 	for p1, p2 in ipl:
 		if p1==na[0]:
 			if atom_trace:
-				_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p2], f'Inconsistency due to {name}')
+				_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p2], msg)
 			world.world[p2].set_lower_upper(0, 1)
 			world.world[p2].set_static(True)
 			if store_interpretation_changes:
@@ -1833,7 +1842,7 @@ def resolve_inconsistency_node(interpretations, comp, na, ipl, t_cnt, fp_cnt, id
 
 		if p2==na[0]:
 			if atom_trace:
-				_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p1], f'Inconsistency due to {name}')
+				_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), world.world[p1], msg)
 			world.world[p1].set_lower_upper(0, 1)
 			world.world[p1].set_static(True)
 			if store_interpretation_changes:
@@ -1844,23 +1853,32 @@ def resolve_inconsistency_node(interpretations, comp, na, ipl, t_cnt, fp_cnt, id
 @numba.njit(cache=True)
 def resolve_inconsistency_edge(interpretations, comp, na, ipl, t_cnt, fp_cnt, idx, atom_trace, rule_trace, rule_trace_atoms, rules_to_be_applied_trace, facts_to_be_applied_trace, store_interpretation_changes, mode):
 	w = interpretations[comp]
+	# Build descriptive message before any trace calls
+	msg = ''
+	if atom_trace:
+		comp_label_value = ''
+		for _p1, _p2 in ipl:
+			if _p1 == na[0]:
+				comp_label_value = _p2.value
+				break
+			if _p2 == na[0]:
+				comp_label_value = _p1.value
+				break
+		if comp_label_value != '':
+			msg = f'Inconsistency occurred. Grounding {na[0].value}({comp[0]},{comp[1]}) conflicts with grounding {comp_label_value}({comp[0]},{comp[1]}). Setting bounds to [0,1] and static=True for this timestep.'
+		else:
+			msg = f'Inconsistency occurred. Conflicting bounds for {na[0].value}({comp[0]},{comp[1]}). Update from [{float_to_str(w.world[na[0]].lower)}, {float_to_str(w.world[na[0]].upper)}] to [{float_to_str(na[1].lower)}, {float_to_str(na[1].upper)}] is not allowed. Setting bounds to [0,1] and static=True for this timestep.'
 	if store_interpretation_changes:
 		rule_trace.append((numba.types.uint16(t_cnt), numba.types.uint16(fp_cnt), comp, na[0], interval.closed(0,1)))
-		if mode == 'fact' or mode == 'graph-attribute-fact' and atom_trace:
-			name = facts_to_be_applied_trace[idx]
-		elif mode == 'rule' and atom_trace:
-			name = rules_to_be_applied_trace[idx][2]
-		else:
-			name = '-'
 		if atom_trace:
-			_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), w.world[na[0]], f'Inconsistency due to {name}')
+			_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), w.world[na[0]], msg)
 	# Resolve inconsistency and set static
 	w.world[na[0]].set_lower_upper(0, 1)
 	w.world[na[0]].set_static(True)
 	for p1, p2 in ipl:
 		if p1==na[0]:
 			if atom_trace:
-				_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), w.world[p2], f'Inconsistency due to {name}')
+				_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), w.world[p2], msg)
 			w.world[p2].set_lower_upper(0, 1)
 			w.world[p2].set_static(True)
 			if store_interpretation_changes:
@@ -1868,7 +1886,7 @@ def resolve_inconsistency_edge(interpretations, comp, na, ipl, t_cnt, fp_cnt, id
 
 		if p2==na[0]:
 			if atom_trace:
-				_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), w.world[p1], f'Inconsistency due to {name}')
+				_update_rule_trace(rule_trace_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), w.world[p1], msg)
 			w.world[p1].set_lower_upper(0, 1)
 			w.world[p1].set_static(True)
 			if store_interpretation_changes:

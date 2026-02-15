@@ -52,6 +52,7 @@ def test_resolve_inconsistency_node_rule_trace(monkeypatch):
     monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     l = label.Label("L")
+    l.value = l.get_value()
     world = SimpleWorld()
     world.world[l] = SimpleInterval()
     interpretations = {"n1": world}
@@ -80,7 +81,9 @@ def test_resolve_inconsistency_node_rule_trace(monkeypatch):
         "rule",
     )
 
-    assert mock_update.call_args[0][-1].endswith("r")
+    msg = mock_update.call_args[0][-1]
+    assert msg.startswith("Inconsistency occurred.")
+    assert "Conflicting bounds for L(n1)" in msg
     assert len(rule_trace) == 1
 
 
@@ -170,6 +173,7 @@ def test_resolve_inconsistency_edge_rule_trace(monkeypatch):
     monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     l = label.Label("L")
+    l.value = l.get_value()
     world = SimpleWorld()
     world.world[l] = SimpleInterval()
     interpretations = {("a", "b"): world}
@@ -198,7 +202,9 @@ def test_resolve_inconsistency_edge_rule_trace(monkeypatch):
         "rule",
     )
 
-    assert mock_update.call_args[0][-1].endswith("r")
+    msg = mock_update.call_args[0][-1]
+    assert msg.startswith("Inconsistency occurred.")
+    assert "Conflicting bounds for L(a,b)" in msg
     assert len(rule_trace) == 1
 
 
