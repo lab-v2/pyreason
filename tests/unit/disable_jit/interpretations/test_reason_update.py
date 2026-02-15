@@ -82,6 +82,7 @@ def test_update_node_tracks_changes(monkeypatch):
             rule_trace_atoms=[],
             store_interpretation_changes=False,
             mode="fact",
+            rule_trace_metadata=[],
             override=False,
         )
         if "num_ga" in sig.parameters:
@@ -176,6 +177,7 @@ def test_update_edge_tracks_changes(monkeypatch):
             rule_trace_atoms=[],
             store_interpretation_changes=False,
             mode="rule",
+            rule_trace_metadata=[],
             override=False,
         )
         if "num_ga" in sig.parameters:
@@ -265,6 +267,7 @@ def test_update_node_override_sets_bounds(monkeypatch):
         rule_trace_atoms=rule_trace_atoms,
         store_interpretation_changes=False,
         mode="fact",
+        rule_trace_metadata=[],
         override=True,
     )
     if "num_ga" in sig.parameters:
@@ -352,6 +355,7 @@ def test_update_node_skips_graph_attr_trace(monkeypatch):
         rule_trace_atoms=rule_trace_atoms,
         store_interpretation_changes=True,
         mode="graph-attribute-fact",
+        rule_trace_metadata=[],
         override=False,
     )
     if "num_ga" in sig.parameters:
@@ -455,6 +459,7 @@ def test_update_node_records_rule_trace(monkeypatch, mode, save_attr, trace_key,
         rule_trace_atoms=rule_trace_atoms,
         store_interpretation_changes=True,
         mode=mode,
+        rule_trace_metadata=[],
         override=False,
     )
     kwargs.update(kwargs_trace)
@@ -545,6 +550,7 @@ def test_update_node_handles_ipl_and_predicate_map(monkeypatch):
         rule_trace_atoms=[],
         store_interpretation_changes=False,
         mode="fact",
+        rule_trace_metadata=[],
         override=False,
     )
     if "num_ga" in sig.parameters:
@@ -640,6 +646,7 @@ def test_update_node_complement_records_traces(monkeypatch, helpers_fixture):
         rule_trace_atoms=[],
         store_interpretation_changes=True,
         mode="fact",
+        rule_trace_metadata=[],
         override=False,
     )
     if "num_ga" in sig.parameters:
@@ -734,6 +741,7 @@ def test_update_node_complement_existing_predicate(monkeypatch, helpers_fixture)
         rule_trace_atoms=[],
         store_interpretation_changes=False,
         mode="fact",
+        rule_trace_metadata=[],
         override=False,
     )
     if "num_ga" in sig.parameters:
@@ -822,6 +830,7 @@ def test_update_node_predicate_map_appends_and_delta(monkeypatch, helpers_fixtur
         rule_trace_atoms=[],
         store_interpretation_changes=False,
         mode="fact",
+        rule_trace_metadata=[],
         override=False,
     )
     if "num_ga" in sig.parameters:
@@ -914,6 +923,7 @@ def test_update_edge_handles_ipl_and_predicate_map(monkeypatch, helpers_fixture)
         rule_trace_atoms=[],
         store_interpretation_changes=True,
         mode="fact",
+        rule_trace_metadata=[],
         override=False,
     )
     if "num_ga" in sig.parameters:
@@ -1004,6 +1014,7 @@ def test_update_edge_predicate_map_append_override(monkeypatch, helpers_fixture)
         rule_trace_atoms=[],
         store_interpretation_changes=False,
         mode="fact",
+        rule_trace_metadata=[],
         override=True,
     )
     if "num_ga" in sig.parameters:
@@ -1094,6 +1105,7 @@ def test_update_edge_rule_atom_trace(monkeypatch, helpers_fixture):
         rule_trace_atoms=[],
         store_interpretation_changes=True,
         mode="rule",
+        rule_trace_metadata=[],
         override=False,
     )
     if "num_ga" in sig.parameters:
@@ -1133,6 +1145,7 @@ def test_update_node_missing_world(monkeypatch, helpers_fixture):
         rule_trace_atoms=[],
         store_interpretation_changes=False,
         mode="fact",
+        rule_trace_metadata=[],
         override=False,
     )
     if "num_ga" in sig.parameters:
@@ -1226,6 +1239,7 @@ def test_update_edge_complement_delta_bound(monkeypatch, helpers_fixture):
         rule_trace_atoms=[],
         store_interpretation_changes=False,
         mode="fact",
+        rule_trace_metadata=[],
         override=False,
     )
     if "num_ga" in sig.parameters:
@@ -1323,6 +1337,7 @@ def test_update_edge_complement_records_traces(monkeypatch, helpers_fixture):
         rule_trace_atoms=[],
         store_interpretation_changes=True,
         mode="fact",
+        rule_trace_metadata=[],
         override=False,
     )
     if "num_ga" in sig.parameters:
@@ -1415,6 +1430,7 @@ def test_update_edge_complement_existing_predicate(monkeypatch, helpers_fixture)
         rule_trace_atoms=[],
         store_interpretation_changes=False,
         mode="fact",
+        rule_trace_metadata=[],
         override=False,
     )
     if "num_ga" in sig.parameters:
@@ -1484,6 +1500,7 @@ def test_update_edge_missing_world(monkeypatch, helpers_fixture):
         rule_trace_atoms=[],
         store_interpretation_changes=False,
         mode="fact",
+        rule_trace_metadata=[],
         override=False,
     )
     if "num_ga" in sig.parameters:
@@ -1712,6 +1729,7 @@ def test_update_node_ipl_complement_delta_bound_bug127(monkeypatch, helpers_fixt
         rule_trace_atoms=[],
         store_interpretation_changes=False,
         mode="fact",
+        rule_trace_metadata=[],
         override=False,
     )
     if "num_ga" in sig.parameters:
@@ -1747,6 +1765,7 @@ def test_update_node_ipl_complement_delta_bound_bug127(monkeypatch, helpers_fixt
         rule_trace_atoms=[],
         store_interpretation_changes=False,
         mode="fact",
+        rule_trace_metadata=[],
         override=False,
     )
     if "num_ga" in sig.parameters:
@@ -1874,6 +1893,7 @@ def test_update_edge_ipl_two_complements_bug125(monkeypatch, helpers_fixture):
         rule_trace_atoms=[],
         store_interpretation_changes=False,
         mode="fact",
+        rule_trace_metadata=[],
         override=False,
     )
     if "num_ga" in sig.parameters:
@@ -1903,6 +1923,7 @@ def test_update_edge_ipl_two_complements_bug125(monkeypatch, helpers_fixture):
         rule_trace_atoms=[],
         store_interpretation_changes=False,
         mode="fact",
+        rule_trace_metadata=[],
         override=False,
     )
     if "num_ga" in sig.parameters:

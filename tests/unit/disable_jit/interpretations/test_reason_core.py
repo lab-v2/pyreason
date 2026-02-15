@@ -179,6 +179,8 @@ def make_copy_env(monkeypatch, persistent):
         "convergence_delta": 0,
         "verbose": False,
         "again": False,
+        "rule_trace_node_metadata": [],
+        "rule_trace_edge_metadata": [],
     }
 
     def run(**overrides):
@@ -226,6 +228,8 @@ def make_copy_env(monkeypatch, persistent):
             params["convergence_delta"],
             params["verbose"],
             params["again"],
+            params["rule_trace_node_metadata"],
+            params["rule_trace_edge_metadata"],
         )
 
     env["run"] = run
@@ -977,6 +981,7 @@ def test_reason_node_rule_delta_zero_traces_and_applies(monkeypatch, reason_env)
         rule_trace_node_atoms,
         store_changes,
         mode="rule",
+        rule_trace_metadata=None,
         override=False,
     ):
         assert rules_trace[idx] == (["qn"], ["qe"], "r")

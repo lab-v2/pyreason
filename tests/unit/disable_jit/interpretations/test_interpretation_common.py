@@ -193,6 +193,8 @@ def get_interpretation_helpers(module_name: str = "interpretation_fp"):
             convergence_delta,
             verbose,
             again,
+            rule_trace_node_metadata=None,
+            rule_trace_edge_metadata=None,
         ):
             return _reason_fn(
                 interpretations_node[0],
@@ -237,9 +239,100 @@ def get_interpretation_helpers(module_name: str = "interpretation_fp"):
                 [0],
                 verbose,
                 again,
+                rule_trace_node_metadata if rule_trace_node_metadata is not None else [],
+                rule_trace_edge_metadata if rule_trace_edge_metadata is not None else [],
             )
     else:
-        reason = _reason_fn
+        def reason(
+            interpretations_node,
+            interpretations_edge,
+            predicate_map_node,
+            predicate_map_edge,
+            tmax,
+            prev_reasoning_data,
+            rules,
+            nodes,
+            edges,
+            neighbors,
+            reverse_neighbors,
+            rules_to_be_applied_node,
+            rules_to_be_applied_edge,
+            edges_to_be_added_node_rule,
+            edges_to_be_added_edge_rule,
+            rules_to_be_applied_node_trace,
+            rules_to_be_applied_edge_trace,
+            facts_to_be_applied_node,
+            facts_to_be_applied_edge,
+            facts_to_be_applied_node_trace,
+            facts_to_be_applied_edge_trace,
+            ipl,
+            rule_trace_node,
+            rule_trace_edge,
+            rule_trace_node_atoms,
+            rule_trace_edge_atoms,
+            reverse_graph,
+            atom_trace,
+            save_graph_attributes_to_rule_trace,
+            persistent,
+            inconsistency_check,
+            store_interpretation_changes,
+            update_mode,
+            allow_ground_rules,
+            max_facts_time,
+            annotation_functions,
+            head_functions,
+            convergence_mode,
+            convergence_delta,
+            verbose,
+            again,
+            rule_trace_node_metadata=None,
+            rule_trace_edge_metadata=None,
+        ):
+            return _reason_fn(
+                interpretations_node,
+                interpretations_edge,
+                predicate_map_node,
+                predicate_map_edge,
+                tmax,
+                prev_reasoning_data,
+                rules,
+                nodes,
+                edges,
+                neighbors,
+                reverse_neighbors,
+                rules_to_be_applied_node,
+                rules_to_be_applied_edge,
+                edges_to_be_added_node_rule,
+                edges_to_be_added_edge_rule,
+                rules_to_be_applied_node_trace,
+                rules_to_be_applied_edge_trace,
+                facts_to_be_applied_node,
+                facts_to_be_applied_edge,
+                facts_to_be_applied_node_trace,
+                facts_to_be_applied_edge_trace,
+                ipl,
+                rule_trace_node,
+                rule_trace_edge,
+                rule_trace_node_atoms,
+                rule_trace_edge_atoms,
+                reverse_graph,
+                atom_trace,
+                save_graph_attributes_to_rule_trace,
+                persistent,
+                inconsistency_check,
+                store_interpretation_changes,
+                update_mode,
+                allow_ground_rules,
+                max_facts_time,
+                annotation_functions,
+                head_functions,
+                convergence_mode,
+                convergence_delta,
+                verbose,
+                again,
+                rule_trace_node_metadata if rule_trace_node_metadata is not None else [],
+                rule_trace_edge_metadata if rule_trace_edge_metadata is not None else [],
+            )
     ns.reason = reason
 
     class FakeLabel:
@@ -353,6 +446,27 @@ class _World:
         return not (bnd.lower > w.upper or w.lower > bnd.upper)
 
 
+class _Label:
+    """Minimal label-like object with .value for use in tests."""
+    def __init__(self, value):
+        self.value = value
+        self._value = value
+
+    def get_value(self):
+        return self.value
+
+    def __hash__(self):
+        return hash(self.value)
+
+    def __eq__(self, other):
+        if isinstance(other, _Label):
+            return self.value == other.value
+        return NotImplemented
+
+    def __repr__(self):
+        return f"_Label({self.value!r})"
+
+
 @pytest.mark.parametrize("check_fn_name", ["check_consistent_node", "check_consistent_edge"])
 def test_check_consistent_functions(monkeypatch, check_fn_name):
     check_fn = globals()[check_fn_name]
@@ -378,16 +492,18 @@ def test_resolve_inconsistency_updates_world_and_trace(monkeypatch, resolver_nam
     monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: _Interval(lo, up))
     calls = []
     monkeypatch.setattr(interpretation, "_update_rule_trace", lambda *a: calls.append(a))
-    world = _World({"p": _Interval(0, 0.5), "q": _Interval(0, 0.5), "r": _Interval(0, 0.5)})
+    p, q, r = _Label("p"), _Label("q"), _Label("r")
+    world = _World({p: _Interval(0, 0.5), q: _Interval(0, 0.5), r: _Interval(0, 0.5)})
     interpretations = {comp_key: world}
-    ipl = [("p", "q"), ("r", "p")]
+    ipl = [(p, q), (r, p)]
     rule_trace = []
     rule_trace_atoms = []
     facts = ["fact"]
+    rule_trace_metadata = []
     resolver(
         interpretations,
         comp_key,
-        ("p", _Interval(0.9, 1.0)),
+        (p, _Interval(0.9, 1.0)),
         ipl,
         1,
         2,
@@ -399,10 +515,11 @@ def test_resolve_inconsistency_updates_world_and_trace(monkeypatch, resolver_nam
         facts,
         True,
         "fact",
+        rule_trace_metadata,
     )
-    assert world.world["p"].lower == 0 and world.world["p"].upper == 1 and world.world["p"].static
-    assert world.world["q"].lower == 0 and world.world["q"].upper == 1 and world.world["q"].static
-    assert world.world["r"].lower == 0 and world.world["r"].upper == 1 and world.world["r"].static
+    assert world.world[p].lower == 0 and world.world[p].upper == 1 and world.world[p].static
+    assert world.world[q].lower == 0 and world.world[q].upper == 1 and world.world[q].static
+    assert world.world[r].lower == 0 and world.world[r].upper == 1 and world.world[r].static
     assert len(rule_trace) == 3
     assert len(calls) == 3
 

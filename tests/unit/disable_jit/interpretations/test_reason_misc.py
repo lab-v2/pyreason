@@ -26,8 +26,9 @@ def test_is_satisfied_edge_comparison_missing_bounds():
 
 def test_resolve_inconsistency_node_rule_trace(monkeypatch):
     class SimpleInterval:
-        def __init__(self):
-            self.lower = self.upper = None
+        def __init__(self, lower=0.0, upper=1.0):
+            self.lower = lower
+            self.upper = upper
             self.static = False
 
         def set_lower_upper(self, l, u):
@@ -47,7 +48,7 @@ def test_resolve_inconsistency_node_rule_trace(monkeypatch):
         def empty_list(self, *args, **kwargs):
             return []
 
-    monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval())
+    monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
     monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
     monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
@@ -64,6 +65,7 @@ def test_resolve_inconsistency_node_rule_trace(monkeypatch):
     mock_update = Mock()
     monkeypatch.setattr(interpretation, "_update_rule_trace", mock_update)
 
+    rule_trace_metadata = []
     interpretation.resolve_inconsistency_node(
         interpretations,
         "n1",
@@ -79,11 +81,18 @@ def test_resolve_inconsistency_node_rule_trace(monkeypatch):
         facts_to_be_applied_trace,
         True,
         "rule",
+        rule_trace_metadata,
     )
 
-    msg = mock_update.call_args[0][-1]
-    assert msg.startswith("Inconsistency occurred.")
-    assert "Conflicting bounds for L(n1)" in msg
+    # _update_rule_trace now receives the actual name, not the message
+    name = mock_update.call_args[0][-1]
+    assert name == "r"
+    # The inconsistency message is now in rule_trace_metadata
+    assert len(rule_trace_metadata) == 1
+    consistent, triggered_by, meta_name, incon_msg = rule_trace_metadata[0]
+    assert not consistent
+    assert incon_msg.startswith("Inconsistency occurred.")
+    assert "Conflicting bounds for L(n1)" in incon_msg
     assert len(rule_trace) == 1
 
 
@@ -124,6 +133,7 @@ def test_resolve_inconsistency_node_rule_trace_no_atom_trace(monkeypatch):
     mock_update = Mock()
     monkeypatch.setattr(interpretation, "_update_rule_trace", mock_update)
 
+    rule_trace_metadata = []
     interpretation.resolve_inconsistency_node(
         interpretations,
         "n1",
@@ -139,6 +149,7 @@ def test_resolve_inconsistency_node_rule_trace_no_atom_trace(monkeypatch):
         ["f"],
         True,
         "rule",
+        rule_trace_metadata,
     )
 
     mock_update.assert_not_called()
@@ -147,8 +158,9 @@ def test_resolve_inconsistency_node_rule_trace_no_atom_trace(monkeypatch):
 
 def test_resolve_inconsistency_edge_rule_trace(monkeypatch):
     class SimpleInterval:
-        def __init__(self):
-            self.lower = self.upper = None
+        def __init__(self, lower=0.0, upper=1.0):
+            self.lower = lower
+            self.upper = upper
             self.static = False
 
         def set_lower_upper(self, l, u):
@@ -168,7 +180,7 @@ def test_resolve_inconsistency_edge_rule_trace(monkeypatch):
         def empty_list(self, *args, **kwargs):
             return []
 
-    monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval())
+    monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
     monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
     monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
@@ -185,6 +197,7 @@ def test_resolve_inconsistency_edge_rule_trace(monkeypatch):
     mock_update = Mock()
     monkeypatch.setattr(interpretation, "_update_rule_trace", mock_update)
 
+    rule_trace_metadata = []
     interpretation.resolve_inconsistency_edge(
         interpretations,
         ("a", "b"),
@@ -200,11 +213,18 @@ def test_resolve_inconsistency_edge_rule_trace(monkeypatch):
         facts_to_be_applied_trace,
         True,
         "rule",
+        rule_trace_metadata,
     )
 
-    msg = mock_update.call_args[0][-1]
-    assert msg.startswith("Inconsistency occurred.")
-    assert "Conflicting bounds for L(a,b)" in msg
+    # _update_rule_trace now receives the actual name, not the message
+    name = mock_update.call_args[0][-1]
+    assert name == "r"
+    # The inconsistency message is now in rule_trace_metadata
+    assert len(rule_trace_metadata) == 1
+    consistent, triggered_by, meta_name, incon_msg = rule_trace_metadata[0]
+    assert not consistent
+    assert incon_msg.startswith("Inconsistency occurred.")
+    assert "Conflicting bounds for L(a,b)" in incon_msg
     assert len(rule_trace) == 1
 
 
@@ -245,6 +265,7 @@ def test_resolve_inconsistency_edge_rule_trace_no_atom_trace(monkeypatch):
     mock_update = Mock()
     monkeypatch.setattr(interpretation, "_update_rule_trace", mock_update)
 
+    rule_trace_metadata = []
     interpretation.resolve_inconsistency_edge(
         interpretations,
         ("a", "b"),
@@ -260,6 +281,7 @@ def test_resolve_inconsistency_edge_rule_trace_no_atom_trace(monkeypatch):
         ["f"],
         True,
         "rule",
+        rule_trace_metadata,
     )
 
     mock_update.assert_not_called()

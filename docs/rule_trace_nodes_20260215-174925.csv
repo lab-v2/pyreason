@@ -1,0 +1,15 @@
+Time,Fixed-Point-Operation,Node,Label,Old Bound,New Bound,Occurred Due To,Consistent,Triggered By,Inconsistency Message,Clause-1,Clause-2
+0,0,Alice,sick,"[0.0,1.0]","[0.8,1.0]",alice_sick_fact,True,Fact,,,
+0,0,Alice,healthy,"[0.0,1.0]","[0.0,0.19999999999999996]",IPL: sick,True,IPL,,,
+0,0,Alice,healthy,"[0.0,0.19999999999999996]","[0.0,1.0]",alice_healthy_fact,False,Fact,"Inconsistency occurred. Grounding healthy(Alice) conflicts with grounding sick(Alice). Setting bounds to [0,1] and static=True for this timestep.",,
+0,0,Alice,sick,"[0.8,1.0]","[0.0,1.0]",alice_healthy_fact,False,IPL,"Inconsistency occurred. Grounding healthy(Alice) conflicts with grounding sick(Alice). Setting bounds to [0,1] and static=True for this timestep.",,
+0,0,Bob,sick,"[0.0,1.0]","[0.6,0.8]",bob_sick_fact,True,Fact,,,
+0,0,Bob,healthy,"[0.0,1.0]","[0.19999999999999996,0.4]",IPL: sick,True,IPL,,,
+0,0,Carol,healthy,"[0.0,1.0]","[0.9,1.0]",alice_healthy_fact,True,Fact,,,
+0,0,Carol,sick,"[0.0,1.0]","[0.0,0.09999999999999998]",IPL: healthy,True,IPL,,,
+0,0,Bob,tired,"[0.0,1.0]","[0.8,1.0]",bob_tired_fact_1,True,Fact,,,
+0,0,Bob,tired,"[0.8,1.0]","[0.0,1.0]",bob_tired_fact_2,False,Fact,"Inconsistency occurred. Conflicting bounds for tired(Bob). Update from [0.800, 1.000] to [0.000, 0.100] is not allowed. Setting bounds to [0,1] and static=True for this timestep.",,
+0,1,Carol,sick,"[0.0,0.09999999999999998]","[0.0,1.0]",spread_rule,False,Rule,"Inconsistency occurred. Grounding sick(Carol) conflicts with grounding healthy(Carol). Setting bounds to [0,1] and static=True for this timestep.",['Bob'],"[('Bob', 'Carol')]"
+0,1,Carol,healthy,"[0.9,1.0]","[0.0,1.0]",spread_rule,False,IPL,"Inconsistency occurred. Grounding sick(Carol) conflicts with grounding healthy(Carol). Setting bounds to [0,1] and static=True for this timestep.",,
+0,1,Dave,sick,"[0.0,1.0]","[0.5,0.7]",spread_rule,True,Rule,,['Bob'],"[('Bob', 'Dave')]"
+0,1,Dave,healthy,"[0.0,1.0]","[0.30000000000000004,0.5]",IPL: sick,True,IPL,,,

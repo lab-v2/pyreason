@@ -121,6 +121,8 @@ def reason_env(monkeypatch, helpers_fixture):
         "convergence_delta": 0,
         "verbose": False,
         "again": False,
+        "rule_trace_node_metadata": [],
+        "rule_trace_edge_metadata": [],
     }
 
     def run(**overrides):
@@ -168,6 +170,8 @@ def reason_env(monkeypatch, helpers_fixture):
             params["convergence_delta"],
             params["verbose"],
             params["again"],
+            params["rule_trace_node_metadata"],
+            params["rule_trace_edge_metadata"],
         )
 
     env["run"] = run

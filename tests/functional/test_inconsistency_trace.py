@@ -36,14 +36,34 @@ def test_inconsistency_trace_message_format(mode):
     interpretation = pr.reason(timesteps=1)
     node_trace, _ = pr.get_rule_trace(interpretation)
 
-    # Filter to inconsistency rows
-    incon_rows = node_trace[node_trace['Occurred Due To'].str.startswith('Inconsistency')]
+    # Check new columns exist
+    assert 'Consistent' in node_trace.columns
+    assert 'Triggered By' in node_trace.columns
+    assert 'Inconsistency Message' in node_trace.columns
+
+    # Filter to inconsistency rows using the new Consistent column
+    incon_rows = node_trace[node_trace['Consistent'] == False]
     assert len(incon_rows) >= 2, f'Expected at least 2 inconsistency trace rows, got {len(incon_rows)}'
 
     for _, row in incon_rows.iterrows():
-        msg = row['Occurred Due To']
+        # Occurred Due To should now contain the actual fact/rule name, not the message
+        assert not row['Occurred Due To'].startswith('Inconsistency'), \
+            f'Occurred Due To should contain fact/rule name, not message: {row["Occurred Due To"]}'
+
+        # Inconsistency Message should contain the descriptive message
+        msg = row['Inconsistency Message']
         assert 'Inconsistency occurred.' in msg, f'Expected "Inconsistency occurred." in message: {msg}'
-        assert 'conflicts with grounding' in msg, f'Expected "conflicts with grounding" in message: {msg}'
         assert 'Setting bounds to [0,1] and static=True for this timestep.' in msg, f'Expected bounds/static info in message: {msg}'
-        assert 'healthy(Alice)' in msg, f'Expected "healthy(Alice)" in message: {msg}'
-        assert 'sick(Alice)' in msg, f'Expected "sick(Alice)" in message: {msg}'
+
+        # Triggered By should be Fact or IPL (these are fact-triggered inconsistencies)
+        assert row['Triggered By'] in ('Fact', 'IPL'), \
+            f'Expected Triggered By to be Fact or IPL, got: {row["Triggered By"]}'
+
+    # Also check that consistent rows have the right metadata
+    consistent_rows = node_trace[node_trace['Consistent'] == True]
+    assert len(consistent_rows) > 0, 'Expected some consistent rows'
+    for _, row in consistent_rows.iterrows():
+        assert row['Inconsistency Message'] == '', \
+            f'Consistent rows should have empty Inconsistency Message, got: {row["Inconsistency Message"]}'
+        assert row['Triggered By'] in ('Fact', 'Rule', 'IPL'), \
+            f'Expected Triggered By to be Fact/Rule/IPL, got: {row["Triggered By"]}'
