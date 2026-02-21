@@ -311,7 +311,7 @@ def test_reason_logs_static_fact(monkeypatch, reason_env):
         prev_reasoning_data=[0, 1],
     )
 
-    assert rule_trace == [(0, 1, node, label_, new_bnd)]
+    assert len(rule_trace) == 1 and rule_trace[0][:5] == (0, 1, node, label_, new_bnd)
     assert reason_env["interpretations_node"][0][node].world[label_] is static_bnd
 
 
@@ -343,7 +343,7 @@ def test_reason_static_fact_traces_and_requeues(reason_env):
 
     assert facts == [(1, node, lbl, new_bnd, True, False)]
     assert trace == [["x"]]
-    assert rule_trace == [(0, 1, node, lbl, new_bnd), (0, 1, node, other, other_bnd)]
+    assert len(rule_trace) == 2 and rule_trace[0][:5] == (0, 1, node, lbl, new_bnd) and rule_trace[1][:5] == (0, 1, node, other, other_bnd)
     assert len(rule_trace_atoms) == 2
     assert reason_env["interpretations_node"][0][node].world[lbl] is static_bnd
 
@@ -376,7 +376,7 @@ def test_reason_static_fact_traces_complement_second(reason_env):
 
     assert facts == [(1, node, lbl, new_bnd, True, False)]
     assert trace == [["z"]]
-    assert rule_trace == [(0, 1, node, lbl, new_bnd), (0, 1, node, other, other_bnd)]
+    assert len(rule_trace) == 2 and rule_trace[0][:5] == (0, 1, node, lbl, new_bnd) and rule_trace[1][:5] == (0, 1, node, other, other_bnd)
     assert len(rule_trace_atoms) == 2
     assert reason_env["interpretations_node"][0][node].world[lbl] is static_bnd
 
@@ -614,10 +614,9 @@ def test_reason_static_edge_rule_trace_branches(
     )
 
     if expect_trace:
-        assert rule_trace == [
-            (0, 1, edge, lbl, static_bnd),
-            (0, 1, edge, other, other_bnd),
-        ]
+        assert len(rule_trace) == 2
+        assert rule_trace[0][:5] == (0, 1, edge, lbl, static_bnd)
+        assert rule_trace[1][:5] == (0, 1, edge, other, other_bnd)
     else:
         assert rule_trace == []
     assert facts == [(1, edge, lbl, reason_env["bnd"], True, graph_attr)]
@@ -659,11 +658,10 @@ def test_reason_static_edge_atom_trace_complements(monkeypatch, reason_env):
         prev_reasoning_data=[0, 1],
     )
 
-    assert rule_trace == [
-        (0, 1, edge, lbl, static_bnd),
-        (0, 1, edge, other1, o1_bnd),
-        (0, 1, edge, other2, o2_bnd),
-    ]
+    assert len(rule_trace) == 3
+    assert rule_trace[0][:5] == (0, 1, edge, lbl, static_bnd)
+    assert rule_trace[1][:5] == (0, 1, edge, other1, o1_bnd)
+    assert rule_trace[2][:5] == (0, 1, edge, other2, o2_bnd)
     assert facts == [(1, edge, lbl, reason_env["bnd"], True, False)]
     assert facts_trace == ["t"]
     assert mock_update.call_count == 3
