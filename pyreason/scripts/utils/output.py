@@ -10,19 +10,23 @@ class Output:
         self.rule_trace_edge = None
 
     def _parse_internal_rule_trace(self, interpretation):
-        header_node = ['Time', 'Fixed-Point-Operation', 'Node', 'Label', 'Old Bound', 'New Bound', 'Occurred Due To']
+        header_node = ['Time', 'Fixed-Point-Operation', 'Node', 'Label', 'Old Bound', 'New Bound', 'Occurred Due To', 'Consistent', 'Triggered By', 'Inconsistency Message']
 
         # Nodes rule trace
         data = []
         max_j = -1
 
         for i, r in enumerate(interpretation.rule_trace_node):
-            row = [r[0], r[1], r[2], r[3]._value, '-', r[4].to_str(), '-']
+            # r[5] = consistent, r[6] = triggered_by, r[7] = name, r[8] = inconsistency_msg
+            row = [r[0], r[1], r[2], r[3]._value, '-', r[4].to_str(), '-', r[5], r[6], r[8]]
+
+            # Use r[7] (name) for Occurred Due To when atom_trace is off
+            if not interpretation.atom_trace and r[7] != '':
+                row[6] = r[7]
+
             if interpretation.atom_trace:
                 qn, qe, old_bnd, name = interpretation.rule_trace_node_atoms[i]
                 row[4] = old_bnd.to_str()
-                # Go through all the changes in the rule trace
-                # len(qn) = len(qe) = num of clauses in rule that was used
                 row[6] = name
 
                 # Go through each clause
@@ -45,19 +49,23 @@ class Output:
         # Store the trace in a DataFrame
         self.rule_trace_node = pd.DataFrame(data, columns=header_node)
 
-        header_edge = ['Time', 'Fixed-Point-Operation', 'Edge', 'Label', 'Old Bound', 'New Bound', 'Occurred Due To']
+        header_edge = ['Time', 'Fixed-Point-Operation', 'Edge', 'Label', 'Old Bound', 'New Bound', 'Occurred Due To', 'Consistent', 'Triggered By', 'Inconsistency Message']
 
         # Edges rule trace
         data = []
         max_j = -1
 
         for i, r in enumerate(interpretation.rule_trace_edge):
-            row = [r[0], r[1], r[2], r[3]._value, '-', r[4].to_str(), '-']
+            # r[5] = consistent, r[6] = triggered_by, r[7] = name, r[8] = inconsistency_msg
+            row = [r[0], r[1], r[2], r[3]._value, '-', r[4].to_str(), '-', r[5], r[6], r[8]]
+
+            # Use r[7] (name) for Occurred Due To when atom_trace is off
+            if not interpretation.atom_trace and r[7] != '':
+                row[6] = r[7]
+
             if interpretation.atom_trace:
                 qn, qe, old_bnd, name = interpretation.rule_trace_edge_atoms[i]
                 row[4] = old_bnd.to_str()
-                # Go through all the changes in the rule trace
-                # len(qn) = num of clauses in rule that was used
                 row[6] = name
 
                 # Go through each clause
@@ -82,7 +90,7 @@ class Output:
 
         # Now do the reordering
         if self.clause_map is not None:
-            offset = 7
+            offset = 10
             columns_to_reorder_node = header_node[offset:]
             columns_to_reorder_edge = header_edge[offset:]
             self.rule_trace_node = self.rule_trace_node.apply(self._reorder_row, axis=1, map_dict=self.clause_map, columns_to_reorder=columns_to_reorder_node)

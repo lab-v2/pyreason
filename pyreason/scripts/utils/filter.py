@@ -20,9 +20,9 @@ class Filter:
         # change contains the timestep, fp operation, component, label and interval
         # Keep only the latest/most recent changes. Since list is sequencial, whatever was earlier will be overwritten
         for change in interpretation.rule_trace_node:
-            t, fp, comp, label, bnd = change
+            t, fp, comp, label, bnd = change[:5]
             latest_changes[t][(comp, label)] = bnd
-        
+
         # Create a list that needs to be sorted. This contains only the latest changes
         list_to_be_sorted = []
         for t, d in latest_changes.items():
@@ -74,7 +74,7 @@ class Filter:
         # change contains the timestep, fp operation, component, label and interval
         # Keep only the latest/most recent changes. Since list is sequential, whatever was earlier will be overwritten
         for change in interpretation.rule_trace_edge:
-            t, fp, comp, label, bnd = change
+            t, fp, comp, label, bnd = change[:5]
             latest_changes[t][(comp, label)] = bnd
 
         # Create a list that needs to be sorted. This contains only the latest changes
