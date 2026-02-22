@@ -328,6 +328,28 @@ def test_get_qualified_groundings_filters(monkeypatch, interpretations):
 
 # ---- check_consistent_node / check_consistent_edge tests ----
 
+class _Label:
+    """Label-like object with .get_value() for resolve_inconsistency tests."""
+    def __init__(self, value):
+        self._value = value
+
+    @property
+    def value(self):
+        return self._value
+
+    def get_value(self):
+        return self._value
+
+    def __hash__(self):
+        return hash(self._value)
+
+    def __eq__(self, other):
+        return isinstance(other, _Label) and self._value == other._value
+
+    def __repr__(self):
+        return f"_Label({self._value!r})"
+
+
 class _Interval:
     def __init__(self, lower, upper):
         self.lower = lower
@@ -376,18 +398,32 @@ def test_check_consistent_functions(monkeypatch, check_fn_name):
 def test_resolve_inconsistency_updates_world_and_trace(monkeypatch, resolver_name, comp_key):
     resolver = globals()[resolver_name]
     monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: _Interval(lo, up))
+    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+
+    class _ListShim:
+        def __call__(self, iterable=()):
+            return list(iterable)
+        def empty_list(self, *args, **kwargs):
+            return []
+
+    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+
     calls = []
     monkeypatch.setattr(interpretation, "_update_rule_trace", lambda *a: calls.append(a))
-    world = _World({"p": _Interval(0, 0.5), "q": _Interval(0, 0.5), "r": _Interval(0, 0.5)})
+
+    p = _Label("p")
+    q = _Label("q")
+    r = _Label("r")
+    world = _World({p: _Interval(0, 0.5), q: _Interval(0, 0.5), r: _Interval(0, 0.5)})
     interpretations = {comp_key: world}
-    ipl = [("p", "q"), ("r", "p")]
+    ipl = [(p, q), (r, p)]
     rule_trace = []
     rule_trace_atoms = []
     facts = ["fact"]
     resolver(
         interpretations,
         comp_key,
-        ("p", _Interval(0.9, 1.0)),
+        (p, _Interval(0.9, 1.0)),
         ipl,
         1,
         2,
@@ -400,10 +436,14 @@ def test_resolve_inconsistency_updates_world_and_trace(monkeypatch, resolver_nam
         True,
         "fact",
     )
-    assert world.world["p"].lower == 0 and world.world["p"].upper == 1 and world.world["p"].static
-    assert world.world["q"].lower == 0 and world.world["q"].upper == 1 and world.world["q"].static
-    assert world.world["r"].lower == 0 and world.world["r"].upper == 1 and world.world["r"].static
+    assert world.world[p].lower == 0 and world.world[p].upper == 1 and world.world[p].static
+    assert world.world[q].lower == 0 and world.world[q].upper == 1 and world.world[q].static
+    assert world.world[r].lower == 0 and world.world[r].upper == 1 and world.world[r].static
     assert len(rule_trace) == 3
+    # Verify metadata fields in the 9-tuples
+    for entry in rule_trace:
+        assert entry[5] == False  # consistent
+        assert entry[6] in ('Fact', 'IPL')  # triggered_by
     assert len(calls) == 3
 
 
