@@ -704,8 +704,8 @@ def build_dummy(persistent):
         time=1,
         nodes=["n1"],
         edges=[("n1", "n2")],
-        rule_trace_node=[(0, 0, "n1", DummyLabel("L1"), DummyBound(0.1, 0.2))],
-        rule_trace_edge=[(0, 0, ("n1", "n2"), DummyLabel("L2"), DummyBound(0.3, 0.4))],
+        rule_trace_node=[(0, 0, "n1", DummyLabel("L1"), DummyBound(0.1, 0.2), True, "Rule", "rule_name", "")],
+        rule_trace_edge=[(0, 0, ("n1", "n2"), DummyLabel("L2"), DummyBound(0.3, 0.4), True, "Rule", "rule_name", "")],
         persistent=persistent,
     )
 

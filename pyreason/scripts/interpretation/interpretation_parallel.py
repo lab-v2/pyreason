@@ -695,7 +695,7 @@ class Interpretation:
 
 		# Update interpretation nodes
 		for change in self.rule_trace_node:
-			time, _, node, l, bnd = change
+			time, _, node, l, bnd, consistent, triggered_by, name, inconsistency_msg = change
 			interpretations[time][node][l._value] = (bnd.lower, bnd.upper)
 
 			# If persistent, update all following timesteps as well
@@ -705,7 +705,7 @@ class Interpretation:
 
 		# Update interpretation edges
 		for change in self.rule_trace_edge:
-			time, _, edge, l, bnd, = change
+			time, _, edge, l, bnd, consistent, triggered_by, name, inconsistency_msg = change
 			interpretations[time][edge][l._value] = (bnd.lower, bnd.upper)
 
 			# If persistent, update all following timesteps as well
