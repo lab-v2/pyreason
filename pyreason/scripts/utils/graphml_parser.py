@@ -89,5 +89,6 @@ class GraphmlParser:
                 specific_edge_labels[label.Label(label_str)].append((e[0], e[1]))
                 f = fact_edge.Fact('graph-attribute-fact', (e[0], e[1]), label.Label(label_str), interval.closed(lower_bnd, upper_bnd), 0, 0, static=static_facts)
                 facts_edge.append(f)
-
+        
+        print("Added ", len(fact_node), "graph-attribute node facts and ", len(fact_edge), "graph_attribute edge facts.")
         return facts_node, facts_edge, specific_node_labels, specific_edge_labels
