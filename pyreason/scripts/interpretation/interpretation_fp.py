@@ -986,12 +986,6 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 			if allow_ground_rules and (clause_var_1, clause_var_2) in edges_set:
 				grounding = numba.typed.List([(clause_var_1, clause_var_2)])
 			else:
-				# Pre-populate groundings for any variable that matches an existing node (partial grounding)
-				if allow_ground_rules:
-					if clause_var_1 in nodes_set and clause_var_1 not in groundings:
-						groundings[clause_var_1] = numba.typed.List([clause_var_1])
-					if clause_var_2 in nodes_set and clause_var_2 not in groundings:
-						groundings[clause_var_2] = numba.typed.List([clause_var_2])
 				grounding = get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, predicate_map_edge, clause_label, edges)
 
 			# Narrow subset based on predicate (save the edges that are qualified to use for finding future groundings faster)
