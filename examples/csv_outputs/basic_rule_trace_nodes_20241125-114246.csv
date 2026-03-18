@@ -1,0 +1,7 @@
+Time,Fixed-Point-Operation,Node,Label,Old Bound,New Bound,Occurred Due To
+0,0,Mary,popular,-,"[1.0,1.0]",-
+1,1,Mary,popular,-,"[1.0,1.0]",-
+1,1,Justin,popular,-,"[1.0,1.0]",-
+2,2,Mary,popular,-,"[1.0,1.0]",-
+2,2,John,popular,-,"[1.0,1.0]",-
+2,2,Justin,popular,-,"[1.0,1.0]",-

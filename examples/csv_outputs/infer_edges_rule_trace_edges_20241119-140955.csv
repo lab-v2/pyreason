@@ -1,0 +1,10 @@
+Time,Fixed-Point-Operation,Edge,Label,Old Bound,New Bound,Occurred Due To,Clause-1,Clause-2,Clause-3
+0,0,"('Amsterdam_Airport_Schiphol', 'Yali')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
+0,0,"('Riga_International_Airport', 'Amsterdam_Airport_Schiphol')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
+0,0,"('Riga_International_Airport', 'Düsseldorf_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
+0,0,"('Chișinău_International_Airport', 'Riga_International_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
+0,0,"('Düsseldorf_Airport', 'Dubrovnik_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
+0,0,"('Pobedilovo_Airport', 'Vnukovo_International_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
+0,0,"('Dubrovnik_Airport', 'Athens_International_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
+0,0,"('Vnukovo_International_Airport', 'Hévíz-Balaton_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact,,,
+1,1,"('Vnukovo_International_Airport', 'Riga_International_Airport')",isConnectedTo,"[0.0,1.0]","[1.0,1.0]",connected_rule_1,"[('Riga_International_Airport', 'Amsterdam_Airport_Schiphol')]",['Amsterdam_Airport_Schiphol'],['Vnukovo_International_Airport']

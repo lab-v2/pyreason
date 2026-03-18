@@ -1,0 +1,11 @@
+Time,Fixed-Point-Operation,Node,Label,Old Bound,New Bound,Occurred Due To
+0,0,Amsterdam_Airport_Schiphol,Amsterdam_Airport_Schiphol,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+0,0,Riga_International_Airport,Riga_International_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+0,0,Chișinău_International_Airport,Chișinău_International_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+0,0,Yali,Yali,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+0,0,Düsseldorf_Airport,Düsseldorf_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+0,0,Pobedilovo_Airport,Pobedilovo_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+0,0,Dubrovnik_Airport,Dubrovnik_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+0,0,Hévíz-Balaton_Airport,Hévíz-Balaton_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+0,0,Athens_International_Airport,Athens_International_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
+0,0,Vnukovo_International_Airport,Vnukovo_International_Airport,"[0.0,1.0]","[1.0,1.0]",graph-attribute-fact
