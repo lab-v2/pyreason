@@ -1712,8 +1712,17 @@ def is_satisfied_node(interpretations, comp, na):
 		# This is to prevent a key error in case the label is a specific label
 		try:
 			world = interpretations[comp]
+			print('--- is_satisfied_node ---')
+			print('  node:', comp)
+			print('  checking label:', na[0].get_value())
+			print('  clause bound: [', float_to_str(na[1].l), ',', float_to_str(na[1].u), ']')
+			print('  world keys:')
+			for k in world.world.keys():
+				print('    ', k.get_value(), '= [', float_to_str(world.world[k].l), ',', float_to_str(world.world[k].u), ']')
 			result = world.is_satisfied(na[0], na[1])
+			print('  result:', result)
 		except Exception:
+			print('  EXCEPTION (label not in world) -> False')
 			result = False
 	else:
 		result = True
@@ -1762,8 +1771,17 @@ def is_satisfied_edge(interpretations, comp, na):
 		# This is to prevent a key error in case the label is a specific label
 		try:
 			world = interpretations[comp]
+			print('--- is_satisfied_edge ---')
+			print('  edge:', comp[0], '->', comp[1])
+			print('  checking label:', na[0].get_value())
+			print('  clause bound: [', float_to_str(na[1].l), ',', float_to_str(na[1].u), ']')
+			print('  world keys:')
+			for k in world.world.keys():
+				print('    ', k.get_value(), '= [', float_to_str(world.world[k].l), ',', float_to_str(world.world[k].u), ']')
 			result = world.is_satisfied(na[0], na[1])
+			print('  result:', result)
 		except Exception:
+			print('  EXCEPTION (label not in world) -> False')
 			result = False
 	else:
 		result = True
