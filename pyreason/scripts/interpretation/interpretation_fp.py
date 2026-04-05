@@ -1830,8 +1830,14 @@ def is_satisfied_node(interpretations, comp, na, minimized_predicates):
 			print('  world keys:')
 			for k in world.world.keys():
 				print('    ', k.get_value(), '= [', float_to_str(world.world[k].l), ',', float_to_str(world.world[k].u), ']')
-			# Minimized predicate: if world bound is [0,1] (unknown), treat as [0,0] (false)
+			# Minimized predicate check
 			if na[0] in minimized_predicates:
+				if na[0] not in world.world:
+					# Label not in world — missing = unknown [0,1] = treat as [0,0]
+					print('  MINIMIZED (label not in world): treating as [0,0]')
+					result = interval.closed(0, 0) in na[1]
+					print('  result:', result)
+					return result
 				world_bnd = world.world[na[0]]
 				if world_bnd.lower == 0.0 and world_bnd.upper == 1.0:
 					print('  MINIMIZED: world bound [0,1] -> treating as [0,0]')
@@ -1897,8 +1903,14 @@ def is_satisfied_edge(interpretations, comp, na, minimized_predicates):
 			print('  world keys:')
 			for k in world.world.keys():
 				print('    ', k.get_value(), '= [', float_to_str(world.world[k].l), ',', float_to_str(world.world[k].u), ']')
-			# Minimized predicate: if world bound is [0,1] (unknown), treat as [0,0] (false)
+			# Minimized predicate check
 			if na[0] in minimized_predicates:
+				if na[0] not in world.world:
+					# Label not in world — missing = unknown [0,1] = treat as [0,0]
+					print('  MINIMIZED (label not in world): treating as [0,0]')
+					result = interval.closed(0, 0) in na[1]
+					print('  result:', result)
+					return result
 				world_bnd = world.world[na[0]]
 				if world_bnd.lower == 0.0 and world_bnd.upper == 1.0:
 					print('  MINIMIZED: world bound [0,1] -> treating as [0,0]')
