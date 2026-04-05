@@ -61,29 +61,29 @@ def interpretations():
 def test_satisfied_path_true(interpretations):
     comp = ('Justin', 'Dog')
     na = ('owns', [1.0, 1.0])
-    assert is_satisfied_node(interpretations, comp, na) is True
-    assert is_satisfied_edge(interpretations, comp, na) is True
+    assert is_satisfied_node(interpretations, comp, na, []) is True
+    assert is_satisfied_edge(interpretations, comp, na, []) is True
 
 def test_satisfied_path_false(interpretations):
     comp = ('Justin', 'Cat')
     na = ('owns', [1.0, 1.0])
-    assert is_satisfied_edge(interpretations, comp, na) is False
+    assert is_satisfied_edge(interpretations, comp, na, []) is False
 
 def test_missing_comp_key_false():
     # name kept from your original file; behavior is True when na has None
     interpretations = {}
     comp = ('Nobody', 'Home')
     na = ('owns', None)
-    assert is_satisfied_node(interpretations, comp, na) is True
-    assert is_satisfied_edge(interpretations, comp, na) is True
-    
+    assert is_satisfied_node(interpretations, comp, na, []) is True
+    assert is_satisfied_edge(interpretations, comp, na, []) is True
+
 def test_is_satisfied_edge_returns_false_when_comp_missing():
     # Empty dict so interpretations[comp] raises inside the try-block
     interpretations = {}
     comp = ("ghost", "edge")
     na = ("owns", [1.0, 1.0])  # both non-None => enter try/except
-    assert is_satisfied_node(interpretations, comp, na) is False
-    assert is_satisfied_edge(interpretations, comp, na) is False
+    assert is_satisfied_node(interpretations, comp, na, []) is False
+    assert is_satisfied_edge(interpretations, comp, na, []) is False
 
 
 # ---- get_qualified_edge_groundings and get_qualified_node_groundings tests ----
@@ -106,8 +106,8 @@ def test_get_qualified_edge_and_node_groundings_filters_true_edges(interpretatio
     ]
     clause_l, clause_bnd = 'owns', [1.0, 1.0]
 
-    result_edge = get_qualified_edge_groundings(interpretations, grounding, clause_l, clause_bnd)
-    result_node = get_qualified_node_groundings(interpretations, grounding, clause_l, clause_bnd)
+    result_edge = get_qualified_edge_groundings(interpretations, grounding, clause_l, clause_bnd, [])
+    result_node = get_qualified_node_groundings(interpretations, grounding, clause_l, clause_bnd, [])
 
     assert result_edge == [grounding[1], grounding[2]]
     assert result_node == [grounding[1], grounding[2]]
@@ -118,9 +118,9 @@ def test_get_qualified_edge_and_node_groundings_filters_true_edges(interpretatio
 
     from unittest.mock import call
     expected_calls = [
-        call(interpretations, grounding[0], (clause_l, clause_bnd)),
-        call(interpretations, grounding[1], (clause_l, clause_bnd)),
-        call(interpretations, grounding[2], (clause_l, clause_bnd)),
+        call(interpretations, grounding[0], (clause_l, clause_bnd), []),
+        call(interpretations, grounding[1], (clause_l, clause_bnd), []),
+        call(interpretations, grounding[2], (clause_l, clause_bnd), []),
     ]
     mock_is_sat_edge.assert_has_calls(expected_calls)
     mockis_satisfied_node.assert_has_calls(expected_calls)
@@ -138,8 +138,8 @@ def test_get_qualified_edge_and_node_groundings_none_qualify(interpretations, mo
 
     grounding = [('Justin', 'Dog'), ('Justin', 'Cat')]
 
-    result_edge = get_qualified_edge_groundings(interpretations, grounding, 'owns', [1.0, 1.0])
-    result_node = get_qualified_node_groundings(interpretations, grounding, 'owns', [1.0, 1.0])
+    result_edge = get_qualified_edge_groundings(interpretations, grounding, 'owns', [1.0, 1.0], [])
+    result_node = get_qualified_node_groundings(interpretations, grounding, 'owns', [1.0, 1.0], [])
 
     assert result_edge == []
     assert result_node == []
@@ -147,8 +147,8 @@ def test_get_qualified_edge_and_node_groundings_none_qualify(interpretations, mo
     assert mockis_satisfied_node.call_count == 2
 
     expected_calls = [
-        call(interpretations, grounding[0], ('owns', [1.0, 1.0])),
-        call(interpretations, grounding[1], ('owns', [1.0, 1.0])),
+        call(interpretations, grounding[0], ('owns', [1.0, 1.0]), []),
+        call(interpretations, grounding[1], ('owns', [1.0, 1.0]), []),
     ]
     mock_is_sat_edge.assert_has_calls(expected_calls)
     mockis_satisfied_node.assert_has_calls(expected_calls)
@@ -164,8 +164,8 @@ def test_get_qualified_edge_and_node_groundings_all_qualify(interpretations, mon
 
     grounding = [('A', 'B'), ('C', 'D')]
 
-    result_edge = get_qualified_edge_groundings(interpretations, grounding, 'owns', [1.0, 1.0])
-    result_node = get_qualified_node_groundings(interpretations, grounding, 'owns', [1.0, 1.0])
+    result_edge = get_qualified_edge_groundings(interpretations, grounding, 'owns', [1.0, 1.0], [])
+    result_node = get_qualified_node_groundings(interpretations, grounding, 'owns', [1.0, 1.0], [])
 
     assert result_edge == grounding
     assert result_node == grounding
@@ -173,8 +173,8 @@ def test_get_qualified_edge_and_node_groundings_all_qualify(interpretations, mon
     assert mockis_satisfied_node.call_count == 2
 
     expected_calls = [
-        call(interpretations, grounding[0], ('owns', [1.0, 1.0])),
-        call(interpretations, grounding[1], ('owns', [1.0, 1.0])),
+        call(interpretations, grounding[0], ('owns', [1.0, 1.0]), []),
+        call(interpretations, grounding[1], ('owns', [1.0, 1.0]), []),
     ]
     mock_is_sat_edge.assert_has_calls(expected_calls)
     mockis_satisfied_node.assert_has_calls(expected_calls)
@@ -475,7 +475,7 @@ def test_check_grounding_threshold_total_uses_len_grounding(
     mock_get_q = Mock()
     monkeypatch.setitem(check_fn.__globals__, get_q_attr, mock_get_q)
 
-    out = check_fn(interpretations, grounding, qualified, "owns", threshold)
+    out = check_fn(interpretations, grounding, qualified, "owns", threshold, [])
 
     assert out is True
     mock_sat.assert_called_once_with(len(grounding), len(qualified), threshold)
@@ -520,10 +520,10 @@ def test_check_grounding_threshold_available_calls_get_qualified(
     mock_sat = Mock(return_value=False)
     monkeypatch.setitem(check_fn.__globals__, "_satisfies_threshold", mock_sat)
 
-    out = check_fn(interpretations, grounding, qualified, "owns", threshold)
+    out = check_fn(interpretations, grounding, qualified, "owns", threshold, [])
 
     assert out is False
-    mock_get_q.assert_called_once_with(interpretations, grounding, "owns", sentinel_closed)
+    mock_get_q.assert_called_once_with(interpretations, grounding, "owns", sentinel_closed, [])
     mock_sat.assert_called_once_with(len(available_return), len(qualified), threshold)
 
 
@@ -555,11 +555,11 @@ def test_check_node_grounding_threshold_available_calls_get_qualified(interpreta
     threshold = ("less", ("percent", "available"), 60)  # mode 'percent', quantifier 'available'
 
     out = check_node_grounding_threshold_satisfaction(
-        interpretations, grounding, qualified_grounding, clause_label, threshold
+        interpretations, grounding, qualified_grounding, clause_label, threshold, []
     )
 
     assert out is False
-    mock_get_q.assert_called_once_with(interpretations, grounding, clause_label, sentinel_closed)
+    mock_get_q.assert_called_once_with(interpretations, grounding, clause_label, sentinel_closed, [])
     mock_sat.assert_called_once_with(3, 1, threshold)
 
 
@@ -691,7 +691,7 @@ def test_check_all_clause_satisfaction_calls_both_helpers_and_ands_results(inter
     ]
 
     out = check_all_clause_satisfaction(
-        interpretations, interpretations, clauses, thresholds, groundings, groundings_edges
+        interpretations, interpretations, clauses, thresholds, groundings, groundings_edges, []
     )
 
     # Overall AND -> False and no short-circuit: both helpers were called
@@ -721,7 +721,7 @@ def test_check_all_clause_satisfaction_all_true_returns_true(interpretations, mo
     ]
 
     out = check_all_clause_satisfaction(
-        interpretations, interpretations, clauses, thresholds, groundings, groundings_edges
+        interpretations, interpretations, clauses, thresholds, groundings, groundings_edges, []
     )
 
     assert out is True
@@ -732,7 +732,7 @@ def test_check_all_clause_satisfaction_all_true_returns_true(interpretations, mo
 def test_check_all_clause_satisfaction_empty_clauses_returns_true(interpretations):
     # No clauses: initialized satisfaction=True should be returned
     out = check_all_clause_satisfaction(
-        interpretations, interpretations, [], [], {}, {}
+        interpretations, interpretations, [], [], {}, {}, []
     )
     assert out is True
 
@@ -761,7 +761,7 @@ def test_check_all_clause_satisfaction_multiple_clauses_no_short_circuit(interpr
     ]
 
     out = check_all_clause_satisfaction(
-        interpretations, interpretations, clauses, thresholds, groundings, groundings_edges
+        interpretations, interpretations, clauses, thresholds, groundings, groundings_edges, []
     )
 
     assert out is False                          # False AND False AND True -> False
@@ -993,7 +993,7 @@ def test_ground_rule_node_success_adds_head_node_and_collects_trace_ann(monkeypa
     monkeypatch.setattr(
         interpretation,
         "get_qualified_node_groundings",
-        lambda interpretations_node, grounding, clause_label, clause_bnd: list(grounding),
+        lambda interpretations_node, grounding, clause_label, clause_bnd, minimized_predicates: list(grounding),
     )
 
     # Thresholds ok; refine is a no-op; final re-check ok
@@ -1201,7 +1201,7 @@ def test_ground_rule_node_edge_clause_trace_and_ann_three_cases(monkeypatch):
     # Qualification is pass-through; thresholds always satisfied
     monkeypatch.setattr(interpretation, "get_rule_edge_clause_grounding", mock_rule_edge_clause_grounding)
     monkeypatch.setattr(interpretation, "get_qualified_edge_groundings",
-                        lambda interpretations_edge, grounding, clause_label, clause_bnd: list(grounding))
+                        lambda interpretations_edge, grounding, clause_label, clause_bnd, minimized_predicates: list(grounding))
     monkeypatch.setattr(interpretation, "check_edge_grounding_threshold_satisfaction", lambda *a, **k: True)
     monkeypatch.setattr(interpretation, "refine_groundings", lambda *a, **k: None)
     monkeypatch.setattr(interpretation, "check_all_clause_satisfaction", lambda *a, **k: True)
@@ -1633,7 +1633,8 @@ def test_check_all_clause_satisfaction_available_threshold_bug138(monkeypatch):
         clauses,
         thresholds,
         groundings,
-        groundings_edges
+        groundings_edges,
+        []
     )
 
     # This assertion expects CORRECT behavior (will fail due to bug)
@@ -1690,7 +1691,8 @@ def test_check_all_clause_satisfaction_total_threshold_bug138(monkeypatch):
         clauses,
         thresholds,
         groundings,
-        groundings_edges
+        groundings_edges,
+        []
     )
 
     # This assertion expects CORRECT behavior (will fail due to bug)
@@ -1747,7 +1749,8 @@ def test_check_all_clause_satisfaction_edge_available_threshold_bug138(monkeypat
         clauses,
         thresholds,
         groundings,
-        groundings_edges
+        groundings_edges,
+        []
     )
 
     # This assertion expects CORRECT behavior (will fail due to bug)
@@ -1802,7 +1805,8 @@ def test_check_all_clause_satisfaction_edge_total_threshold_bug138(monkeypatch):
         clauses,
         thresholds,
         groundings,
-        groundings_edges
+        groundings_edges,
+        []
     )
 
     # This assertion expects CORRECT behavior (will fail due to bug)

@@ -72,10 +72,12 @@ def get_interpretation_helpers(module_name: str = "interpretation_fp"):
     if "num_ga" in inspect.signature(_ground_rule_fn).parameters:
         def ground_rule(*args, **kwargs):
             kwargs.setdefault('head_functions', ())
+            kwargs.setdefault('minimized_predicates', [])
             return _ground_rule_fn(*args, num_ga=[0], **kwargs)
     else:
         def ground_rule(*args, **kwargs):
             kwargs.setdefault('head_functions', ())
+            kwargs.setdefault('minimized_predicates', [])
             return _ground_rule_fn(*args, **kwargs)
     ns.ground_rule = ground_rule
     ns.update_rule_trace = _py(interpretation._update_rule_trace)
@@ -193,6 +195,7 @@ def get_interpretation_helpers(module_name: str = "interpretation_fp"):
             convergence_delta,
             verbose,
             again,
+            minimized_predicates,
         ):
             return _reason_fn(
                 interpretations_node[0],
@@ -237,6 +240,7 @@ def get_interpretation_helpers(module_name: str = "interpretation_fp"):
                 [0],
                 verbose,
                 again,
+                minimized_predicates,
             )
     else:
         reason = _reason_fn
@@ -295,10 +299,10 @@ def interpretations():
 def test_is_satisfied_node_and_edge(interpretations):
     comp = ('Justin', 'Dog')
     na = ('owns', [1.0, 1.0])
-    assert is_satisfied_node(interpretations, comp, na) is True
-    assert is_satisfied_edge(interpretations, comp, na) is True
+    assert is_satisfied_node(interpretations, comp, na, []) is True
+    assert is_satisfied_edge(interpretations, comp, na, []) is True
     comp = ('Justin', 'Cat')
-    assert is_satisfied_edge(interpretations, comp, na) is False
+    assert is_satisfied_edge(interpretations, comp, na, []) is False
 
 
 def test_get_qualified_groundings_filters(monkeypatch, interpretations):
@@ -313,14 +317,14 @@ def test_get_qualified_groundings_filters(monkeypatch, interpretations):
         ('Nobody', 'Home'),
     ]
     clause_l, clause_bnd = 'owns', [1.0, 1.0]
-    result_edge = get_qualified_edge_groundings(interpretations, grounding, clause_l, clause_bnd)
-    result_node = get_qualified_node_groundings(interpretations, grounding, clause_l, clause_bnd)
+    result_edge = get_qualified_edge_groundings(interpretations, grounding, clause_l, clause_bnd, [])
+    result_node = get_qualified_node_groundings(interpretations, grounding, clause_l, clause_bnd, [])
     assert result_edge == [grounding[1], grounding[2]]
     assert result_node == [grounding[1], grounding[2]]
     expected_calls = [
-        call(interpretations, grounding[0], (clause_l, clause_bnd)),
-        call(interpretations, grounding[1], (clause_l, clause_bnd)),
-        call(interpretations, grounding[2], (clause_l, clause_bnd)),
+        call(interpretations, grounding[0], (clause_l, clause_bnd), []),
+        call(interpretations, grounding[1], (clause_l, clause_bnd), []),
+        call(interpretations, grounding[2], (clause_l, clause_bnd), []),
     ]
     mock_edge.assert_has_calls(expected_calls)
     mock_node.assert_has_calls(expected_calls)
@@ -545,9 +549,9 @@ def test_are_satisfied_helpers_call_each(monkeypatch, are_fn_name, sat_name):
     monkeypatch.setattr(interpretation, sat_name, mock)
     nas = [("l1", _Interval(0, 1)), ("l2", _Interval(0, 1))]
     are_fn = globals()[are_fn_name]
-    out = are_fn({}, "c", nas)
+    out = are_fn({}, "c", nas, [])
     assert out is False
-    expected = [call({}, "c", nas[0]), call({}, "c", nas[1])]
+    expected = [call({}, "c", nas[0], []), call({}, "c", nas[1], [])]
     mock.assert_has_calls(expected)
 
 

@@ -179,6 +179,7 @@ def make_copy_env(monkeypatch, persistent):
         "convergence_delta": 0,
         "verbose": False,
         "again": False,
+        "minimized_predicates": [],
     }
 
     def run(**overrides):
@@ -226,6 +227,7 @@ def make_copy_env(monkeypatch, persistent):
             params["convergence_delta"],
             params["verbose"],
             params["again"],
+            params["minimized_predicates"],
         )
 
     env["run"] = run
