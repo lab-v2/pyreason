@@ -466,6 +466,7 @@ __rules_name_set = set() # We want to warn the user if they add multiple rules w
 __ipl: Optional[numba.typed.List] = None
 __specific_node_labels: Optional[numba.typed.List] = None
 __specific_edge_labels: Optional[numba.typed.List] = None
+__minimized_predicates = set()
 
 __non_fluent_graph_facts_node: Optional[numba.typed.List] = None
 __non_fluent_graph_facts_edge: Optional[numba.typed.List] = None
@@ -486,12 +487,13 @@ def reset():
     """Resets certain variables to None to be able to do pr.reason() multiple times in a program
     without memory blowing up
     """
-    global __node_facts, __edge_facts, __graph, __facts_name_set
+    global __node_facts, __edge_facts, __graph, __facts_name_set, __minimized_predicates
 
     # Facts
     __node_facts = None
     __edge_facts = None
     __facts_name_set.clear()
+    __minimized_predicates = set()
     if __program is not None:
         __program.reset_facts()
 
@@ -1085,6 +1087,17 @@ def _parse_and_validate_fact_params(idx, name_raw, start_time_raw, end_time_raw,
     return name, start_time, end_time, static
 
 
+def add_minimized_predicate(predicate_name: str) -> None:
+    """Register a predicate as minimized (circumscription). For any node/edge where
+    a minimized predicate has bounds [0,1] (unknown), it will be treated as [0,0] (false)
+    during rule satisfaction checks.
+
+    :param predicate_name: The name of the predicate to minimize
+    :return: None
+    """
+    __minimized_predicates.add(predicate_name)
+
+
 def add_fact(pyreason_fact: Fact) -> None:
     """Add a PyReason fact to the program.
 
@@ -1509,6 +1522,12 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
     __program = Program(__graph, all_node_facts, all_edge_facts, __rules, __ipl, annotation_functions, head_functions, settings.reverse_digraph, settings.atom_trace, settings.save_graph_attributes_to_trace, settings.persistent, settings.inconsistency_check, settings.store_interpretation_changes, settings.parallel_computing, settings.update_mode, settings.allow_ground_rules, settings.fp_version)
     __program.specific_node_labels = __specific_node_labels
     __program.specific_edge_labels = __specific_edge_labels
+
+    # Convert minimized predicates to numba-compatible list of label types
+    minimized_preds_numba = numba.typed.List.empty_list(label.label_type)
+    for pred_name in __minimized_predicates:
+        minimized_preds_numba.append(label.Label(pred_name))
+    __program.minimized_predicates = minimized_preds_numba
 
     # Run Program and get final interpretation
     interpretation = __program.reason(timesteps, convergence_threshold, convergence_bound_threshold, settings.verbose)
