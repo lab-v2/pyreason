@@ -6,6 +6,7 @@ Tests the critical reset(), reset_rules(), reset_settings() functions and global
 import pytest
 from unittest.mock import patch, MagicMock
 import pyreason as pr
+import pyreason.pyreason as pr_mod
 
 
 class TestResetFunction:
@@ -295,3 +296,51 @@ class TestStateConsistency:
         assert pr.settings.verbose is True
         assert pr.settings.memory_profile is False
         assert pr.settings.output_file_name == "pyreason_output"
+
+
+def _get_minimized():
+    """Access the internal minimized predicates set."""
+    return pr_mod.__dict__['__minimized_predicates']
+
+
+class TestMinimizedPredicateApi:
+    """Test add_minimized_predicate() and its interaction with reset functions."""
+
+    def setup_method(self):
+        pr.reset()
+        pr.reset_rules()
+
+    def teardown_method(self):
+        pr.reset()
+        pr.reset_rules()
+
+    def test_add_minimized_predicate_registers(self):
+        pr.add_minimized_predicate('hackerControl')
+        assert 'hackerControl' in _get_minimized()
+
+    def test_add_multiple_minimized_predicates(self):
+        pr.add_minimized_predicate('pred_a')
+        pr.add_minimized_predicate('pred_b')
+        pr.add_minimized_predicate('pred_c')
+        assert {'pred_a', 'pred_b', 'pred_c'} == _get_minimized()
+
+    def test_add_duplicate_is_idempotent(self):
+        pr.add_minimized_predicate('pred')
+        pr.add_minimized_predicate('pred')
+        assert _get_minimized() == {'pred'}
+
+    def test_reset_clears_minimized_predicates(self):
+        pr.add_minimized_predicate('pred_a')
+        pr.add_minimized_predicate('pred_b')
+        pr.reset()
+        assert len(_get_minimized()) == 0
+
+    def test_reset_rules_does_not_clear_minimized_predicates(self):
+        pr.add_minimized_predicate('pred')
+        pr.reset_rules()
+        assert 'pred' in _get_minimized()
+
+    def test_reset_settings_does_not_clear_minimized_predicates(self):
+        pr.add_minimized_predicate('pred')
+        pr.reset_settings()
+        assert 'pred' in _get_minimized()
