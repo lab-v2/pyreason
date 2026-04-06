@@ -1,4 +1,4 @@
-"""Functional tests for minimized predicates (circumscription).
+"""Functional tests for closed_world predicates (circumscription).
 
 End-to-end tests using the full PyReason API with networkx graphs,
 parametrized across regular, fp, and parallel reasoning modes.
@@ -30,15 +30,15 @@ def _build_two_node_graph():
 
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
-def test_minimized_known_bounds_bypass_minimization(mode):
-    """Known [1,1] bounds on a minimized predicate should NOT be coerced to [0,0].
-    A ~minimized_pred(Y) clause must therefore not fire when Y has known [1,1]."""
+def test_closed_world_known_bounds_bypass_minimization(mode):
+    """Known [1,1] bounds on a closed_world predicate should NOT be coerced to [0,0].
+    A ~closed_world_pred(Y) clause must therefore not fire when Y has known [1,1]."""
     setup_mode(mode)
 
     g = _build_two_node_graph()
     pr.load_graph(g)
 
-    pr.add_minimized_predicate('hackerControl')
+    pr.add_closed_world_predicate('hackerControl')
 
     pr.add_fact(pr.Fact('hackerControl(A)', 'hc_a'))
     pr.add_fact(pr.Fact('hackerControl(B)', 'hc_b_known'))  # defaults to [1,1]
@@ -58,9 +58,9 @@ def test_minimized_known_bounds_bypass_minimization(mode):
 
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
-def test_minimized_vs_non_minimized_satisfaction(mode):
-    """A minimized predicate with [0,1] bounds satisfies a ~pred (negated [0,0])
-    clause because [0,1] is treated as [0,0]. An equivalent non-minimized predicate
+def test_closed_world_vs_non_closed_world_satisfaction(mode):
+    """A closed_world predicate with [0,1] bounds satisfies a ~pred (negated [0,0])
+    clause because [0,1] is treated as [0,0]. An equivalent non-closed_world predicate
     with the same [0,1] bounds does NOT satisfy the same clause."""
     setup_mode(mode)
 
@@ -69,8 +69,8 @@ def test_minimized_vs_non_minimized_satisfaction(mode):
     g.add_edge('A', 'B', stepFrom=1)
     pr.load_graph(g)
 
-    # hackerControl is minimized, otherPred is not
-    pr.add_minimized_predicate('hackerControl')
+    # hackerControl is closed_world, otherPred is not
+    pr.add_closed_world_predicate('hackerControl')
 
     # Both predicates start with unknown [0,1] on B
     pr.add_fact(pr.Fact('hackerControl(A)', 'hc_a'))
@@ -79,16 +79,16 @@ def test_minimized_vs_non_minimized_satisfaction(mode):
     pr.add_fact(pr.Fact('otherPred(B):[0,1]', 'op_b_unknown'))
 
     # Rule using negation: ~pred requires [0,0] bounds
-    # minimized hackerControl [0,1] -> [0,0] -> satisfies ~hackerControl
+    # closed_world hackerControl [0,1] -> [0,0] -> satisfies ~hackerControl
     pr.add_rule(pr.Rule('blocked(Y) <-1 stepFrom(X,Y), hackerControl(X), ~hackerControl(Y)',
-                        'minimized_rule'))
-    # Non-minimized otherPred [0,1] stays [0,1] -> does NOT satisfy ~otherPred ([0,0])
+                        'closed_world_rule'))
+    # Non-closed_world otherPred [0,1] stays [0,1] -> does NOT satisfy ~otherPred ([0,0])
     pr.add_rule(pr.Rule('notBlocked(Y) <-1 stepFrom(X,Y), otherPred(X), ~otherPred(Y)',
-                        'non_minimized_rule'))
+                        'non_closed_world_rule'))
 
     interpretation = pr.reason(timesteps=1)
 
-    # Minimized: hackerControl(B) [0,1] -> [0,0] satisfies ~hackerControl -> blocked(B) fires
+    # closed_world: hackerControl(B) [0,1] -> [0,0] satisfies ~hackerControl -> blocked(B) fires
     blocked_dfs = pr.filter_and_sort_nodes(interpretation, ['blocked'])
     found_blocked = False
     for df in blocked_dfs:
@@ -96,21 +96,21 @@ def test_minimized_vs_non_minimized_satisfaction(mode):
             found_blocked = True
             break
     assert found_blocked, \
-        'blocked(B) should fire: minimized hackerControl(B) [0,1] -> [0,0] satisfies ~hackerControl'
+        'blocked(B) should fire: closed_world hackerControl(B) [0,1] -> [0,0] satisfies ~hackerControl'
 
-    # Non-minimized: otherPred(B) stays [0,1], does NOT satisfy ~otherPred ([0,0])
+    # Non-closed_world: otherPred(B) stays [0,1], does NOT satisfy ~otherPred ([0,0])
     not_blocked_dfs = pr.filter_and_sort_nodes(interpretation, ['notBlocked'])
     for df in not_blocked_dfs:
         if len(df) > 0:
             assert 'B' not in df['component'].values, \
-                'notBlocked(B) should NOT fire: non-minimized otherPred(B) [0,1] does not satisfy ~otherPred'
+                'notBlocked(B) should NOT fire: non-closed_world otherPred(B) [0,1] does not satisfy ~otherPred'
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
-def test_minimized_predicate_multi_timestep(mode):
+def test_closed_world_predicate_multi_timestep(mode):
     """Minimization must apply at every timestep where a body clause sees an
-    unknown [0,1] bound on a minimized predicate. Cascade A -> B -> C: the
+    unknown [0,1] bound on a closed_world predicate. Cascade A -> B -> C: the
     block rule must fire on B at t=1 and on C at t=2, both via minimization."""
     setup_mode(mode)
 
@@ -120,12 +120,12 @@ def test_minimized_predicate_multi_timestep(mode):
     g.add_edge('B', 'C', stepFrom=1)
     pr.load_graph(g)
 
-    pr.add_minimized_predicate('hackerControl')
+    pr.add_closed_world_predicate('hackerControl')
     pr.add_fact(pr.Fact('hackerControl(A)', 'hc_a'))
     pr.add_fact(pr.Fact('hackerControl(B):[0,1]', 'hc_b_unknown'))
     pr.add_fact(pr.Fact('hackerControl(C):[0,1]', 'hc_c_unknown'))
 
-    # block(Y) fires when Y has minimized hackerControl ([0,1] -> [0,0])
+    # block(Y) fires when Y has closed_world hackerControl ([0,1] -> [0,0])
     # and X (the source) is "active" — either has known hackerControl or is already blocked.
     pr.add_rule(pr.Rule('blocked(Y) <-1 stepFrom(X,Y), hackerControl(X), ~hackerControl(Y)',
                         'block_rule_initial'))
@@ -149,7 +149,7 @@ def test_minimized_predicate_multi_timestep(mode):
 
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
-def test_minimized_with_inconsistency_check(mode):
+def test_closed_world_with_inconsistency_check(mode):
     """Minimization must drive a rule to fire even with inconsistency_check enabled."""
     setup_mode(mode)
     pr.settings.inconsistency_check = True
@@ -157,7 +157,7 @@ def test_minimized_with_inconsistency_check(mode):
     g = _build_two_node_graph()
     pr.load_graph(g)
 
-    pr.add_minimized_predicate('hackerControl')
+    pr.add_closed_world_predicate('hackerControl')
     pr.add_fact(pr.Fact('hackerControl(A)', 'hc_a'))
     pr.add_fact(pr.Fact('hackerControl(B):[0,1]', 'hc_b_unknown'))
     pr.add_rule(pr.Rule('blocked(Y) <-1 stepFrom(X,Y), hackerControl(X), ~hackerControl(Y)',
@@ -176,7 +176,7 @@ def test_minimized_with_inconsistency_check(mode):
 
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
-def test_minimized_with_persistent_mode(mode):
+def test_closed_world_with_persistent_mode(mode):
     """Minimization must drive a rule to fire even with persistent bounds enabled."""
     setup_mode(mode)
     pr.settings.persistent = True
@@ -184,7 +184,7 @@ def test_minimized_with_persistent_mode(mode):
     g = _build_two_node_graph()
     pr.load_graph(g)
 
-    pr.add_minimized_predicate('hackerControl')
+    pr.add_closed_world_predicate('hackerControl')
     pr.add_fact(pr.Fact('hackerControl(A)', 'hc_a'))
     pr.add_fact(pr.Fact('hackerControl(B):[0,1]', 'hc_b_unknown'))
     pr.add_rule(pr.Rule('blocked(Y) <-1 stepFrom(X,Y), hackerControl(X), ~hackerControl(Y)',
@@ -203,7 +203,7 @@ def test_minimized_with_persistent_mode(mode):
 
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
-def test_minimized_with_atom_trace(mode):
+def test_closed_world_with_atom_trace(mode):
     """Minimization must drive a rule to fire and the atom trace must be available."""
     setup_mode(mode)
     pr.settings.atom_trace = True
@@ -211,7 +211,7 @@ def test_minimized_with_atom_trace(mode):
     g = _build_two_node_graph()
     pr.load_graph(g)
 
-    pr.add_minimized_predicate('hackerControl')
+    pr.add_closed_world_predicate('hackerControl')
     pr.add_fact(pr.Fact('hackerControl(A)', 'hc_a'))
     pr.add_fact(pr.Fact('hackerControl(B):[0,1]', 'hc_b_unknown'))
     pr.add_rule(pr.Rule('blocked(Y) <-1 stepFrom(X,Y), hackerControl(X), ~hackerControl(Y)',
@@ -236,7 +236,7 @@ def test_minimized_with_atom_trace(mode):
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_circumscription_example_scenario(mode):
     """End-to-end scenario adapted from the circumscription example: a rule
-    that fires only because hackerControl(cb_2) is minimized from [0,1] to [0,0]."""
+    that fires only because hackerControl(cb_2) is closed_world from [0,1] to [0,0]."""
     setup_mode(mode)
     pr.settings.atom_trace = True
     pr.settings.inconsistency_check = True
@@ -248,18 +248,18 @@ def test_circumscription_example_scenario(mode):
     g.add_edge('cb_2', 'l2', hasLabel=1)
     pr.load_graph(g)
 
-    pr.add_minimized_predicate('hackerControl')
+    pr.add_closed_world_predicate('hackerControl')
     pr.add_fact(pr.Fact('stepFrom(cb_1, cb_2)', 'step_from_fact', 0, 1))
     pr.add_fact(pr.Fact('hackerControl(cb_1)', 'hacker_control_initial_fact'))
     pr.add_fact(pr.Fact('hackerControl(cb_2):[0,1]', 'hc_cb2_unknown'))
 
-    # safe(Y) fires only if Y has minimized hackerControl ([0,1] -> [0,0]).
+    # safe(Y) fires only if Y has closed_world hackerControl ([0,1] -> [0,0]).
     pr.add_rule(pr.Rule('safe(Y) <-1 stepFrom(X,Y), hackerControl(X), ~hackerControl(Y)',
                         'safe_rule'))
 
     interpretation = pr.reason(timesteps=2)
 
-    # safe(cb_2) should fire because hackerControl(cb_2) [0,1] is minimized to [0,0]
+    # safe(cb_2) should fire because hackerControl(cb_2) [0,1] is closed_world to [0,0]
     safe_dfs = pr.filter_and_sort_nodes(interpretation, ['safe'])
     found_cb2 = False
     for df in safe_dfs:
@@ -271,8 +271,8 @@ def test_circumscription_example_scenario(mode):
 
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
-def test_two_minimized_predicates_explicit_and_missing(mode):
-    """Two minimized predicates exercise both branches of the minimization check:
+def test_two_closed_world_predicates_explicit_and_missing(mode):
+    """Two closed_world predicates exercise both branches of the minimization check:
       - hackerControl(B) is set explicitly to [0,1] via a fact (in-world branch).
       - compromised(B) has no fact at all (missing-from-world branch).
     Two rules each negate one of these predicates; both must fire on B."""
@@ -281,8 +281,8 @@ def test_two_minimized_predicates_explicit_and_missing(mode):
     g = _build_two_node_graph()
     pr.load_graph(g)
 
-    pr.add_minimized_predicate('hackerControl')
-    pr.add_minimized_predicate('compromised')
+    pr.add_closed_world_predicate('hackerControl')
+    pr.add_closed_world_predicate('compromised')
 
     pr.add_fact(pr.Fact('hackerControl(A)', 'hc_a'))
     # Explicit [0,1] -> exercises the in-world [0,1] -> [0,0] branch
@@ -303,7 +303,7 @@ def test_two_minimized_predicates_explicit_and_missing(mode):
             found_hc = True
             break
     assert found_hc, \
-        'blocked_hc(B) should fire: minimized hackerControl(B) [0,1] -> [0,0] satisfies ~hackerControl'
+        'blocked_hc(B) should fire: closed_world hackerControl(B) [0,1] -> [0,0] satisfies ~hackerControl'
 
     blocked_comp_dfs = pr.filter_and_sort_nodes(interpretation, ['blocked_comp'])
     found_comp = False

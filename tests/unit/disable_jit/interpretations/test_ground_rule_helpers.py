@@ -993,7 +993,7 @@ def test_ground_rule_node_success_adds_head_node_and_collects_trace_ann(monkeypa
     monkeypatch.setattr(
         interpretation,
         "get_qualified_node_groundings",
-        lambda interpretations_node, grounding, clause_label, clause_bnd, minimized_predicates: list(grounding),
+        lambda interpretations_node, grounding, clause_label, clause_bnd, closed_world_predicates: list(grounding),
     )
 
     # Thresholds ok; refine is a no-op; final re-check ok
@@ -1201,7 +1201,7 @@ def test_ground_rule_node_edge_clause_trace_and_ann_three_cases(monkeypatch):
     # Qualification is pass-through; thresholds always satisfied
     monkeypatch.setattr(interpretation, "get_rule_edge_clause_grounding", mock_rule_edge_clause_grounding)
     monkeypatch.setattr(interpretation, "get_qualified_edge_groundings",
-                        lambda interpretations_edge, grounding, clause_label, clause_bnd, minimized_predicates: list(grounding))
+                        lambda interpretations_edge, grounding, clause_label, clause_bnd, closed_world_predicates: list(grounding))
     monkeypatch.setattr(interpretation, "check_edge_grounding_threshold_satisfaction", lambda *a, **k: True)
     monkeypatch.setattr(interpretation, "refine_groundings", lambda *a, **k: None)
     monkeypatch.setattr(interpretation, "check_all_clause_satisfaction", lambda *a, **k: True)

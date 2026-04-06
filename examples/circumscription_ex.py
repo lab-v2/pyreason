@@ -19,7 +19,7 @@ pr.settings.inconsistency_check = True
 
 pr.load_graph(g)
 
-pr.add_minimized_predicate('hackerControl')
+pr.add_closed_world_predicate('hackerControl')
 pr.add_fact(pr.Fact('stepFrom(cb_1, cb_2)', 'step_from_fact', 0, 1))
 pr.add_fact(pr.Fact('hackerControl(cb_1)', 'hacker_control_initial_fact'))
 pr.add_rule(pr.Rule('future(Y) <-1 stepFrom(X,Y), hackerControl(X)'))

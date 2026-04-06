@@ -54,7 +54,7 @@ edges_to_be_added_type = numba.types.Tuple((numba.types.ListType(node_type), num
 class Interpretation:
 	specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(node_type))
 	specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(edge_type))
-	minimized_predicates = numba.typed.List.empty_list(label.label_type)
+	closed_world_predicates = numba.typed.List.empty_list(label.label_type)
 
 	def __init__(self, graph, ipl, annotation_functions, head_functions, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, persistent, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules):
 		self.graph = graph
@@ -216,7 +216,7 @@ class Interpretation:
 			if restart:
 				self.time = 0
 				self.prev_reasoning_data[0] = 0
-		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.predicate_map_node, self.predicate_map_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.persistent, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, self.allow_ground_rules, max_facts_time, self.annotation_functions, self.head_functions, self._convergence_mode, self._convergence_delta, self.num_ga, verbose, again, self.minimized_predicates)
+		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.predicate_map_node, self.predicate_map_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.persistent, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, self.allow_ground_rules, max_facts_time, self.annotation_functions, self.head_functions, self._convergence_mode, self._convergence_delta, self.num_ga, verbose, again, self.closed_world_predicates)
 		self.time = t - 1
 		# If we need to reason again, store the next timestep to start from
 		self.prev_reasoning_data[0] = t
@@ -226,7 +226,7 @@ class Interpretation:
 
 	@staticmethod
 	@numba.njit(cache=True, parallel=True)
-	def reason(interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, persistent, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules, max_facts_time, annotation_functions, head_functions, convergence_mode, convergence_delta, num_ga, verbose, again, minimized_predicates):
+	def reason(interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, persistent, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules, max_facts_time, annotation_functions, head_functions, convergence_mode, convergence_delta, num_ga, verbose, again, closed_world_predicates):
 		t = prev_reasoning_data[0]
 		fp_cnt = prev_reasoning_data[1]
 		max_rules_time = 0
@@ -561,7 +561,7 @@ class Interpretation:
 						# Only go through if the rule can be applied within the given timesteps, or we're running until convergence
 						delta_t = rule.get_delta()
 						if t + delta_t <= tmax or tmax == -1 or again:
-							applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, num_ga, t, head_functions, minimized_predicates)
+							applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, num_ga, t, head_functions, closed_world_predicates)
 
 							# Loop through applicable rules and add them to the rules to be applied for later or next fp operation
 							for applicable_rule in applicable_node_rules:
@@ -784,7 +784,7 @@ class Interpretation:
 
 
 @numba.njit(cache=True)
-def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, num_ga, t, head_functions, minimized_predicates):
+def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, num_ga, t, head_functions, closed_world_predicates):
 	# Extract rule params
 	rule_type = rule.get_type()
 	head_variables = rule.get_head_variables()
@@ -841,7 +841,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 				grounding = get_rule_node_clause_grounding(clause_var_1, groundings, predicate_map_node, clause_label, nodes)
 
 			# Narrow subset based on predicate
-			qualified_groundings = get_qualified_node_groundings(interpretations_node, grounding, clause_label, clause_bnd, minimized_predicates)
+			qualified_groundings = get_qualified_node_groundings(interpretations_node, grounding, clause_label, clause_bnd, closed_world_predicates)
 			groundings[clause_var_1] = qualified_groundings
 			qualified_groundings_set = set(qualified_groundings)
 			for c1, c2 in groundings_edges:
@@ -854,7 +854,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 			# Only check satisfaction if the default threshold is used. This saves us from grounding the rest of the rule
 			# It doesn't make sense to check any other thresholds because the head could be grounded with multiple nodes/edges
 			# if thresholds[i][1][0] == 'number' and thresholds[i][1][1] == 'total' and thresholds[i][2] == 1.0:
-			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, grounding, qualified_groundings, clause_label, thresholds[i], minimized_predicates) and satisfaction
+			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, grounding, qualified_groundings, clause_label, thresholds[i], closed_world_predicates) and satisfaction
 
 		# This is an edge clause
 		elif clause_type == 'edge':
@@ -874,13 +874,13 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 				grounding = get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groundings_edges, neighbors, reverse_neighbors, predicate_map_edge, clause_label, edges)
 
 			# Narrow subset based on predicate (save the edges that are qualified to use for finding future groundings faster)
-			qualified_groundings = get_qualified_edge_groundings(interpretations_edge, grounding, clause_label, clause_bnd, minimized_predicates)
+			qualified_groundings = get_qualified_edge_groundings(interpretations_edge, grounding, clause_label, clause_bnd, closed_world_predicates)
 
 			# Check satisfaction of those edges wrt the threshold
 			# Only check satisfaction if the default threshold is used. This saves us from grounding the rest of the rule
 			# It doesn't make sense to check any other thresholds because the head could be grounded with multiple nodes/edges
 			# if thresholds[i][1][0] == 'number' and thresholds[i][1][1] == 'total' and thresholds[i][2] == 1.0:
-			satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, grounding, qualified_groundings, clause_label, thresholds[i], minimized_predicates) and satisfaction
+			satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, grounding, qualified_groundings, clause_label, thresholds[i], closed_world_predicates) and satisfaction
 
 			# Update the groundings
 			groundings[clause_var_1] = numba.typed.List.empty_list(node_type)
@@ -956,7 +956,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 				edges_to_be_added = (numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(node_type), rule_edges[-1])
 
 				# Check for satisfaction one more time in case the refining process has changed the groundings
-				satisfaction = check_all_clause_satisfaction(interpretations_node, interpretations_edge, clauses, thresholds, groundings, groundings_edges, minimized_predicates)
+				satisfaction = check_all_clause_satisfaction(interpretations_node, interpretations_edge, clauses, thresholds, groundings, groundings_edges, closed_world_predicates)
 				if not satisfaction:
 					continue
 
@@ -1114,7 +1114,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 
 				# Check if the thresholds are still satisfied
 				# Check if all clauses are satisfied again in case the refining process changed anything
-				satisfaction = check_all_clause_satisfaction(interpretations_node, interpretations_edge, clauses, thresholds, temp_groundings, temp_groundings_edges, minimized_predicates)
+				satisfaction = check_all_clause_satisfaction(interpretations_node, interpretations_edge, clauses, thresholds, temp_groundings, temp_groundings_edges, closed_world_predicates)
 
 				if not satisfaction:
 					continue
@@ -1235,7 +1235,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 
 
 @numba.njit(cache=True)
-def check_all_clause_satisfaction(interpretations_node, interpretations_edge, clauses, thresholds, groundings, groundings_edges, minimized_predicates):
+def check_all_clause_satisfaction(interpretations_node, interpretations_edge, clauses, thresholds, groundings, groundings_edges, closed_world_predicates):
 	# Check if the thresholds are satisfied for each clause
 	satisfaction = True
 	for i, clause in enumerate(clauses):
@@ -1247,12 +1247,12 @@ def check_all_clause_satisfaction(interpretations_node, interpretations_edge, cl
 
 		if clause_type == 'node':
 			clause_var_1 = clause_variables[0]
-			qualified_groundings = get_qualified_node_groundings(interpretations_node, groundings[clause_var_1], clause_label, clause_bnd, minimized_predicates)
-			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, groundings[clause_var_1], qualified_groundings, clause_label, thresholds[i], minimized_predicates) and satisfaction
+			qualified_groundings = get_qualified_node_groundings(interpretations_node, groundings[clause_var_1], clause_label, clause_bnd, closed_world_predicates)
+			satisfaction = check_node_grounding_threshold_satisfaction(interpretations_node, groundings[clause_var_1], qualified_groundings, clause_label, thresholds[i], closed_world_predicates) and satisfaction
 		elif clause_type == 'edge':
 			clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
-			qualified_groundings = get_qualified_edge_groundings(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], clause_label, clause_bnd, minimized_predicates)
-			satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], qualified_groundings, clause_label, thresholds[i], minimized_predicates) and satisfaction
+			qualified_groundings = get_qualified_edge_groundings(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], clause_label, clause_bnd, closed_world_predicates)
+			satisfaction = check_edge_grounding_threshold_satisfaction(interpretations_edge, groundings_edges[(clause_var_1, clause_var_2)], qualified_groundings, clause_label, thresholds[i], closed_world_predicates) and satisfaction
 	return satisfaction
 
 
@@ -1315,14 +1315,14 @@ def refine_groundings(clause_variables, groundings, groundings_edges, dependency
 
 
 @numba.njit(cache=True)
-def check_node_grounding_threshold_satisfaction(interpretations_node, grounding, qualified_grounding, clause_label, threshold, minimized_predicates):
+def check_node_grounding_threshold_satisfaction(interpretations_node, grounding, qualified_grounding, clause_label, threshold, closed_world_predicates):
 	threshold_quantifier_type = threshold[1][1]
 	if threshold_quantifier_type == 'total':
 		neigh_len = len(grounding)
 
 	# Available is all neighbors that have a particular label with bound inside [0,1]
 	elif threshold_quantifier_type == 'available':
-		neigh_len = len(get_qualified_node_groundings(interpretations_node, grounding, clause_label, interval.closed(0, 1), minimized_predicates))
+		neigh_len = len(get_qualified_node_groundings(interpretations_node, grounding, clause_label, interval.closed(0, 1), closed_world_predicates))
 
 
 	qualified_neigh_len = len(qualified_grounding)
@@ -1331,14 +1331,14 @@ def check_node_grounding_threshold_satisfaction(interpretations_node, grounding,
 
 
 @numba.njit(cache=True)
-def check_edge_grounding_threshold_satisfaction(interpretations_edge, grounding, qualified_grounding, clause_label, threshold, minimized_predicates):
+def check_edge_grounding_threshold_satisfaction(interpretations_edge, grounding, qualified_grounding, clause_label, threshold, closed_world_predicates):
 	threshold_quantifier_type = threshold[1][1]
 	if threshold_quantifier_type == 'total':
 		neigh_len = len(grounding)
 
 	# Available is all neighbors that have a particular label with bound inside [0,1]
 	elif threshold_quantifier_type == 'available':
-		neigh_len = len(get_qualified_edge_groundings(interpretations_edge, grounding, clause_label, interval.closed(0, 1), minimized_predicates))
+		neigh_len = len(get_qualified_edge_groundings(interpretations_edge, grounding, clause_label, interval.closed(0, 1), closed_world_predicates))
 
 	qualified_neigh_len = len(qualified_grounding)
 	satisfaction = _satisfies_threshold(neigh_len, qualified_neigh_len, threshold)
@@ -1403,22 +1403,22 @@ def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groun
 
 
 @numba.njit(cache=True)
-def get_qualified_node_groundings(interpretations_node, grounding, clause_l, clause_bnd, minimized_predicates):
+def get_qualified_node_groundings(interpretations_node, grounding, clause_l, clause_bnd, closed_world_predicates):
 	# Filter the grounding by the predicate and bound of the clause
 	qualified_groundings = numba.typed.List.empty_list(node_type)
 	for n in grounding:
-		if is_satisfied_node(interpretations_node, n, (clause_l, clause_bnd), minimized_predicates):
+		if is_satisfied_node(interpretations_node, n, (clause_l, clause_bnd), closed_world_predicates):
 			qualified_groundings.append(n)
 
 	return qualified_groundings
 
 
 @numba.njit(cache=True)
-def get_qualified_edge_groundings(interpretations_edge, grounding, clause_l, clause_bnd, minimized_predicates):
+def get_qualified_edge_groundings(interpretations_edge, grounding, clause_l, clause_bnd, closed_world_predicates):
 	# Filter the grounding by the predicate and bound of the clause
 	qualified_groundings = numba.typed.List.empty_list(edge_type)
 	for e in grounding:
-		if is_satisfied_edge(interpretations_edge, e, (clause_l, clause_bnd), minimized_predicates):
+		if is_satisfied_edge(interpretations_edge, e, (clause_l, clause_bnd), closed_world_predicates):
 			qualified_groundings.append(e)
 
 	return qualified_groundings
@@ -1699,22 +1699,22 @@ def _update_rule_trace(rule_trace, qn, qe, prev_bnd, name):
 
 
 @numba.njit(cache=True)
-def are_satisfied_node(interpretations, comp, nas, minimized_predicates):
+def are_satisfied_node(interpretations, comp, nas, closed_world_predicates):
 	result = True
 	for (l, bnd) in nas:
-		result = result and is_satisfied_node(interpretations, comp, (l, bnd), minimized_predicates)
+		result = result and is_satisfied_node(interpretations, comp, (l, bnd), closed_world_predicates)
 	return result
 
 
 @numba.njit(cache=True)
-def is_satisfied_node(interpretations, comp, na, minimized_predicates):
+def is_satisfied_node(interpretations, comp, na, closed_world_predicates):
 	result = False
 	if not (na[0] is None or na[1] is None):
 		# This is to prevent a key error in case the label is a specific label
 		try:
 			world = interpretations[comp]
-			# Minimized predicate check
-			if na[0] in minimized_predicates:
+			# closed_world predicate check
+			if na[0] in closed_world_predicates:
 				if na[0] not in world.world:
 					# Label not in world — missing = unknown [0,1] = treat as [0,0]
 					result = interval.closed(0, 0) in na[1]
@@ -1759,22 +1759,22 @@ def is_satisfied_node_comparison(interpretations, comp, na):
 
 
 @numba.njit(cache=True)
-def are_satisfied_edge(interpretations, comp, nas, minimized_predicates):
+def are_satisfied_edge(interpretations, comp, nas, closed_world_predicates):
 	result = True
 	for (l, bnd) in nas:
-		result = result and is_satisfied_edge(interpretations, comp, (l, bnd), minimized_predicates)
+		result = result and is_satisfied_edge(interpretations, comp, (l, bnd), closed_world_predicates)
 	return result
 
 
 @numba.njit(cache=True)
-def is_satisfied_edge(interpretations, comp, na, minimized_predicates):
+def is_satisfied_edge(interpretations, comp, na, closed_world_predicates):
 	result = False
 	if not (na[0] is None or na[1] is None):
 		# This is to prevent a key error in case the label is a specific label
 		try:
 			world = interpretations[comp]
-			# Minimized predicate check
-			if na[0] in minimized_predicates:
+			# closed_world predicate check
+			if na[0] in closed_world_predicates:
 				if na[0] not in world.world:
 					# Label not in world — missing = unknown [0,1] = treat as [0,0]
 					result = interval.closed(0, 0) in na[1]

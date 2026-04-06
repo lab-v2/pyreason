@@ -72,12 +72,12 @@ def get_interpretation_helpers(module_name: str = "interpretation_fp"):
     if "num_ga" in inspect.signature(_ground_rule_fn).parameters:
         def ground_rule(*args, **kwargs):
             kwargs.setdefault('head_functions', ())
-            kwargs.setdefault('minimized_predicates', [])
+            kwargs.setdefault('closed_world_predicates', [])
             return _ground_rule_fn(*args, num_ga=[0], **kwargs)
     else:
         def ground_rule(*args, **kwargs):
             kwargs.setdefault('head_functions', ())
-            kwargs.setdefault('minimized_predicates', [])
+            kwargs.setdefault('closed_world_predicates', [])
             return _ground_rule_fn(*args, **kwargs)
     ns.ground_rule = ground_rule
     ns.update_rule_trace = _py(interpretation._update_rule_trace)
@@ -195,7 +195,7 @@ def get_interpretation_helpers(module_name: str = "interpretation_fp"):
             convergence_delta,
             verbose,
             again,
-            minimized_predicates,
+            closed_world_predicates,
         ):
             return _reason_fn(
                 interpretations_node[0],
@@ -240,7 +240,7 @@ def get_interpretation_helpers(module_name: str = "interpretation_fp"):
                 [0],
                 verbose,
                 again,
-                minimized_predicates,
+                closed_world_predicates,
             )
     else:
         reason = _reason_fn

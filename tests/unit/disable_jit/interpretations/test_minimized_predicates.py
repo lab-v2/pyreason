@@ -1,6 +1,6 @@
-"""Unit tests for minimized predicates (circumscription) in is_satisfied_node/edge.
+"""Unit tests for closed_world predicates (circumscription) in is_satisfied_node/edge.
 
-Tests verify that when a predicate is in the minimized_predicates list:
+Tests verify that when a predicate is in the closed_world_predicates list:
 - Unknown bounds [0,1] are treated as [0,0]
 - Missing labels are treated as [0,0]
 - Known bounds (not [0,1]) are unaffected
@@ -74,9 +74,9 @@ def patch_interval(monkeypatch):
 
 # ---- is_satisfied_node tests ----
 
-class TestMinimizedIsStatisfiedNode:
+class Testclosed_worldIsStatisfiedNode:
     def test_unknown_bounds_treated_as_false(self):
-        """[0,1] bounds on a minimized predicate should be treated as [0,0],
+        """[0,1] bounds on a closed_world predicate should be treated as [0,0],
         so a clause requiring [1,1] should NOT be satisfied."""
         world = _World({"pred": _Interval(0.0, 1.0)})
         interpretations = {"node_a": world}
@@ -84,34 +84,34 @@ class TestMinimizedIsStatisfiedNode:
         assert is_satisfied_node(interpretations, "node_a", na, ["pred"]) is False
 
     def test_missing_label_treated_as_false(self):
-        """A minimized predicate not in the world should be treated as [0,0]."""
+        """A closed_world predicate not in the world should be treated as [0,0]."""
         world = _World({})  # pred not present
         interpretations = {"node_a": world}
         na = ("pred", _Bound(1.0, 1.0))
         assert is_satisfied_node(interpretations, "node_a", na, ["pred"]) is False
 
     def test_known_bounds_unaffected(self):
-        """A minimized predicate with known bounds [1,1] should still satisfy [1,1]."""
+        """A closed_world predicate with known bounds [1,1] should still satisfy [1,1]."""
         world = _World({"pred": _Interval(1.0, 1.0)})
         interpretations = {"node_a": world}
         na = ("pred", _Bound(1.0, 1.0))
         assert is_satisfied_node(interpretations, "node_a", na, ["pred"]) is True
 
     def test_zero_zero_clause_with_unknown(self):
-        """A clause requiring [0,0] should be satisfied when minimized [0,1] -> [0,0]."""
+        """A clause requiring [0,0] should be satisfied when closed_world [0,1] -> [0,0]."""
         world = _World({"pred": _Interval(0.0, 1.0)})
         interpretations = {"node_a": world}
         na = ("pred", _Bound(0.0, 0.0))
         assert is_satisfied_node(interpretations, "node_a", na, ["pred"]) is True
 
     def test_zero_zero_clause_with_missing(self):
-        """A clause requiring [0,0] should be satisfied when minimized pred is missing."""
+        """A clause requiring [0,0] should be satisfied when closed_world pred is missing."""
         world = _World({})
         interpretations = {"node_a": world}
         na = ("pred", _Bound(0.0, 0.0))
         assert is_satisfied_node(interpretations, "node_a", na, ["pred"]) is True
 
-    def test_non_minimized_predicate_unchanged(self):
+    def test_non_closed_world_predicate_unchanged(self):
         """Without minimization, [0,1] bounds use standard satisfaction."""
         world = _World({"pred": _Interval(0.0, 1.0)})
         interpretations = {"node_a": world}
@@ -119,30 +119,30 @@ class TestMinimizedIsStatisfiedNode:
         # Standard: [0,1] overlaps [1,1] at the boundary -> not (1 > 1 or 0 > 1) -> True
         assert is_satisfied_node(interpretations, "node_a", na, []) is True
 
-    def test_partial_bounds_not_minimized(self):
-        """Bounds like [0.5, 0.8] should NOT be treated as unknown even if minimized."""
+    def test_partial_bounds_not_closed_world(self):
+        """Bounds like [0.5, 0.8] should NOT be treated as unknown even if closed_world."""
         world = _World({"pred": _Interval(0.5, 0.8)})
         interpretations = {"node_a": world}
         na = ("pred", _Bound(0.0, 1.0))
         assert is_satisfied_node(interpretations, "node_a", na, ["pred"]) is True
 
-    def test_multiple_minimized_predicates(self):
-        """Multiple predicates can be minimized; each checked independently."""
+    def test_multiple_closed_world_predicates(self):
+        """Multiple predicates can be closed_world; each checked independently."""
         world = _World({
             "pred_a": _Interval(0.0, 1.0),  # unknown -> [0,0]
             "pred_b": _Interval(1.0, 1.0),  # known -> unaffected
         })
         interpretations = {"node_a": world}
-        minimized = ["pred_a", "pred_b"]
+        closed_world = ["pred_a", "pred_b"]
         # pred_a [0,1] -> [0,0], clause [1,1] -> False
         assert is_satisfied_node(interpretations, "node_a",
-                                 ("pred_a", _Bound(1.0, 1.0)), minimized) is False
+                                 ("pred_a", _Bound(1.0, 1.0)), closed_world) is False
         # pred_b [1,1] -> still [1,1], clause [1,1] -> True
         assert is_satisfied_node(interpretations, "node_a",
-                                 ("pred_b", _Bound(1.0, 1.0)), minimized) is True
+                                 ("pred_b", _Bound(1.0, 1.0)), closed_world) is True
 
     def test_none_na_returns_true(self):
-        """na with None components should still return True regardless of minimized."""
+        """na with None components should still return True regardless of closed_world."""
         interpretations = {}
         na = (None, None)
         assert is_satisfied_node(interpretations, "node_a", na, ["pred"]) is True
@@ -150,54 +150,54 @@ class TestMinimizedIsStatisfiedNode:
 
 # ---- is_satisfied_edge tests ----
 
-class TestMinimizedIsSatisfiedEdge:
+class Testclosed_worldIsSatisfiedEdge:
     def test_unknown_bounds_treated_as_false(self):
-        """[0,1] bounds on a minimized predicate should be treated as [0,0]."""
+        """[0,1] bounds on a closed_world predicate should be treated as [0,0]."""
         world = _World({"pred": _Interval(0.0, 1.0)})
         interpretations = {("a", "b"): world}
         na = ("pred", _Bound(1.0, 1.0))
         assert is_satisfied_edge(interpretations, ("a", "b"), na, ["pred"]) is False
 
     def test_missing_label_treated_as_false(self):
-        """A minimized predicate not in the world should be treated as [0,0]."""
+        """A closed_world predicate not in the world should be treated as [0,0]."""
         world = _World({})
         interpretations = {("a", "b"): world}
         na = ("pred", _Bound(1.0, 1.0))
         assert is_satisfied_edge(interpretations, ("a", "b"), na, ["pred"]) is False
 
     def test_known_bounds_unaffected(self):
-        """Known bounds [1,1] should still satisfy [1,1] even when minimized."""
+        """Known bounds [1,1] should still satisfy [1,1] even when closed_world."""
         world = _World({"pred": _Interval(1.0, 1.0)})
         interpretations = {("a", "b"): world}
         na = ("pred", _Bound(1.0, 1.0))
         assert is_satisfied_edge(interpretations, ("a", "b"), na, ["pred"]) is True
 
     def test_zero_zero_clause_with_unknown(self):
-        """Clause [0,0] satisfied when minimized [0,1] -> [0,0]."""
+        """Clause [0,0] satisfied when closed_world [0,1] -> [0,0]."""
         world = _World({"pred": _Interval(0.0, 1.0)})
         interpretations = {("a", "b"): world}
         na = ("pred", _Bound(0.0, 0.0))
         assert is_satisfied_edge(interpretations, ("a", "b"), na, ["pred"]) is True
 
-    def test_non_minimized_unchanged(self):
+    def test_non_closed_world_unchanged(self):
         """Without minimization, [0,1] uses standard satisfaction."""
         world = _World({"pred": _Interval(0.0, 1.0)})
         interpretations = {("a", "b"): world}
         na = ("pred", _Bound(1.0, 1.0))
         assert is_satisfied_edge(interpretations, ("a", "b"), na, []) is True
 
-    def test_multiple_minimized_predicates(self):
-        """Multiple minimized predicates checked independently on edges."""
+    def test_multiple_closed_world_predicates(self):
+        """Multiple closed_world predicates checked independently on edges."""
         world = _World({
             "pred_a": _Interval(0.0, 1.0),
             "pred_b": _Interval(1.0, 1.0),
         })
         interpretations = {("a", "b"): world}
-        minimized = ["pred_a", "pred_b"]
+        closed_world = ["pred_a", "pred_b"]
         assert is_satisfied_edge(interpretations, ("a", "b"),
-                                 ("pred_a", _Bound(1.0, 1.0)), minimized) is False
+                                 ("pred_a", _Bound(1.0, 1.0)), closed_world) is False
         assert is_satisfied_edge(interpretations, ("a", "b"),
-                                 ("pred_b", _Bound(1.0, 1.0)), minimized) is True
+                                 ("pred_b", _Bound(1.0, 1.0)), closed_world) is True
 
     def test_comp_missing_returns_false(self):
         """Edge not in interpretations should return False (exception path)."""
