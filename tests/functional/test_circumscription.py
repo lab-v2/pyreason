@@ -30,9 +30,9 @@ def _build_two_node_graph():
 
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
-def test_minimized_predicate_allows_known_propagation(mode):
-    """When hackerControl is minimized but B has known [1,1] bounds,
-    the rule should still fire normally."""
+def test_minimized_known_bounds_bypass_minimization(mode):
+    """Known [1,1] bounds on a minimized predicate should NOT be coerced to [0,0].
+    A ~minimized_pred(Y) clause must therefore not fire when Y has known [1,1]."""
     setup_mode(mode)
 
     g = _build_two_node_graph()
@@ -43,22 +43,17 @@ def test_minimized_predicate_allows_known_propagation(mode):
     pr.add_fact(pr.Fact('hackerControl(A)', 'hc_a'))
     pr.add_fact(pr.Fact('hackerControl(B)', 'hc_b_known'))  # defaults to [1,1]
 
-    pr.add_rule(pr.Rule('infected(Y) <-1 stepFrom(X,Y), hackerControl(X), hackerControl(Y)',
-                        'infection_rule'))
+    # ~hackerControl(Y) requires [0,0]. B has known [1,1] -> minimization bypassed -> rule MUST NOT fire.
+    pr.add_rule(pr.Rule('blocked(Y) <-1 stepFrom(X,Y), hackerControl(X), ~hackerControl(Y)',
+                        'block_rule'))
 
     interpretation = pr.reason(timesteps=1)
 
-    # Both nodes have known hackerControl [1,1], so infected(B) should fire
-    dataframes = pr.filter_and_sort_nodes(interpretation, ['infected'])
-    found = False
-    for df in dataframes:
-        if len(df) > 0 and 'B' in df['component'].values:
-            row = df[df['component'] == 'B'].iloc[0]
-            assert row['infected'] == [1.0, 1.0], \
-                f'infected(B) should have bounds [1,1], got {row["infected"]}'
-            found = True
-            break
-    assert found, 'infected(B) should fire when both nodes have known hackerControl'
+    blocked_dfs = pr.filter_and_sort_nodes(interpretation, ['blocked'])
+    for df in blocked_dfs:
+        if len(df) > 0:
+            assert 'B' not in df['component'].values, \
+                'blocked(B) should NOT fire: known [1,1] hackerControl(B) bypasses minimization'
 
 
 @pytest.mark.slow
@@ -114,40 +109,48 @@ def test_minimized_vs_non_minimized_satisfaction(mode):
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_minimized_predicate_multi_timestep(mode):
-    """A minimized predicate propagated by a rule should set known bounds
-    at a later timestep."""
+    """Minimization must apply at every timestep where a body clause sees an
+    unknown [0,1] bound on a minimized predicate. Cascade A -> B -> C: the
+    block rule must fire on B at t=1 and on C at t=2, both via minimization."""
     setup_mode(mode)
 
     g = nx.DiGraph()
-    g.add_nodes_from(['A', 'B'])
+    g.add_nodes_from(['A', 'B', 'C'])
     g.add_edge('A', 'B', stepFrom=1)
+    g.add_edge('B', 'C', stepFrom=1)
     pr.load_graph(g)
 
     pr.add_minimized_predicate('hackerControl')
-
-    # A has control from the start
     pr.add_fact(pr.Fact('hackerControl(A)', 'hc_a'))
-    # Simple propagation rule: control spreads via stepFrom (only needs source)
-    pr.add_rule(pr.Rule('hackerControl(Y) <-1 stepFrom(X,Y), hackerControl(X)',
-                        'propagation_rule'))
+    pr.add_fact(pr.Fact('hackerControl(B):[0,1]', 'hc_b_unknown'))
+    pr.add_fact(pr.Fact('hackerControl(C):[0,1]', 'hc_c_unknown'))
+
+    # block(Y) fires when Y has minimized hackerControl ([0,1] -> [0,0])
+    # and X (the source) is "active" — either has known hackerControl or is already blocked.
+    pr.add_rule(pr.Rule('blocked(Y) <-1 stepFrom(X,Y), hackerControl(X), ~hackerControl(Y)',
+                        'block_rule_initial'))
+    pr.add_rule(pr.Rule('blocked(Y) <-1 stepFrom(X,Y), blocked(X), ~hackerControl(Y)',
+                        'block_rule_cascade'))
 
     interpretation = pr.reason(timesteps=2)
 
-    # B should eventually get hackerControl from propagation
-    dataframes = pr.filter_and_sort_nodes(interpretation, ['hackerControl'])
+    blocked_dfs = pr.filter_and_sort_nodes(interpretation, ['blocked'])
     found_b = False
-    for df in dataframes:
-        if len(df) > 0 and 'B' in df['component'].values:
-            found_b = True
-            break
-    assert found_b, 'hackerControl should propagate from A to B via the rule'
+    found_c = False
+    for df in blocked_dfs:
+        if len(df) > 0:
+            if 'B' in df['component'].values:
+                found_b = True
+            if 'C' in df['component'].values:
+                found_c = True
+    assert found_b, 'blocked(B) should fire at t=1 via minimization of hackerControl(B) [0,1] -> [0,0]'
+    assert found_c, 'blocked(C) should fire at t=2 via minimization of hackerControl(C) [0,1] -> [0,0]'
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_minimized_with_inconsistency_check(mode):
-    """Verify that reasoning with minimized predicates works correctly
-    when inconsistency_check is enabled."""
+    """Minimization must drive a rule to fire even with inconsistency_check enabled."""
     setup_mode(mode)
     pr.settings.inconsistency_check = True
 
@@ -157,22 +160,24 @@ def test_minimized_with_inconsistency_check(mode):
     pr.add_minimized_predicate('hackerControl')
     pr.add_fact(pr.Fact('hackerControl(A)', 'hc_a'))
     pr.add_fact(pr.Fact('hackerControl(B):[0,1]', 'hc_b_unknown'))
-    pr.add_rule(pr.Rule('infected(Y) <-1 stepFrom(X,Y), hackerControl(X), hackerControl(Y)',
-                        'infection_rule'))
+    pr.add_rule(pr.Rule('blocked(Y) <-1 stepFrom(X,Y), hackerControl(X), ~hackerControl(Y)',
+                        'block_rule'))
 
-    # Should complete without error
     interpretation = pr.reason(timesteps=1)
 
-    dataframes = pr.filter_and_sort_nodes(interpretation, ['infected'])
-    for df in dataframes:
-        if len(df) > 0:
-            assert 'B' not in df['component'].values
+    blocked_dfs = pr.filter_and_sort_nodes(interpretation, ['blocked'])
+    found = False
+    for df in blocked_dfs:
+        if len(df) > 0 and 'B' in df['component'].values:
+            found = True
+            break
+    assert found, 'blocked(B) should fire via minimization with inconsistency_check enabled'
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_minimized_with_persistent_mode(mode):
-    """Verify minimized predicates work correctly with persistent bounds."""
+    """Minimization must drive a rule to fire even with persistent bounds enabled."""
     setup_mode(mode)
     pr.settings.persistent = True
 
@@ -182,23 +187,24 @@ def test_minimized_with_persistent_mode(mode):
     pr.add_minimized_predicate('hackerControl')
     pr.add_fact(pr.Fact('hackerControl(A)', 'hc_a'))
     pr.add_fact(pr.Fact('hackerControl(B):[0,1]', 'hc_b_unknown'))
-    pr.add_rule(pr.Rule('infected(Y) <-1 stepFrom(X,Y), hackerControl(X), hackerControl(Y)',
-                        'infection_rule'))
+    pr.add_rule(pr.Rule('blocked(Y) <-1 stepFrom(X,Y), hackerControl(X), ~hackerControl(Y)',
+                        'block_rule'))
 
     interpretation = pr.reason(timesteps=2)
 
-    # With persistent mode, B's unknown [0,1] should still be minimized to [0,0]
-    dataframes = pr.filter_and_sort_nodes(interpretation, ['infected'])
-    for df in dataframes:
-        if len(df) > 0:
-            assert 'B' not in df['component'].values, \
-                'Minimization should still block propagation in persistent mode'
+    blocked_dfs = pr.filter_and_sort_nodes(interpretation, ['blocked'])
+    found = False
+    for df in blocked_dfs:
+        if len(df) > 0 and 'B' in df['component'].values:
+            found = True
+            break
+    assert found, 'blocked(B) should fire via minimization with persistent mode enabled'
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_minimized_with_atom_trace(mode):
-    """Verify atom tracing works correctly with minimized predicates."""
+    """Minimization must drive a rule to fire and the atom trace must be available."""
     setup_mode(mode)
     pr.settings.atom_trace = True
 
@@ -207,10 +213,19 @@ def test_minimized_with_atom_trace(mode):
 
     pr.add_minimized_predicate('hackerControl')
     pr.add_fact(pr.Fact('hackerControl(A)', 'hc_a'))
-    pr.add_rule(pr.Rule('hackerControl(Y) <-1 stepFrom(X,Y), hackerControl(X)',
-                        'propagation_rule'))
+    pr.add_fact(pr.Fact('hackerControl(B):[0,1]', 'hc_b_unknown'))
+    pr.add_rule(pr.Rule('blocked(Y) <-1 stepFrom(X,Y), hackerControl(X), ~hackerControl(Y)',
+                        'block_rule'))
 
     interpretation = pr.reason(timesteps=1)
+
+    blocked_dfs = pr.filter_and_sort_nodes(interpretation, ['blocked'])
+    found = False
+    for df in blocked_dfs:
+        if len(df) > 0 and 'B' in df['component'].values:
+            found = True
+            break
+    assert found, 'blocked(B) should fire via minimization with atom_trace enabled'
 
     # Rule trace should be available without errors
     rule_trace_node, rule_trace_edge = pr.get_rule_trace(interpretation)
@@ -220,7 +235,8 @@ def test_minimized_with_atom_trace(mode):
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_circumscription_example_scenario(mode):
-    """Test the scenario from the circumscription example file."""
+    """End-to-end scenario adapted from the circumscription example: a rule
+    that fires only because hackerControl(cb_2) is minimized from [0,1] to [0,0]."""
     setup_mode(mode)
     pr.settings.atom_trace = True
     pr.settings.inconsistency_check = True
@@ -235,24 +251,19 @@ def test_circumscription_example_scenario(mode):
     pr.add_minimized_predicate('hackerControl')
     pr.add_fact(pr.Fact('stepFrom(cb_1, cb_2)', 'step_from_fact', 0, 1))
     pr.add_fact(pr.Fact('hackerControl(cb_1)', 'hacker_control_initial_fact'))
-    pr.add_rule(pr.Rule('future(Y) <-1 stepFrom(X,Y), hackerControl(X)'))
+    pr.add_fact(pr.Fact('hackerControl(cb_2):[0,1]', 'hc_cb2_unknown'))
+
+    # safe(Y) fires only if Y has minimized hackerControl ([0,1] -> [0,0]).
+    pr.add_rule(pr.Rule('safe(Y) <-1 stepFrom(X,Y), hackerControl(X), ~hackerControl(Y)',
+                        'safe_rule'))
 
     interpretation = pr.reason(timesteps=2)
 
-    # cb_2 should have future because cb_1 has known hackerControl
-    dataframes = pr.filter_and_sort_nodes(interpretation, ['future'])
+    # safe(cb_2) should fire because hackerControl(cb_2) [0,1] is minimized to [0,0]
+    safe_dfs = pr.filter_and_sort_nodes(interpretation, ['safe'])
     found_cb2 = False
-    for df in dataframes:
+    for df in safe_dfs:
         if len(df) > 0 and 'cb_2' in df['component'].values:
             found_cb2 = True
             break
-    assert found_cb2, 'future(cb_2) should fire since hackerControl(cb_1) is known'
-
-    # cb_1 should have hackerControl in the results
-    hc_dataframes = pr.filter_and_sort_nodes(interpretation, ['hackerControl'])
-    found_cb1 = False
-    for df in hc_dataframes:
-        if len(df) > 0 and 'cb_1' in df['component'].values:
-            found_cb1 = True
-            break
-    assert found_cb1, 'cb_1 should appear in hackerControl filter results'
+    assert found_cb2, 'safe(cb_2) should fire via minimization of hackerControl(cb_2) [0,1] -> [0,0]'

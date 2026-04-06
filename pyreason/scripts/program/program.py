@@ -31,10 +31,12 @@ class Program:
 	def reason(self, tmax, convergence_threshold, convergence_bound_threshold, verbose=True):
 		self._tmax = tmax
 		# Set up available labels
+		#TODO: Investigate issues w/ not adding specific edge and node labels to other interps
 		Interpretation.specific_node_labels = self.specific_node_labels
 		Interpretation.specific_edge_labels = self.specific_edge_labels
 		Interpretation.minimized_predicates = self.minimized_predicates
 		InterpretationFP.minimized_predicates = self.minimized_predicates
+		InterpretationParallel.minimized_predicates = self.minimized_predicates
 
 		# Instantiate correct interpretation class based on whether we parallelize the code or not. (We cannot parallelize with cache on)
 		if self._parallel_computing:
