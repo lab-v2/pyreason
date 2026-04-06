@@ -121,6 +121,7 @@ def reason_env(monkeypatch, helpers_fixture):
         "convergence_delta": 0,
         "verbose": False,
         "again": False,
+        "closed_world_predicates": [],
     }
 
     def run(**overrides):
@@ -168,6 +169,7 @@ def reason_env(monkeypatch, helpers_fixture):
             params["convergence_delta"],
             params["verbose"],
             params["again"],
+            params["closed_world_predicates"],
         )
 
     env["run"] = run

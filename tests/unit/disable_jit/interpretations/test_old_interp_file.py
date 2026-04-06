@@ -452,7 +452,7 @@ def test_check_edge_grounding_threshold_satisfaction_branches(
     l = label.Label("L")
 
     result = check_edge_grounding_threshold_satisfaction(
-        interpretations_edge, grounding, qualified_grounding, l, threshold
+        interpretations_edge, grounding, qualified_grounding, l, threshold, []
     )
 
     assert result is expected
