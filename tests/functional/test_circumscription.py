@@ -267,3 +267,49 @@ def test_circumscription_example_scenario(mode):
             found_cb2 = True
             break
     assert found_cb2, 'safe(cb_2) should fire via minimization of hackerControl(cb_2) [0,1] -> [0,0]'
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
+def test_two_minimized_predicates_explicit_and_missing(mode):
+    """Two minimized predicates exercise both branches of the minimization check:
+      - hackerControl(B) is set explicitly to [0,1] via a fact (in-world branch).
+      - compromised(B) has no fact at all (missing-from-world branch).
+    Two rules each negate one of these predicates; both must fire on B."""
+    setup_mode(mode)
+
+    g = _build_two_node_graph()
+    pr.load_graph(g)
+
+    pr.add_minimized_predicate('hackerControl')
+    pr.add_minimized_predicate('compromised')
+
+    pr.add_fact(pr.Fact('hackerControl(A)', 'hc_a'))
+    # Explicit [0,1] -> exercises the in-world [0,1] -> [0,0] branch
+    pr.add_fact(pr.Fact('hackerControl(B):[0,1]', 'hc_b_unknown'))
+    # No fact for compromised(B) -> exercises the missing-from-world branch
+
+    pr.add_rule(pr.Rule('blocked_hc(Y) <-1 stepFrom(X,Y), hackerControl(X), ~hackerControl(Y)',
+                        'blocked_hc_rule'))
+    pr.add_rule(pr.Rule('blocked_comp(Y) <-1 stepFrom(X,Y), hackerControl(X), ~compromised(Y)',
+                        'blocked_comp_rule'))
+
+    interpretation = pr.reason(timesteps=1)
+
+    blocked_hc_dfs = pr.filter_and_sort_nodes(interpretation, ['blocked_hc'])
+    found_hc = False
+    for df in blocked_hc_dfs:
+        if len(df) > 0 and 'B' in df['component'].values:
+            found_hc = True
+            break
+    assert found_hc, \
+        'blocked_hc(B) should fire: minimized hackerControl(B) [0,1] -> [0,0] satisfies ~hackerControl'
+
+    blocked_comp_dfs = pr.filter_and_sort_nodes(interpretation, ['blocked_comp'])
+    found_comp = False
+    for df in blocked_comp_dfs:
+        if len(df) > 0 and 'B' in df['component'].values:
+            found_comp = True
+            break
+    assert found_comp, \
+        'blocked_comp(B) should fire: missing compromised(B) treated as [0,0] satisfies ~compromised'
