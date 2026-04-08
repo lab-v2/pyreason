@@ -51,7 +51,7 @@ Labels are distinct from the *truth values* attached to facts (which are Interva
 
 ---
 
-## T - Temporal & Non-Monotonic Reasoning
+## T - Temporal Reasoning
 
 ### Temporal Reasoning
 **Definition:** Logical reasoning that explicitly models how truth values change over discrete timesteps. Facts that are true at time T may become false at time T+1 (non-monotonic).
