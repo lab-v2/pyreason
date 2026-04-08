@@ -32,8 +32,6 @@ def try_to_sign_player(team, player):
         team.sign_player(player)
         add_rostered_fact(team, player)
         print(f"{team.team_name} signed {player.name} for ${player.expected_salary}")
-    else:
-        add_not_rostered_fact(team, player)
 
 # Operating at timestep 1 
 def add_interested_fact(team, player):
@@ -144,7 +142,7 @@ def demanded_player_annotation_fn(annotations, weights):
     # print("Annotations: ", annotations)
     # print("Annotations[0]: ", annotations[0])
     num_interested_teams = len(annotations[0])
-    print("Interested Teams: ", num_interested_teams)
+    # print("Interested Teams: ", num_interested_teams)
     if num_interested_teams > 3:
         upper_bound = 1
         lower_bound = 1
