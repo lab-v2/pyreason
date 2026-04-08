@@ -6,6 +6,7 @@ from pyreason.scripts.interpretation.interpretation_fp import Interpretation as 
 class Program:
 	specific_node_labels = []
 	specific_edge_labels = []
+	closed_world_predicates = []
 
 	def __init__(self, graph, facts_node, facts_edge, rules, ipl, annotation_functions, head_functions, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, canonical, inconsistency_check, store_interpretation_changes, parallel_computing, update_mode, allow_ground_rules, fp_version):
 		self._graph = graph
@@ -30,8 +31,12 @@ class Program:
 	def reason(self, tmax, convergence_threshold, convergence_bound_threshold, verbose=True):
 		self._tmax = tmax
 		# Set up available labels
+		#TODO: Investigate issues w/ not adding specific edge and node labels to other interps
 		Interpretation.specific_node_labels = self.specific_node_labels
 		Interpretation.specific_edge_labels = self.specific_edge_labels
+		Interpretation.closed_world_predicates = self.closed_world_predicates
+		InterpretationFP.closed_world_predicates = self.closed_world_predicates
+		InterpretationParallel.closed_world_predicates = self.closed_world_predicates
 
 		# Instantiate correct interpretation class based on whether we parallelize the code or not. (We cannot parallelize with cache on)
 		if self._parallel_computing:

@@ -37,7 +37,9 @@ if not cache_status['initialized']:
     print('PyReason initialized!')
     print()
 
-    # Update cache status
-    cache_status['initialized'] = True
-    with open(cache_status_path, 'w') as file:
-        yaml.dump(cache_status, file)
+    # Update cache status (skip under test runners to keep repo file clean)
+    import sys
+    if 'pytest' not in sys.modules and 'unittest' not in sys.modules:
+        cache_status['initialized'] = True
+        with open(cache_status_path, 'w') as file:
+            yaml.dump(cache_status, file)

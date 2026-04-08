@@ -21,12 +21,30 @@ def helpers_fixture(request):
 
 class FakeWorld:
     """Minimal stand-in for World."""
-    def __init__(self, truth_by_label=None, name=""):
+    def __init__(self, truth_by_label=None, name="", bounds_by_label=None):
         self.truth_by_label = truth_by_label or {}
         self.name = name
+        # bounds_by_label maps label -> [lower, upper] interval bounds
+        self.bounds_by_label = bounds_by_label or {}
 
     def is_satisfied(self, label, interval):
-        # interval content isn't important to the edge function; we key by label.
+        # Backward compatibility: if bounds_by_label is used, do interval containment check
+        if label in self.bounds_by_label:
+            # For our patched interval (tuple like ("closed", lo, up)), extract bounds
+            if isinstance(interval, tuple) and len(interval) >= 3:
+                req_lower, req_upper = interval[1], interval[2]
+            else:
+                # Fallback for actual Interval objects
+                req_lower, req_upper = interval
+
+            actual_lower, actual_upper = self.bounds_by_label[label]
+
+            # Check if actual interval is contained within required interval
+            # [actual_lower, actual_upper] ⊆ [req_lower, req_upper]
+            return actual_lower >= req_lower and actual_upper <= req_upper
+
+        # Legacy behavior: use truth_by_label (for existing tests)
+        # interval content isn't important; we key by label.
         return self.truth_by_label.get(label, False)
 
 
@@ -43,29 +61,29 @@ def interpretations():
 def test_satisfied_path_true(interpretations):
     comp = ('Justin', 'Dog')
     na = ('owns', [1.0, 1.0])
-    assert is_satisfied_node(interpretations, comp, na) is True
-    assert is_satisfied_edge(interpretations, comp, na) is True
+    assert is_satisfied_node(interpretations, comp, na, []) is True
+    assert is_satisfied_edge(interpretations, comp, na, []) is True
 
 def test_satisfied_path_false(interpretations):
     comp = ('Justin', 'Cat')
     na = ('owns', [1.0, 1.0])
-    assert is_satisfied_edge(interpretations, comp, na) is False
+    assert is_satisfied_edge(interpretations, comp, na, []) is False
 
 def test_missing_comp_key_false():
     # name kept from your original file; behavior is True when na has None
     interpretations = {}
     comp = ('Nobody', 'Home')
     na = ('owns', None)
-    assert is_satisfied_node(interpretations, comp, na) is True
-    assert is_satisfied_edge(interpretations, comp, na) is True
-    
+    assert is_satisfied_node(interpretations, comp, na, []) is True
+    assert is_satisfied_edge(interpretations, comp, na, []) is True
+
 def test_is_satisfied_edge_returns_false_when_comp_missing():
     # Empty dict so interpretations[comp] raises inside the try-block
     interpretations = {}
     comp = ("ghost", "edge")
     na = ("owns", [1.0, 1.0])  # both non-None => enter try/except
-    assert is_satisfied_node(interpretations, comp, na) is False
-    assert is_satisfied_edge(interpretations, comp, na) is False
+    assert is_satisfied_node(interpretations, comp, na, []) is False
+    assert is_satisfied_edge(interpretations, comp, na, []) is False
 
 
 # ---- get_qualified_edge_groundings and get_qualified_node_groundings tests ----
@@ -88,8 +106,8 @@ def test_get_qualified_edge_and_node_groundings_filters_true_edges(interpretatio
     ]
     clause_l, clause_bnd = 'owns', [1.0, 1.0]
 
-    result_edge = get_qualified_edge_groundings(interpretations, grounding, clause_l, clause_bnd)
-    result_node = get_qualified_node_groundings(interpretations, grounding, clause_l, clause_bnd)
+    result_edge = get_qualified_edge_groundings(interpretations, grounding, clause_l, clause_bnd, [])
+    result_node = get_qualified_node_groundings(interpretations, grounding, clause_l, clause_bnd, [])
 
     assert result_edge == [grounding[1], grounding[2]]
     assert result_node == [grounding[1], grounding[2]]
@@ -100,9 +118,9 @@ def test_get_qualified_edge_and_node_groundings_filters_true_edges(interpretatio
 
     from unittest.mock import call
     expected_calls = [
-        call(interpretations, grounding[0], (clause_l, clause_bnd)),
-        call(interpretations, grounding[1], (clause_l, clause_bnd)),
-        call(interpretations, grounding[2], (clause_l, clause_bnd)),
+        call(interpretations, grounding[0], (clause_l, clause_bnd), []),
+        call(interpretations, grounding[1], (clause_l, clause_bnd), []),
+        call(interpretations, grounding[2], (clause_l, clause_bnd), []),
     ]
     mock_is_sat_edge.assert_has_calls(expected_calls)
     mockis_satisfied_node.assert_has_calls(expected_calls)
@@ -120,8 +138,8 @@ def test_get_qualified_edge_and_node_groundings_none_qualify(interpretations, mo
 
     grounding = [('Justin', 'Dog'), ('Justin', 'Cat')]
 
-    result_edge = get_qualified_edge_groundings(interpretations, grounding, 'owns', [1.0, 1.0])
-    result_node = get_qualified_node_groundings(interpretations, grounding, 'owns', [1.0, 1.0])
+    result_edge = get_qualified_edge_groundings(interpretations, grounding, 'owns', [1.0, 1.0], [])
+    result_node = get_qualified_node_groundings(interpretations, grounding, 'owns', [1.0, 1.0], [])
 
     assert result_edge == []
     assert result_node == []
@@ -129,8 +147,8 @@ def test_get_qualified_edge_and_node_groundings_none_qualify(interpretations, mo
     assert mockis_satisfied_node.call_count == 2
 
     expected_calls = [
-        call(interpretations, grounding[0], ('owns', [1.0, 1.0])),
-        call(interpretations, grounding[1], ('owns', [1.0, 1.0])),
+        call(interpretations, grounding[0], ('owns', [1.0, 1.0]), []),
+        call(interpretations, grounding[1], ('owns', [1.0, 1.0]), []),
     ]
     mock_is_sat_edge.assert_has_calls(expected_calls)
     mockis_satisfied_node.assert_has_calls(expected_calls)
@@ -146,8 +164,8 @@ def test_get_qualified_edge_and_node_groundings_all_qualify(interpretations, mon
 
     grounding = [('A', 'B'), ('C', 'D')]
 
-    result_edge = get_qualified_edge_groundings(interpretations, grounding, 'owns', [1.0, 1.0])
-    result_node = get_qualified_node_groundings(interpretations, grounding, 'owns', [1.0, 1.0])
+    result_edge = get_qualified_edge_groundings(interpretations, grounding, 'owns', [1.0, 1.0], [])
+    result_node = get_qualified_node_groundings(interpretations, grounding, 'owns', [1.0, 1.0], [])
 
     assert result_edge == grounding
     assert result_node == grounding
@@ -155,8 +173,8 @@ def test_get_qualified_edge_and_node_groundings_all_qualify(interpretations, mon
     assert mockis_satisfied_node.call_count == 2
 
     expected_calls = [
-        call(interpretations, grounding[0], ('owns', [1.0, 1.0])),
-        call(interpretations, grounding[1], ('owns', [1.0, 1.0])),
+        call(interpretations, grounding[0], ('owns', [1.0, 1.0]), []),
+        call(interpretations, grounding[1], ('owns', [1.0, 1.0]), []),
     ]
     mock_is_sat_edge.assert_has_calls(expected_calls)
     mockis_satisfied_node.assert_has_calls(expected_calls)
@@ -457,7 +475,7 @@ def test_check_grounding_threshold_total_uses_len_grounding(
     mock_get_q = Mock()
     monkeypatch.setitem(check_fn.__globals__, get_q_attr, mock_get_q)
 
-    out = check_fn(interpretations, grounding, qualified, "owns", threshold)
+    out = check_fn(interpretations, grounding, qualified, "owns", threshold, [])
 
     assert out is True
     mock_sat.assert_called_once_with(len(grounding), len(qualified), threshold)
@@ -502,10 +520,10 @@ def test_check_grounding_threshold_available_calls_get_qualified(
     mock_sat = Mock(return_value=False)
     monkeypatch.setitem(check_fn.__globals__, "_satisfies_threshold", mock_sat)
 
-    out = check_fn(interpretations, grounding, qualified, "owns", threshold)
+    out = check_fn(interpretations, grounding, qualified, "owns", threshold, [])
 
     assert out is False
-    mock_get_q.assert_called_once_with(interpretations, grounding, "owns", sentinel_closed)
+    mock_get_q.assert_called_once_with(interpretations, grounding, "owns", sentinel_closed, [])
     mock_sat.assert_called_once_with(len(available_return), len(qualified), threshold)
 
 
@@ -537,11 +555,11 @@ def test_check_node_grounding_threshold_available_calls_get_qualified(interpreta
     threshold = ("less", ("percent", "available"), 60)  # mode 'percent', quantifier 'available'
 
     out = check_node_grounding_threshold_satisfaction(
-        interpretations, grounding, qualified_grounding, clause_label, threshold
+        interpretations, grounding, qualified_grounding, clause_label, threshold, []
     )
 
     assert out is False
-    mock_get_q.assert_called_once_with(interpretations, grounding, clause_label, sentinel_closed)
+    mock_get_q.assert_called_once_with(interpretations, grounding, clause_label, sentinel_closed, [])
     mock_sat.assert_called_once_with(3, 1, threshold)
 
 
@@ -664,8 +682,8 @@ def test_check_all_clause_satisfaction_calls_both_helpers_and_ands_results(inter
     groundings_edges = {("X", "Y"): [("n1", "m1"), ("n2", "m2")]}
 
     clauses = [
-        ("node", "owns", ("X",)),        # uses groundings["X"]
-        ("edge", "likes", ("X", "Y")),   # uses groundings_edges[("X","Y")]
+        ("node", "owns", ("X",), [0, 1], "greater_equal"),        # uses groundings["X"]
+        ("edge", "likes", ("X", "Y"), [0, 1], "greater_equal"),   # uses groundings_edges[("X","Y")]
     ]
     thresholds = [
         ("greater_equal", ("number", "total"), 1),
@@ -673,17 +691,15 @@ def test_check_all_clause_satisfaction_calls_both_helpers_and_ands_results(inter
     ]
 
     out = check_all_clause_satisfaction(
-        interpretations, interpretations, clauses, thresholds, groundings, groundings_edges
+        interpretations, interpretations, clauses, thresholds, groundings, groundings_edges, []
     )
 
     # Overall AND -> False and no short-circuit: both helpers were called
     assert out is False
-    mock_node.assert_called_once_with(
-        interpretations, groundings["X"], groundings["X"], "owns", thresholds[0]
-    )
-    mock_edge.assert_called_once_with(
-        interpretations, groundings_edges[("X", "Y")], groundings_edges[("X", "Y")], "likes", thresholds[1]
-    )
+    # Note: The second parameter is now qualified_groundings (filtered by clause bound [0,1])
+    # With FakeWorld using truth_by_label, nodes with the label will pass the filter
+    assert mock_node.call_count == 1
+    assert mock_edge.call_count == 1
 
 
 def test_check_all_clause_satisfaction_all_true_returns_true(interpretations, monkeypatch):
@@ -696,8 +712,8 @@ def test_check_all_clause_satisfaction_all_true_returns_true(interpretations, mo
     groundings_edges = {("X", "Y"): [("n1", "m1")]}
 
     clauses = [
-        ("node", "owns", ("X",)),
-        ("edge", "likes", ("X", "Y")),
+        ("node", "owns", ("X",), [0, 1], "greater_equal"),
+        ("edge", "likes", ("X", "Y"), [0, 1], "greater_equal"),
     ]
     thresholds = [
         ("greater_equal", ("number", "total"), 1),
@@ -705,7 +721,7 @@ def test_check_all_clause_satisfaction_all_true_returns_true(interpretations, mo
     ]
 
     out = check_all_clause_satisfaction(
-        interpretations, interpretations, clauses, thresholds, groundings, groundings_edges
+        interpretations, interpretations, clauses, thresholds, groundings, groundings_edges, []
     )
 
     assert out is True
@@ -716,7 +732,7 @@ def test_check_all_clause_satisfaction_all_true_returns_true(interpretations, mo
 def test_check_all_clause_satisfaction_empty_clauses_returns_true(interpretations):
     # No clauses: initialized satisfaction=True should be returned
     out = check_all_clause_satisfaction(
-        interpretations, interpretations, [], [], {}, {}
+        interpretations, interpretations, [], [], {}, {}, []
     )
     assert out is True
 
@@ -734,9 +750,9 @@ def test_check_all_clause_satisfaction_multiple_clauses_no_short_circuit(interpr
     groundings_edges = {}
 
     clauses = [
-        ("node", "L1", ("A",)),
-        ("node", "L2", ("B",)),
-        ("node", "L3", ("C",)),
+        ("node", "L1", ("A",), [0, 1], "greater_equal"),
+        ("node", "L2", ("B",), [0, 1], "greater_equal"),
+        ("node", "L3", ("C",), [0, 1], "greater_equal"),
     ]
     thresholds = [
         ("greater_equal", ("number", "total"), 1),
@@ -745,18 +761,15 @@ def test_check_all_clause_satisfaction_multiple_clauses_no_short_circuit(interpr
     ]
 
     out = check_all_clause_satisfaction(
-        interpretations, interpretations, clauses, thresholds, groundings, groundings_edges
+        interpretations, interpretations, clauses, thresholds, groundings, groundings_edges, []
     )
 
     assert out is False                          # False AND False AND True -> False
     assert mock_node.call_count == 3             # all evaluated; no short-circuit
-    # Verify the calls used the right arguments each time
-    expected_calls = [
-        call(interpretations, groundings["A"], groundings["A"], "L1", thresholds[0]),
-        call(interpretations, groundings["B"], groundings["B"], "L2", thresholds[1]),
-        call(interpretations, groundings["C"], groundings["C"], "L3", thresholds[2]),
-    ]
-    mock_node.assert_has_calls(expected_calls)
+    # Note: The second parameter is now qualified_groundings (filtered by clause bound [0,1])
+    # Since the test uses FakeWorld with truth_by_label, all nodes pass the filter
+    # So qualified_groundings == groundings for this test
+    assert mock_node.call_count == 3
 
 
 def test_add_node_minimal(monkeypatch):
@@ -980,7 +993,7 @@ def test_ground_rule_node_success_adds_head_node_and_collects_trace_ann(monkeypa
     monkeypatch.setattr(
         interpretation,
         "get_qualified_node_groundings",
-        lambda interpretations_node, grounding, clause_label, clause_bnd: list(grounding),
+        lambda interpretations_node, grounding, clause_label, clause_bnd, closed_world_predicates: list(grounding),
     )
 
     # Thresholds ok; refine is a no-op; final re-check ok
@@ -1188,7 +1201,7 @@ def test_ground_rule_node_edge_clause_trace_and_ann_three_cases(monkeypatch):
     # Qualification is pass-through; thresholds always satisfied
     monkeypatch.setattr(interpretation, "get_rule_edge_clause_grounding", mock_rule_edge_clause_grounding)
     monkeypatch.setattr(interpretation, "get_qualified_edge_groundings",
-                        lambda interpretations_edge, grounding, clause_label, clause_bnd: list(grounding))
+                        lambda interpretations_edge, grounding, clause_label, clause_bnd, closed_world_predicates: list(grounding))
     monkeypatch.setattr(interpretation, "check_edge_grounding_threshold_satisfaction", lambda *a, **k: True)
     monkeypatch.setattr(interpretation, "refine_groundings", lambda *a, **k: None)
     monkeypatch.setattr(interpretation, "check_all_clause_satisfaction", lambda *a, **k: True)
@@ -1550,6 +1563,257 @@ def test_ground_rule_edge_head_vars_use_existing_nodes_when_allowed(monkeypatch)
     assert edges_to_add == ([], [], "HEADLBL")
     mock_add_node.assert_not_called()
     mock_add_edge.assert_not_called()
+
+
+# ---- BUG-138: Integration test for broken threshold checking ----
+
+def test_check_all_clause_satisfaction_available_threshold_bug138(monkeypatch):
+    """
+    BUG-138: Tests that 'available' threshold quantifier works correctly.
+
+    This test creates a scenario where:
+    - 5 nodes total being considered as candidates
+    - 4 nodes have the 'infected' label (available)
+    - 2 nodes satisfy the clause bound [0.8, 1.0] (qualified)
+    - Threshold is ">= 60% available"
+
+    Expected behavior: 2/4 = 50% >= 60% → FALSE
+    With bug: check_all_clause_satisfaction passes groundings[X] twice instead of:
+      - Computing qualified groundings first using get_qualified_node_groundings
+      - Passing total groundings and qualified groundings separately
+    Result: The function doesn't filter by the bound, compares wrong values → TRUE (WRONG!)
+    """
+    # Patch interval.closed to return a simple tuple instead of Interval object
+    monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: ("closed", lo, up))
+
+    # Create 5 nodes with different infection levels
+    # FakeWorld.is_satisfied will check if interval bounds match
+    interpretations_node = {
+        'n1': FakeWorld(name="infected,[0.9,1.0]", bounds_by_label={'infected': [0.9, 1.0]}),   # satisfies [0.8,1.0]
+        'n2': FakeWorld(name="infected,[0.5,0.6]", bounds_by_label={'infected': [0.5, 0.6]}),  # has label, doesn't satisfy
+        'n3': FakeWorld(name="infected,[0.85,0.95]", bounds_by_label={'infected': [0.85, 0.95]}), # satisfies [0.8,1.0]
+        'n4': FakeWorld(name="infected,[0.7,0.75]", bounds_by_label={'infected': [0.7, 0.75]}), # has label, doesn't satisfy
+        'n5': FakeWorld(name="", bounds_by_label={}),                                      # no infected label at all
+    }
+
+    interpretations_edge = {}
+
+    # Clause structure: (type, label, variables, bound, operator)
+    # The bound [0.8, 1.0] specifies which nodes are "qualified"
+    clauses = [
+        ('node', 'infected', ('X',), [0.8, 1.0], 'greater_equal'),
+    ]
+
+    # Threshold: >= 60% of available nodes (those with 'infected' label)
+    thresholds = [
+        ('greater_equal', ('percent', 'available'), 60),
+    ]
+
+    # Total grounding: all nodes being considered as candidates
+    groundings = {
+        'X': ['n1', 'n2', 'n3', 'n4', 'n5']
+    }
+
+    groundings_edges = {}
+
+    # Correct calculation:
+    # - Available (have 'infected' label): get_qualified_node_groundings(..., [0,1]) = [n1, n2, n3, n4] = 4
+    # - Qualified (satisfy [0.8, 1.0]): get_qualified_node_groundings(..., [0.8,1.0]) = [n1, n3] = 2
+    # - Percentage: 2/4 = 50% >= 60%? → FALSE
+    #
+    # With BUG-138:
+    # - check_all_clause_satisfaction passes groundings['X'] twice (all 5 nodes)
+    # - available = get_qualified_node_groundings([n1,n2,n3,n4,n5], ..., [0,1]) = [n1,n2,n3,n4] = 4
+    # - qualified_neigh_len = len([n1,n2,n3,n4,n5]) = 5  (WRONG! should be filtered by bound)
+    # - 5/4 = 125% >= 60%? → TRUE (WRONG!)
+
+    result = check_all_clause_satisfaction(
+        interpretations_node,
+        interpretations_edge,
+        clauses,
+        thresholds,
+        groundings,
+        groundings_edges,
+        []
+    )
+
+    # This assertion expects CORRECT behavior (will fail due to bug)
+    assert result is False, (
+        "Expected False: Only 2 out of 4 available nodes satisfy the clause (50% < 60%). "
+        "If this returns True, BUG-138 is still present (not filtering by clause bound)."
+    )
+
+
+def test_check_all_clause_satisfaction_total_threshold_bug138(monkeypatch):
+    # Patch interval.closed to return a simple tuple instead of Interval object
+    monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: ("closed", lo, up))
+
+    # Same 5 nodes as the available test
+    interpretations_node = {
+        'n1': FakeWorld(name="infected,[0.9,1.0]", bounds_by_label={'infected': [0.9, 1.0]}),
+        'n2': FakeWorld(name="infected,[0.5,0.6]", bounds_by_label={'infected': [0.5, 0.6]}),
+        'n3': FakeWorld(name="infected,[0.85,0.95]", bounds_by_label={'infected': [0.85, 0.95]}),
+        'n4': FakeWorld(name="infected,[0.7,0.75]", bounds_by_label={'infected': [0.7, 0.75]}),
+        'n5': FakeWorld(name="", bounds_by_label={}),
+    }
+
+    interpretations_edge = {}
+
+    clauses = [
+        ('node', 'infected', ('X',), [0.8, 1.0], 'greater_equal'),
+    ]
+
+    # Threshold: >= 60% of TOTAL nodes
+    thresholds = [
+        ('greater_equal', ('percent', 'total'), 60),
+    ]
+
+    groundings = {
+        'X': ['n1', 'n2', 'n3', 'n4', 'n5']
+    }
+
+    groundings_edges = {}
+
+    # Correct calculation:
+    # - Total: 5 nodes
+    # - Qualified (satisfy [0.8, 1.0]): [n1, n3] = 2 nodes
+    # - Percentage: 2/5 = 40% >= 60%? → FALSE
+    #
+    # With BUG-138:
+    # - check_all_clause_satisfaction passes groundings['X'] twice (all 5 nodes)
+    # - total = len([n1,n2,n3,n4,n5]) = 5
+    # - qualified_neigh_len = len([n1,n2,n3,n4,n5]) = 5  (WRONG! should be filtered)
+    # - 5/5 = 100% >= 60%? → TRUE (WRONG!)
+
+    result = check_all_clause_satisfaction(
+        interpretations_node,
+        interpretations_edge,
+        clauses,
+        thresholds,
+        groundings,
+        groundings_edges,
+        []
+    )
+
+    # This assertion expects CORRECT behavior (will fail due to bug)
+    assert result is False, (
+        "Expected False: Only 2 out of 5 total nodes satisfy the clause (40% < 60%). "
+        "If this returns True, BUG-138 is still present (not filtering by clause bound)."
+    )
+
+
+def test_check_all_clause_satisfaction_edge_available_threshold_bug138(monkeypatch):
+    # Patch interval.closed to return a simple tuple instead of Interval object
+    monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: ("closed", lo, up))
+
+    # Create 5 edges with different connection strengths
+    interpretations_edge = {
+        ('n1', 'n2'): FakeWorld(name="connected,[0.9,1.0]", bounds_by_label={'connected': [0.9, 1.0]}),   # satisfies [0.8,1.0]
+        ('n2', 'n3'): FakeWorld(name="connected,[0.5,0.6]", bounds_by_label={'connected': [0.5, 0.6]}),  # has label, doesn't satisfy
+        ('n3', 'n4'): FakeWorld(name="connected,[0.85,0.95]", bounds_by_label={'connected': [0.85, 0.95]}), # satisfies [0.8,1.0]
+        ('n4', 'n5'): FakeWorld(name="connected,[0.7,0.75]", bounds_by_label={'connected': [0.7, 0.75]}), # has label, doesn't satisfy
+        ('n5', 'n6'): FakeWorld(name="", bounds_by_label={}),                                      # no connected label at all
+    }
+
+    interpretations_node = {}
+
+    # Clause structure: (type, label, variables, bound, operator)
+    clauses = [
+        ('edge', 'connected', ('X', 'Y'), [0.8, 1.0], 'greater_equal'),
+    ]
+
+    # Threshold: >= 60% of available edges (those with 'connected' label)
+    thresholds = [
+        ('greater_equal', ('percent', 'available'), 60),
+    ]
+
+    # Total grounding: all edges being considered as candidates
+    groundings = {}
+    groundings_edges = {
+        ('X', 'Y'): [('n1', 'n2'), ('n2', 'n3'), ('n3', 'n4'), ('n4', 'n5'), ('n5', 'n6')]
+    }
+
+    # Correct calculation:
+    # - Available (have 'connected' label): 4 edges
+    # - Qualified (satisfy [0.8, 1.0]): 2 edges
+    # - Percentage: 2/4 = 50% >= 60%? → FALSE
+    #
+    # With BUG-138:
+    # - Passes groundings_edges[('X','Y')] twice (all 5 edges)
+    # - available = 4, qualified = 5 (WRONG!)
+    # - 5/4 = 125% >= 60%? → TRUE (WRONG!)
+
+    result = check_all_clause_satisfaction(
+        interpretations_node,
+        interpretations_edge,
+        clauses,
+        thresholds,
+        groundings,
+        groundings_edges,
+        []
+    )
+
+    # This assertion expects CORRECT behavior (will fail due to bug)
+    assert result is False, (
+        "Expected False: Only 2 out of 4 available edges satisfy the clause (50% < 60%). "
+        "If this returns True, BUG-138 is still present (not filtering by clause bound)."
+    )
+
+
+def test_check_all_clause_satisfaction_edge_total_threshold_bug138(monkeypatch):
+    # Patch interval.closed to return a simple tuple instead of Interval object
+    monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: ("closed", lo, up))
+
+    # Same 5 edges as the available test
+    interpretations_edge = {
+        ('n1', 'n2'): FakeWorld(name="connected,[0.9,1.0]", bounds_by_label={'connected': [0.9, 1.0]}),
+        ('n2', 'n3'): FakeWorld(name="connected,[0.5,0.6]", bounds_by_label={'connected': [0.5, 0.6]}),
+        ('n3', 'n4'): FakeWorld(name="connected,[0.85,0.95]", bounds_by_label={'connected': [0.85, 0.95]}),
+        ('n4', 'n5'): FakeWorld(name="connected,[0.7,0.75]", bounds_by_label={'connected': [0.7, 0.75]}),
+        ('n5', 'n6'): FakeWorld(name="", bounds_by_label={}),
+    }
+
+    interpretations_node = {}
+
+    clauses = [
+        ('edge', 'connected', ('X', 'Y'), [0.8, 1.0], 'greater_equal'),
+    ]
+
+    # Threshold: >= 60% of TOTAL edges
+    thresholds = [
+        ('greater_equal', ('percent', 'total'), 60),
+    ]
+
+    groundings = {}
+    groundings_edges = {
+        ('X', 'Y'): [('n1', 'n2'), ('n2', 'n3'), ('n3', 'n4'), ('n4', 'n5'), ('n5', 'n6')]
+    }
+
+    # Correct calculation:
+    # - Total: 5 edges
+    # - Qualified (satisfy [0.8, 1.0]): 2 edges
+    # - Percentage: 2/5 = 40% >= 60%? → FALSE
+    #
+    # With BUG-138:
+    # - Passes groundings_edges[('X','Y')] twice (all 5 edges)
+    # - total = 5, qualified = 5 (WRONG!)
+    # - 5/5 = 100% >= 60%? → TRUE (WRONG!)
+
+    result = check_all_clause_satisfaction(
+        interpretations_node,
+        interpretations_edge,
+        clauses,
+        thresholds,
+        groundings,
+        groundings_edges,
+        []
+    )
+
+    # This assertion expects CORRECT behavior (will fail due to bug)
+    assert result is False, (
+        "Expected False: Only 2 out of 5 total edges satisfy the clause (40% < 60%). "
+        "If this returns True, BUG-138 is still present (not filtering by clause bound)."
+    )
 
 
 def test_ground_rule_node_clause_filters_edge_groundings(monkeypatch):

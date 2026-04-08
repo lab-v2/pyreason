@@ -58,8 +58,8 @@ def intersection(self, interval):
         lower = max(self.lower, interval.lower)
         upper = min(self.upper, interval.upper)
         if lower > upper:
-            lower = np.float32(0)
-            upper = np.float32(1)
+            lower = np.float64(0)
+            upper = np.float64(1)
         return Interval(lower, upper, False, self.prev_lower, self.prev_upper)
 
     return impl
