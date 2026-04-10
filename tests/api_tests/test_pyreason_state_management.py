@@ -6,6 +6,7 @@ Tests the critical reset(), reset_rules(), reset_settings() functions and global
 import pytest
 from unittest.mock import patch, MagicMock
 import pyreason as pr
+import pyreason.pyreason as pr_mod
 
 
 class TestResetFunction:
@@ -295,3 +296,51 @@ class TestStateConsistency:
         assert pr.settings.verbose is True
         assert pr.settings.memory_profile is False
         assert pr.settings.output_file_name == "pyreason_output"
+
+
+def _get_closed_world():
+    """Access the internal closed_world predicates set."""
+    return pr_mod.__dict__['__closed_world_predicates']
+
+
+class Testclosed_worldPredicateApi:
+    """Test add_closed_world_predicate() and its interaction with reset functions."""
+
+    def setup_method(self):
+        pr.reset()
+        pr.reset_rules()
+
+    def teardown_method(self):
+        pr.reset()
+        pr.reset_rules()
+
+    def test_add_closed_world_predicate_registers(self):
+        pr.add_closed_world_predicate('hackerControl')
+        assert 'hackerControl' in _get_closed_world()
+
+    def test_add_multiple_closed_world_predicates(self):
+        pr.add_closed_world_predicate('pred_a')
+        pr.add_closed_world_predicate('pred_b')
+        pr.add_closed_world_predicate('pred_c')
+        assert {'pred_a', 'pred_b', 'pred_c'} == _get_closed_world()
+
+    def test_add_duplicate_is_idempotent(self):
+        pr.add_closed_world_predicate('pred')
+        pr.add_closed_world_predicate('pred')
+        assert _get_closed_world() == {'pred'}
+
+    def test_reset_clears_closed_world_predicates(self):
+        pr.add_closed_world_predicate('pred_a')
+        pr.add_closed_world_predicate('pred_b')
+        pr.reset()
+        assert len(_get_closed_world()) == 0
+
+    def test_reset_rules_does_not_clear_closed_world_predicates(self):
+        pr.add_closed_world_predicate('pred')
+        pr.reset_rules()
+        assert 'pred' in _get_closed_world()
+
+    def test_reset_settings_does_not_clear_closed_world_predicates(self):
+        pr.add_closed_world_predicate('pred')
+        pr.reset_settings()
+        assert 'pred' in _get_closed_world()

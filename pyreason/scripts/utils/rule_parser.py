@@ -102,7 +102,7 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
 
     # Validate head variable names
     for var in head_variables:
-        _validate_variable_name(var, "Head")
+        _validate_component_name(var, "Head")
 
     # Assign type of rule
     rule_type = 'node' if len(head_variables) == 1 else 'edge'
@@ -132,7 +132,7 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
             variables += clause_str[start_idx+1:end_idx].split(',')
         # Validate body variable names
         for var in variables:
-            _validate_variable_name(var, "Body")
+            _validate_component_name(var, "Body")
         body_variables.append(variables)
 
     # Change infer edge parameter if it's a node rule
@@ -489,12 +489,12 @@ def _validate_predicate_name(pred, context):
         raise ValueError(f"{context} predicate name '{pred}' contains invalid characters. Must match [a-zA-Z_][a-zA-Z0-9_]*")
 
 
-def _validate_variable_name(var, context):
+def _validate_component_name(var, context):
     """Validate that a variable name matches ^[a-zA-Z_][a-zA-Z0-9_]*$."""
     if not _IDENTIFIER_RE.match(var):
         if var and var[0].isdigit():
-            raise ValueError(f"{context} variable name '{var}' cannot start with a digit")
-        raise ValueError(f"{context} variable name '{var}' contains invalid characters. Must match [a-zA-Z_][a-zA-Z0-9_]*")
+            raise ValueError(f"{context} component name '{var}' cannot start with a digit")
+        raise ValueError(f"{context} component name '{var}' contains invalid characters. Must match [a-zA-Z_][a-zA-Z0-9_]*")
 
 
 def _str_bound_to_bound(str_bound):

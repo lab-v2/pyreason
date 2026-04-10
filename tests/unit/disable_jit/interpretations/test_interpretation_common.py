@@ -72,10 +72,12 @@ def get_interpretation_helpers(module_name: str = "interpretation_fp"):
     if "num_ga" in inspect.signature(_ground_rule_fn).parameters:
         def ground_rule(*args, **kwargs):
             kwargs.setdefault('head_functions', ())
+            kwargs.setdefault('closed_world_predicates', [])
             return _ground_rule_fn(*args, num_ga=[0], **kwargs)
     else:
         def ground_rule(*args, **kwargs):
             kwargs.setdefault('head_functions', ())
+            kwargs.setdefault('closed_world_predicates', [])
             return _ground_rule_fn(*args, **kwargs)
     ns.ground_rule = ground_rule
     ns.update_rule_trace = _py(interpretation._update_rule_trace)
@@ -193,6 +195,7 @@ def get_interpretation_helpers(module_name: str = "interpretation_fp"):
             convergence_delta,
             verbose,
             again,
+            closed_world_predicates,
         ):
             return _reason_fn(
                 interpretations_node[0],
@@ -237,6 +240,7 @@ def get_interpretation_helpers(module_name: str = "interpretation_fp"):
                 [0],
                 verbose,
                 again,
+                closed_world_predicates,
             )
     else:
         reason = _reason_fn
@@ -295,10 +299,10 @@ def interpretations():
 def test_is_satisfied_node_and_edge(interpretations):
     comp = ('Justin', 'Dog')
     na = ('owns', [1.0, 1.0])
-    assert is_satisfied_node(interpretations, comp, na) is True
-    assert is_satisfied_edge(interpretations, comp, na) is True
+    assert is_satisfied_node(interpretations, comp, na, []) is True
+    assert is_satisfied_edge(interpretations, comp, na, []) is True
     comp = ('Justin', 'Cat')
-    assert is_satisfied_edge(interpretations, comp, na) is False
+    assert is_satisfied_edge(interpretations, comp, na, []) is False
 
 
 def test_get_qualified_groundings_filters(monkeypatch, interpretations):
@@ -313,20 +317,42 @@ def test_get_qualified_groundings_filters(monkeypatch, interpretations):
         ('Nobody', 'Home'),
     ]
     clause_l, clause_bnd = 'owns', [1.0, 1.0]
-    result_edge = get_qualified_edge_groundings(interpretations, grounding, clause_l, clause_bnd)
-    result_node = get_qualified_node_groundings(interpretations, grounding, clause_l, clause_bnd)
+    result_edge = get_qualified_edge_groundings(interpretations, grounding, clause_l, clause_bnd, [])
+    result_node = get_qualified_node_groundings(interpretations, grounding, clause_l, clause_bnd, [])
     assert result_edge == [grounding[1], grounding[2]]
     assert result_node == [grounding[1], grounding[2]]
     expected_calls = [
-        call(interpretations, grounding[0], (clause_l, clause_bnd)),
-        call(interpretations, grounding[1], (clause_l, clause_bnd)),
-        call(interpretations, grounding[2], (clause_l, clause_bnd)),
+        call(interpretations, grounding[0], (clause_l, clause_bnd), []),
+        call(interpretations, grounding[1], (clause_l, clause_bnd), []),
+        call(interpretations, grounding[2], (clause_l, clause_bnd), []),
     ]
     mock_edge.assert_has_calls(expected_calls)
     mock_node.assert_has_calls(expected_calls)
 
 
 # ---- check_consistent_node / check_consistent_edge tests ----
+
+class _Label:
+    """Label-like object with .get_value() for resolve_inconsistency tests."""
+    def __init__(self, value):
+        self._value = value
+
+    @property
+    def value(self):
+        return self._value
+
+    def get_value(self):
+        return self._value
+
+    def __hash__(self):
+        return hash(self._value)
+
+    def __eq__(self, other):
+        return isinstance(other, _Label) and self._value == other._value
+
+    def __repr__(self):
+        return f"_Label({self._value!r})"
+
 
 class _Interval:
     def __init__(self, lower, upper):
@@ -376,18 +402,32 @@ def test_check_consistent_functions(monkeypatch, check_fn_name):
 def test_resolve_inconsistency_updates_world_and_trace(monkeypatch, resolver_name, comp_key):
     resolver = globals()[resolver_name]
     monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: _Interval(lo, up))
+    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+
+    class _ListShim:
+        def __call__(self, iterable=()):
+            return list(iterable)
+        def empty_list(self, *args, **kwargs):
+            return []
+
+    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+
     calls = []
     monkeypatch.setattr(interpretation, "_update_rule_trace", lambda *a: calls.append(a))
-    world = _World({"p": _Interval(0, 0.5), "q": _Interval(0, 0.5), "r": _Interval(0, 0.5)})
+
+    p = _Label("p")
+    q = _Label("q")
+    r = _Label("r")
+    world = _World({p: _Interval(0, 0.5), q: _Interval(0, 0.5), r: _Interval(0, 0.5)})
     interpretations = {comp_key: world}
-    ipl = [("p", "q"), ("r", "p")]
+    ipl = [(p, q), (r, p)]
     rule_trace = []
     rule_trace_atoms = []
     facts = ["fact"]
     resolver(
         interpretations,
         comp_key,
-        ("p", _Interval(0.9, 1.0)),
+        (p, _Interval(0.9, 1.0)),
         ipl,
         1,
         2,
@@ -400,10 +440,14 @@ def test_resolve_inconsistency_updates_world_and_trace(monkeypatch, resolver_nam
         True,
         "fact",
     )
-    assert world.world["p"].lower == 0 and world.world["p"].upper == 1 and world.world["p"].static
-    assert world.world["q"].lower == 0 and world.world["q"].upper == 1 and world.world["q"].static
-    assert world.world["r"].lower == 0 and world.world["r"].upper == 1 and world.world["r"].static
+    assert world.world[p].lower == 0 and world.world[p].upper == 1 and world.world[p].static
+    assert world.world[q].lower == 0 and world.world[q].upper == 1 and world.world[q].static
+    assert world.world[r].lower == 0 and world.world[r].upper == 1 and world.world[r].static
     assert len(rule_trace) == 3
+    # Verify metadata fields in the 9-tuples
+    for entry in rule_trace:
+        assert entry[5] == False  # consistent
+        assert entry[6] in ('Fact', 'IPL')  # triggered_by
     assert len(calls) == 3
 
 
@@ -505,9 +549,9 @@ def test_are_satisfied_helpers_call_each(monkeypatch, are_fn_name, sat_name):
     monkeypatch.setattr(interpretation, sat_name, mock)
     nas = [("l1", _Interval(0, 1)), ("l2", _Interval(0, 1))]
     are_fn = globals()[are_fn_name]
-    out = are_fn({}, "c", nas)
+    out = are_fn({}, "c", nas, [])
     assert out is False
-    expected = [call({}, "c", nas[0]), call({}, "c", nas[1])]
+    expected = [call({}, "c", nas[0], []), call({}, "c", nas[1], [])]
     mock.assert_has_calls(expected)
 
 
@@ -664,8 +708,8 @@ def build_dummy(persistent):
         time=1,
         nodes=["n1"],
         edges=[("n1", "n2")],
-        rule_trace_node=[(0, 0, "n1", DummyLabel("L1"), DummyBound(0.1, 0.2))],
-        rule_trace_edge=[(0, 0, ("n1", "n2"), DummyLabel("L2"), DummyBound(0.3, 0.4))],
+        rule_trace_node=[(0, 0, "n1", DummyLabel("L1"), DummyBound(0.1, 0.2), True, "Rule", "rule_name", "")],
+        rule_trace_edge=[(0, 0, ("n1", "n2"), DummyLabel("L2"), DummyBound(0.3, 0.4), True, "Rule", "rule_name", "")],
         persistent=persistent,
     )
 
