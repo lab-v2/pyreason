@@ -1147,7 +1147,7 @@ def add_fact(pyreason_fact: Fact) -> None:
         if pyreason_fact.name is None:
             pyreason_fact.name = f'fact_{len(__node_facts)+len(__edge_facts)}'
 
-        if pyreason_fact.name in __node_facts_name_set:
+        if pyreason_fact.name in __facts_name_set:
             warnings.warn(f"Fact {pyreason_fact.name} has already been added. Duplicate fact names will lead to an ambiguous node and atom traces.", stacklevel=2)
 
         f = fact_node.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.pred, pyreason_fact.bound, pyreason_fact.start_time, pyreason_fact.end_time, pyreason_fact.static)
@@ -1157,7 +1157,7 @@ def add_fact(pyreason_fact: Fact) -> None:
         if pyreason_fact.name is None:
             pyreason_fact.name = f'fact_{len(__node_facts)+len(__edge_facts)}'
 
-        if pyreason_fact.name in __node_facts_name_set:
+        if pyreason_fact.name in __facts_name_set:
             warnings.warn(f"Fact {pyreason_fact.name} has already been added. Duplicate fact names will lead to an ambiguous node and atom traces.", stacklevel=2)
 
         f = fact_edge.Fact(pyreason_fact.name, pyreason_fact.component, pyreason_fact.pred, pyreason_fact.bound, pyreason_fact.start_time, pyreason_fact.end_time, pyreason_fact.static)
