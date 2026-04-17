@@ -1,18 +1,27 @@
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 import re
 
-_IDENTIFIER_RE = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_.\-]*$')
+_PREDICATE_RE = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_.\-]*$')
+_COMPONENT_RE = re.compile(r'^[a-zA-Z0-9_][a-zA-Z0-9_.\-]*$')
 
 
-def _validate_name(name, context):
-    """Validate that a predicate or component name matches _IDENTIFIER_RE."""
+def _validate_predicate(name):
+    """Validate that a predicate name starts with a letter/underscore."""
+    if not name:
+        raise ValueError("Predicate name cannot be empty")
+    if not _PREDICATE_RE.match(name):
+        if name[0].isdigit():
+            raise ValueError(f"Predicate name '{name}' cannot start with a digit. Must start with a letter or underscore")
+        else:
+            raise ValueError(f"Predicate name '{name}' contains invalid characters. Must match [a-zA-Z_][a-zA-Z0-9_.\\-]*")
+
+
+def _validate_component(name, context):
+    """Validate that a component (entity) name contains only valid characters. May start with a digit."""
     if not name:
         raise ValueError(f"{context} name cannot be empty")
-    if not _IDENTIFIER_RE.match(name):
-        if name[0].isdigit():
-            raise ValueError(f"{context} name '{name}' cannot start with a digit. Must start with a letter or underscore")
-        else:
-            raise ValueError(f"{context} name '{name}' contains invalid characters. Must match [a-zA-Z_][a-zA-Z0-9_.\\-]*")
+    if not _COMPONENT_RE.match(name):
+        raise ValueError(f"{context} name '{name}' contains invalid characters. Must match [a-zA-Z0-9_][a-zA-Z0-9_.\\-]*")
 
 
 # Input validation work was implemented with the help of Claude Sonnet 4.5.
@@ -89,7 +98,7 @@ def parse_fact(fact_text):
     component = pred_comp[idx + 1:-1]
 
     # Validate predicate name
-    _validate_name(pred, "Predicate")
+    _validate_predicate(pred)
 
     # Validate component is not empty
     if not component:
@@ -106,12 +115,12 @@ def parse_fact(fact_text):
 
         # Validate component names
         for i, comp in enumerate(components):
-            _validate_name(comp, f"Edge component {i+1}")
+            _validate_component(comp, f"Edge component {i+1}")
 
         component = tuple(components)
     else:
         fact_type = 'node'
-        _validate_name(component, "Node component")
+        _validate_component(component, "Node component")
 
     # Check if bound is a boolean or a list of floats
     if bound.lower() == 'true':
