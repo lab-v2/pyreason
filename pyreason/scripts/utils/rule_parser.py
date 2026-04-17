@@ -10,7 +10,7 @@ import pyreason.scripts.numba_wrapper.numba_types.label_type as label
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 from pyreason.scripts.threshold.threshold import Threshold
 
-_IDENTIFIER_RE = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
+_IDENTIFIER_RE = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_.\-]*$')
 
 
 def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, dict], infer_edges: bool = False, set_static: bool = False, weights: Union[None, np.ndarray] = None) -> rule.Rule:
@@ -486,7 +486,7 @@ def _validate_predicate_name(pred, context):
     if not _IDENTIFIER_RE.match(pred):
         if pred and pred[0].isdigit():
             raise ValueError(f"{context} predicate name '{pred}' cannot start with a digit")
-        raise ValueError(f"{context} predicate name '{pred}' contains invalid characters. Must match [a-zA-Z_][a-zA-Z0-9_]*")
+        raise ValueError(f"{context} predicate name '{pred}' contains invalid characters. Must match [a-zA-Z_][a-zA-Z0-9_.\\-]*")
 
 
 def _validate_component_name(var, context):
@@ -494,7 +494,7 @@ def _validate_component_name(var, context):
     if not _IDENTIFIER_RE.match(var):
         if var and var[0].isdigit():
             raise ValueError(f"{context} component name '{var}' cannot start with a digit")
-        raise ValueError(f"{context} component name '{var}' contains invalid characters. Must match [a-zA-Z_][a-zA-Z0-9_]*")
+        raise ValueError(f"{context} component name '{var}' contains invalid characters. Must match [a-zA-Z_][a-zA-Z0-9_.\\-]*")
 
 
 def _str_bound_to_bound(str_bound):

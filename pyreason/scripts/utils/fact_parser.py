@@ -1,6 +1,19 @@
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 import re
 
+_IDENTIFIER_RE = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_.\-]*$')
+
+
+def _validate_name(name, context):
+    """Validate that a predicate or component name matches _IDENTIFIER_RE."""
+    if not name:
+        raise ValueError(f"{context} name cannot be empty")
+    if not _IDENTIFIER_RE.match(name):
+        if name[0].isdigit():
+            raise ValueError(f"{context} name '{name}' cannot start with a digit. Must start with a letter or underscore")
+        else:
+            raise ValueError(f"{context} name '{name}' contains invalid characters. Must match [a-zA-Z_][a-zA-Z0-9_.\\-]*")
+
 
 # Input validation work was implemented with the help of Claude Sonnet 4.5.
 def parse_fact(fact_text):
@@ -75,27 +88,12 @@ def parse_fact(fact_text):
     pred = pred_comp[:idx]
     component = pred_comp[idx + 1:-1]
 
-    # Validate predicate is not empty
-    if not pred:
-        raise ValueError("Predicate cannot be empty")
-
-    # Validate predicate contains only valid characters (alphanumeric and underscore)
-    # Predicates must start with a letter or underscore (like Python identifiers)
-    if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', pred):
-        if pred[0].isdigit():
-            raise ValueError(f"Predicate '{pred}' cannot start with a digit. Must start with a letter or underscore")
-        else:
-            raise ValueError(f"Predicate '{pred}' contains invalid characters. Only letters, digits, and underscores allowed, must start with letter or underscore")
+    # Validate predicate name
+    _validate_name(pred, "Predicate")
 
     # Validate component is not empty
     if not component:
         raise ValueError("Component cannot be empty")
-
-    # Check for invalid characters in component
-    if '(' in component or ')' in component:
-        raise ValueError("Component cannot contain parentheses")
-    if ':' in component:
-        raise ValueError("Component cannot contain colons")
 
     # Check if it is a node or edge fact
     if ',' in component:
@@ -106,14 +104,14 @@ def parse_fact(fact_text):
         if len(components) != 2:
             raise ValueError(f"Edge facts must have exactly 2 components, found {len(components)}")
 
-        # Validate no empty components
+        # Validate component names
         for i, comp in enumerate(components):
-            if not comp:
-                raise ValueError(f"Component {i+1} in edge fact cannot be empty")
+            _validate_name(comp, f"Edge component {i+1}")
 
         component = tuple(components)
     else:
         fact_type = 'node'
+        _validate_name(component, "Node component")
 
     # Check if bound is a boolean or a list of floats
     if bound.lower() == 'true':

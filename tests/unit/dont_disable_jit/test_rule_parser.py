@@ -653,7 +653,7 @@ class TestEdgeCasesAndBoundary:
     def test_head_predicate_invalid_chars(self):
         """Head predicate with invalid chars raises ValueError."""
         with pytest.raises(ValueError, match="invalid characters"):
-            parse_rule("pred-name(X) <- b(X)", "r", None)
+            parse_rule("pred!name(X) <- b(X)", "r", None)
 
     def test_body_predicate_starts_with_digit(self):
         """Body predicate starting with digit raises ValueError."""
@@ -663,7 +663,7 @@ class TestEdgeCasesAndBoundary:
     def test_body_predicate_invalid_chars(self):
         """Body predicate with invalid chars raises ValueError."""
         with pytest.raises(ValueError, match="invalid characters"):
-            parse_rule("p(X) <- body-name(X)", "r", None)
+            parse_rule("p(X) <- body!name(X)", "r", None)
 
     def test_double_negation_head(self):
         """Double negation in head raises ValueError."""
@@ -683,7 +683,7 @@ class TestEdgeCasesAndBoundary:
     def test_body_variable_invalid_chars(self):
         """Body variable with invalid chars raises ValueError."""
         with pytest.raises(ValueError, match="invalid characters"):
-            parse_rule("p(X) <- b(X-Y)", "r", None)
+            parse_rule("p(X) <- b(X!Y)", "r", None)
 
     def test_empty_head_parentheses(self):
         """Empty head parentheses raises ValueError."""
