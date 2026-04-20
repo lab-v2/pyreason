@@ -2,7 +2,7 @@ import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 import re
 
 _PREDICATE_RE = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_.\-]*$')
-_COMPONENT_RE = re.compile(r'^[a-zA-Z0-9_][a-zA-Z0-9_.\-]*$')
+_COMPONENT_RE = re.compile(r'^[a-zA-Z0-9_][a-zA-Z0-9_.@\-]*$')
 
 
 def _validate_predicate(name):
@@ -21,7 +21,7 @@ def _validate_component(name, context):
     if not name:
         raise ValueError(f"{context} name cannot be empty")
     if not _COMPONENT_RE.match(name):
-        raise ValueError(f"{context} name '{name}' contains invalid characters. Must match [a-zA-Z0-9_][a-zA-Z0-9_.\\-]*")
+        raise ValueError(f"{context} name '{name}' contains invalid characters. Must match [a-zA-Z0-9_][a-zA-Z0-9_.@\\-]*")
 
 
 # Input validation work was implemented with the help of Claude Sonnet 4.5.
