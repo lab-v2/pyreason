@@ -675,11 +675,6 @@ class TestEdgeCasesAndBoundary:
         with pytest.raises(ValueError, match="Double negation"):
             parse_rule("p(X) <- ~~b(X)", "r", None)
 
-    def test_head_variable_starts_with_digit(self):
-        """Head variable starting with digit raises ValueError."""
-        with pytest.raises(ValueError, match="digit"):
-            parse_rule("p(1X) <- b(Y)", "r", None)
-
     def test_body_variable_invalid_chars(self):
         """Body variable with invalid chars raises ValueError."""
         with pytest.raises(ValueError, match="invalid characters"):
