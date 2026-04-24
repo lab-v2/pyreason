@@ -17,5 +17,6 @@ Contents
    ./infer_edges.rst
    ./annotation_function.rst
    ./cybersecurity_inconsistency.rst
-
+   ./load_rules_facts_from_file.rst
+   ./llm_generated_rules.rst
    

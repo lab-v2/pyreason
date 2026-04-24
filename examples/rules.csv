@@ -1,0 +1,5 @@
+rule_text,name,infer_edges,set_static
+"under_department(X,Y) <-0 enroll(X,Z), in_department(Z,Y)",under_department_rule,true,false
+"eligible(X) <-1 under_department(X,Y), scholarship(Y)",eligible_scholarship_rule,false,false
+
+
