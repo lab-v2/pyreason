@@ -1,0 +1,2 @@
+fact_text,name,start_time,end_time,static
+scholarship(math_dept),scholarship_math_dept,0,2,False
