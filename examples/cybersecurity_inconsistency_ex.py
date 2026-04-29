@@ -58,7 +58,7 @@ g.add_nodes_from(['web_server', 'workstation_1', 'dev_server'])
 # Software nodes -- specific vulnerable versions
 g.add_nodes_from(['sudo_1_9_5p1', 'linux_kernel_5_1', 'openssl_3_0_1'])
 
-# CVE nodes -- real vulnerability identifiers from NVD (lowercase per convention)
+# CVE nodes -- real vulnerability identifiers from NVD 
 g.add_nodes_from(['cve_2021_3156', 'cve_2022_0185', 'cve_2022_26923'])
 
 # Asset --> Software edges (which asset runs which software version)
@@ -105,8 +105,6 @@ pr.add_rule(pr.Rule(
 ))
 
 # Rule 4: A compromised asset is unlikely to be patched -- low patch confidence
-# patch_confidence is a separate predicate from "patched" so it does not
-# interfere with the vulnerable/patched IPL.
 # This will conflict with dev_patch_db_fact on dev_server via
 # same-predicate non-overlapping bounds -- a rule-triggered inconsistency.
 pr.add_rule(pr.Rule(
