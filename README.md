@@ -1,7 +1,9 @@
 <img src="https://raw.githubusercontent.com/lab-v2/pyreason/main/media/pyreason_logo.jpg"/>
 
-[![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
 [![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
+[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3120/)
+[![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/release/python-3130/)
 [![Documentation Status](https://readthedocs.org/projects/pyreason/badge/?version=latest)](https://pyreason.readthedocs.io/en/latest/?badge=latest)
 [![pypi](https://github.com/lab-v2/pyreason/actions/workflows/python-publish.yml/badge.svg)](https://github.com/lab-v2/pyreason/actions/workflows/python-publish.yml)
 [![Tests](https://github.com/lab-v2/pyreason/actions/workflows/python-package-version-test.yml/badge.svg)](https://github.com/lab-v2/pyreason/actions/workflows/python-package-version-test.yml)
@@ -43,7 +45,7 @@ PyReason can be installed as a python library using
 ```bash
 pip install pyreason
 ```
-The Python versions that are currently supported are `3.7`, `3.8`, `3.9`, `3.10`. If you want multi-core parallel support only `3.9` and `3.10` versions work due to limited numba support.
+The Python versions that are currently supported are `3.10`, `3.11`, `3.12`, and `3.13`.
 
 ## 4. Bibtex
 If you used this software in your work please cite our paper
