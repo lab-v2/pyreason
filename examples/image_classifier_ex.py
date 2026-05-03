@@ -18,6 +18,11 @@ from pyreason.scripts.learning.utils.model_interface import ModelInterfaceOption
 from pyreason.scripts.rules.rule import Rule
 from pyreason.pyreason import _Settings as Settings, reason, reset_settings, get_rule_trace, add_fact, add_rule, load_graph, save_rule_trace
 
+#import pandas as pd
+#If you want to see the full table, you can uncomment the following lines and run the script.
+#pd.set_option("display.max_columns", None)   # show all columns
+#pd.set_option("display.width", 200)          # wider line before wrapping
+#pd.set_option("display.max_colwidth", None)  # don't truncate cell text
 
 # Step 1: Load a pre-trained model and image processor from Hugging Face
 model_name = "google/vit-base-patch16-224"  # Vision Transformer model
@@ -31,7 +36,7 @@ load_graph(G)
 image_dir = Path(__file__).resolve().parent.parent / "examples" / "images"
 image_paths = list(Path(image_dir).glob("*.jpeg"))  # Get all .jpeg files in the directory
 image_list = []
-allowed_labels = ['goldfish', 'tiger shark', 'hammerhead', 'great white shark', 'tench']
+allowed_labels = ['goldfish', 'tiger shark', 'hammerhead', 'great white shark', 'tench', 'flamingo', 'bald eagle']
 
 # Add Rules to the knowlege base
 add_rule(Rule("is_fish(x) <-0 goldfish(x)", "is_fish_rule"))
@@ -41,6 +46,12 @@ add_rule(Rule("is_shark(x) <-0 hammerhead(x)", "is_shark_rule"))
 add_rule(Rule("is_shark(x) <-0 greatwhiteshark(x)", "is_shark_rule"))
 add_rule(Rule("is_scary(x) <-0 is_shark(x)", "is_scary_rule"))
 add_rule(Rule("likes_to_eat(y,x) <-0 is_shark(y), is_fish(x)", "likes_to_eat_rule", infer_edges=True))
+add_rule(Rule("is_flamingo(x) <-0 flamingo(x)", "is_flamingo_rule"))
+add_rule(Rule("is_bird(x) <-0 flamingo(x)", "is_bird_rule"))
+add_rule(Rule("is_eagle(x) <-0 baldeagle(x)", "is_eagle_rule"))
+add_rule(Rule("is_bird(x) <-0 baldeagle(x)", "is_bird_rule"))
+add_rule(Rule("can_fly(x) <-0 is_bird(x)", "can_fly_rule"))
+add_rule(Rule("likes_to_eat(y,x) <-0 is_flamingo(y), is_fish(x)", "likes_to_eat", infer_edges=True))
 
 for image_path in image_paths:
     print(f"Processing Image: {image_path.name}")
