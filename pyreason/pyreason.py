@@ -555,6 +555,8 @@ def get_time() -> int:
         i = get_interpretation()
     except Exception:
         return 0
+    if i is None:
+        return 0
     return i.time + 1
 
 

@@ -1,7 +1,7 @@
 Installation
 ==========
 
-PyReason is currently compatible with Python 3.10, 3.11, 3.12, and 3.13. To install PyReason, you can use pip:
+PyReason is currently compatible with Python 3.12 and 3.13. To install PyReason, you can use pip:
 
 .. code:: bash
 

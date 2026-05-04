@@ -13,7 +13,7 @@ Prerequisites
 
 .. note::
 
-    Use Python version 3.10, 3.11, 3.12, or 3.13.
+    Use Python version 3.12 or 3.13.
 
 
 Step-by-Step Guide

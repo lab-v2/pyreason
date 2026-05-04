@@ -8,9 +8,9 @@ long_description = (this_directory / "README.md").read_text(encoding='UTF-8')
 
 setup(
     name='pyreason',
-    version='3.5.1',
-    author='Dyuman Aditya',
-    author_email='dyuman.aditya@gmail.com',
+    version='4.0.0b1',
+    author='Colton Payne',
+    author_email='coltonpayne23@gmail.com',
     description='An explainable inference software supporting annotated, real valued, graph based and temporal logic',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -22,14 +22,12 @@ setup(
     },
     classifiers=[
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent"
     ],
-    python_requires='>=3.10,<3.14',
+    python_requires='>=3.12,<3.14',
     install_requires=[
         'networkx',
         'pyyaml',
