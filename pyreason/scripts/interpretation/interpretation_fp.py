@@ -55,6 +55,40 @@ rules_to_be_applied_trace_type = numba.types.Tuple((numba.types.ListType(numba.t
 edges_to_be_added_type = numba.types.Tuple((numba.types.ListType(node_type), numba.types.ListType(node_type), label.label_type))
 
 
+@numba.njit(cache=True)
+def _filter_pending_node_rules(rules_to_be_applied_node, edges_to_be_added_node_rule, rules_to_be_applied_node_trace, rules_to_remove_idx, atom_trace):
+	rules_to_be_applied_node_new = numba.typed.List.empty_list(rules_to_be_applied_node_type)
+	edges_to_be_added_node_rule_new = numba.typed.List.empty_list(edges_to_be_added_type)
+	rules_to_be_applied_node_trace_new = numba.typed.List.empty_list(rules_to_be_applied_trace_type)
+	for keep_idx in range(len(rules_to_be_applied_node)):
+		if keep_idx not in rules_to_remove_idx:
+			rules_to_be_applied_node_new.append(rules_to_be_applied_node[keep_idx])
+			edges_to_be_added_node_rule_new.append(edges_to_be_added_node_rule[keep_idx])
+			if atom_trace:
+				rules_to_be_applied_node_trace_new.append(rules_to_be_applied_node_trace[keep_idx])
+	rules_to_be_applied_node[:] = rules_to_be_applied_node_new.copy()
+	edges_to_be_added_node_rule[:] = edges_to_be_added_node_rule_new.copy()
+	if atom_trace:
+		rules_to_be_applied_node_trace[:] = rules_to_be_applied_node_trace_new.copy()
+
+
+@numba.njit(cache=True)
+def _filter_pending_edge_rules(rules_to_be_applied_edge, edges_to_be_added_edge_rule, rules_to_be_applied_edge_trace, rules_to_remove_idx, atom_trace):
+	rules_to_be_applied_edge_new = numba.typed.List.empty_list(rules_to_be_applied_edge_type)
+	edges_to_be_added_edge_rule_new = numba.typed.List.empty_list(edges_to_be_added_type)
+	rules_to_be_applied_edge_trace_new = numba.typed.List.empty_list(rules_to_be_applied_trace_type)
+	for keep_idx in range(len(rules_to_be_applied_edge)):
+		if keep_idx not in rules_to_remove_idx:
+			rules_to_be_applied_edge_new.append(rules_to_be_applied_edge[keep_idx])
+			edges_to_be_added_edge_rule_new.append(edges_to_be_added_edge_rule[keep_idx])
+			if atom_trace:
+				rules_to_be_applied_edge_trace_new.append(rules_to_be_applied_edge_trace[keep_idx])
+	rules_to_be_applied_edge[:] = rules_to_be_applied_edge_new.copy()
+	edges_to_be_added_edge_rule[:] = edges_to_be_added_edge_rule_new.copy()
+	if atom_trace:
+		rules_to_be_applied_edge_trace[:] = rules_to_be_applied_edge_trace_new.copy()
+
+
 class Interpretation:
 	specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(node_type))
 	specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(edge_type))
@@ -619,8 +653,8 @@ class Interpretation:
 			# Apply the rules that need to be applied at this timestep
 			# Nodes
 			rules_to_remove_idx.clear()
-			for idx, i in enumerate(rules_to_be_applied_node):
-				t, comp, l, bnd, set_static = i[0], i[1], i[2], i[3], i[4]
+			for idx, pending_rule in enumerate(rules_to_be_applied_node):
+				t, comp, l, bnd, set_static = pending_rule[0], pending_rule[1], pending_rule[2], pending_rule[3], pending_rule[4]
 
 				# if node doesn't exist in interpretation, add it
 				if comp not in interpretations_node[t]:
@@ -659,15 +693,12 @@ class Interpretation:
 				rules_to_remove_idx.add(idx)
 
 			# Remove from rules to be applied and edges to be applied lists after coming out from loop
-			rules_to_be_applied_node[:] = numba.typed.List([rules_to_be_applied_node[i] for i in range(len(rules_to_be_applied_node)) if i not in rules_to_remove_idx])
-			edges_to_be_added_node_rule[:] = numba.typed.List([edges_to_be_added_node_rule[i] for i in range(len(edges_to_be_added_node_rule)) if i not in rules_to_remove_idx])
-			if atom_trace:
-				rules_to_be_applied_node_trace[:] = numba.typed.List([rules_to_be_applied_node_trace[i] for i in range(len(rules_to_be_applied_node_trace)) if i not in rules_to_remove_idx])
+			_filter_pending_node_rules(rules_to_be_applied_node, edges_to_be_added_node_rule, rules_to_be_applied_node_trace, rules_to_remove_idx, atom_trace)
 
 			# Edges
 			rules_to_remove_idx.clear()
-			for idx, i in enumerate(rules_to_be_applied_edge):
-				t, comp, l, bnd, set_static = i[0], i[1], i[2], i[3], i[4]
+			for idx, pending_rule in enumerate(rules_to_be_applied_edge):
+				t, comp, l, bnd, set_static = pending_rule[0], pending_rule[1], pending_rule[2], pending_rule[3], pending_rule[4]
 				sources, targets, edge_l = edges_to_be_added_edge_rule[idx]
 				edges_added, changes = _add_edges(sources, targets, neighbors, reverse_neighbors, nodes, edges, edge_l, interpretations_node[t], interpretations_edge[t], predicate_map_edge, t)
 				changes_cnt += changes
@@ -743,10 +774,7 @@ class Interpretation:
 				rules_to_remove_idx.add(idx)
 
 			# Remove from rules to be applied and edges to be applied lists after coming out from loop
-			rules_to_be_applied_edge[:] = numba.typed.List([rules_to_be_applied_edge[i] for i in range(len(rules_to_be_applied_edge)) if i not in rules_to_remove_idx])
-			edges_to_be_added_edge_rule[:] = numba.typed.List([edges_to_be_added_edge_rule[i] for i in range(len(edges_to_be_added_edge_rule)) if i not in rules_to_remove_idx])
-			if atom_trace:
-				rules_to_be_applied_edge_trace[:] = numba.typed.List([rules_to_be_applied_edge_trace[i] for i in range(len(rules_to_be_applied_edge_trace)) if i not in rules_to_remove_idx])
+			_filter_pending_edge_rules(rules_to_be_applied_edge, edges_to_be_added_edge_rule, rules_to_be_applied_edge_trace, rules_to_remove_idx, atom_trace)
 			
 			# Check for convergence after each timestep (perfect convergence or convergence specified by user)
 			# Check number of changed interpretations or max bound change
@@ -1496,15 +1524,15 @@ def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groun
 	# We replace Y by the sources of Z
 	elif clause_var_1 not in groundings and clause_var_2 in groundings:
 		for n in groundings[clause_var_2]:
-			es = numba.typed.List([(nn, n) for nn in reverse_neighbors[n]])
-			edge_groundings.extend(es)
+			for nn in reverse_neighbors[n]:
+				edge_groundings.append((nn, n))
 
 	# Case 3:
 	# We replace Z by the neighbors of Y
 	elif clause_var_1 in groundings and clause_var_2 not in groundings:
 		for n in groundings[clause_var_1]:
-			es = numba.typed.List([(n, nn) for nn in neighbors[n]])
-			edge_groundings.extend(es)
+			for nn in neighbors[n]:
+				edge_groundings.append((n, nn))
 
 	# Case 4:
 	# We have seen both variables before
@@ -1516,8 +1544,9 @@ def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groun
 		else:
 			groundings_clause_var_2_set = set(groundings[clause_var_2])
 			for n in groundings[clause_var_1]:
-				es = numba.typed.List([(n, nn) for nn in neighbors[n] if nn in groundings_clause_var_2_set])
-				edge_groundings.extend(es)
+				for nn in neighbors[n]:
+					if nn in groundings_clause_var_2_set:
+						edge_groundings.append((n, nn))
 
 	return edge_groundings
 
