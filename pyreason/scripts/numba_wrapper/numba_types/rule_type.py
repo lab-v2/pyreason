@@ -32,8 +32,8 @@ def typeof_rule(val, c):
 # Construct object from Numba functions (Doesn't work. We don't need this currently)
 @type_callable(Rule)
 def type_rule(context):
-    def typer(rule_name, type, target, head_variables, delta, clauses, bnd, thresholds, ann_fn, weights, head_fns, head_fns_vars, edges, static):
-        if isinstance(rule_name, types.UnicodeType) and isinstance(type, types.UnicodeType) and isinstance(target, label.LabelType) and isinstance(head_variables, types.ListType) and isinstance(delta, types.Integer) and isinstance(clauses, (types.NoneType, types.ListType)) and isinstance(bnd, interval.IntervalType) and isinstance(thresholds, types.ListType) and isinstance(ann_fn, types.UnicodeType) and isinstance(weights, types.Array) and isinstance(head_fns, types.ListType) and isinstance(head_fns_vars, types.ListType) and isinstance(edges, types.Tuple) and isinstance(static, types.Boolean):
+    def typer(rule_name, type, target, head_variables, delta, clauses, bnd, thresholds, ann_fn, weights, head_fns, head_fns_vars, edges, static, head_negated):
+        if isinstance(rule_name, types.UnicodeType) and isinstance(type, types.UnicodeType) and isinstance(target, label.LabelType) and isinstance(head_variables, types.ListType) and isinstance(delta, types.Integer) and isinstance(clauses, (types.NoneType, types.ListType)) and isinstance(bnd, interval.IntervalType) and isinstance(thresholds, types.ListType) and isinstance(ann_fn, types.UnicodeType) and isinstance(weights, types.Array) and isinstance(head_fns, types.ListType) and isinstance(head_fns_vars, types.ListType) and isinstance(edges, types.Tuple) and isinstance(static, types.Boolean) and isinstance(head_negated, types.Boolean):
             return rule_type
     return typer
 
@@ -57,6 +57,7 @@ class RuleModel(models.StructModel):
             ('head_fns_vars', types.ListType(types.ListType(types.string))),
             ('edges', types.Tuple((types.string, types.string, label.label_type))),
             ('static', types.boolean),
+            ('head_negated', types.boolean),
             ]
         models.StructModel.__init__(self, dmm, fe_type, members)
 
@@ -76,13 +77,14 @@ make_attribute_wrapper(RuleType, 'head_fns', 'head_fns')
 make_attribute_wrapper(RuleType, 'head_fns_vars', 'head_fns_vars')
 make_attribute_wrapper(RuleType, 'edges', 'edges')
 make_attribute_wrapper(RuleType, 'static', 'static')
+make_attribute_wrapper(RuleType, 'head_negated', 'head_negated')
 
 
 # Implement constructor
-@lower_builtin(Rule, types.string, types.string, label.label_type, types.ListType(types.string), types.uint16, types.ListType(types.Tuple((types.string, label.label_type, types.ListType(types.string), interval.interval_type, types.string))), interval.interval_type, types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64))), types.string, types.float64[::1], types.ListType(types.string), types.ListType(types.ListType(types.string)), types.Tuple((types.string, types.string, label.label_type)), types.boolean)
+@lower_builtin(Rule, types.string, types.string, label.label_type, types.ListType(types.string), types.uint16, types.ListType(types.Tuple((types.string, label.label_type, types.ListType(types.string), interval.interval_type, types.string))), interval.interval_type, types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64))), types.string, types.float64[::1], types.ListType(types.string), types.ListType(types.ListType(types.string)), types.Tuple((types.string, types.string, label.label_type)), types.boolean, types.boolean)
 def impl_rule(context, builder, sig, args):
     typ = sig.return_type
-    rule_name, type, target, head_variables, delta, clauses, bnd, thresholds, ann_fn, weights, head_fns, head_fns_vars, edges, static = args
+    rule_name, type, target, head_variables, delta, clauses, bnd, thresholds, ann_fn, weights, head_fns, head_fns_vars, edges, static, head_negated = args
     context.nrt.incref(builder, types.ListType(types.string), head_variables)
     context.nrt.incref(builder, types.ListType(types.Tuple((types.string, label.label_type, types.ListType(types.string), interval.interval_type, types.string))), clauses)
     context.nrt.incref(builder, types.ListType(types.Tuple((types.string, types.UniTuple(types.string, 2), types.float64))), thresholds)
@@ -104,6 +106,7 @@ def impl_rule(context, builder, sig, args):
     rule.head_fns_vars = head_fns_vars
     rule.edges = edges
     rule.static = static
+    rule.head_negated = head_negated
     return rule._getvalue()
 
 
@@ -213,6 +216,13 @@ def is_static_rule(rule):
     return impl
 
 
+@overload_method(RuleType, "is_head_negated")
+def is_head_negated(rule):
+    def impl(rule):
+        return rule.head_negated
+    return impl
+
+
 # Tell numba how to make native
 @unbox(RuleType)
 def unbox_rule(typ, obj, c):
@@ -230,6 +240,7 @@ def unbox_rule(typ, obj, c):
     head_fns_vars_obj = c.pyapi.object_getattr_string(obj, "_head_fns_vars")
     edges_obj = c.pyapi.object_getattr_string(obj, "_edges")
     static_obj = c.pyapi.object_getattr_string(obj, "_static")
+    head_negated_obj = c.pyapi.object_getattr_string(obj, "_head_negated")
     rule = cgutils.create_struct_proxy(typ)(c.context, c.builder)
     rule.rule_name = c.unbox(types.string, name_obj).value
     rule.type = c.unbox(types.string, type_obj).value
@@ -245,6 +256,7 @@ def unbox_rule(typ, obj, c):
     rule.head_fns_vars = c.unbox(types.ListType(types.ListType(types.string)), head_fns_vars_obj).value
     rule.edges = c.unbox(types.Tuple((types.string, types.string, label.label_type)), edges_obj).value
     rule.static = c.unbox(types.boolean, static_obj).value
+    rule.head_negated = c.unbox(types.boolean, head_negated_obj).value
     c.pyapi.decref(name_obj)
     c.pyapi.decref(type_obj)
     c.pyapi.decref(target_obj)
@@ -259,6 +271,7 @@ def unbox_rule(typ, obj, c):
     c.pyapi.decref(head_fns_vars_obj)
     c.pyapi.decref(edges_obj)
     c.pyapi.decref(static_obj)
+    c.pyapi.decref(head_negated_obj)
     is_error = cgutils.is_not_null(c.builder, c.pyapi.err_occurred())
     return NativeValue(rule._getvalue(), is_error=is_error)
 
@@ -281,7 +294,8 @@ def box_rule(typ, val, c):
     head_fns_vars_obj = c.box(types.ListType(types.ListType(types.string)), rule.head_fns_vars)
     edges_obj = c.box(types.Tuple((types.string, types.string, label.label_type)), rule.edges)
     static_obj = c.box(types.boolean, rule.static)
-    res = c.pyapi.call_function_objargs(class_obj, (name_obj, type_obj, target_obj, head_variables_obj, delta_obj, clauses_obj, bnd_obj, thresholds_obj, ann_fn_obj, weights_obj, head_fns_obj, head_fns_vars_obj, edges_obj, static_obj))
+    head_negated_obj = c.box(types.boolean, rule.head_negated)
+    res = c.pyapi.call_function_objargs(class_obj, (name_obj, type_obj, target_obj, head_variables_obj, delta_obj, clauses_obj, bnd_obj, thresholds_obj, ann_fn_obj, weights_obj, head_fns_obj, head_fns_vars_obj, edges_obj, static_obj, head_negated_obj))
     c.pyapi.decref(name_obj)
     c.pyapi.decref(type_obj)
     c.pyapi.decref(target_obj)
@@ -296,5 +310,6 @@ def box_rule(typ, val, c):
     c.pyapi.decref(head_fns_vars_obj)
     c.pyapi.decref(edges_obj)
     c.pyapi.decref(static_obj)
+    c.pyapi.decref(head_negated_obj)
     c.pyapi.decref(class_obj)
     return res

@@ -544,6 +544,9 @@ class Interpretation:
 
 							if should_apply_rule:
 								bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
+								# If the rule head was negated, invert the ann_fn output: ~[l,u] = [1-u, 1-l]
+								if rule.is_head_negated():
+									bnd = (1 - bnd[1], 1 - bnd[0])
 								# Bound annotations in between 0 and 1
 								bnd_l = min(max(bnd[0], 0), 1)
 								bnd_u = min(max(bnd[1], 0), 1)
@@ -581,6 +584,9 @@ class Interpretation:
 
 							if should_apply_rule:
 								bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
+								# If the rule head was negated, invert the ann_fn output: ~[l,u] = [1-u, 1-l]
+								if rule.is_head_negated():
+									bnd = (1 - bnd[1], 1 - bnd[0])
 								# Bound annotations in between 0 and 1
 								bnd_l = min(max(bnd[0], 0), 1)
 								bnd_u = min(max(bnd[1], 0), 1)

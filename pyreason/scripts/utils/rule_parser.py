@@ -81,8 +81,8 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
             custom_thresholds[i] = Threshold("greater_equal", ("percent", "total"), 100)
             body_clauses[i] = inner
 
-    # Parse the head: target predicate, bound, and annotation function
-    head, target_bound, ann_fn = _parse_head(head)
+    # Parse the head: target predicate, bound, annotation function, and head-negation flag
+    head, target_bound, ann_fn, head_negated = _parse_head(head)
 
     idx = head.find('(')
     target = head[:idx]
@@ -240,7 +240,7 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
             typed_vars_list.append(var)
         head_fns_vars_numba.append(typed_vars_list)
 
-    result = rule.Rule(name, rule_type, target, head_variables, numba.types.uint16(delta_t), clauses, target_bound, thresholds, ann_fn, weights, head_fns_numba, head_fns_vars_numba, edges, set_static)
+    result = rule.Rule(name, rule_type, target, head_variables, numba.types.uint16(delta_t), clauses, target_bound, thresholds, ann_fn, weights, head_fns_numba, head_fns_vars_numba, edges, set_static, head_negated)
     return result
 
 
@@ -367,6 +367,14 @@ def _parse_head(head):
     if colon_count > 1:
         raise ValueError(f"Rule head contains {colon_count} colons, expected at most 1")
 
+    # Strip a leading '~' up front so the suffix-handling below is uniform across
+    # all forms: ~pred(X), ~pred(X):[l,u], ~pred(X):True/False, ~pred(X):ann_fn.
+    # We apply the [1-u, 1-l] inversion to the resolved target_bound below.
+    negate_head_interval = False
+    if head[0] == '~':
+        head = head[1:]
+        negate_head_interval = True
+
     # Convert :True/:False shorthand to numeric bounds (case-insensitive)
     if colon_count == 1:
         colon_idx = head.index(':')
@@ -376,18 +384,9 @@ def _parse_head(head):
         elif suffix.lower() == 'false':
             head = head[:colon_idx] + ':[0,0]'
 
-    # If no colon present, attach default bound
-    negate_head_interval = False
+    # If no colon present, attach default bound [1,1] (negation will flip it to [0,0])
     if head[-1] == ')':
-        if head[0] == '~':
-            head += ':[0,0]'
-            head = head[1:]
-        else:
-            head += ':[1,1]'
-    elif head[0] == '~' and head[-1] == ']':
-        # ~pred(X):[l,u] — strip negation, keep explicit bound, flag for inversion
-        head = head[1:]
-        negate_head_interval = True
+        head += ':[1,1]'
 
     head_str, head_bound_str = head.split(':')
 
@@ -407,10 +406,13 @@ def _parse_head(head):
                 raise ValueError(
                     f"{e}. Note: Annotation function names cannot contain brackets '[' or ']'"
                 )
+        # Annotation function: default bound is [0,1]; ~[0,1] = [0,1] is a no-op
+        # at parse time. To actually invert the ann_fn's runtime output, the
+        # negate_head_interval flag must be plumbed onto Rule.
         target_bound = interval.closed(0, 1)
         ann_fn = head_bound_str
 
-    return head_str, target_bound, ann_fn
+    return head_str, target_bound, ann_fn, negate_head_interval
 
 
 def _parse_head_arguments(head_args_str):

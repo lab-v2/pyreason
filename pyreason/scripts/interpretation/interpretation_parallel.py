@@ -569,6 +569,9 @@ class Interpretation:
 								# If there is an edge to add or the predicate doesn't exist or the interpretation is not static
 								if rule.get_target() not in interpretations_node[n].world or not interpretations_node[n].world[rule.get_target()].is_static():
 									bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
+									# If the rule head was negated, invert the ann_fn output: ~[l,u] = [1-u, 1-l]
+									if rule.is_head_negated():
+										bnd = (1 - bnd[1], 1 - bnd[0])
 									# Bound annotations in between 0 and 1
 									bnd_l = min(max(bnd[0], 0), 1)
 									bnd_u = min(max(bnd[1], 0), 1)
@@ -588,6 +591,9 @@ class Interpretation:
 								# If there is an edge to add or the predicate doesn't exist or the interpretation is not static
 								if len(edges_to_add[0]) > 0 or rule.get_target() not in interpretations_edge[e].world or not interpretations_edge[e].world[rule.get_target()].is_static():
 									bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
+									# If the rule head was negated, invert the ann_fn output: ~[l,u] = [1-u, 1-l]
+									if rule.is_head_negated():
+										bnd = (1 - bnd[1], 1 - bnd[0])
 									# Bound annotations in between 0 and 1
 									bnd_l = min(max(bnd[0], 0), 1)
 									bnd_u = min(max(bnd[1], 0), 1)

@@ -109,6 +109,32 @@ def test_annotation_function(mode):
 
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
+def test_negated_annotation_function(mode):
+    """Negated head with an annotation function: the ann_fn output [l,u] must be
+    inverted to [1-u, 1-l] before being stored on the head atom."""
+    setup_mode(mode)
+
+    pr.settings.allow_ground_rules = True
+
+    pr.add_fact(pr.Fact('P(A) : [0.01, 1]'))
+    pr.add_fact(pr.Fact('P(B) : [0.2, 1]'))
+    pr.add_annotation_function(probability_func)
+    # probability_func returns (0.21, 1); negation should invert to [0, 0.79].
+    pr.add_rule(pr.Rule('~union_probability(A, B):probability_func <- P(A):[0, 1], P(B):[0, 1]', infer_edges=True))
+
+    interpretation = pr.reason(timesteps=1)
+
+    dataframes = pr.filter_and_sort_edges(interpretation, ['union_probability'])
+    for t, df in enumerate(dataframes):
+        print(f'TIMESTEP - {t}')
+        print(df)
+        print()
+
+    assert interpretation.query(pr.Query('union_probability(A, B) : [0, 0.79]')), 'Negated union probability should be [0, 0.79]'
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_custom_thresholds(mode):
     """Test custom threshold functionality."""
     setup_mode(mode)
