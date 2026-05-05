@@ -1,0 +1,11 @@
+Time,Fixed-Point-Operation,Edge,Label,Old Bound,New Bound,Occurred Due To,Consistent,Triggered By,Inconsistency Message,Clause-1,Clause-2
+0,2,"('shark_1', 'fish_1')",likes_to_eat,"[0.0,1.0]","[1.0,1.0]",likes_to_eat_rule,True,Rule,,['shark_1'],['fish_1']
+0,2,"('shark_1', 'fish_2')",likes_to_eat,"[0.0,1.0]","[1.0,1.0]",likes_to_eat_rule,True,Rule,,['shark_1'],['fish_2']
+0,2,"('shark_2', 'fish_1')",likes_to_eat,"[0.0,1.0]","[1.0,1.0]",likes_to_eat_rule,True,Rule,,['shark_2'],['fish_1']
+0,2,"('shark_2', 'fish_2')",likes_to_eat,"[0.0,1.0]","[1.0,1.0]",likes_to_eat_rule,True,Rule,,['shark_2'],['fish_2']
+0,2,"('shark_3', 'fish_1')",likes_to_eat,"[0.0,1.0]","[1.0,1.0]",likes_to_eat_rule,True,Rule,,['shark_3'],['fish_1']
+0,2,"('shark_3', 'fish_2')",likes_to_eat,"[0.0,1.0]","[1.0,1.0]",likes_to_eat_rule,True,Rule,,['shark_3'],['fish_2']
+0,2,"('Flamingo_1', 'fish_1')",likes_to_eat,"[0.0,1.0]","[1.0,1.0]",likes_to_eat_rule,True,Rule,,['Flamingo_1'],['fish_1']
+0,2,"('Flamingo_1', 'fish_2')",likes_to_eat,"[0.0,1.0]","[1.0,1.0]",likes_to_eat_rule,True,Rule,,['Flamingo_1'],['fish_2']
+0,2,"('Flamingo_2', 'fish_1')",likes_to_eat,"[0.0,1.0]","[1.0,1.0]",likes_to_eat_rule,True,Rule,,['Flamingo_2'],['fish_1']
+0,2,"('Flamingo_2', 'fish_2')",likes_to_eat,"[0.0,1.0]","[1.0,1.0]",likes_to_eat_rule,True,Rule,,['Flamingo_2'],['fish_2']

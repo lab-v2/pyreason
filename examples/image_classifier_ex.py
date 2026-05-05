@@ -16,7 +16,7 @@ from pyreason.scripts.learning.classification.hf_classifier import HuggingFaceLo
 from pyreason.scripts.facts.fact import Fact
 from pyreason.scripts.learning.utils.model_interface import ModelInterfaceOptions
 from pyreason.scripts.rules.rule import Rule
-from pyreason.pyreason import _Settings as Settings, reason, reset_settings, get_rule_trace, add_fact, add_rule, load_graph, save_rule_trace
+from pyreason.pyreason import _Settings as Settings, reason, reset_settings, get_rule_trace, add_fact, add_rule, load_graph
 
 #import pandas as pd
 #If you want to see the full table, you can uncomment the following lines and run the script.
@@ -51,7 +51,7 @@ add_rule(Rule("is_bird(x) <-0 flamingo(x)", "is_bird_rule"))
 add_rule(Rule("is_eagle(x) <-0 baldeagle(x)", "is_eagle_rule"))
 add_rule(Rule("is_bird(x) <-0 baldeagle(x)", "is_bird_rule"))
 add_rule(Rule("can_fly(x) <-0 is_bird(x)", "can_fly_rule"))
-add_rule(Rule("likes_to_eat(y,x) <-0 is_flamingo(y), is_fish(x)", "likes_to_eat", infer_edges=True))
+add_rule(Rule("likes_to_eat(y,x) <-0 is_flamingo(y), is_fish(x)", "likes_to_eat_rule", infer_edges=True))
 
 for image_path in image_paths:
     print(f"Processing Image: {image_path.name}")

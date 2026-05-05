@@ -16,4 +16,5 @@ Contents
    ./custom_thresholds.rst
    ./infer_edges.rst
    ./annotation_function.rst
+   ./image_classifier_reasoning.rst
    
