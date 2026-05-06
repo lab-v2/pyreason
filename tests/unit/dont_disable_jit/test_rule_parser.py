@@ -81,6 +81,19 @@ class TestValidRuleParsing:
         edges = r.get_edges()
         assert edges[2].get_value() == "avg"
 
+    def test_negation_with_annotation_function_head(self):
+        """Negated head with an annotation function — the '~' must be stripped
+        from the predicate name and the annotation function must still be captured."""
+        r = parse_rule(
+            "~hasLabel(CB, Lrisk):minimum_bounds_ann_fn <-0 hasLabel(CB, Lsafe):[0.7,1], mitigates(Lsafe, Lrisk)",
+            "neg_ann_head",
+            None,
+        )
+        assert r.get_target().get_value() == "hasLabel"
+        assert r.get_annotation_function() == "minimum_bounds_ann_fn"
+        assert r.get_rule_type() == "edge"
+        assert len(r.get_clauses()) == 2
+
     def test_explicit_head_bound(self):
         """Rule with explicit bound on head."""
         r = parse_rule("reliable(X):[0.8,1.0] <- tested(X):[0.9,1.0]", "hb", None)
