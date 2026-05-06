@@ -229,6 +229,9 @@ def test_reason_applies_applicable_node_rule_with_trace_and_delta_zero(monkeypat
         def is_head_negated(self):
             return False
 
+        def get_annotation_function(self):
+            return ""
+
         def get_name(self):
             return "r"
 
@@ -361,6 +364,9 @@ def test_reason_applies_applicable_edge_rule_with_trace_and_delta_zero(monkeypat
 
         def is_head_negated(self):
             return False
+
+        def get_annotation_function(self):
+            return ""
 
         def get_name(self):
             return "r"
