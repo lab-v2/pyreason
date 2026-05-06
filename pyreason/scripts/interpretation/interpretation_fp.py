@@ -548,7 +548,7 @@ class Interpretation:
 								should_apply_rule = True
 
 							if should_apply_rule:
-								bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
+								bnd = annotate(annotation_functions, rule, annotations, qualified_nodes, qualified_edges, clause_labels, clause_variables, rule.get_weights())
 								# If the rule head was negated AND an ann_fn produced the bound, invert it:
 								# ~[l,u] = [1-u, 1-l]. For non-ann_fn negation the parser already folded
 								# the inversion into target_bound, so we must NOT re-invert here.
@@ -590,7 +590,7 @@ class Interpretation:
 								should_apply_rule = True
 
 							if should_apply_rule:
-								bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
+								bnd = annotate(annotation_functions, rule, annotations, qualified_nodes, qualified_edges, clause_labels, clause_variables, rule.get_weights())
 								# If the rule head was negated AND an ann_fn produced the bound, invert it:
 								# ~[l,u] = [1-u, 1-l]. For non-ann_fn negation the parser already folded
 								# the inversion into target_bound, so we must NOT re-invert here.

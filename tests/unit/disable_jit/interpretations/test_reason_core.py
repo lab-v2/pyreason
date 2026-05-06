@@ -944,7 +944,7 @@ def test_reason_node_rule_delta_zero_traces_and_applies(monkeypatch, reason_env)
     def ground_rule_stub(*args, **kwargs):
         ground_calls["n"] += 1
         if ground_calls["n"] == 1:
-            return ([(new_node, [], ["qn"], ["qe"], None)], [])
+            return ([(new_node, [], ["qn"], ["qe"], None, [], [])], [])
         return ([], [])
 
     monkeypatch.setattr(interpretation, "_ground_rule", ground_rule_stub)
@@ -1029,7 +1029,7 @@ def test_reason_node_rule_skips_when_static(monkeypatch, reason_env):
     rule.get_annotation_function.return_value = ""
     rule.get_name.return_value = "r"
 
-    mock_ground = Mock(return_value=([(node, [], [], [], None)], []))
+    mock_ground = Mock(return_value=([(node, [], [], [], None, [], [])], []))
     monkeypatch.setattr(interpretation, "_ground_rule", mock_ground)
 
     rules_list = []
@@ -1064,7 +1064,7 @@ def test_reason_node_rule_resolves_inconsistency(monkeypatch, reason_env):
     rule.get_name.return_value = "r"
 
     monkeypatch.setattr(
-        interpretation, "_ground_rule", lambda *a, **k: ([(reason_env["node"], [], [], [], None)], [])
+        interpretation, "_ground_rule", lambda *a, **k: ([(reason_env["node"], [], [], [], None, [], [])], [])
     )
     monkeypatch.setattr(interpretation, "check_consistent_node", lambda *a, **k: False)
 
@@ -1163,7 +1163,7 @@ def test_reason_edge_rule_records_trace(monkeypatch, reason_env):
     rule.get_bnd.return_value = Mock(lower=0, upper=1)
 
     edge_placeholder = type("EL", (), {"value": ""})()
-    applicable = [(edge, [], [node], [edge], ([], [], edge_placeholder))]
+    applicable = [(edge, [], [node], [edge], ([], [], edge_placeholder), [], [])]
     monkeypatch.setattr(interpretation, "_ground_rule", lambda *a, **k: ([], applicable))
 
     def add_edge_to_interp(comp, interp_edge):
@@ -1217,7 +1217,7 @@ def test_reason_edge_rule_delta_zero_applies(monkeypatch, reason_env):
     rule.get_bnd.return_value = Mock(lower=0, upper=1)
 
     edge_placeholder = type("EL", (), {"value": ""})()
-    applicable = [(edge, [], [], [], ([], [], edge_placeholder))]
+    applicable = [(edge, [], [], [], ([], [], edge_placeholder), [], [])]
     monkeypatch.setattr(interpretation, "_ground_rule", lambda *a, **k: ([], applicable))
 
     def add_edge_to_interp(comp, interp_edge):

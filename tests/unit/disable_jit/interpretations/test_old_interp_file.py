@@ -379,7 +379,7 @@ def test_reason_applies_applicable_edge_rule_with_trace_and_delta_zero(monkeypat
     reason_env["rules"] = [rule1, rule2]
 
     edges_to_add = ([node], [other], edge_lbl)
-    applicable_edge_rule = (edge, [], [], [], edges_to_add)
+    applicable_edge_rule = (edge, [], [], [], edges_to_add, [], [])
     mock_ground = Mock(
         side_effect=[
             ([], [applicable_edge_rule]),

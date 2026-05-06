@@ -604,7 +604,7 @@ class AnnRule:
 def test_annotate_returns_bounds_when_no_function():
     bnd = _Interval(0.2, 0.3)
     rule = AnnRule("", bnd)
-    lo, up = annotate([], rule, [], [])
+    lo, up = annotate([], rule, [], [], [], [], [], [])
     assert (lo, up) == (0.2, 0.3)
 
 
@@ -615,7 +615,7 @@ def test_annotate_calls_named_function():
     def foo(ann, wts):
         return (len(ann), len(wts))
 
-    out = annotate([foo], rule, [1, 2], [3])
+    out = annotate([foo], rule, [1, 2], [], [], [], [], [3])
     assert out == (2, 1)
 
 
