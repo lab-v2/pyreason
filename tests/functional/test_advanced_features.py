@@ -135,6 +135,26 @@ def test_negated_annotation_function(mode):
 
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
+def test_negated_head_without_annotation_function(mode):
+    """Regression: negated head with no ann_fn must not be inverted at runtime.
+
+    The parser already folds negation into target_bound (e.g. ~pred(X) -> [0,0]).
+    `annotate()` for an empty ann_fn just returns that stored bound, so applying
+    the runtime inversion again would double-invert and produce [1,1]."""
+    setup_mode(mode)
+    pr.settings.allow_ground_rules = True
+
+    pr.add_fact(pr.Fact('body(A) : [1, 1]'))
+    pr.add_rule(pr.Rule('~pred(A) <- body(A)', 'neg_no_ann'))
+
+    interpretation = pr.reason(timesteps=1)
+
+    bnd = interpretation.query(pr.Query('pred(A) : [0, 1]'), return_bool=False)
+    assert bnd == (0.0, 0.0), f'Expected [0, 0] for ~pred(A), got {bnd}'
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_custom_thresholds(mode):
     """Test custom threshold functionality."""
     setup_mode(mode)
