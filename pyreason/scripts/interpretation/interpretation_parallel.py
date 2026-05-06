@@ -569,6 +569,11 @@ class Interpretation:
 								# If there is an edge to add or the predicate doesn't exist or the interpretation is not static
 								if rule.get_target() not in interpretations_node[n].world or not interpretations_node[n].world[rule.get_target()].is_static():
 									bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
+									# If the rule head was negated AND an ann_fn produced the bound, invert it:
+									# ~[l,u] = [1-u, 1-l]. For non-ann_fn negation the parser already folded
+									# the inversion into target_bound, so we must NOT re-invert here.
+									if rule.get_annotation_function() != '' and rule.is_head_negated():
+										bnd = (1 - bnd[1], 1 - bnd[0])
 									# Bound annotations in between 0 and 1
 									bnd_l = min(max(bnd[0], 0), 1)
 									bnd_u = min(max(bnd[1], 0), 1)
@@ -588,6 +593,11 @@ class Interpretation:
 								# If there is an edge to add or the predicate doesn't exist or the interpretation is not static
 								if len(edges_to_add[0]) > 0 or rule.get_target() not in interpretations_edge[e].world or not interpretations_edge[e].world[rule.get_target()].is_static():
 									bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
+									# If the rule head was negated AND an ann_fn produced the bound, invert it:
+									# ~[l,u] = [1-u, 1-l]. For non-ann_fn negation the parser already folded
+									# the inversion into target_bound, so we must NOT re-invert here.
+									if rule.get_annotation_function() != '' and rule.is_head_negated():
+										bnd = (1 - bnd[1], 1 - bnd[0])
 									# Bound annotations in between 0 and 1
 									bnd_l = min(max(bnd[0], 0), 1)
 									bnd_u = min(max(bnd[1], 0), 1)
