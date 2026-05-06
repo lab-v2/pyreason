@@ -1,2 +1,4 @@
 fact_text,name,start_time,end_time,static
 scholarship(math_dept),scholarship_math_dept,0,2,False
+"in_department(math,math_dept)",math_in_math_department,0,2,False
+"in_department(cs,cs_dept)",cs_in_cs_department,0,2,False
