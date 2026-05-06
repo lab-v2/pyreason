@@ -28,13 +28,16 @@ facts_to_be_applied_node_type = numba.types.Tuple((numba.types.uint16, node_type
 facts_to_be_applied_edge_type = numba.types.Tuple((numba.types.uint16, edge_type, label.label_type, interval.interval_type, numba.types.boolean, numba.types.boolean))
 
 # Type for returning list of applicable rules for a certain rule
-# node/edge, annotations, qualified nodes, qualified edges, edges to be added
+# node/edge, annotations, qualified nodes, qualified edges, edges to be added,
+# clause labels (per-clause predicate label), clause variables (per-clause variable names)
 node_applicable_rule_type = numba.types.Tuple((
 	node_type,
 	numba.types.ListType(numba.types.ListType(interval.interval_type)),
 	numba.types.ListType(numba.types.ListType(node_type)),
 	numba.types.ListType(numba.types.ListType(edge_type)),
-	numba.types.Tuple((numba.types.ListType(node_type), numba.types.ListType(node_type), label.label_type))
+	numba.types.Tuple((numba.types.ListType(node_type), numba.types.ListType(node_type), label.label_type)),
+	numba.types.ListType(label.label_type),
+	numba.types.ListType(numba.types.ListType(numba.types.string))
 ))
 
 edge_applicable_rule_type = numba.types.Tuple((
@@ -42,7 +45,9 @@ edge_applicable_rule_type = numba.types.Tuple((
 	numba.types.ListType(numba.types.ListType(interval.interval_type)),
 	numba.types.ListType(numba.types.ListType(node_type)),
 	numba.types.ListType(numba.types.ListType(edge_type)),
-	numba.types.Tuple((numba.types.ListType(node_type), numba.types.ListType(node_type), label.label_type))
+	numba.types.Tuple((numba.types.ListType(node_type), numba.types.ListType(node_type), label.label_type)),
+	numba.types.ListType(label.label_type),
+	numba.types.ListType(numba.types.ListType(numba.types.string))
 ))
 
 rules_to_be_applied_node_type = numba.types.Tuple((numba.types.uint16, node_type, label.label_type, interval.interval_type, numba.types.boolean))
@@ -565,10 +570,10 @@ class Interpretation:
 
 							# Loop through applicable rules and add them to the rules to be applied for later or next fp operation
 							for applicable_rule in applicable_node_rules:
-								n, annotations, qualified_nodes, qualified_edges, _ = applicable_rule
+								n, annotations, qualified_nodes, qualified_edges, _, clause_labels, clause_variables = applicable_rule
 								# If there is an edge to add or the predicate doesn't exist or the interpretation is not static
 								if rule.get_target() not in interpretations_node[n].world or not interpretations_node[n].world[rule.get_target()].is_static():
-									bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
+									bnd = annotate(annotation_functions, rule, annotations, qualified_nodes, qualified_edges, clause_labels, clause_variables, rule.get_weights())
 									# Bound annotations in between 0 and 1
 									bnd_l = min(max(bnd[0], 0), 1)
 									bnd_u = min(max(bnd[1], 0), 1)
@@ -584,10 +589,10 @@ class Interpretation:
 										update_threadsafe[i] = False
 
 							for applicable_rule in applicable_edge_rules:
-								e, annotations, qualified_nodes, qualified_edges, edges_to_add = applicable_rule
+								e, annotations, qualified_nodes, qualified_edges, edges_to_add, clause_labels, clause_variables = applicable_rule
 								# If there is an edge to add or the predicate doesn't exist or the interpretation is not static
 								if len(edges_to_add[0]) > 0 or rule.get_target() not in interpretations_edge[e].world or not interpretations_edge[e].world[rule.get_target()].is_static():
-									bnd = annotate(annotation_functions, rule, annotations, rule.get_weights())
+									bnd = annotate(annotation_functions, rule, annotations, qualified_nodes, qualified_edges, clause_labels, clause_variables, rule.get_weights())
 									# Bound annotations in between 0 and 1
 									bnd_l = min(max(bnd[0], 0), 1)
 									bnd_u = min(max(bnd[1], 0), 1)
@@ -953,6 +958,8 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 				qualified_nodes = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
 				qualified_edges = numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type))
 				annotations = numba.typed.List.empty_list(numba.typed.List.empty_list(interval.interval_type))
+				clause_labels_out = numba.typed.List.empty_list(label.label_type)
+				clause_variables_out = numba.typed.List.empty_list(numba.typed.List.empty_list(numba.types.string))
 				edges_to_be_added = (numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(node_type), rule_edges[-1])
 
 				# Check for satisfaction one more time in case the refining process has changed the groundings
@@ -970,12 +977,14 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 						clause_var_1 = clause_variables[0]
 
 						# 1.
-						if atom_trace:
+						if atom_trace or ann_fn != '':
 							if clause_var_1 == head_var_1:
 								qualified_nodes.append(numba.typed.List([head_grounding]))
 							else:
 								qualified_nodes.append(numba.typed.List(groundings[clause_var_1]))
 							qualified_edges.append(numba.typed.List.empty_list(edge_type))
+							clause_labels_out.append(clause_label)
+							clause_variables_out.append(numba.typed.List(clause_variables))
 						# 2.
 						if ann_fn != '':
 							a = numba.typed.List.empty_list(interval.interval_type)
@@ -989,7 +998,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 					elif clause_type == 'edge':
 						clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
 						# 1.
-						if atom_trace:
+						if atom_trace or ann_fn != '':
 							# Cases: Both equal, one equal, none equal
 							qualified_nodes.append(numba.typed.List.empty_list(node_type))
 							if clause_var_1 == head_var_1:
@@ -1000,6 +1009,8 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 								qualified_edges.append(es)
 							else:
 								qualified_edges.append(numba.typed.List(groundings_edges[(clause_var_1, clause_var_2)]))
+							clause_labels_out.append(clause_label)
+							clause_variables_out.append(numba.typed.List(clause_variables))
 						# 2.
 						if ann_fn != '':
 							a = numba.typed.List.empty_list(interval.interval_type)
@@ -1024,7 +1035,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 					_add_node(head_var_1, neighbors, reverse_neighbors, nodes, interpretations_node)
 
 				# For each grounding add a rule to be applied
-				applicable_rules_node.append((head_grounding, annotations, qualified_nodes, qualified_edges, edges_to_be_added))
+				applicable_rules_node.append((head_grounding, annotations, qualified_nodes, qualified_edges, edges_to_be_added, clause_labels_out, clause_variables_out))
 
 		elif rule_type == 'edge':
 			head_var_1 = head_variables[0]
@@ -1085,6 +1096,8 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 				qualified_nodes = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
 				qualified_edges = numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type))
 				annotations = numba.typed.List.empty_list(numba.typed.List.empty_list(interval.interval_type))
+				clause_labels_out = numba.typed.List.empty_list(label.label_type)
+				clause_variables_out = numba.typed.List.empty_list(numba.typed.List.empty_list(numba.types.string))
 				edges_to_be_added = (numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(node_type), rule_edges[-1])
 
 				# Containers to keep track of groundings to make sure that the edge pair is valid
@@ -1134,7 +1147,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 					if clause_type == 'node':
 						clause_var_1 = clause_variables[0]
 						# 1.
-						if atom_trace:
+						if atom_trace or ann_fn != '':
 							if clause_var_1 == head_var_1:
 								qualified_nodes.append(numba.typed.List([head_var_1_grounding]))
 							elif clause_var_1 == head_var_2:
@@ -1142,6 +1155,8 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 							else:
 								qualified_nodes.append(numba.typed.List(temp_groundings[clause_var_1]))
 							qualified_edges.append(numba.typed.List.empty_list(edge_type))
+							clause_labels_out.append(clause_label)
+							clause_variables_out.append(numba.typed.List(clause_variables))
 						# 2.
 						if ann_fn != '':
 							a = numba.typed.List.empty_list(interval.interval_type)
@@ -1157,7 +1172,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 					elif clause_type == 'edge':
 						clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
 						# 1.
-						if atom_trace:
+						if atom_trace or ann_fn != '':
 							# Cases:
 							# 1. Both equal (cv1 = hv1 and cv2 = hv2 or cv1 = hv2 and cv2 = hv1)
 							# 2. One equal (cv1 = hv1 or cv2 = hv1 or cv1 = hv2 or cv2 = hv2)
@@ -1183,6 +1198,8 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 								qualified_edges.append(es)
 							else:
 								qualified_edges.append(numba.typed.List(temp_groundings_edges[(clause_var_1, clause_var_2)]))
+							clause_labels_out.append(clause_label)
+							clause_variables_out.append(numba.typed.List(clause_variables))
 
 						# 2.
 						if ann_fn != '':
@@ -1228,7 +1245,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 				# Only if all the clauses have valid groundings
 				# if satisfaction:
 				e = (head_var_1_grounding, head_var_2_grounding)
-				applicable_rules_edge.append((e, annotations, qualified_nodes, qualified_edges, edges_to_be_added))
+				applicable_rules_edge.append((e, annotations, qualified_nodes, qualified_edges, edges_to_be_added, clause_labels_out, clause_variables_out))
 
 	# Return the applicable rules
 	return applicable_rules_node, applicable_rules_edge
@@ -1819,7 +1836,7 @@ def is_satisfied_edge_comparison(interpretations, comp, na):
 
 
 @numba.njit(cache=True)
-def annotate(annotation_functions, rule, annotations, weights):
+def annotate(annotation_functions, rule, annotations, qualified_nodes, qualified_edges, clause_labels, clause_variables, weights):
 	func_name = rule.get_annotation_function()
 	if func_name == '':
 		return rule.get_bnd().lower, rule.get_bnd().upper
@@ -1827,7 +1844,19 @@ def annotate(annotation_functions, rule, annotations, weights):
 		with numba.objmode(annotation='Tuple((float64, float64))'):
 			for func in annotation_functions:
 				if func.__name__ == func_name:
-					annotation = func(annotations, weights)
+					# Back-compat: dispatch on arity.
+					#   2 args: legacy (annotations, weights)
+					#   6 args: + (qualified_nodes, qualified_edges, clause_labels,
+					#              clause_variables) so user code can recover the
+					#              per-grounding join and identify clauses by
+					#              predicate name / variable bindings instead of
+					#              relying on body order
+					py_func = getattr(func, 'py_func', func)
+					nargs = py_func.__code__.co_argcount
+					if nargs >= 6:
+						annotation = func(annotations, weights, qualified_nodes, qualified_edges, clause_labels, clause_variables)
+					else:
+						annotation = func(annotations, weights)
 		return annotation
 
 

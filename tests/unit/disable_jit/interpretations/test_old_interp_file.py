@@ -235,7 +235,7 @@ def test_reason_applies_applicable_node_rule_with_trace_and_delta_zero(monkeypat
     rule = Rule()
     reason_env["rules"] = [rule]
 
-    applicable_rule = (reason_env["node"], [], [], [], None)
+    applicable_rule = (reason_env["node"], [], [], [], None, [], [])
     mock_ground = Mock(side_effect=[([applicable_rule], []), ([], [])])
     monkeypatch.setattr(interpretation, "_ground_rule", mock_ground)
     monkeypatch.setattr(interpretation, "annotate", Mock(return_value=(0.0, 1.0)))
@@ -285,7 +285,7 @@ def test_reason_skips_static_node_rule(monkeypatch, reason_env):
             return ()
 
     reason_env["rules"] = [Rule()]
-    applicable_rule = (reason_env["node"], [], [], [], None)
+    applicable_rule = (reason_env["node"], [], [], [], None, [], [])
     monkeypatch.setattr(interpretation, "_ground_rule", Mock(return_value=([applicable_rule], [])))
     mock_annotate = Mock(return_value=(0.0, 1.0))
     monkeypatch.setattr(interpretation, "annotate", mock_annotate)
