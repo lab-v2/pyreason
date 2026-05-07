@@ -149,7 +149,7 @@ class TestReasoningFunction:
         pr.add_rule(Rule("friend(A, B) <- person(A), person(B)", "test_rule", False))
 
         # Add some facts first to create existing specific labels
-        pr.add_fact(Fact('person("C")', 'person_c', 0, 1))
+        pr.add_fact(Fact('person(C)', 'person_c', 0, 1))
 
         interpretation = pr.reason(timesteps=1)
         assert interpretation is not None
@@ -292,7 +292,7 @@ class TestReasoningFunction:
         pr.add_rule(Rule("friend(A, B) <- connected(A, B)", "test_rule", False))
 
         # Add some facts
-        pr.add_fact(Fact('person("A")', 'person_a', 0, 1))
+        pr.add_fact(Fact('person(A)', 'person_a', 0, 1))
 
         interpretation = pr.reason(timesteps=1)
         assert interpretation is not None
@@ -352,7 +352,7 @@ class TestReasonAgainFunction:
         assert interpretation1 is not None
 
         # Add new facts and reason again
-        pr.add_fact(Fact('person("A")', 'person_a', 0, 1))
+        pr.add_fact(Fact('person(A)', 'person_a', 0, 1))
         interpretation2 = pr.reason(timesteps=1)
         assert interpretation2 is not None
 
@@ -657,7 +657,7 @@ class TestFilterAndSortFunctions:
         # Add multiple rules
         pr.add_rule(Rule("friend(A, B) <- connected(A, B)", "rule1", False))
         pr.add_rule(Rule("close_friend(A, B) <- friend(A, B)", "rule2", False))
-        pr.add_fact(Fact('person("A")', 'fact1', 0, 2))
+        pr.add_fact(Fact('person(A)', 'fact1', 0, 2))
 
         pr.settings.store_interpretation_changes = True
         interpretation = pr.reason(timesteps=3)
@@ -736,7 +736,7 @@ class TestReasonFunctionBranches:
         assert interpretation1 is not None
 
         # Add facts for reason_again to work with
-        pr.add_fact(Fact('person("A")', 'person_a', 0, 1))
+        pr.add_fact(Fact('person(A)', 'person_a', 0, 1))
 
         # Enable memory profiling
         pr.settings.memory_profile = True
@@ -776,7 +776,7 @@ class TestReasonFunctionBranches:
         assert interpretation1 is not None
 
         # Add facts for reason_again to work with
-        pr.add_fact(Fact('person("A")', 'person_a', 0, 1))
+        pr.add_fact(Fact('person(A)', 'person_a', 0, 1))
 
         # Ensure memory profiling is disabled
         pr.settings.memory_profile = False
@@ -798,14 +798,14 @@ class TestReasonFunctionBranches:
         assert interpretation1 is not None
 
         # Add facts for reason_again calls
-        pr.add_fact(Fact('person("A")', 'person_a', 0, 1))
+        pr.add_fact(Fact('person(A)', 'person_a', 0, 1))
 
         # Test again=True with restart=True (should use _reason_again)
         interpretation2 = pr.reason(timesteps=1, again=True, restart=True)
         assert interpretation2 is not None
 
         # Add more facts for next call
-        pr.add_fact(Fact('person("B")', 'person_b', 0, 1))
+        pr.add_fact(Fact('person(B)', 'person_b', 0, 1))
 
         # Test again=True with restart=False (should use _reason_again)
         interpretation3 = pr.reason(timesteps=1, again=True, restart=False)
@@ -841,7 +841,7 @@ class TestReasonFunctionBranches:
         assert interpretation1 is not None
 
         # Add some facts to test the fact extension logic in _reason_again
-        pr.add_fact(Fact('person("A")', 'person_a', 0, 1))
+        pr.add_fact(Fact('person(A)', 'person_a', 0, 1))
 
         # This should exercise the fact extension branches in _reason_again
         interpretation2 = pr.reason(timesteps=2, again=True, restart=True)
@@ -859,7 +859,7 @@ class TestReasonFunctionBranches:
         assert interpretation1 is not None
 
         # Add facts for reason_again
-        pr.add_fact(Fact('person("A")', 'person_a', 0, 1))
+        pr.add_fact(Fact('person(A)', 'person_a', 0, 1))
 
         # Enable verbose mode
         pr.settings.verbose = True
@@ -899,7 +899,7 @@ class TestReasonFunctionBranches:
             pr.settings.memory_profile = False
 
         # Add facts for again=True tests
-        pr.add_fact(Fact('person("A")', 'person_a', 0, 1))
+        pr.add_fact(Fact('person(A)', 'person_a', 0, 1))
 
         # Test case 3: again=True, memory_profile=False
         pr.settings.memory_profile = False
@@ -907,7 +907,7 @@ class TestReasonFunctionBranches:
         assert interpretation3 is not None
 
         # Add more facts for next test
-        pr.add_fact(Fact('person("B")', 'person_b', 0, 1))
+        pr.add_fact(Fact('person(B)', 'person_b', 0, 1))
 
         # Test case 4: again=True, memory_profile=True
         pr.settings.memory_profile = True
@@ -933,7 +933,7 @@ class TestReasonFunctionBranches:
         assert interpretation1 is not None
 
         # Add facts for reason_again
-        pr.add_fact(Fact('person("A")', 'person_a', 0, 1))
+        pr.add_fact(Fact('person(A)', 'person_a', 0, 1))
 
         # Now the assert in _reason_again should pass
         interpretation2 = pr.reason(timesteps=1, again=True)

@@ -17,4 +17,6 @@ Contents
    ./infer_edges.rst
    ./annotation_function.rst
    ./image_classifier_reasoning.rst
+   ./cybersecurity_inconsistency.rst
+
    

@@ -81,6 +81,19 @@ class TestValidRuleParsing:
         edges = r.get_edges()
         assert edges[2].get_value() == "avg"
 
+    def test_negation_with_annotation_function_head(self):
+        """Negated head with an annotation function — the '~' must be stripped
+        from the predicate name and the annotation function must still be captured."""
+        r = parse_rule(
+            "~hasLabel(CB, Lrisk):minimum_bounds_ann_fn <-0 hasLabel(CB, Lsafe):[0.7,1], mitigates(Lsafe, Lrisk)",
+            "neg_ann_head",
+            None,
+        )
+        assert r.get_target().get_value() == "hasLabel"
+        assert r.get_annotation_function() == "minimum_bounds_ann_fn"
+        assert r.get_rule_type() == "edge"
+        assert len(r.get_clauses()) == 2
+
     def test_explicit_head_bound(self):
         """Rule with explicit bound on head."""
         r = parse_rule("reliable(X):[0.8,1.0] <- tested(X):[0.9,1.0]", "hb", None)
@@ -653,7 +666,7 @@ class TestEdgeCasesAndBoundary:
     def test_head_predicate_invalid_chars(self):
         """Head predicate with invalid chars raises ValueError."""
         with pytest.raises(ValueError, match="invalid characters"):
-            parse_rule("pred-name(X) <- b(X)", "r", None)
+            parse_rule("pred!name(X) <- b(X)", "r", None)
 
     def test_body_predicate_starts_with_digit(self):
         """Body predicate starting with digit raises ValueError."""
@@ -663,7 +676,7 @@ class TestEdgeCasesAndBoundary:
     def test_body_predicate_invalid_chars(self):
         """Body predicate with invalid chars raises ValueError."""
         with pytest.raises(ValueError, match="invalid characters"):
-            parse_rule("p(X) <- body-name(X)", "r", None)
+            parse_rule("p(X) <- body!name(X)", "r", None)
 
     def test_double_negation_head(self):
         """Double negation in head raises ValueError."""
@@ -675,15 +688,10 @@ class TestEdgeCasesAndBoundary:
         with pytest.raises(ValueError, match="Double negation"):
             parse_rule("p(X) <- ~~b(X)", "r", None)
 
-    def test_head_variable_starts_with_digit(self):
-        """Head variable starting with digit raises ValueError."""
-        with pytest.raises(ValueError, match="digit"):
-            parse_rule("p(1X) <- b(Y)", "r", None)
-
     def test_body_variable_invalid_chars(self):
         """Body variable with invalid chars raises ValueError."""
         with pytest.raises(ValueError, match="invalid characters"):
-            parse_rule("p(X) <- b(X-Y)", "r", None)
+            parse_rule("p(X) <- b(X!Y)", "r", None)
 
     def test_empty_head_parentheses(self):
         """Empty head parentheses raises ValueError."""

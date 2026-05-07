@@ -109,6 +109,52 @@ def test_annotation_function(mode):
 
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
+def test_negated_annotation_function(mode):
+    """Negated head with an annotation function: the ann_fn output [l,u] must be
+    inverted to [1-u, 1-l] before being stored on the head atom."""
+    setup_mode(mode)
+
+    pr.settings.allow_ground_rules = True
+
+    pr.add_fact(pr.Fact('P(A) : [0.01, 1]'))
+    pr.add_fact(pr.Fact('P(B) : [0.2, 1]'))
+    pr.add_annotation_function(probability_func)
+    # probability_func returns (0.21, 1); negation should invert to [0, 0.79].
+    pr.add_rule(pr.Rule('~union_probability(A, B):probability_func <- P(A):[0, 1], P(B):[0, 1]', infer_edges=True))
+
+    interpretation = pr.reason(timesteps=1)
+
+    dataframes = pr.filter_and_sort_edges(interpretation, ['union_probability'])
+    for t, df in enumerate(dataframes):
+        print(f'TIMESTEP - {t}')
+        print(df)
+        print()
+
+    assert interpretation.query(pr.Query('union_probability(A, B) : [0, 0.79]')), 'Negated union probability should be [0, 0.79]'
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
+def test_negated_head_without_annotation_function(mode):
+    """Regression: negated head with no ann_fn must not be inverted at runtime.
+
+    The parser already folds negation into target_bound (e.g. ~pred(X) -> [0,0]).
+    `annotate()` for an empty ann_fn just returns that stored bound, so applying
+    the runtime inversion again would double-invert and produce [1,1]."""
+    setup_mode(mode)
+    pr.settings.allow_ground_rules = True
+
+    pr.add_fact(pr.Fact('body(A) : [1, 1]'))
+    pr.add_rule(pr.Rule('~pred(A) <- body(A)', 'neg_no_ann'))
+
+    interpretation = pr.reason(timesteps=1)
+
+    bnd = interpretation.query(pr.Query('pred(A) : [0, 1]'), return_bool=False)
+    assert bnd == (0.0, 0.0), f'Expected [0, 0] for ~pred(A), got {bnd}'
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_custom_thresholds(mode):
     """Test custom threshold functionality."""
     setup_mode(mode)
