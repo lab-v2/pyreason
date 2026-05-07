@@ -17,5 +17,5 @@ Contents
    ./infer_edges.rst
    ./annotation_function.rst
    ./cybersecurity_inconsistency.rst
-
+   ./counterfactual_tutorial.rst
    
