@@ -31,8 +31,7 @@ They are connected by two predicates: ``major_in`` and ``in_department``.
 
 The Prompt
 ----------
-Instead of asking the LLM to generate arbitrary rules, the prompt describes 
-a specific reasoning goal: deriving which department a student belongs to.
+The prompt describes a specific reasoning goal: deriving which department a student belongs to.
 The head predicate name is fixed to ensure consistent, comparable output across LLMs.
 
 .. code:: python
