@@ -3,6 +3,7 @@ Image Classifier to PyReason Tutorial
 
 This tutorial shows how to use an image classifier as input to PyReason,
 then reason over those predictions using logical rules.
+To learn more about the LLM used for this tutorial go to: https://huggingface.co/google/vit-base-patch16-224
 
 We will walk through four steps:
 
@@ -157,7 +158,7 @@ is gets a tight bound ``[1.0, 1.0]``. The other labels still print, but with
 ``[0.0, 1.0]``. That is the model not picking that class for this image. It is
 not the same as ``[0.0, 0.0]`` on both ends.
 
-Fish images
+Fish image trace
 ^^^^^^^^^^^
 
 .. code:: text
@@ -174,136 +175,6 @@ Fish images
    baldeagle(fish_1) : [0.0,1.0] | start: 0 -> end: 0
    greatwhiteshark(fish_1) : [0.0,1.0] | start: 0 -> end: 0
    Done processing image  fish_1.jpeg
-
-.. code:: text
-
-   Processing Image: fish_2.jpeg
-   === Fish Classifier Output ===
-
-   Generated Classifier Facts:
-   goldfish(fish_2) : [1.0,1.0] | start: 0 -> end: 0
-   tench(fish_2) : [0.0,1.0] | start: 0 -> end: 0
-   tigershark(fish_2) : [0.0,1.0] | start: 0 -> end: 0
-   hammerhead(fish_2) : [0.0,1.0] | start: 0 -> end: 0
-   greatwhiteshark(fish_2) : [0.0,1.0] | start: 0 -> end: 0
-   baldeagle(fish_2) : [0.0,1.0] | start: 0 -> end: 0
-   flamingo(fish_2) : [0.0,1.0] | start: 0 -> end: 0
-   Done processing image  fish_2.jpeg
-
-Shark images
-^^^^^^^^^^^^
-
-.. code:: text
-
-   Processing Image: shark_1.jpeg
-   === Fish Classifier Output ===
-
-   Generated Classifier Facts:
-   tigershark(shark_1) : [1.0,1.0] | start: 0 -> end: 0
-   greatwhiteshark(shark_1) : [0.0,1.0] | start: 0 -> end: 0
-   hammerhead(shark_1) : [0.0,1.0] | start: 0 -> end: 0
-   tench(shark_1) : [0.0,1.0] | start: 0 -> end: 0
-   goldfish(shark_1) : [0.0,1.0] | start: 0 -> end: 0
-   flamingo(shark_1) : [0.0,1.0] | start: 0 -> end: 0
-   baldeagle(shark_1) : [0.0,1.0] | start: 0 -> end: 0
-   Done processing image  shark_1.jpeg
-
-.. code:: text
-
-   Processing Image: shark_2.jpeg
-   === Fish Classifier Output ===
-
-   Generated Classifier Facts:
-   tigershark(shark_2) : [1.0,1.0] | start: 0 -> end: 0
-   greatwhiteshark(shark_2) : [0.0,1.0] | start: 0 -> end: 0
-   hammerhead(shark_2) : [0.0,1.0] | start: 0 -> end: 0
-   tench(shark_2) : [0.0,1.0] | start: 0 -> end: 0
-   goldfish(shark_2) : [0.0,1.0] | start: 0 -> end: 0
-   flamingo(shark_2) : [0.0,1.0] | start: 0 -> end: 0
-   baldeagle(shark_2) : [0.0,1.0] | start: 0 -> end: 0
-   Done processing image  shark_2.jpeg
-
-.. code:: text
-
-   Processing Image: shark_3.jpeg
-   === Fish Classifier Output ===
-
-   Generated Classifier Facts:
-   hammerhead(shark_3) : [1.0,1.0] | start: 0 -> end: 0
-   tigershark(shark_3) : [0.0,1.0] | start: 0 -> end: 0
-   greatwhiteshark(shark_3) : [0.0,1.0] | start: 0 -> end: 0
-   goldfish(shark_3) : [0.0,1.0] | start: 0 -> end: 0
-   tench(shark_3) : [0.0,1.0] | start: 0 -> end: 0
-   flamingo(shark_3) : [0.0,1.0] | start: 0 -> end: 0
-   baldeagle(shark_3) : [0.0,1.0] | start: 0 -> end: 0
-   Done processing image  shark_3.jpeg
-
-Flamingo images
-^^^^^^^^^^^^^^^
-
-.. code:: text
-
-   Processing Image: Flamingo_1.jpeg
-   === Fish Classifier Output ===
-
-   Generated Classifier Facts:
-   flamingo(Flamingo_1) : [1.0,1.0] | start: 0 -> end: 0
-   goldfish(Flamingo_1) : [0.0,1.0] | start: 0 -> end: 0
-   tench(Flamingo_1) : [0.0,1.0] | start: 0 -> end: 0
-   baldeagle(Flamingo_1) : [0.0,1.0] | start: 0 -> end: 0
-   tigershark(Flamingo_1) : [0.0,1.0] | start: 0 -> end: 0
-   hammerhead(Flamingo_1) : [0.0,1.0] | start: 0 -> end: 0
-   greatwhiteshark(Flamingo_1) : [0.0,1.0] | start: 0 -> end: 0
-   Done processing image  Flamingo_1.jpeg
-
-.. code:: text
-
-   Processing Image: Flamingo_2.jpeg
-   === Fish Classifier Output ===
-
-   Generated Classifier Facts:
-   flamingo(Flamingo_2) : [1.0,1.0] | start: 0 -> end: 0
-   goldfish(Flamingo_2) : [0.0,1.0] | start: 0 -> end: 0
-   tench(Flamingo_2) : [0.0,1.0] | start: 0 -> end: 0
-   tigershark(Flamingo_2) : [0.0,1.0] | start: 0 -> end: 0
-   greatwhiteshark(Flamingo_2) : [0.0,1.0] | start: 0 -> end: 0
-   hammerhead(Flamingo_2) : [0.0,1.0] | start: 0 -> end: 0
-   baldeagle(Flamingo_2) : [0.0,1.0] | start: 0 -> end: 0
-   Done processing image  Flamingo_2.jpeg
-
-Eagle images
-^^^^^^^^^^^^
-
-.. code:: text
-
-   Processing Image: eagle_2.jpeg
-   === Fish Classifier Output ===
-
-   Generated Classifier Facts:
-   baldeagle(eagle_2) : [1.0,1.0] | start: 0 -> end: 0
-   tench(eagle_2) : [0.0,1.0] | start: 0 -> end: 0
-   hammerhead(eagle_2) : [0.0,1.0] | start: 0 -> end: 0
-   goldfish(eagle_2) : [0.0,1.0] | start: 0 -> end: 0
-   flamingo(eagle_2) : [0.0,1.0] | start: 0 -> end: 0
-   greatwhiteshark(eagle_2) : [0.0,1.0] | start: 0 -> end: 0
-   tigershark(eagle_2) : [0.0,1.0] | start: 0 -> end: 0
-   Done processing image  eagle_2.jpeg
-
-.. code:: text
-
-   Processing Image: eagle_1.jpeg
-   === Fish Classifier Output ===
-
-   Generated Classifier Facts:
-   baldeagle(eagle_1) : [1.0,1.0] | start: 0 -> end: 0
-   tench(eagle_1) : [0.0,1.0] | start: 0 -> end: 0
-   goldfish(eagle_1) : [0.0,1.0] | start: 0 -> end: 0
-   flamingo(eagle_1) : [0.0,1.0] | start: 0 -> end: 0
-   tigershark(eagle_1) : [0.0,1.0] | start: 0 -> end: 0
-   hammerhead(eagle_1) : [0.0,1.0] | start: 0 -> end: 0
-   greatwhiteshark(eagle_1) : [0.0,1.0] | start: 0 -> end: 0
-   Done processing image  eagle_1.jpeg
-
 
 After classification: what PyReason does next
 --------------------------------------------
@@ -338,35 +209,18 @@ Full node and edge traces for this example are saved under
 Sample end of run
 ^^^^^^^^^^^^^^^^^
 
-.. code:: text
+.. image:: image_classifier_Output_fish1.png
 
-   Filtering rules based on queries
-   Timestep: 0
-
-   Converged at time: 0
-   Fixed Point iterations: 3
-   NODE RULE TRACE:
-
-   ...
-   EDGE RULE TRACE:
-
-   ...
+.. image:: image_classifier_Output_Table.png
 
 
 Common Pitfalls
 ---------------
 
-1. Running with ``python3 examples/image_classifier_ex.py`` may fail in some
-   environments due to module resolution. From repo root, use:
-
-   .. code:: bash
-
-      PYTHONPATH=. python3 examples/image_classifier_ex.py
-
-2. If you see many ``[0.0,1.0]`` facts and very few ``[1.0,1.0]`` facts,
+1. If you see many ``[0.0,1.0]`` facts and very few ``[1.0,1.0]`` facts,
    your image may not match the selected allowed labels well.
 
-3. If a class never appears, confirm:
+2. If a class never appears, confirm:
 
    - the class exists in ``model.config.id2label``
    - the class spelling in ``allowed_labels`` matches model labels
