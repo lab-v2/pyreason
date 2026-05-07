@@ -7,7 +7,6 @@ Pipeline:
     Step 1: Extract facts and rules in plain English
     Step 2: Convert English facts/rules into PyReason syntax
     Step 3: Validate the rules with PyReason
-    Step 4: Run PyReason infernce using the new rules, return derived English conclusion
 
 How to set up: 
     1. Install Ollama
@@ -19,12 +18,23 @@ import ollama
 import pyreason as pr
 import re
 
-# Paragraph (test)
+# Paragraph
 
-paragraph = "John and Mary are both students. " \
-"All students who study regularly tend to perform well academically. " \
-"Mary studies regularly. Anyone who performs well academically is likely to graduate. " \
-"John does not study regularly." 
+# TEST paragraph
+# paragraph = "John and Mary are both students. " \
+# "All students who study regularly tend to perform well academically. " \
+# "Mary studies regularly. Anyone who performs well academically is likely to graduate. " \
+# "John does not study regularly." 
+
+print("Enter your paragraph (press Enter twice when done):")
+lines = []
+while True:
+    line = input()
+    if line == "" and lines:
+        break
+    lines.append(line)
+paragraph = " ".join(lines).strip()
+
 
 # Step 1: Extract facts and rules in English 
 # Ask LLM to read the paragraph and separate facts from rules in plain English
@@ -120,4 +130,3 @@ for rule in rules:
         print(f"Rule passed {rule}")
     except Exception as e:
         print(f"ERROR {rule}\n{e}")
-
