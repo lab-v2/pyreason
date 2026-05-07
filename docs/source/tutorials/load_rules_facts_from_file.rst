@@ -12,7 +12,7 @@ from CSV or JSON files: ``add_fact_from_csv``, ``add_fact_from_json``,
 ``add_rule_from_csv``, and ``add_rule_from_json``.
 
 .. note:: 
-   Find the full, executable code `here <https://github.com/lab-v2/pyreason/blob/main/examples/load_rules_facts_from_file_ex.py>`_
+   Find the full, executable code `here <https://github.com/lab-v2/pyreason/blob/main/examples/load_rules_facts_from_file/load_rules_facts_from_file_ex.py>`_
 
 Graph
 ----------------------
@@ -21,28 +21,21 @@ and Mary are students — Alice and Bob enroll in the math major, while Mary
 enrolls in CS. Each major belongs to a department: math belongs to the math 
 department, and CS belongs to the CS department.
 
+The enrollment relationships are defined as graph edges. The ``in_department``
+and ``scholarship`` relationships are loaded from external files as facts instead.
+
 .. code:: python
 
     import networkx as nx
 
-    # A simple student/major/department knowledge graph
-
     g = nx.DiGraph()
-    student_names = ['alice', 'bob', 'mary']
-    g.add_nodes_from(student_names)
-
-    majors = ['math', 'cs']
-    g.add_nodes_from(majors)
-
-    departments = ['math_dept', 'cs_dept']
-    g.add_nodes_from(departments)
+    g.add_nodes_from(['alice', 'bob', 'mary'])  # students
+    g.add_nodes_from(['math', 'cs'])            # majors
+    g.add_nodes_from(['math_dept', 'cs_dept'])  # departments
 
     g.add_edge('alice', 'math', enroll=1)
     g.add_edge('bob', 'math', enroll=1)
     g.add_edge('mary', 'cs', enroll=1)
-
-    g.add_edge('math', 'math_dept', in_department=1)
-    g.add_edge('cs', 'cs_dept', in_department=1)
 
 
 Load Rules from CSV 
@@ -54,6 +47,7 @@ Rules can be loaded from a CSV file. Each row has four columns:
 
     rule_text,name,infer_edges,set_static
     "under_department(X,Y) <-0 enroll(X,Z), in_department(Z,Y)",under_department_rule,true,false
+    "eligible(X) <-1 under_department(X,Y), scholarship(Y)",eligible_scholarship_rule,false,false
 
 Note: when the rule text contains a comma, wrap the whole field in quotes.
 
@@ -100,6 +94,10 @@ Facts can be loaded from a CSV file. Each row should have up to 5 comma-separate
 
     fact_text,name,start_time,end_time,static
     scholarship(math_dept),scholarship_math_dept,0,2,False
+    "in_department(math,math_dept)",math_in_math_department,0,2,False
+    "in_department(cs,cs_dept)",cs_in_cs_department,0,2,False
+    
+Note: when the fact text contains a comma, wrap the whole field in quotes.
 
 Then load the file using:
 
@@ -118,6 +116,22 @@ Example:
         {
             "fact_text": "scholarship(math_dept)",
             "name": "scholarship_math_dept",
+            "start_time": 0,
+            "end_time": 2,
+            "static": false
+        },
+
+        {
+            "fact_text": "in_department(math,math_dept)",
+            "name": "math_in_math_department",
+            "start_time": 0,
+            "end_time": 2,
+            "static": false
+        },
+
+        {
+            "fact_text": "in_department(cs,cs_dept)",
+            "name": "cs_in_cs_department",
             "start_time": 0,
             "end_time": 2,
             "static": false
@@ -174,7 +188,5 @@ because ``cs_dept`` has no scholarship fact.
 Further Details
 ---------------
 
-For a complete description of parameters and advanced features (such as 
-``custom_thresholds``, ``weights``, error handling with ``raise_errors``), 
-see the full API reference in `pyreason.py 
+For a complete description of parameters and advanced features, see the full API reference in `pyreason.py 
 <https://github.com/lab-v2/pyreason/blob/main/pyreason/pyreason.py#L868>`_.
