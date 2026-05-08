@@ -5,210 +5,295 @@ Counterfactual Reasoning
 
    Find the full, executable code `here <https://github.com/lab-v2/pyreason/blob/main/examples/counterfactual_tutorial_ex.py>`_
 
-This tutorial extends the cybersecurity inconsistency tutorial by adding
-*counterfactual reasoning* on top of PyReason's annotated logic engine.
-Where the inconsistency tutorial asked "do these facts conflict?", the
-counterfactual tutorial asks "what would the inferred world look like if
-this fact were not true (or were different)?"
+This tutorial extends the cybersecurity inconsistency tutorial. The
+inconsistency tutorial asked: *"do these facts conflict?"* This
+tutorial asks the opposite question: *"if I changed something, would
+the conclusions still hold?"* That is what a counterfactual is -- a
+"what if" question answered by re-running reasoning on a modified
+input.
 
-PyReason does not provide a built-in counterfactual operator. Instead we
-implement counterfactuals as a meta-procedure: run reasoning on the
-baseline graph, run again on a perturbed copy, then diff the two
-interpretations. The diff identifies which downstream conclusions
-causally depended on the perturbation.
+PyReason has no built-in counterfactual operator. We implement them
+manually: run reasoning on the original graph, run again on a modified
+copy, and compare the two final states. The differences tell us which
+conclusions depended on the change.
 
 .. note::
 
    This tutorial reuses the cybersecurity knowledge graph from the
-   *Cybersecurity Inconsistency* tutorial and assumes familiarity with
-   that material.
+   *Cybersecurity Inconsistency* tutorial. Familiarity with that tutorial
+   is assumed.
 
-Background
-----------
+What a Grounding Is
+-------------------
 
-A **counterfactual** in logic answers a "what if" question by re-running
-inference under a hypothetically modified set of premises. Counterfactual
-reasoning is widely used in:
+Before the demos: a brief note on terminology, since the rest of the
+tutorial leans on this concept.
 
-- **Causal attribution** -- isolating which inputs are load-bearing for a
-  given conclusion.
-- **Inconsistency diagnosis** -- determining which premise is responsible
-  for an observed contradiction.
-- **Robustness analysis** -- checking how sensitive a conclusion is to
-  small perturbations of the input.
+A rule like ``at_risk(X) <- runs(X, Y), has_cve(Y, Z)`` does not "fire"
+once. It fires once for each combination of nodes that satisfies the
+body. Each such combination is called a **grounding**. In the
+cybersecurity graph there are three groundings of this rule, one for
+each asset:
 
-In PyReason terms, the perturbation is one of:
+============= =========================== ============================
+Grounding for X = ...                     Y = ..., Z = ...
+============= =========================== ============================
+1             ``web_server``              ``sudo_1_9_5p1``, ``cve_2021_3156``
+2             ``workstation_1``           ``linux_kernel_5_1``, ``cve_2022_0185``
+3             ``dev_server``              ``openssl_3_0_1``, ``cve_2022_26923``
+============= =========================== ============================
 
-1. **Removing a baseline fact** -- "what if we didn't know X?"
-2. **Injecting a contrary fact** -- "what if we knew NOT X?"
-3. **Modifying the graph** (removing edges or nodes) -- "what if this
-   relationship didn't exist?"
+Each grounding is independent. Removing a graph edge or fact eliminates
+any grounding that depended on it; the others fire normally. This is
+why counterfactual perturbations have such localized effects -- they
+surgically delete specific groundings without touching the rest.
 
-The Counterfactual Harness
---------------------------
+The Three Demos
+---------------
 
-Counterfactuals require multiple PyReason runs that share rules and a
-graph template but differ in their facts or topology. The harness
-``run_world`` in this tutorial wraps each run in a function that:
+The script ``counterfactual_tutorial_ex.py`` walks through three
+counterfactuals:
 
-1. Resets PyReason state (``pr.reset()``, ``pr.reset_rules()``,
-   ``pr.reset_settings()``).
-2. Builds a fresh graph (optionally with edges/nodes removed).
-3. Loads baseline rules.
-4. Loads baseline facts (optionally with some omitted via ``skip_facts``).
-5. Optionally injects extra facts (``extra_facts``).
-6. Runs reasoning to a fixed point and collects bounds for every
-   ``(node, predicate)`` pair across all timesteps.
+- **Demo 1** -- remove a graph edge. Show that one grounding of
+  ``exposure_rule`` disappears, and the cascade collapses for the
+  affected asset.
+- **Demo 2** -- inject a contradicting fact. Show that PyReason
+  detects the conflict and reports an inconsistency.
+- **Demo 3** -- start from a graph that *already has* an inconsistency.
+  Counterfactually remove a candidate cause and check whether the
+  inconsistency disappears.
 
-The state-collection loop walks every timestep DataFrame returned by
-``filter_and_sort_nodes`` and keeps the latest bound seen for each pair.
-This produces the cumulative final state, not just whatever changed at
-the last timestep -- a subtle but important detail. Looking only at the
-last DataFrame can miss bounds that were set earlier and never updated.
+Each run writes a CSV trace alongside the script. Trace rows
+are referenced inline below.
 
-Two such state dictionaries can then be diffed via ``diff_worlds`` to
-produce a counterfactual report. Diff classifies each ``(node, predicate)``
-change as ``unchanged``, ``gained``, ``lost``, ``collapsed``, or
-``shifted``.
+Demo 1: Remove a Graph Edge
+---------------------------
 
-Demo 1: Single-edge counterfactual
+**Question:** if ``web_server`` did not run ``sudo_1_9_5p1``, would it
+still be classified as at risk?
+
+The ``exposure_rule`` says: a host is at risk if it runs some software
+that has a CVE. In PyReason, a graph edge with an attribute is treated
+as a fact -- the ``runs=1`` edge between ``web_server`` and
+``sudo_1_9_5p1`` becomes the fact ``runs(web_server, sudo_1_9_5p1)``
+during reasoning. Removing the edge removes that fact, so the
+grounding of ``exposure_rule`` for ``web_server`` no longer has
+anything to bind ``Y`` to and cannot fire.
+
+In the baseline trace, the rule fires three times -- once per asset.
+The relevant rows are::
+
+    Time Op Node           Label    Old Bound  New Bound  Caused By       Consistent  Clause-1
+    0    1  web_server     at_risk  [0.0,1.0]  [1.0,1.0]  exposure_rule   True        [('web_server', 'sudo_1_9_5p1')]
+    0    1  workstation_1  at_risk  [0.0,1.0]  [1.0,1.0]  exposure_rule   True        [('workstation_1', 'linux_kernel_5_1')]
+    0    1  dev_server     at_risk  [0.0,1.0]  [1.0,1.0]  exposure_rule   True        [('dev_server', 'openssl_3_0_1')]
+
+The ``Clause-1`` column shows which graph elements satisfied each
+grounding's body. After we remove the edge, the counterfactual trace
+contains only the second and third rows. The ``web_server`` row is
+gone -- because the edge it depended on no longer exists.
+
+The cascade follows automatically. ``vulnerability_rule``,
+``compromise_rule``, and ``unpatched_rule`` all need their predecessor
+to have fired. With ``at_risk(web_server)`` missing, none of them have
+a valid grounding for ``web_server``.
+
+Diff vs. baseline (final state of each run, side by side):
+
+================  =================  =================  ==================
+node              predicate          baseline           counterfactual
+================  =================  =================  ==================
+web_server        at_risk            [1.0, 1.0]         (none)
+web_server        vulnerable         [0.8, 1.0]         (none)
+web_server        compromised        [0.8, 1.0]         (none)
+web_server        patch_confidence   [0.0, 0.2]         (none)
+================  =================  =================  ==================
+
+``workstation_1`` and ``dev_server`` are unaffected -- their groundings
+remain intact. One edge removed, four conclusions lost, all on a single
+asset. That is the basic shape of a counterfactual: a small input
+change has a localized but compounded effect downstream.
+
+Demo 2: Inject a Contradicting Fact
 -----------------------------------
 
-**Question:** *If* ``web_server`` *did not run* ``sudo_1_9_5p1`` *, would
-it still be at_risk?*
+**Question:** what happens if we assert that ``workstation_1`` is
+*definitely not* at risk, even though the graph would normally infer
+that it is?
 
-This perturbation is structural -- the ``exposure_rule`` requires the
-two-hop pattern ``runs(X, Y), has_cve(Y, Z)``. Removing the
-``runs(web_server, sudo_1_9_5p1)`` edge breaks the first hop, so the rule
-should no longer fire for ``web_server``.
+We add a fact ``at_risk(workstation_1):[0.0, 0.0]`` -- meaning "I am
+100% certain this is false." The graph still says it should be
+``[1.0, 1.0]`` (true), so two sources will disagree.
 
-Observed outcome:
+In the trace, the injected fact lands first::
 
-================  =================  =================  ==================  =========
-node              predicate          baseline_bound     counterfactual      change
-================  =================  =================  ==================  =========
-web_server        at_risk            [1.0, 1.0]         (none)              lost
-web_server        vulnerable         [0.8, 1.0]         (none)              lost
-web_server        compromised        [0.8, 1.0]         (none)              lost
-web_server        patch_confidence   [0.0, 0.2]         (none)              lost
-================  =================  =================  ==================  =========
+    Time Op Node           Label    Old Bound  New Bound  Caused By       Consistent
+    0    0  workstation_1  at_risk  [0.0,1.0]  [0.0,0.0]  cf_not_at_risk  True
 
-``workstation_1`` and ``dev_server`` are unaffected because their edges
-remain intact. The entire downstream chain on ``web_server`` is causally
-rooted in that single edge -- one structural perturbation, four lost
-conclusions, all on the same node.
+Then the ``exposure_rule`` fires and tries to write ``[1.0, 1.0]``.
+The two bounds do not overlap, so PyReason flags an inconsistency::
 
-Demo 2: Mid-chain counterfactual injection
--------------------------------------------
+    Time Op Node           Label    Old Bound  New Bound  Caused By       Consistent
+    0    1  workstation_1  at_risk  [0.0,0.0]  [0.0,1.0]  exposure_rule   False
 
-**Question:** *What if we asserted that* ``workstation_1`` *is NOT at
-risk, even though the graph would otherwise infer it?*
+    Inconsistency Message:
+    "Inconsistency occurred. Conflicting bounds for at_risk(workstation_1).
+     Update from [0.000, 0.000] to [1.000, 1.000] is not allowed.
+     Setting bounds to [0,1] and static=True for this timestep."
 
-We inject ``at_risk(workstation_1):[0.0, 0.0]`` as a fact. The graph
-topology would normally cause the ``exposure_rule`` to infer
-``at_risk(workstation_1):[1.0, 1.0]``.
+For that one timestep, the bound is set to ``[0.0, 1.0]`` (fully
+unknown) and marked static. At the next timestep, the injected fact
+re-asserts itself (its time window covers all timesteps), pulling the
+bound back to ``[0.0, 0.0]``. The final state shows ``[0.0, 0.0]`` --
+the injection wins by being re-asserted.
 
-Observed outcome:
+**Why the cascade breaks downstream:**
 
-================  =================  =================  ==================  =========
-node              predicate          baseline_bound     counterfactual      change
-================  =================  =================  ==================  =========
-workstation_1     at_risk            [1.0, 1.0]         [0.0, 0.0]          shifted
-workstation_1     vulnerable         [0.8, 1.0]         (none)              lost
-workstation_1     compromised        [0.8, 1.0]         (none)              lost
-workstation_1     patch_confidence   [0.0, 0.2]         (none)              lost
-================  =================  =================  ==================  =========
+The next rule in the chain is ``vulnerability_rule``::
 
-A subtlety worth flagging here: the ``at_risk`` bound *does not* collapse
-to ``[0.0, 1.0]`` (the standard inconsistency-resolution outcome). It
-stays at ``[0.0, 0.0]``. This is because PyReason's annotated logic is
-**monotonic** -- bounds can only tighten over time, never widen. The
-injected ``[0.0, 0.0]`` arrives first; the rule's later attempt to write
-``[1.0, 1.0]`` would require widening the bound, so the write is
-silently rejected.
+    vulnerable(X):[0.8, 1.0] <- at_risk(X)
 
-The downstream effect is what we expected, but the mechanism is more
-subtle than "inconsistency resolution kicks in." With ``at_risk`` pinned
-at ``[0.0, 0.0]``, the ``vulnerability_rule`` cannot fire (its body atom
-is effectively false), and the rest of the chain breaks. The final three
-predicates are lost on ``workstation_1``.
+In the baseline trace, this rule fires three times (one grounding per
+asset)::
 
-This demo illustrates two things at once:
+    Time Op Node           Label       Caused By           Consistent  Clause-1
+    0    2  web_server     vulnerable  vulnerability_rule  True        ['web_server']
+    0    2  workstation_1  vulnerable  vulnerability_rule  True        ['workstation_1']
+    0    2  dev_server     vulnerable  vulnerability_rule  True        ['dev_server']
 
-1. **Counterfactual injection at one stage of a rule chain neutralizes
-   all downstream inferences for that node.** A single ``[0.0, 0.0]``
-   fact is enough to break the cascade.
-2. **Fact-arrival order matters in PyReason.** An early tight bound can
-   block later rule writes that would otherwise fire. Worth keeping in
-   mind when designing rule sets where multiple sources may write to the
-   same predicate.
+In the counterfactual trace, only two rows appear -- the
+``workstation_1`` grounding is missing::
 
-Demo 3: Counterfactual to diagnose an inconsistency
-----------------------------------------------------
+    0    2  web_server     vulnerable  vulnerability_rule  True        ['web_server']
+    0    2  dev_server     vulnerable  vulnerability_rule  True        ['dev_server']
 
-The cybersecurity inconsistency tutorial introduced a rule-triggered
-inconsistency on ``dev_server``: the ``unpatched_rule`` infers
-``patch_confidence(dev_server):[0.0, 0.2]`` while the fact
-``dev_patch_db_fact`` asserts ``[0.9, 1.0]``.
+That grounding does not fire because its body
+(``at_risk(workstation_1)``) is held at ``[0.0, 0.0]``, which fails
+the rule's threshold check. With no ``vulnerable(workstation_1)``,
+``compromise_rule`` cannot fire for ``workstation_1`` either, and the
+chain breaks one grounding at a time.
 
-**Counterfactual question:** *If we did not have* ``dev_patch_db_fact``,
-*would the inconsistency disappear?*
+Diff vs. baseline:
 
-We re-run reasoning with that single fact omitted.
+================  =================  =================  ==================
+node              predicate          baseline           counterfactual
+================  =================  =================  ==================
+workstation_1     at_risk            [1.0, 1.0]         [0.0, 0.0]
+workstation_1     vulnerable         [0.8, 1.0]         (none)
+workstation_1     compromised        [0.8, 1.0]         (none)
+workstation_1     patch_confidence   [0.0, 0.2]         (none)
+================  =================  =================  ==================
 
-Observed outcome:
+A single injected fact eliminated three downstream groundings, exactly
+as in Demo 1 -- but via a different mechanism. In Demo 1 a graph edge
+was removed; in Demo 2 a fact was added that produced an inconsistency,
+and the resolved bound was incompatible with downstream rules.
 
-================  =================  =================  ==================  =========
-node              predicate          baseline_bound     counterfactual      change
-================  =================  =================  ==================  =========
-dev_server        patch_confidence   [0.9, 1.0]         [0.0, 0.2]          shifted
-================  =================  =================  ==================  =========
+Demo 3: Diagnose an Existing Inconsistency
+------------------------------------------
 
-In the baseline, ``patch_confidence(dev_server)`` ends up at ``[0.9,
-1.0]`` -- the asserted fact's bound. The same monotonicity behavior from
-Demo 2 is at work here: the asserted fact arrives first, and the rule's
-attempted ``[0.0, 0.2]`` write would require widening, so it is rejected.
-The conflict is *latent* -- two pieces of evidence point in opposite
-directions, but only one survives.
+Demos 1 and 2 perturbed an otherwise-consistent baseline. Demo 3 is
+different: **the baseline already contains an inconsistency** before
+any perturbation. The counterfactual question is: which fact is
+causing it?
 
-With ``dev_patch_db_fact`` removed, the rule's bound writes cleanly to
-``[0.0, 0.2]``. The diff between the two runs makes the latent conflict
-visible: removing one fact flips the conclusion entirely.
+**The baseline inconsistency:**
 
-This pattern is **counterfactual attribution for inconsistencies**. When
-a baseline conclusion is suspicious -- maybe two sources should be
-disagreeing but the engine reports a clean answer -- counterfactual
-removal of each contributing fact in turn reveals which inputs are
-load-bearing for the surviving conclusion. In a more complex setting
-where many facts contribute through many rules, this becomes a
-systematic technique for blame assignment.
+The four-rule chain ends with ``unpatched_rule``, which says: a
+compromised host has low patch confidence::
+
+    patch_confidence(X):[0.0, 0.2] <- compromised(X):[0.5, 1.0]
+
+This rule fires for all three assets. Separately, the fact
+``dev_patch_db_fact`` asserts ``patch_confidence(dev_server):[0.9, 1.0]``
+-- "the patch database says dev_server is well patched."
+
+For ``dev_server``, both writes target the same atom with
+non-overlapping bounds. Looking at the baseline trace::
+
+    Time Op Node        Label             Old Bound  New Bound  Caused By           Consistent
+    0    0  dev_server  patch_confidence  [0.0,1.0]  [0.9,1.0]  dev_patch_db_fact   True
+    ...
+    0    4  dev_server  patch_confidence  [0.9,1.0]  [0.0,1.0]  unpatched_rule      False
+
+    Inconsistency Message:
+    "Inconsistency occurred. Conflicting bounds for patch_confidence(dev_server).
+     Update from [0.900, 1.000] to [0.000, 0.200] is not allowed.
+     Setting bounds to [0,1] and static=True for this timestep."
+
+For ``web_server`` and ``workstation_1`` the same rule operation is
+consistent::
+
+    0    4  web_server     patch_confidence  [0.0,1.0]  [0.0,0.2]  unpatched_rule  True
+    0    4  workstation_1  patch_confidence  [0.0,1.0]  [0.0,0.2]  unpatched_rule  True
+
+Why is only ``dev_server`` inconsistent? Because only ``dev_server``
+had a prior asserted bound for ``patch_confidence`` (the
+``dev_patch_db_fact``). The other two assets had the default
+``[0.0, 1.0]`` bound, which the rule's update fits inside.
+
+After the inconsistency, the asserted fact re-asserts at later
+timesteps, so the final state ends up at ``[0.9, 1.0]``. But the
+trace preserves the record of the conflict that occurred along the way.
+
+**The counterfactual:**
+
+We re-run reasoning with ``dev_patch_db_fact`` removed.
+
+In the counterfactual trace, the same ``unpatched_rule`` grounding
+fires for ``dev_server`` -- the rule body still holds. But now there
+is no prior bound to conflict with::
+
+    0    4  dev_server  patch_confidence  [0.0,1.0]  [0.0,0.2]  unpatched_rule  True
+
+Consistent. No inconsistency message.
+
+Diff vs. baseline:
+
+================  =================  =================  ==================
+node              predicate          baseline           counterfactual
+================  =================  =================  ==================
+dev_server        patch_confidence   [0.9, 1.0]         [0.0, 0.2]
+================  =================  =================  ==================
+
+Removing one fact eliminated the baseline inconsistency. This is the
+diagnostic pattern -- when an inconsistency exists and you want to
+know which fact caused it, counterfactually remove each candidate and
+check whether the conflict goes away.
+
+In a real system with many facts and many rules, this becomes a
+systematic technique: remove each fact one at a time, observe which
+removals eliminate the inconsistency, and you have identified the
+load-bearing inputs.
+
+Notice that the *grounding itself* is identical in both runs. The
+``unpatched_rule`` grounding for ``dev_server`` fires in both. What
+changes is the outcome of that grounding's update -- inconsistent in
+the baseline, consistent in the counterfactual. That is a more subtle
+effect than Demos 1 and 2, where the fact change eliminated
+groundings outright. Here the grounding stays; only its consistency
+changes.
 
 Running the Code
 ----------------
 
-Execute the tutorial script::
+::
 
     python examples/counterfactual_tutorial_ex.py
 
-Key Takeaways
--------------
+CSV traces are written to the working directory. The script runs
+all three demos in sequence and prints the diffs above.
 
-1. **Counterfactuals are a meta-procedure on top of PyReason**, not a
-   built-in operator. They are implemented by re-running reasoning with
-   perturbed inputs and diffing the outcomes.
+Summary
+-------
 
-2. **Counterfactual perturbations propagate through rule chains.**
-   Pinning a predicate at one stage of the chain neutralizes all
-   downstream inferences for the affected node.
+Two things to take away:
 
-3. **Monotonicity governs what survives.** PyReason bounds can only
-   tighten, never widen. When two writes conflict, the earlier (or
-   tighter) one wins and the later one is silently rejected -- meaning
-   contradictions can be *latent* rather than loudly flagged.
+1. **Counterfactuals are re-runs and diffs.** PyReason does not
+   provide them as a built-in operator. The pattern is: run, perturb,
+   run again, compare.
 
-4. **Counterfactuals diagnose latent inconsistencies.** When two premises
-   conflict but only one survives, counterfactual removal of each in
-   turn reveals which premise is the load-bearing contributor.
-
-5. **Three perturbation types:** fact removal, fact injection, and graph
-   modification. Arbitrary combinations are supported by the harness.
+2. **Perturbations affect groundings.** The unit of rule firing is the
+   grounding -- a specific instantiation of a rule's variables.
+   Counterfactual changes either eliminate groundings (Demos 1 and 2)
+   or change whether their resulting updates are consistent (Demo 3).

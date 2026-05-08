@@ -1,5 +1,5 @@
 """
-Counterfactual Reasoning Tutorial
+Cybersecurity Counterfactual Reasoning Tutorial
 ================================================
 
 This tutorial extends the cybersecurity inconsistency tutorial by
@@ -26,11 +26,11 @@ Three demos:
 
     Demo 3 -- Counterfactual interaction with inconsistencies
               "If we remove the asserted patch_confidence fact, does the
-              rule-triggered inconsistency from PR #140 disappear?"
+              rule-triggered inconsistency disappear?"
 
 Reuses the graph and rules from cybersecurity_inconsistency_ex.py.
 
-Real CVEs used (same as PR #140):
+Real CVEs used:
     cve_2021_3156   sudo 1.9.5p1      CVSS 7.8  CWE-121
     cve_2022_0185   linux_kernel_5_1  CVSS 8.4  CWE-121
     cve_2022_26923  openssl_3_0_1     CVSS 7.5  CWE-415
@@ -49,7 +49,7 @@ import pandas as pd
 # level globals, so re-running reasoning requires a full reset.
 
 def build_graph():
-    """Build the cybersecurity knowledge graph from PR #140."""
+    """Build the cybersecurity knowledge graph."""
     g = nx.DiGraph()
 
     # Asset nodes
@@ -75,6 +75,7 @@ def build_graph():
 
 
 def add_baseline_rules():
+    """The four-hop rule chain."""
     pr.add_rule(pr.Rule(
         'at_risk(X) <- runs(X, Y), has_cve(Y, Z)', 'exposure_rule'))
     pr.add_rule(pr.Rule(
@@ -89,6 +90,8 @@ def add_baseline_rules():
 
 def add_baseline_facts(skip=None):
     """
+    Add the baseline facts.
+
     The `skip` argument is a set of fact names to OMIT -- this is how we
     implement "remove fact" counterfactuals. Reasoning runs without those
     facts, and we observe what no longer gets inferred downstream.
@@ -130,7 +133,8 @@ def reset_pyreason():
 #   4. Run reasoning
 #   5. Return the final interpretation as a DataFrame for diffing
 
-def run_world(label, skip_facts=None, extra_facts=None, timesteps=4):
+def run_world(label, skip_facts=None, extra_facts=None, timesteps=4,
+              save_trace=False):
     """
     Run PyReason reasoning under a specific counterfactual scenario.
 
@@ -144,6 +148,8 @@ def run_world(label, skip_facts=None, extra_facts=None, timesteps=4):
         Additional facts to inject (for "what if we knew X" counterfactuals).
     timesteps : int
         How many timesteps to reason for.
+    save_trace : bool
+        If True, write CSV rule-trace files to ./traces/<label>/ for inspection.
 
     Returns
     -------
@@ -166,6 +172,14 @@ def run_world(label, skip_facts=None, extra_facts=None, timesteps=4):
             pr.add_fact(f)
 
     interp = pr.reason(timesteps=timesteps)
+
+    # Optionally write CSV trace files (nodes + edges) for this run.
+    # PyReason names trace files by second-precision timestamp, so we sleep
+    # briefly to guarantee each save gets a unique filename.
+    if save_trace:
+        import time
+        time.sleep(1.1)
+        pr.save_rule_trace(interp, folder='./')
 
     # Collect cumulative final-state bounds for every (node, predicate).
     # filter_and_sort_nodes returns one DataFrame per timestep, each showing
@@ -263,8 +277,8 @@ This perturbs the graph itself, not just the facts. We rebuild the graph
 without the runs(web_server, sudo_1_9_5p1) edge and re-run reasoning.
 """)
 
-    # --- Baseline run ---
-    _, baseline_state, _ = run_world('baseline')
+    # --- Baseline run (saves baseline trace once for the whole tutorial) ---
+    _, baseline_state, _ = run_world('baseline', save_trace=True)
 
     # --- Counterfactual run with edge removed ---
     reset_pyreason()
@@ -279,6 +293,9 @@ without the runs(web_server, sudo_1_9_5p1) edge and re-run reasoning.
     add_baseline_facts()
 
     interp_cf = pr.reason(timesteps=4)
+    import time
+    time.sleep(1.1)
+    pr.save_rule_trace(interp_cf, folder='./')
     cf_state = {}
     for pred in ['at_risk', 'vulnerable', 'compromised', 'patch_confidence']:
         dfs = pr.filter_and_sort_nodes(interp_cf, [pred])
@@ -302,11 +319,14 @@ without the runs(web_server, sudo_1_9_5p1) edge and re-run reasoning.
 # ============================================================================
 # DEMO 2 -- COUNTERFACTUAL ON A MULTI-HOP RULE CHAIN
 # ============================================================================
+# The four-hop chain is:
+#     exposure_rule -> vulnerability_rule -> compromise_rule -> unpatched_rule
+#
 # We test what happens when we inject a NEGATIVE counterfactual mid-chain --
 # what if we asserted at_risk(workstation_1):[0,0] (definitely not at risk)
 # even though the graph would otherwise infer it?
 #
-# asserting at_risk:[0,0] should clash with the rule's
+# In annotated logic, asserting at_risk:[0,0] should clash with the rule's
 # inference of at_risk:[1,1] -- this is itself a kind of inconsistency,
 # which is great because it shows the boundary between counterfactuals
 # and inconsistencies.
@@ -325,7 +345,8 @@ downstream chain still infers vulnerable / compromised / unpatched.
 
     extra = [pr.Fact('at_risk(workstation_1):[0.0, 0.0]',
                      'cf_not_at_risk', 0, 4)]
-    _, cf_state, _ = run_world('cf_not_at_risk', extra_facts=extra)
+    _, cf_state, _ = run_world('demo2_inject_not_at_risk',
+                               extra_facts=extra, save_trace=True)
 
     diff = diff_worlds(baseline_state, cf_state)
     print_diff("DEMO 2 DIFF: inject at_risk(workstation_1):[0.0, 0.0]", diff)
@@ -347,6 +368,8 @@ downstream chain still infers vulnerable / compromised / unpatched.
 #
 # Counterfactual question: "If we did NOT have the asserted patch_confidence
 # fact, would the inconsistency disappear?"
+#
+# This is a useful pattern: counterfactuals as inconsistency-source diagnosis.
 
 def demo_3():
     print("\n" + "#" * 70)
@@ -360,8 +383,9 @@ whether the inconsistency disappears.
 """)
 
     _, baseline_state, _ = run_world('baseline')
-    _, cf_state, _ = run_world('cf_no_patch_fact',
-                               skip_facts={'dev_patch_db_fact'})
+    _, cf_state, _ = run_world('demo3_skip_patch_fact',
+                               skip_facts={'dev_patch_db_fact'},
+                               save_trace=True)
 
     diff = diff_worlds(baseline_state, cf_state)
     print_diff("DEMO 3 DIFF: skip dev_patch_db_fact", diff)
@@ -386,4 +410,6 @@ if __name__ == '__main__':
     demo_1()
     demo_2()
     demo_3()
-
+    print("\n" + "=" * 70)
+    print("  Tutorial complete.")
+    print("=" * 70)
