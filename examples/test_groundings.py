@@ -39,40 +39,6 @@ def ann_fn_1(annotations, weights):
         return 0.0, 1.0
     return lower, upper
 
-
-@numba.njit
-def ann_fn_2(annotations, weights):
-    # Identity annotation function: take the bounds of the (single) atom in the
-    # (single) clause and pass them straight through as the head's bounds.
-    print("Running annotation function 2")
-    num_clauses = len(annotations)
-    print("Num Clauses:", num_clauses)
-    clause_lowers = np.zeros(num_clauses, dtype=np.float64)
-    clause_uppers = np.zeros(num_clauses, dtype=np.float64)
-
-    for i in range(num_clauses):
-        clause = annotations[i]
-        print("i: ", i)
-        print("Clause: ", clause)
-        s_lower = 0.0
-        s_upper = 0.0
-        for atom in clause:
-            s_lower = max(s_lower, atom.lower)
-            s_upper = max(s_upper, atom.upper)
-        clause_lowers[i] = s_lower
-        clause_uppers[i] = s_upper
-
-    print("Clause Lowers:", clause_lowers)
-    print("Clause Uppers: ", clause_uppers)
-    lower = min(clause_lowers[0], 1.0)
-    upper = min(clause_uppers[0], 1.0)
-    print("Lower: ", lower)
-    print("Upper: ", upper)
-    if lower > upper:
-        return 0.0, 1.0
-    return lower, upper
-
-
 # 6-arg variant: in addition to (annotations, weights), receives:
 #   - qualified_nodes:    per-clause list of node groundings (parallel to annotations)
 #   - qualified_edges:    per-clause list of edge groundings as (src, tgt) tuples
@@ -205,7 +171,6 @@ pr.add_rule(pr.Rule("hackerAt(CB2):ann_fn_paired <- hasLabel(CB1, X):[0.001,1], 
 # pr.add_fact(pr.Fact("body2(abc2, rty2)"))
 # pr.add_rule(pr.Rule("head(X,Y):[1,1] <-1 body1(X), body2(X,Y)"))
 pr.add_annotation_function(ann_fn_1)
-pr.add_annotation_function(ann_fn_2)
 pr.add_annotation_function(ann_fn_paired)
 # Perform reasoning for 1 timestep
 interpretation = pr.reason(timesteps=1)
