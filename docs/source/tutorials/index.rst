@@ -21,5 +21,5 @@ Contents
    ./cybersecurity_inconsistency.rst
    ./load_rules_facts_from_file.rst
    ./llm_generated_rules.rst
-   ./naturual_language_to_pyreason.rst
+   ./natural_language_to_pyreason.rst
    
