@@ -1,6 +1,7 @@
 # ruff: noqa: F403 F405 (Ignore Pyreason import * for public api)
 # Set numba environment variable
 import os
+import sys
 package_path = os.path.abspath(os.path.dirname(__file__))
 cache_path = os.path.join(package_path, 'cache')
 cache_status_path = os.path.join(package_path, '.cache_status.yaml')
@@ -9,12 +10,11 @@ os.environ['NUMBA_CACHE_DIR'] = cache_path
 
 from pyreason.pyreason import *
 import yaml
-from importlib.metadata import version
-from pkg_resources import get_distribution, DistributionNotFound
+from importlib.metadata import PackageNotFoundError, version
 
 try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:
+    __version__ = version(__name__)
+except PackageNotFoundError:
     # package is not installed
     pass
 
@@ -22,7 +22,9 @@ except DistributionNotFound:
 with open(cache_status_path) as file:
     cache_status = yaml.safe_load(file)
 
-if not cache_status['initialized']:
+running_tests = 'pytest' in sys.modules or 'unittest' in sys.modules
+
+if not cache_status['initialized'] and not running_tests:
     print('Imported PyReason for the first time. Initializing caches for faster runtimes ... this will take a minute')
     graph_path = os.path.join(package_path, 'examples', 'hello-world', 'friends_graph.graphml')
 
@@ -37,9 +39,6 @@ if not cache_status['initialized']:
     print('PyReason initialized!')
     print()
 
-    # Update cache status (skip under test runners to keep repo file clean)
-    import sys
-    if 'pytest' not in sys.modules and 'unittest' not in sys.modules:
-        cache_status['initialized'] = True
-        with open(cache_status_path, 'w') as file:
-            yaml.dump(cache_status, file)
+    cache_status['initialized'] = True
+    with open(cache_status_path, 'w') as file:
+        yaml.dump(cache_status, file)
