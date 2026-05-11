@@ -43,10 +43,13 @@ Grounding for X = ...                     Y = ..., Z = ...
 3             ``dev_server``              ``openssl_3_0_1``, ``cve_2022_26923``
 ============= =========================== ============================
 
-Each grounding is independent. Removing a graph edge or fact eliminates
-any grounding that depended on it; the others fire normally. This is
+Each grounding is independent. A counterfactual perturbation can add,
+modify, or remove specific groundings -- adding an edge or fact can
+introduce new groundings, modifying a bound can change whether a
+grounding's threshold is met, and removing an edge or fact eliminates
+any grounding that depended on it. The others fire normally. This is
 why counterfactual perturbations have such localized effects -- they
-surgically delete specific groundings without touching the rest.
+target specific groundings without touching the rest.
 
 The Three Demos
 ---------------
@@ -91,12 +94,21 @@ The relevant rows are::
 The ``Clause-1`` column shows which graph elements satisfied each
 grounding's body. After we remove the edge, the counterfactual trace
 contains only the second and third rows. The ``web_server`` row is
-gone -- because the edge it depended on no longer exists.
+gone -- because the edge it depended on no longer exists::
 
-The cascade follows automatically. ``vulnerability_rule``,
-``compromise_rule``, and ``unpatched_rule`` all need their predecessor
-to have fired. With ``at_risk(web_server)`` missing, none of them have
-a valid grounding for ``web_server``.
+    Time Op Node           Label    Old Bound  New Bound  Caused By       Consistent  Clause-1
+    0    1  workstation_1  at_risk  [0.0,1.0]  [1.0,1.0]  exposure_rule   True        [('workstation_1', 'linux_kernel_5_1')]
+    0    1  dev_server     at_risk  [0.0,1.0]  [1.0,1.0]  exposure_rule   True        [('dev_server', 'openssl_3_0_1')]
+
+The three downstream rules each require ``at_risk`` to have fired for
+the same node before they can produce a grounding:
+
+- ``vulnerability_rule``: ``vulnerable(X):[0.8, 1.0] <- at_risk(X)``
+- ``compromise_rule``:    ``compromised(X):[0.8, 1.0] <- vulnerable(X):[0.5, 1.0]``
+- ``unpatched_rule``:     ``patch_confidence(X):[0.0, 0.2] <- compromised(X):[0.5, 1.0]``
+
+With ``at_risk(web_server)`` absent from the counterfactual trace,
+none of them have a valid grounding for ``web_server``.
 
 Diff vs. baseline (final state of each run, side by side):
 
@@ -172,6 +184,12 @@ That grounding does not fire because its body
 the rule's threshold check. With no ``vulnerable(workstation_1)``,
 ``compromise_rule`` cannot fire for ``workstation_1`` either, and the
 chain breaks one grounding at a time.
+
+The same three downstream rules from Demo 1 apply here:
+
+- ``vulnerability_rule``: ``vulnerable(X):[0.8, 1.0] <- at_risk(X)``
+- ``compromise_rule``:    ``compromised(X):[0.8, 1.0] <- vulnerable(X):[0.5, 1.0]``
+- ``unpatched_rule``:     ``patch_confidence(X):[0.0, 0.2] <- compromised(X):[0.5, 1.0]``
 
 Diff vs. baseline:
 
