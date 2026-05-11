@@ -16,6 +16,12 @@ Contents
    ./custom_thresholds.rst
    ./infer_edges.rst
    ./annotation_function.rst
+   ./temporal_classifier_tutorial.rst   
    ./cybersecurity_inconsistency.rst
+<<<<<<< daniel/counterfactual-tutorial
    ./counterfactual_tutorial.rst
+=======
+   ./load_rules_facts_from_file.rst
+   ./llm_generated_rules.rst
+>>>>>>> main
    
