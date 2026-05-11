@@ -1,0 +1,25 @@
+[
+    {
+        "fact_text": "scholarship(math_dept)",
+        "name": "scholarship_math_dept",
+        "start_time": 0,
+        "end_time": 2,
+        "static": false
+    },
+
+    {
+        "fact_text": "in_department(math,math_dept)",
+        "name": "math_in_math_department",
+        "start_time": 0,
+        "end_time": 2,
+        "static": false
+    },
+
+    {
+        "fact_text": "in_department(cs,cs_dept)",
+        "name": "cs_in_cs_department",
+        "start_time": 0,
+        "end_time": 2,
+        "static": false
+    }
+]
