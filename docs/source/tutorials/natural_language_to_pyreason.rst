@@ -4,7 +4,7 @@ Natural Language to PyReason Tutorial
 Welcome to the Natural Language to PyReason tutorial! In this document we outline
 a pipeline that converts a plain English paragraph into PyReason facts and rules
 using a Large Language Model (LLM). If you want to combine the flexibility of
-natural language input with the precision of symbolic reasoning, this is the
+natural language input with the precision of symbolic reasoning, you're in the
 right place!
 
 .. note::
@@ -33,10 +33,10 @@ Setup
 
 We use `Ollama <https://ollama.com>`_ to run an LLM locally. Different models
 have different trade-offs between speed and stability — we discuss this at the
-end of the tutorial. For best results, we recommend ``qwen3:14b``.
+end of the tutorial. For this tutorial, we use ``qwen3:14b``.
 
 1. Install Ollama from `ollama.com <https://ollama.com>`_
-2. Pull the model:
+2. Pull the model in terminal:
 
 .. code:: bash
 
@@ -47,27 +47,6 @@ end of the tutorial. For best results, we recommend ``qwen3:14b``.
 .. code:: bash
 
    pip install ollama pyreason
-
-Reading the Paragraph
-----------------------
-
-The script reads the paragraph from the user. The user types lines and presses
-Enter twice when done:
-
-.. code:: python
-
-   import ollama
-   import pyreason as pr
-   import re
-
-   print("Enter your paragraph (press Enter twice when done):")
-   lines = []
-   while True:
-       line = input()
-       if line == "" and lines:
-           break
-       lines.append(line)
-   paragraph = " ".join(lines).strip()
 
 Step 1: Extract Facts and Rules in English
 -------------------------------------------
@@ -114,17 +93,6 @@ Three design choices in this prompt deserve attention:
    continues writing from where the prompt ended, jumping directly into the
    structured output rather than producing chatty preamble like "Sure, here are
    the facts I extracted...".
-
-We send this prompt to the model:
-
-.. code:: python
-
-   response_extract = ollama.chat(
-       model="qwen3:14b",
-       messages=[{"role": "user", "content": PROMPT_EXTRACT}]
-   )
-   english_output = response_extract["message"]["content"].strip()
-   print(f"\n{english_output}")
 
 For our example paragraph, the LLM produces:
 
@@ -206,17 +174,6 @@ with ``<fact 1>`` / ``<rule 1>`` placeholders. This acts as a strong format
 anchor — the LLM sees the exact shape of the expected output and fills in the
 slots, which reduces format drift.
 
-We send this prompt to the model:
-
-.. code:: python
-
-   response_convert = ollama.chat(
-       model="qwen3:14b",
-       messages=[{"role": "user", "content": PROMPT_CONVERT}]
-   )
-   pyreason_output = response_convert["message"]["content"].strip()
-   print(f"\n{pyreason_output}")
-
 For our example, the LLM produces:
 
 ::
@@ -242,59 +199,17 @@ Notice how:
 - The two rules **chain**: rule 1's head ``strong_reputation`` appears
   verbatim in rule 2's body.
 
-Parsing the LLM Output
------------------------
-
-The LLM returns plain text with a ``Facts:`` section and a ``Rules:`` section.
-We use a regex to split the output at the ``Rules:`` header:
-
-.. code:: python
-
-   parts = re.split(
-       r'\*{0,2}\s*rules\s*\*{0,2}\s*:?',
-       pyreason_output,
-       maxsplit=1,
-       flags=re.IGNORECASE
-   )
-
-   if len(parts) < 2:
-       print("\nERROR: Could not parse LLM output - Rules section not found.")
-       print("Raw output was:")
-       print(pyreason_output)
-       exit(1)
-
-The regex tolerates several variations of the header that LLMs sometimes
-produce: ``Rules:``, ``RULES:``, ``**Rules**``, with or without trailing colon
-and surrounding whitespace. This robustness matters because even with a clean
-prompt, LLM output formatting drifts between runs.
-
-Once we have the two blocks, we extract facts and rules by recognizing each
-line's syntactic markers:
-
-.. code:: python
-
-   facts_block, rules_block = parts[0], parts[1]
-   facts = [l.strip() for l in facts_block.split("\n") if "):" in l]
-   rules = [l.strip() for l in rules_block.split("\n") if "<-" in l]
-
-   if not rules:
-       print("\nERROR: No rules extracted. LLM may have formatted output incorrectly.")
-       exit(1)
-
-A fact line always contains ``):`` (the closing parenthesis of the predicate
-followed by the bound colon). A rule line always contains ``<-`` (the
-implication arrow). These two markers are reliable structural signals — they
-don't depend on the LLM cooperating with header formatting.
-
 Step 3: Validate with PyReason
 -------------------------------
 
-Now that we have parsed rules as strings, we check each one by constructing a
-``pr.Rule`` object. If PyReason's parser rejects it, we catch the error:
+After parsing the LLM output into a list of facts and rules, we check each
+rule by constructing a ``pr.Rule`` object. If PyReason's parser rejects it,
+we catch the error and report which rule failed.
 
 .. code:: python
-
-   print("\nValidating rules...")
+   
+   import pyreason as pr
+   
    for rule in rules:
        try:
            pr.Rule(rule)

@@ -19,6 +19,7 @@ Setup:
 """
  
 import ollama
+import pyreason as pr
 import re
  
  
