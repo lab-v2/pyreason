@@ -16,6 +16,7 @@ Contents
    ./custom_thresholds.rst
    ./infer_edges.rst
    ./annotation_function.rst
+   ./image_classifier_reasoning.rst
    ./temporal_classifier_tutorial.rst   
    ./cybersecurity_inconsistency.rst
    ./load_rules_facts_from_file.rst
