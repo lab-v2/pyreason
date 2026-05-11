@@ -27,6 +27,7 @@ import re
 MODEL_NAME = "qwen3:14b"
 
 # Read the paragraph from the user
+print("Enter your paragraph (press Enter twice when done):")
 lines = []
 while True:
     line = input()
