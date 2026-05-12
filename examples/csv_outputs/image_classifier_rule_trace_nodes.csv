@@ -1,0 +1,30 @@
+Time,Fixed-Point-Operation,Node,Label,Old Bound,New Bound,Occurred Due To,Consistent,Triggered By,Inconsistency Message,Clause-1
+0,0,fish_1,goldfish,"[0.0,1.0]","[1.0,1.0]",fish_1-goldfish-fact,True,Fact,,
+0,0,shark_1,tigershark,"[0.0,1.0]","[1.0,1.0]",shark_1-tiger shark-fact,True,Fact,,
+0,0,Flamingo_1,flamingo,"[0.0,1.0]","[1.0,1.0]",Flamingo_1-flamingo-fact,True,Fact,,
+0,0,eagle_2,baldeagle,"[0.0,1.0]","[1.0,1.0]",eagle_2-bald eagle-fact,True,Fact,,
+0,0,eagle_1,baldeagle,"[0.0,1.0]","[1.0,1.0]",eagle_1-bald eagle-fact,True,Fact,,
+0,0,Flamingo_2,flamingo,"[0.0,1.0]","[1.0,1.0]",Flamingo_2-flamingo-fact,True,Fact,,
+0,0,shark_2,tigershark,"[0.0,1.0]","[1.0,1.0]",shark_2-tiger shark-fact,True,Fact,,
+0,0,fish_2,goldfish,"[0.0,1.0]","[1.0,1.0]",fish_2-goldfish-fact,True,Fact,,
+0,0,shark_3,hammerhead,"[0.0,1.0]","[1.0,1.0]",shark_3-hammerhead-fact,True,Fact,,
+0,1,fish_1,is_fish,"[0.0,1.0]","[1.0,1.0]",is_fish_rule,True,Rule,,['fish_1']
+0,1,fish_2,is_fish,"[0.0,1.0]","[1.0,1.0]",is_fish_rule,True,Rule,,['fish_2']
+0,1,shark_1,is_shark,"[0.0,1.0]","[1.0,1.0]",is_shark_rule,True,Rule,,['shark_1']
+0,1,shark_2,is_shark,"[0.0,1.0]","[1.0,1.0]",is_shark_rule,True,Rule,,['shark_2']
+0,1,shark_3,is_shark,"[0.0,1.0]","[1.0,1.0]",is_shark_rule,True,Rule,,['shark_3']
+0,1,Flamingo_1,is_flamingo,"[0.0,1.0]","[1.0,1.0]",is_flamingo_rule,True,Rule,,['Flamingo_1']
+0,1,Flamingo_2,is_flamingo,"[0.0,1.0]","[1.0,1.0]",is_flamingo_rule,True,Rule,,['Flamingo_2']
+0,1,Flamingo_1,is_bird,"[0.0,1.0]","[1.0,1.0]",is_bird_rule,True,Rule,,['Flamingo_1']
+0,1,Flamingo_2,is_bird,"[0.0,1.0]","[1.0,1.0]",is_bird_rule,True,Rule,,['Flamingo_2']
+0,1,eagle_2,is_eagle,"[0.0,1.0]","[1.0,1.0]",is_eagle_rule,True,Rule,,['eagle_2']
+0,1,eagle_1,is_eagle,"[0.0,1.0]","[1.0,1.0]",is_eagle_rule,True,Rule,,['eagle_1']
+0,1,eagle_2,is_bird,"[0.0,1.0]","[1.0,1.0]",is_bird_rule,True,Rule,,['eagle_2']
+0,1,eagle_1,is_bird,"[0.0,1.0]","[1.0,1.0]",is_bird_rule,True,Rule,,['eagle_1']
+0,2,shark_1,is_scary,"[0.0,1.0]","[1.0,1.0]",is_scary_rule,True,Rule,,['shark_1']
+0,2,shark_2,is_scary,"[0.0,1.0]","[1.0,1.0]",is_scary_rule,True,Rule,,['shark_2']
+0,2,shark_3,is_scary,"[0.0,1.0]","[1.0,1.0]",is_scary_rule,True,Rule,,['shark_3']
+0,2,Flamingo_1,can_fly,"[0.0,1.0]","[1.0,1.0]",can_fly_rule,True,Rule,,['Flamingo_1']
+0,2,Flamingo_2,can_fly,"[0.0,1.0]","[1.0,1.0]",can_fly_rule,True,Rule,,['Flamingo_2']
+0,2,eagle_2,can_fly,"[0.0,1.0]","[1.0,1.0]",can_fly_rule,True,Rule,,['eagle_2']
+0,2,eagle_1,can_fly,"[0.0,1.0]","[1.0,1.0]",can_fly_rule,True,Rule,,['eagle_1']
