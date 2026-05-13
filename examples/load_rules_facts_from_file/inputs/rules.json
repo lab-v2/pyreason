@@ -1,0 +1,14 @@
+[
+    {
+        "rule_text": "under_department(X,Y) <-0 enroll(X,Z), in_department(Z,Y)",
+        "name": "under_department_rule",
+        "infer_edges": true,
+        "set_static": false
+    },    
+    {
+        "rule_text": "eligible(X) <-1 under_department(X,Y), scholarship(Y)",
+        "name": "eligible_scholarship_rule",
+        "infer_edges": false,
+        "set_static": false
+    }
+]
