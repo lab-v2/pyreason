@@ -1,6 +1,5 @@
 from setuptools import setup, find_packages
 
-# Read the contents of README file
 from pathlib import Path
 
 this_directory = Path(__file__).parent
@@ -8,7 +7,6 @@ long_description = (this_directory / "README.md").read_text(encoding='UTF-8')
 
 setup(
     name='pyreason',
-    version='3.5.1',
     author='Dyuman Aditya',
     author_email='dyuman.aditya@gmail.com',
     description='An explainable inference software supporting annotated, real valued, graph based and temporal logic',
@@ -25,18 +23,16 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent"
     ],
-    python_requires='>3.6',
+    python_requires='>=3.10',
     install_requires=[
-        'networkx',
-        'pyyaml',
-        'pandas',
-        'numba',
-        'numpy',
+        'networkx>=3.1',
+        'pyyaml>=6.0',
+        'pandas>=2.0.0',
+        'numba>=0.65.1',
+        'numpy>=2.1,<2.5',
         'memory_profiler',
         'pytest'
     ],
-    use_scm_version=True,
-    setup_requires=['setuptools_scm'],
     packages=find_packages(),
     include_package_data=True
 )
