@@ -73,11 +73,13 @@ def get_interpretation_helpers(module_name: str = "interpretation_fp"):
         def ground_rule(*args, **kwargs):
             kwargs.setdefault('head_functions', ())
             kwargs.setdefault('closed_world_predicates', [])
+            kwargs.setdefault('extended_ann_fn', False)
             return _ground_rule_fn(*args, num_ga=[0], **kwargs)
     else:
         def ground_rule(*args, **kwargs):
             kwargs.setdefault('head_functions', ())
             kwargs.setdefault('closed_world_predicates', [])
+            kwargs.setdefault('extended_ann_fn', False)
             return _ground_rule_fn(*args, **kwargs)
     ns.ground_rule = ground_rule
     ns.update_rule_trace = _py(interpretation._update_rule_trace)

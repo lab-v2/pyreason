@@ -43,70 +43,6 @@ def identity_func(annotations):
     return result
 
 
-@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
-def test_probability_func_consistency(mode):
-    """Ensure annotation function behaves the same with and without JIT."""
-    setup_mode(mode)
-    annotations = numba.typed.List()
-    annotations.append(numba.typed.List([closed(0.01, 1.0)]))
-    annotations.append(numba.typed.List([closed(0.2, 1.0)]))
-    weights = numba.typed.List([1.0, 1.0])
-    jit_res = probability_func(annotations, weights)
-    py_res = probability_func.py_func(annotations, weights)
-    assert jit_res == py_res
-
-
-@pytest.mark.slow
-@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
-def test_head_functions(mode):
-    """Test head function usage in rules for node and edge rules."""
-    setup_mode(mode)
-
-    pr.add_head_function(identity_func)
-
-    graph = nx.DiGraph()
-    graph.add_node("A", property=1)
-    graph.add_node("B", property=1)
-    graph.add_edge("A", "B", connected=1)
-    pr.load_graph(graph)
-
-    pr.add_rule(pr.Rule('Processed(identity_func(X)) <- property(X), property(Y), connected(X, Y)', 'node_rule_with_func'))
-    pr.add_rule(pr.Rule('Route(identity_func(A), B) <- property(X), property(Y), connected(X, Y)', 'edge_rule_func_first'))
-    pr.add_rule(pr.Rule('Path(A, identity_func(B)) <- property(X), property(Y), connected(X, Y)', 'edge_rule_func_second'))
-    pr.add_rule(pr.Rule('Link(identity_func(A), identity_func(B)) <- property(X), property(Y), connected(X, Y)', 'edge_rule_func_both'))
-
-    interpretation = pr.reason(timesteps=1)
-
-    assert interpretation.query(pr.Query('Processed(A)'), return_bool=True)
-    assert interpretation.query(pr.Query('Route(A, B)'), return_bool=True)
-    assert interpretation.query(pr.Query('Path(A, B)'), return_bool=True)
-    assert interpretation.query(pr.Query('Link(A, B)'), return_bool=True)
-
-
-@pytest.mark.slow
-@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
-def test_annotation_function(mode):
-    """Test annotation function usage in reasoning."""
-    setup_mode(mode)
-
-    pr.settings.allow_ground_rules = True
-
-    pr.add_fact(pr.Fact('P(A) : [0.01, 1]'))
-    pr.add_fact(pr.Fact('P(B) : [0.2, 1]'))
-    pr.add_annotation_function(probability_func)
-    pr.add_rule(pr.Rule('union_probability(A, B):probability_func <- P(A):[0, 1], P(B):[0, 1]', infer_edges=True))
-
-    interpretation = pr.reason(timesteps=1)
-
-    dataframes = pr.filter_and_sort_edges(interpretation, ['union_probability'])
-    for t, df in enumerate(dataframes):
-        print(f'TIMESTEP - {t}')
-        print(df)
-        print()
-
-    assert interpretation.query(pr.Query('union_probability(A, B) : [0.21, 1]')), 'Union probability should be 0.21'
-
-
 @numba.njit
 def ann_fn_paired(annotations, weights, qualified_nodes, qualified_edges, clause_labels, clause_variables):
     # 6-arg annotation function: pair hasLabel(CB1,X) and hasLabel(CB2,Y) atoms
@@ -173,20 +109,74 @@ def ann_fn_paired(annotations, weights, qualified_nodes, qualified_edges, clause
     return lower, upper
 
 
+@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
+def test_probability_func_consistency(mode):
+    """Ensure annotation function behaves the same with and without JIT."""
+    setup_mode(mode)
+    annotations = numba.typed.List()
+    annotations.append(numba.typed.List([closed(0.01, 1.0)]))
+    annotations.append(numba.typed.List([closed(0.2, 1.0)]))
+    weights = numba.typed.List([1.0, 1.0])
+    jit_res = probability_func(annotations, weights)
+    py_res = probability_func.py_func(annotations, weights)
+    assert jit_res == py_res
+
+
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
-def test_annotation_function_with_groundings(mode):
-    """6-arg annotation function consumes per-clause groundings to pair atoms.
+def test_head_functions(mode):
+    """Test head function usage in rules for node and edge rules."""
+    setup_mode(mode)
 
-    The extended signature exposes qualified_nodes, qualified_edges,
-    clause_labels, and clause_variables in addition to (annotations, weights),
-    letting the function recover the join imposed by conn(X, Y) without
-    relying on body position (clauses can be reordered by reorder_clauses).
+    pr.add_head_function(identity_func)
+
+    graph = nx.DiGraph()
+    graph.add_node("A", property=1)
+    graph.add_node("B", property=1)
+    graph.add_edge("A", "B", connected=1)
+    pr.load_graph(graph)
+
+    pr.add_rule(pr.Rule('Processed(identity_func(X)) <- property(X), property(Y), connected(X, Y)', 'node_rule_with_func'))
+    pr.add_rule(pr.Rule('Route(identity_func(A), B) <- property(X), property(Y), connected(X, Y)', 'edge_rule_func_first'))
+    pr.add_rule(pr.Rule('Path(A, identity_func(B)) <- property(X), property(Y), connected(X, Y)', 'edge_rule_func_second'))
+    pr.add_rule(pr.Rule('Link(identity_func(A), identity_func(B)) <- property(X), property(Y), connected(X, Y)', 'edge_rule_func_both'))
+
+    interpretation = pr.reason(timesteps=1)
+
+    assert interpretation.query(pr.Query('Processed(A)'), return_bool=True)
+    assert interpretation.query(pr.Query('Route(A, B)'), return_bool=True)
+    assert interpretation.query(pr.Query('Path(A, B)'), return_bool=True)
+    assert interpretation.query(pr.Query('Link(A, B)'), return_bool=True)
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
+def test_annotation_function(mode):
+    """Annotation function usage in reasoning.
+
+    Exercises both supported signatures in a single reason() call:
+      - ``probability_func`` (2-arg legacy: annotations, weights)
+      - ``ann_fn_paired``    (6-arg extended: + qualified_nodes,
+                              qualified_edges, clause_labels,
+                              clause_variables)
+
+    Mixing the two signatures on different rules confirms per-rule dispatch
+    in ``annotate`` and the per-rule metadata gate in ``_ground_rule``
+    (``extended_ann_fn_flags[i]``) route each rule to the correct path.
+    ``atom_trace`` is left at its default (off) so the 6-arg path is
+    exercised through the perf gate alone, not via the atom_trace branch.
     """
     setup_mode(mode)
-    pr.settings.allow_ground_rules = True
-    pr.settings.atom_trace = True
 
+    pr.settings.allow_ground_rules = True
+
+    # 2-arg path: simple disjoint probability
+    pr.add_fact(pr.Fact('P(A) : [0.01, 1]'))
+    pr.add_fact(pr.Fact('P(B) : [0.2, 1]'))
+
+    # 6-arg path: hasLabel + conn join. Correct answer for hackerAt(b) is
+    # [0.5, 1] from the conn-paired (l1, l5) grounding, not [0.3, 1] from
+    # the positional weakest-link aggregation a 2-arg fn would yield.
     pr.add_fact(pr.Fact("hasLabel(a, l1):[0.5,1]"))
     pr.add_fact(pr.Fact("hasLabel(a, l2):[0.6,1]"))
     pr.add_fact(pr.Fact("hasLabel(a, l_unused):[0.8,1]"))
@@ -197,20 +187,25 @@ def test_annotation_function_with_groundings(mode):
     pr.add_fact(pr.Fact("conn(l1, l5)"))
     pr.add_fact(pr.Fact("conn(l1, l6)"))
 
+    pr.add_annotation_function(probability_func)
     pr.add_annotation_function(ann_fn_paired)
+
+    pr.add_rule(pr.Rule('union_probability(A, B):probability_func <- P(A):[0, 1], P(B):[0, 1]', infer_edges=True))
     pr.add_rule(pr.Rule(
         "hackerAt(CB2):ann_fn_paired <- hasLabel(CB1, X):[0.001,1], hasLabel(CB2,Y):[0.001,1], conn(X,Y)"
     ))
 
     interpretation = pr.reason(timesteps=1)
 
-    # For CB2=b, pairings driven by conn(X,Y):
-    #   (l1, l4): min(hasLabel(a,l1)=0.5, hasLabel(b,l4)=0.3) -> 0.3
-    #   (l2, l4): min(hasLabel(a,l2)=0.6, hasLabel(b,l4)=0.3) -> 0.3
-    #   (l1, l5): min(hasLabel(a,l1)=0.5, hasLabel(b,l5)=0.8) -> 0.5  <- best
-    #   (l1, l6): no hasLabel(b,l6), skipped
+    dataframes = pr.filter_and_sort_edges(interpretation, ['union_probability'])
+    for t, df in enumerate(dataframes):
+        print(f'TIMESTEP - {t}')
+        print(df)
+        print()
+
+    assert interpretation.query(pr.Query('union_probability(A, B) : [0.21, 1]')), 'Union probability should be 0.21'
     assert interpretation.query(pr.Query('hackerAt(b) : [0.5, 1]')), \
-        'hackerAt(b) should be [0.5, 1] (best pair: hasLabel(a,l1) + hasLabel(b,l5))'
+        'hackerAt(b) should be [0.5, 1] (best conn-paired grounding: hasLabel(a,l1) + hasLabel(b,l5))'
 
 
 @pytest.mark.slow

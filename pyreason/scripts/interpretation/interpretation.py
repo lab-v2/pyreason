@@ -221,7 +221,15 @@ class Interpretation:
 			if restart:
 				self.time = 0
 				self.prev_reasoning_data[0] = 0
-		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.predicate_map_node, self.predicate_map_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.persistent, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, self.allow_ground_rules, max_facts_time, self.annotation_functions, self.head_functions, self._convergence_mode, self._convergence_delta, self.num_ga, verbose, again, self.closed_world_predicates)
+		# Per-rule flag: True iff the rule's annotation function is registered
+		# with the extended 6-arg signature. Gates the per-grounding metadata
+		# build in _ground_rule so legacy 2-arg ann_fns pay zero extra cost.
+		ann_fn_arity = {f.__name__: getattr(f, 'py_func', f).__code__.co_argcount for f in self.annotation_functions}
+		extended_ann_fn_flags = numba.typed.List.empty_list(numba.types.boolean)
+		for r in rules:
+			fn_name = r.get_annotation_function()
+			extended_ann_fn_flags.append(fn_name != '' and ann_fn_arity.get(fn_name, 0) == 6)
+		fp_cnt, t = self.reason(self.interpretations_node, self.interpretations_edge, self.predicate_map_node, self.predicate_map_edge, self.tmax, self.prev_reasoning_data, rules, self.nodes, self.edges, self.neighbors, self.reverse_neighbors, self.rules_to_be_applied_node, self.rules_to_be_applied_edge, self.edges_to_be_added_node_rule, self.edges_to_be_added_edge_rule, self.rules_to_be_applied_node_trace, self.rules_to_be_applied_edge_trace, self.facts_to_be_applied_node, self.facts_to_be_applied_edge, self.facts_to_be_applied_node_trace, self.facts_to_be_applied_edge_trace, self.ipl, self.rule_trace_node, self.rule_trace_edge, self.rule_trace_node_atoms, self.rule_trace_edge_atoms, self.reverse_graph, self.atom_trace, self.save_graph_attributes_to_rule_trace, self.persistent, self.inconsistency_check, self.store_interpretation_changes, self.update_mode, self.allow_ground_rules, max_facts_time, self.annotation_functions, extended_ann_fn_flags, self.head_functions, self._convergence_mode, self._convergence_delta, self.num_ga, verbose, again, self.closed_world_predicates)
 		self.time = t - 1
 		# If we need to reason again, store the next timestep to start from
 		self.prev_reasoning_data[0] = t
@@ -231,7 +239,7 @@ class Interpretation:
 
 	@staticmethod
 	@numba.njit(cache=True, parallel=False)
-	def reason(interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, persistent, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules, max_facts_time, annotation_functions, head_functions, convergence_mode, convergence_delta, num_ga, verbose, again, closed_world_predicates):
+	def reason(interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, tmax, prev_reasoning_data, rules, nodes, edges, neighbors, reverse_neighbors, rules_to_be_applied_node, rules_to_be_applied_edge, edges_to_be_added_node_rule, edges_to_be_added_edge_rule, rules_to_be_applied_node_trace, rules_to_be_applied_edge_trace, facts_to_be_applied_node, facts_to_be_applied_edge, facts_to_be_applied_node_trace, facts_to_be_applied_edge_trace, ipl, rule_trace_node, rule_trace_edge, rule_trace_node_atoms, rule_trace_edge_atoms, reverse_graph, atom_trace, save_graph_attributes_to_rule_trace, persistent, inconsistency_check, store_interpretation_changes, update_mode, allow_ground_rules, max_facts_time, annotation_functions, extended_ann_fn_flags, head_functions, convergence_mode, convergence_delta, num_ga, verbose, again, closed_world_predicates):
 		t = prev_reasoning_data[0]
 		fp_cnt = prev_reasoning_data[1]
 		max_rules_time = 0
@@ -566,7 +574,7 @@ class Interpretation:
 						# Only go through if the rule can be applied within the given timesteps, or we're running until convergence
 						delta_t = rule.get_delta()
 						if t + delta_t <= tmax or tmax == -1 or again:
-							applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, num_ga, t, head_functions, closed_world_predicates)
+							applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, extended_ann_fn_flags[i], allow_ground_rules, num_ga, t, head_functions, closed_world_predicates)
 
 							# Loop through applicable rules and add them to the rules to be applied for later or next fp operation
 							for applicable_rule in applicable_node_rules:
@@ -799,7 +807,7 @@ class Interpretation:
 
 
 @numba.njit(cache=True)
-def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, allow_ground_rules, num_ga, t, head_functions, closed_world_predicates):
+def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, extended_ann_fn, allow_ground_rules, num_ga, t, head_functions, closed_world_predicates):
 	# Extract rule params
 	rule_type = rule.get_type()
 	head_variables = rule.get_head_variables()
@@ -987,14 +995,15 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 						clause_var_1 = clause_variables[0]
 
 						# 1.
-						if atom_trace or ann_fn != '':
+						if atom_trace or extended_ann_fn:
 							if clause_var_1 == head_var_1:
 								qualified_nodes.append(numba.typed.List([head_grounding]))
 							else:
 								qualified_nodes.append(numba.typed.List(groundings[clause_var_1]))
 							qualified_edges.append(numba.typed.List.empty_list(edge_type))
-							clause_labels_out.append(clause_label)
-							clause_variables_out.append(numba.typed.List(clause_variables))
+							if extended_ann_fn:
+								clause_labels_out.append(clause_label)
+								clause_variables_out.append(numba.typed.List(clause_variables))
 						# 2.
 						if ann_fn != '':
 							a = numba.typed.List.empty_list(interval.interval_type)
@@ -1008,7 +1017,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 					elif clause_type == 'edge':
 						clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
 						# 1.
-						if atom_trace or ann_fn != '':
+						if atom_trace or extended_ann_fn:
 							# Cases: Both equal, one equal, none equal
 							qualified_nodes.append(numba.typed.List.empty_list(node_type))
 							if clause_var_1 == head_var_1:
@@ -1019,8 +1028,9 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 								qualified_edges.append(es)
 							else:
 								qualified_edges.append(numba.typed.List(groundings_edges[(clause_var_1, clause_var_2)]))
-							clause_labels_out.append(clause_label)
-							clause_variables_out.append(numba.typed.List(clause_variables))
+							if extended_ann_fn:
+								clause_labels_out.append(clause_label)
+								clause_variables_out.append(numba.typed.List(clause_variables))
 						# 2.
 						if ann_fn != '':
 							a = numba.typed.List.empty_list(interval.interval_type)
@@ -1157,7 +1167,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 					if clause_type == 'node':
 						clause_var_1 = clause_variables[0]
 						# 1.
-						if atom_trace or ann_fn != '':
+						if atom_trace or extended_ann_fn:
 							if clause_var_1 == head_var_1:
 								qualified_nodes.append(numba.typed.List([head_var_1_grounding]))
 							elif clause_var_1 == head_var_2:
@@ -1165,8 +1175,9 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 							else:
 								qualified_nodes.append(numba.typed.List(temp_groundings[clause_var_1]))
 							qualified_edges.append(numba.typed.List.empty_list(edge_type))
-							clause_labels_out.append(clause_label)
-							clause_variables_out.append(numba.typed.List(clause_variables))
+							if extended_ann_fn:
+								clause_labels_out.append(clause_label)
+								clause_variables_out.append(numba.typed.List(clause_variables))
 						# 2.
 						if ann_fn != '':
 							a = numba.typed.List.empty_list(interval.interval_type)
@@ -1182,7 +1193,7 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 					elif clause_type == 'edge':
 						clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
 						# 1.
-						if atom_trace or ann_fn != '':
+						if atom_trace or extended_ann_fn:
 							# Cases:
 							# 1. Both equal (cv1 = hv1 and cv2 = hv2 or cv1 = hv2 and cv2 = hv1)
 							# 2. One equal (cv1 = hv1 or cv2 = hv1 or cv1 = hv2 or cv2 = hv2)
@@ -1208,8 +1219,9 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 								qualified_edges.append(es)
 							else:
 								qualified_edges.append(numba.typed.List(temp_groundings_edges[(clause_var_1, clause_var_2)]))
-							clause_labels_out.append(clause_label)
-							clause_variables_out.append(numba.typed.List(clause_variables))
+							if extended_ann_fn:
+								clause_labels_out.append(clause_label)
+								clause_variables_out.append(numba.typed.List(clause_variables))
 
 						# 2.
 						if ann_fn != '':
@@ -1847,6 +1859,50 @@ def is_satisfied_edge_comparison(interpretations, comp, na):
 
 @numba.njit(cache=True)
 def annotate(annotation_functions, rule, annotations, qualified_nodes, qualified_edges, clause_labels, clause_variables, weights):
+	"""Resolve and invoke the rule's annotation function.
+
+	If the rule has no annotation function attached, returns the rule's static
+	bound directly. Otherwise looks up the user-registered function by name
+	and dispatches based on arity (arity is validated at registration; see
+	``add_annotation_function``).
+
+	Two supported signatures:
+
+	- 2-arg legacy::
+
+	      def fn(annotations, weights) -> Tuple[float, float]
+
+	- 6-arg extended::
+
+	      def fn(annotations, weights,
+	             qualified_nodes, qualified_edges,
+	             clause_labels, clause_variables) -> Tuple[float, float]
+
+	  The extended args expose the per-clause join structure the engine
+	  already builds, so user code can identify clauses by predicate name +
+	  variable role (robust to ``reorder_clauses``) and walk the actual
+	  per-grounding pairings rather than the flattened per-atom bounds.
+
+	Per-clause alignment (extended signature)
+	-----------------------------------------
+	The five list-shaped args are indexed by the same per-clause position ``i``::
+
+	    annotations[i]       # List[Interval] — bounds of qualifying atoms
+	    qualified_nodes[i]   # List[Node]     — nodes that qualified
+	    qualified_edges[i]   # List[Edge]     — edges that qualified
+	    clause_labels[i]     # Label          — predicate of this clause
+	    clause_variables[i]  # List[str]      — variable names of this clause
+
+	Per-clause arity:
+
+	- Node clause: ``qualified_edges[i]`` is empty; ``len(clause_variables[i]) == 1``.
+	- Edge clause: ``qualified_nodes[i]`` is empty; ``len(clause_variables[i]) == 2``.
+
+	Comparison clauses are skipped during metadata collection, so
+	``len(clause_labels)`` may be less than ``len(rule.get_clauses())``.
+	Do not assume index parity with the original rule body — match clauses
+	by predicate name and variable role instead.
+	"""
 	func_name = rule.get_annotation_function()
 	if func_name == '':
 		return rule.get_bnd().lower, rule.get_bnd().upper
@@ -1854,16 +1910,13 @@ def annotate(annotation_functions, rule, annotations, qualified_nodes, qualified
 		with numba.objmode(annotation='Tuple((float64, float64))'):
 			for func in annotation_functions:
 				if func.__name__ == func_name:
-					# Back-compat: dispatch on arity.
-					#   2 args: legacy (annotations, weights)
-					#   6 args: + (qualified_nodes, qualified_edges, clause_labels,
-					#              clause_variables) so user code can recover the
-					#              per-grounding join and identify clauses by
-					#              predicate name / variable bindings instead of
-					#              relying on body order
+					# Arity is gated at registration time by
+					# `add_annotation_function`, so only 2 and 6 reach here.
+					# (Raising inside numba.objmode is unsupported, so we
+					# rely on the registration-time check for validation.)
 					py_func = getattr(func, 'py_func', func)
 					nargs = py_func.__code__.co_argcount
-					if nargs >= 6:
+					if nargs == 6:
 						annotation = func(annotations, weights, qualified_nodes, qualified_edges, clause_labels, clause_variables)
 					else:
 						annotation = func(annotations, weights)
