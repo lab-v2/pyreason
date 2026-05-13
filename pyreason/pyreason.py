@@ -1413,15 +1413,70 @@ def add_fact_from_csv(csv_path: str, raise_errors = True) -> None:
 
 
 def add_annotation_function(function: Callable) -> None:
-    """Function to add annotation functions to PyReason. The added functions can be used in rules
+    """Function to add annotation functions to PyReason. The added functions can be used in rules.
 
-    :param function: Function to be added. This has to be under a numba `njit` decorator. function has signature: two parameters as input -- annotations, weights
+    The function must be ``@numba.njit``-decorated and must accept exactly one of the two
+    supported signatures:
+
+    - 2 args (legacy)::
+
+          def fn(annotations, weights) -> Tuple[float, float]
+
+      ``annotations`` is a per-clause list of bounds for the atoms that satisfied that
+      clause. The relational join across body variables is performed inside the engine
+      and projected away before this hook fires, so 2-arg functions cannot recover which
+      grounding produced which bound.
+
+    - 6 args (extended)::
+
+          def fn(annotations, weights,
+                 qualified_nodes, qualified_edges,
+                 clause_labels, clause_variables) -> Tuple[float, float]
+
+      Same as the legacy signature, plus four extra args that expose the per-clause
+      structure the engine already builds:
+
+      ====================  =====================================================
+      ``annotations[i]``    bounds of atoms that satisfied clause ``i``
+      ``qualified_nodes[i]``    nodes that satisfied clause ``i`` (empty for edge clauses)
+      ``qualified_edges[i]``    edges that satisfied clause ``i`` (empty for node clauses)
+      ``clause_labels[i]``  predicate label of clause ``i``
+      ``clause_variables[i]``  variable names of clause ``i``
+                                 (length 1 for node clauses, length 2 for edge clauses)
+      ====================  =====================================================
+
+      Comparison clauses are not surfaced, so the list lengths may be less than
+      ``len(rule.get_clauses())``. Match clauses by predicate name and variable role,
+      not by position in the rule body — the parser's ``reorder_clauses`` optimization
+      may rewrite the order.
+
+    Arity validation runs at registration time, so anything other than 2 or 6 raises
+    ``TypeError`` here rather than producing a confusing failure inside the reasoning
+    loop.
+
+    :param function: Function to be added. Must be ``@numba.njit``-decorated and must
+        match one of the two supported signatures above.
     :type function: Callable
     :return: None
+    :raises TypeError: if ``function`` does not have exactly 2 or 6 positional
+        arguments.
     """
     # Make sure that the functions are jitted so that they can be passed around in other jitted functions
     # TODO: Remove if necessary
     # assert hasattr(function, 'nopython_signatures'), 'The function to be added has to be under a `numba.njit` decorator'
+
+    # Arity gate: only 2-arg and 6-arg signatures are supported by `annotate`.
+    # Validating here keeps the error close to the user's call site and avoids
+    # `raise` inside numba.objmode (which would fail with_lifting).
+    py_func = getattr(function, 'py_func', function)
+    nargs = py_func.__code__.co_argcount
+    if nargs != 2 and nargs != 6:
+        raise TypeError(
+            f"Annotation function {py_func.__name__!r} must accept exactly 2 positional "
+            f"args (annotations, weights) or exactly 6 positional args (annotations, "
+            f"weights, qualified_nodes, qualified_edges, clause_labels, clause_variables); "
+            f"got {nargs}."
+        )
 
     __annotation_functions.append(function)
 
