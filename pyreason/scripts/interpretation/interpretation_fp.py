@@ -1094,6 +1094,10 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 					add_head_var_node_to_graph = True
 				groundings[head_var_1] = numba.typed.List([head_var_1])
 
+			# TODO(perf): when extended_ann_fn is True, `numba.typed.List(clause_variables)`
+			# is allocated K*N times (K head groundings * N clauses) below, but the data
+			# is rule-static. Hoist a precomputed `clause_variables_precomputed` list
+			# here and append references in the inner loop instead of fresh copies.
 			for head_grounding in groundings[head_var_1]:
 				qualified_nodes = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
 				qualified_edges = numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type))
@@ -1232,6 +1236,10 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 							valid_edge_groundings.append((g1, g2))
 
 			# Loop through the head variable groundings
+			# TODO(perf): when extended_ann_fn is True, `numba.typed.List(clause_variables)`
+			# is allocated K*N times (K edge groundings * N clauses) below, but the data
+			# is rule-static. Hoist a precomputed `clause_variables_precomputed` list
+			# here and append references in the inner loop instead of fresh copies.
 			for valid_e in valid_edge_groundings:
 				head_var_1_grounding, head_var_2_grounding = valid_e[0], valid_e[1]
 				qualified_nodes = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
