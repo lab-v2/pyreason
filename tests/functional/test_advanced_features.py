@@ -107,6 +107,112 @@ def test_annotation_function(mode):
     assert interpretation.query(pr.Query('union_probability(A, B) : [0.21, 1]')), 'Union probability should be 0.21'
 
 
+@numba.njit
+def ann_fn_paired(annotations, weights, qualified_nodes, qualified_edges, clause_labels, clause_variables):
+    # 6-arg annotation function: pair hasLabel(CB1,X) and hasLabel(CB2,Y) atoms
+    # via conn(X,Y) groundings. Identify clauses by predicate + variable role
+    # rather than body position (reorder_clauses may rewrite clause order).
+    head_var = "CB2"
+    conn_idx = -1
+    has_label_cb1_idx = -1
+    has_label_cb2_idx = -1
+    for i in range(len(clause_labels)):
+        name = clause_labels[i].value
+        if name == "conn":
+            conn_idx = i
+        elif name == "hasLabel":
+            if clause_variables[i][0] == head_var:
+                has_label_cb2_idx = i
+            else:
+                has_label_cb1_idx = i
+
+    if conn_idx < 0 or has_label_cb1_idx < 0 or has_label_cb2_idx < 0:
+        return 0.0, 1.0
+
+    best_lower = 0.0
+    best_upper = 0.0
+    found_any = False
+    conn_pairs = qualified_edges[conn_idx]
+    for ci in range(len(conn_pairs)):
+        x_val = conn_pairs[ci][0]
+        y_val = conn_pairs[ci][1]
+
+        x_lower = -1.0
+        x_upper = -1.0
+        for k in range(len(qualified_edges[has_label_cb1_idx])):
+            if qualified_edges[has_label_cb1_idx][k][1] == x_val:
+                x_lower = annotations[has_label_cb1_idx][k].lower
+                x_upper = annotations[has_label_cb1_idx][k].upper
+                break
+        if x_lower < 0.0:
+            continue
+
+        y_lower = -1.0
+        y_upper = -1.0
+        for k in range(len(qualified_edges[has_label_cb2_idx])):
+            if qualified_edges[has_label_cb2_idx][k][1] == y_val:
+                y_lower = annotations[has_label_cb2_idx][k].lower
+                y_upper = annotations[has_label_cb2_idx][k].upper
+                break
+        if y_lower < 0.0:
+            continue
+
+        pair_lower = min(x_lower, y_lower)
+        pair_upper = min(x_upper, y_upper)
+        if not found_any or pair_lower > best_lower:
+            best_lower = pair_lower
+            best_upper = pair_upper
+            found_any = True
+
+    if not found_any:
+        return 0.0, 1.0
+    lower = min(best_lower, 1.0)
+    upper = min(best_upper, 1.0)
+    if lower > upper:
+        return 0.0, 1.0
+    return lower, upper
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
+def test_annotation_function_with_groundings(mode):
+    """6-arg annotation function consumes per-clause groundings to pair atoms.
+
+    The extended signature exposes qualified_nodes, qualified_edges,
+    clause_labels, and clause_variables in addition to (annotations, weights),
+    letting the function recover the join imposed by conn(X, Y) without
+    relying on body position (clauses can be reordered by reorder_clauses).
+    """
+    setup_mode(mode)
+    pr.settings.allow_ground_rules = True
+    pr.settings.atom_trace = True
+
+    pr.add_fact(pr.Fact("hasLabel(a, l1):[0.5,1]"))
+    pr.add_fact(pr.Fact("hasLabel(a, l2):[0.6,1]"))
+    pr.add_fact(pr.Fact("hasLabel(a, l_unused):[0.8,1]"))
+    pr.add_fact(pr.Fact("hasLabel(b, l4):[0.3,1]"))
+    pr.add_fact(pr.Fact("hasLabel(b, l5):[0.8,1]"))
+    pr.add_fact(pr.Fact("conn(l1, l4)"))
+    pr.add_fact(pr.Fact("conn(l2, l4)"))
+    pr.add_fact(pr.Fact("conn(l1, l5)"))
+    pr.add_fact(pr.Fact("conn(l1, l6)"))
+
+    pr.add_annotation_function(ann_fn_paired)
+    pr.add_rule(pr.Rule(
+        "hackerAt(CB2):ann_fn_paired <- hasLabel(CB1, X):[0.001,1], hasLabel(CB2,Y):[0.001,1], conn(X,Y)"
+    ))
+
+    interpretation = pr.reason(timesteps=1)
+
+    # For CB2=b, pairings driven by conn(X,Y):
+    #   (l1, l4): min(hasLabel(a,l1)=0.5, hasLabel(b,l4)=0.3) -> 0.3
+    #   (l2, l4): min(hasLabel(a,l2)=0.6, hasLabel(b,l4)=0.3) -> 0.3
+    #   (l1, l5): min(hasLabel(a,l1)=0.5, hasLabel(b,l5)=0.8) -> 0.5  <- best
+    #   (l1, l6): no hasLabel(b,l6), skipped
+    assert interpretation.query(pr.Query('hackerAt(b) : [0.5, 1]')), \
+        'hackerAt(b) should be [0.5, 1] (best pair: hasLabel(a,l1) + hasLabel(b,l5))'
+
+
 @pytest.mark.slow
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
 def test_negated_annotation_function(mode):
