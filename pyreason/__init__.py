@@ -9,13 +9,11 @@ os.environ['NUMBA_CACHE_DIR'] = cache_path
 
 from pyreason.pyreason import *
 import yaml
-from importlib.metadata import version
-from pkg_resources import get_distribution, DistributionNotFound
+from importlib.metadata import version, PackageNotFoundError
 
 try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:
-    # package is not installed
+    __version__ = version(__name__)
+except PackageNotFoundError:
     pass
 
 
