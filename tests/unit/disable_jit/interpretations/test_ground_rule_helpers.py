@@ -1039,7 +1039,7 @@ def test_ground_rule_node_success_adds_head_node_and_collects_trace_ann(monkeypa
 
     # One applicable rule instance for node head
     assert len(apps_node) == 1 and apps_edge == []
-    head_grounding, annotations, qualified_nodes, qualified_edges, edges_to_add = apps_node[0]
+    head_grounding, annotations, qualified_nodes, qualified_edges, edges_to_add, _, _ = apps_node[0]
 
     assert head_grounding == "H"
     # _add_node called to materialize head node (ground rule)
@@ -1093,7 +1093,7 @@ def test_ground_rule_edge_infer_adds_nodes_and_unlabeled_edge(monkeypatch):
     # One applicable edge instance
     assert apps_node == []
     assert len(apps_edge) == 1
-    (e, annotations, qn, qe, edges_to_add) = apps_edge[0]
+    (e, annotations, qn, qe, edges_to_add, _, _) = apps_edge[0]
     assert e == ("S","T")
 
     # infer_edges → edges_to_add lists get S and T
@@ -1160,7 +1160,7 @@ def test_ground_rule_edge_existing_edge_with_body_clause_trace_and_ann(monkeypat
     # One applicable instance using existing edge
     assert apps_node == []
     assert len(apps_edge) == 1
-    (e, annotations, qn, qe, edges_to_add) = apps_edge[0]
+    (e, annotations, qn, qe, edges_to_add, _, _) = apps_edge[0]
 
     # The head grounding should be the concrete edge
     assert e == ("A","B")
@@ -1255,7 +1255,7 @@ def test_ground_rule_node_edge_clause_trace_and_ann_three_cases(monkeypatch):
 
     # Node-head: expect exactly one applicable rule instance
     assert len(apps_node) == 1 and apps_edge == []
-    head_grounding, annotations, qualified_nodes, qualified_edges, edges_to_add = apps_node[0]
+    head_grounding, annotations, qualified_nodes, qualified_edges, edges_to_add, _, _ = apps_node[0]
     assert head_grounding == "H"
 
     # We have 3 edge clauses → 3 entries added for both trace and annotations
@@ -1376,7 +1376,7 @@ def test_ground_rule_edge_head_edge_clause_all_matching_cases(monkeypatch):
     # Exactly one head pair (H1,H2) → one applicable edge
     assert apps_node == []
     assert len(apps_edge) == 1
-    (e, annotations, qn, qe, edges_to_add) = apps_edge[0]
+    (e, annotations, qn, qe, edges_to_add, _, _) = apps_edge[0]
     assert e == (hv1, hv2)
 
     # 7 clauses → 7 entries
@@ -1463,7 +1463,7 @@ def test_ground_rule_node_clause_ground_atom_allow_ground_rules(monkeypatch):
 
     assert apps_edge == []
     assert len(apps_node) == 1
-    head_grounding, annotations, qn, qe, edges_to_add = apps_node[0]
+    head_grounding, annotations, qn, qe, edges_to_add, _, _ = apps_node[0]
     assert head_grounding == "A"
     assert qn[0] == ["A"]
     assert annotations[0] == ["ANN_A"]
@@ -1555,7 +1555,7 @@ def test_ground_rule_edge_head_vars_use_existing_nodes_when_allowed(monkeypatch)
 
     assert apps_node == []
     assert len(apps_edge) == 1
-    e, annotations, qn, qe, edges_to_add = apps_edge[0]
+    e, annotations, qn, qe, edges_to_add, _, _ = apps_edge[0]
     assert e == ("A", "B")
     assert annotations == []
     assert qn == []
@@ -1969,7 +1969,7 @@ def test_ground_rule_edge_with_node_clauses_tracing(monkeypatch):
 
     assert apps_node == []
     assert len(apps_edge) == 1
-    (e, annotations, qn, qe, edges_to_add) = apps_edge[0]
+    (e, annotations, qn, qe, edges_to_add, _, _) = apps_edge[0]
     assert e == ("a1", "b1")
     assert qn[0] == ["a1"]
     assert qn[1] == ["b1"]
