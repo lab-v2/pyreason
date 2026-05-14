@@ -1,17 +1,20 @@
-networkx
-pyyaml
-pandas
-numba==0.59.1
-numpy==1.26.4
+# Install all development dependencies:
+#   uv pip install -e ".[dev,torch,docs]"   (recommended)
+#   pip install -r requirements.txt          (legacy fallback)
+
+networkx>=3.1
+pyyaml>=6.0
+pandas>=2.0.0
+numba>=0.65.1
+numpy>=2.1,<2.5
 memory_profiler
+torch>=2.6.0
 pytest
-torch
-setuptools_scm
 pytest-cov
 pre-commit
+ruff
 
 sphinx_rtd_theme
 sphinx
 sphinx-autopackagesummary
 sphinx-autoapi
-ruff

@@ -1,6 +1,64 @@
 [build-system]
-requires = ['setuptools>=42']
-build-backend = 'setuptools.build_meta'
+requires = ["setuptools>=80", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyreason"
+description = "An explainable inference software supporting annotated, real valued, graph based and temporal logic"
+readme = "README.md"
+license = { text = "BSD 3-Clause" }
+authors = [
+  { name = "Dyuman Aditya", email = "dyuman.aditya@gmail.com" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.10"
+dynamic = ["version"]
+dependencies = [
+    "networkx>=3.1",
+    "pyyaml>=6.0",
+    "pandas>=2.0.0",
+    "numba>=0.65.1",
+    "numpy>=2.1,<2.5",
+]
+
+[project.optional-dependencies]
+torch = ["torch>=2.6.0"]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pre-commit",
+    "ruff",
+    "memory_profiler",
+]
+docs = [
+    "sphinx",
+    "sphinx_rtd_theme",
+    "sphinx-autopackagesummary",
+    "sphinx-autoapi",
+]
+
+[project.urls]
+Homepage = "https://github.com/lab-v2/pyreason"
+"Bug Tracker" = "https://github.com/lab-v2/pyreason/issues"
+Repository = "https://github.com/lab-v2/pyreason"
+
+[tool.setuptools_scm]
+fallback_version = "0.0.0"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
 
 [tool.ruff.lint]
 # Ignore ambiguous variable name errors (E741) in interpretation files

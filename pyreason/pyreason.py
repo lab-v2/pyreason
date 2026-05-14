@@ -7,7 +7,12 @@ import numba
 import time
 import sys
 import pandas as pd
-import memory_profiler as mp
+try:
+    import memory_profiler as mp
+    _has_memory_profiler = True
+except ImportError:
+    mp = None
+    _has_memory_profiler = False
 import warnings
 from typing import List, Type, Callable, Tuple, Optional
 
@@ -1512,6 +1517,12 @@ def reason(timesteps: int = -1, convergence_threshold: int = -1, convergence_bou
 
     if settings.output_to_file:
         sys.stdout = open(f"./{settings.output_file_name}_{__timestamp}.txt", "a")
+
+    if settings.memory_profile and not _has_memory_profiler:
+        raise ImportError(
+            "memory_profiler is required for memory profiling. "
+            "Install it with: pip install memory_profiler"
+        )
 
     if not again or __program is None:
         if settings.memory_profile:

@@ -1,6 +1,11 @@
 # ruff: noqa: F403 F405 (Ignore Pyreason import * for public api)
 # Set numba environment variable
 import os
+import sys
+
+# Python 3.11+ bytecode generates ~2300 CFG nodes for the large JIT-compiled
+# reasoning functions; Numba's recursive DFS exceeds the default limit of 1000.
+sys.setrecursionlimit(max(sys.getrecursionlimit(), 5000))
 package_path = os.path.abspath(os.path.dirname(__file__))
 cache_path = os.path.join(package_path, 'cache')
 cache_status_path = os.path.join(package_path, '.cache_status.yaml')
@@ -9,13 +14,11 @@ os.environ['NUMBA_CACHE_DIR'] = cache_path
 
 from pyreason.pyreason import *
 import yaml
-from importlib.metadata import version
-from pkg_resources import get_distribution, DistributionNotFound
+from importlib.metadata import version, PackageNotFoundError
 
 try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:
-    # package is not installed
+    __version__ = version(__name__)
+except PackageNotFoundError:
     pass
 
 
