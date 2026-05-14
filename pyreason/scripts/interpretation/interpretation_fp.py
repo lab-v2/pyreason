@@ -360,9 +360,9 @@ class Interpretation:
 				facts_to_be_applied_node_new.clear()
 				facts_to_be_applied_node_trace_new.clear()
 				nodes_set = set(nodes)
-				for i in range(len(facts_to_be_applied_node)):
-					if facts_to_be_applied_node[i][0] == t:
-						comp, l, bnd, static, graph_attribute = facts_to_be_applied_node[i][1], facts_to_be_applied_node[i][2], facts_to_be_applied_node[i][3], facts_to_be_applied_node[i][4], facts_to_be_applied_node[i][5]
+				for fi in range(len(facts_to_be_applied_node)):
+					if facts_to_be_applied_node[fi][0] == t:
+						comp, l, bnd, static, graph_attribute = facts_to_be_applied_node[fi][1], facts_to_be_applied_node[fi][2], facts_to_be_applied_node[fi][3], facts_to_be_applied_node[fi][4], facts_to_be_applied_node[fi][5]
 						# If the component is not in the graph, add it
 						if comp not in nodes_set:
 							nodes_set.add(comp)
@@ -375,27 +375,27 @@ class Interpretation:
 							# Check if we should even store any of the changes to the rule trace etc.
 							# Inverse of this is: if not save_graph_attributes_to_rule_trace and graph_attribute
 							if (save_graph_attributes_to_rule_trace or not graph_attribute) and store_interpretation_changes:
-								meta_name = facts_to_be_applied_node_trace[i] if atom_trace else ''
+								meta_name = facts_to_be_applied_node_trace[fi] if atom_trace else ''
 								rule_trace_node.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, l, bnd, True, 'Fact', meta_name, ''))
 								if atom_trace:
-									_update_rule_trace(rule_trace_node_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), bnd, facts_to_be_applied_node_trace[i])
+									_update_rule_trace(rule_trace_node_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), bnd, facts_to_be_applied_node_trace[fi])
 								for p1, p2 in ipl:
 									if p1==l:
 										rule_trace_node.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, p2, interpretations_node[t][comp].world[p2], True, 'IPL', f'IPL: {l.get_value()}', ''))
 										if atom_trace:
-											_update_rule_trace(rule_trace_node_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), interpretations_node[t][comp].world[p2], facts_to_be_applied_node_trace[i])
+											_update_rule_trace(rule_trace_node_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), interpretations_node[t][comp].world[p2], facts_to_be_applied_node_trace[fi])
 									elif p2==l:
 										rule_trace_node.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, p1, interpretations_node[t][comp].world[p1], True, 'IPL', f'IPL: {l.get_value()}', ''))
 										if atom_trace:
-											_update_rule_trace(rule_trace_node_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), interpretations_node[t][comp].world[p1], facts_to_be_applied_node_trace[i])
-	
+											_update_rule_trace(rule_trace_node_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), interpretations_node[t][comp].world[p1], facts_to_be_applied_node_trace[fi])
+
 						else:
 							# Check for inconsistencies (multiple facts)
 							if check_consistent_node(interpretations_node[t], comp, (l, bnd)):
 								mode = 'graph-attribute-fact' if graph_attribute else 'fact'
 								override = True if update_mode == 'override' else False
-								u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode=mode, override=override)
-	
+								u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, fi, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode=mode, override=override)
+
 								update = u or update
 								if update:
 									max_t_changes = max(max_t_changes, t)
@@ -408,10 +408,10 @@ class Interpretation:
 							else:
 								mode = 'graph-attribute-fact' if graph_attribute else 'fact'
 								if inconsistency_check:
-									resolve_inconsistency_node(interpretations_node[t], comp, (l, bnd), ipl, t, fp_cnt, i, atom_trace, rule_trace_node, rule_trace_node_atoms, rules_to_be_applied_node_trace, facts_to_be_applied_node_trace, store_interpretation_changes, mode=mode)
+									resolve_inconsistency_node(interpretations_node[t], comp, (l, bnd), ipl, t, fp_cnt, fi, atom_trace, rule_trace_node, rule_trace_node_atoms, rules_to_be_applied_node_trace, facts_to_be_applied_node_trace, store_interpretation_changes, mode=mode)
 								else:
-									u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, i, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode=mode, override=True)
-	
+									u, changes = _update_node(interpretations_node[t], predicate_map_node, comp, (l, bnd), ipl, rule_trace_node, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_node_trace, fi, facts_to_be_applied_node_trace, rule_trace_node_atoms, store_interpretation_changes, mode=mode, override=True)
+
 									update = u or update
 									if update:
 										max_t_changes = max(max_t_changes, t)
@@ -420,17 +420,17 @@ class Interpretation:
 										bound_delta = max(bound_delta, changes)
 									else:
 										changes_cnt += changes
-	
+
 						if static:
-							facts_to_be_applied_node_new.append((numba.types.uint16(facts_to_be_applied_node[i][0]+1), comp, l, bnd, static, graph_attribute))
+							facts_to_be_applied_node_new.append((numba.types.uint16(facts_to_be_applied_node[fi][0]+1), comp, l, bnd, static, graph_attribute))
 							if atom_trace:
-								facts_to_be_applied_node_trace_new.append(facts_to_be_applied_node_trace[i])
-	
+								facts_to_be_applied_node_trace_new.append(facts_to_be_applied_node_trace[fi])
+
 					# If time doesn't match, fact to be applied later
 					else:
-						facts_to_be_applied_node_new.append(facts_to_be_applied_node[i])
+						facts_to_be_applied_node_new.append(facts_to_be_applied_node[fi])
 						if atom_trace:
-							facts_to_be_applied_node_trace_new.append(facts_to_be_applied_node_trace[i])
+							facts_to_be_applied_node_trace_new.append(facts_to_be_applied_node_trace[fi])
 	
 				# Update list of facts with ones that have not been applied yet (delete applied facts)
 				facts_to_be_applied_node[:] = facts_to_be_applied_node_new.copy()
@@ -443,40 +443,40 @@ class Interpretation:
 				facts_to_be_applied_edge_new.clear()
 				facts_to_be_applied_edge_trace_new.clear()
 				edges_set = set(edges)
-				for i in range(len(facts_to_be_applied_edge)):
-					if facts_to_be_applied_edge[i][0] == t:
-						comp, l, bnd, static, graph_attribute = facts_to_be_applied_edge[i][1], facts_to_be_applied_edge[i][2], facts_to_be_applied_edge[i][3], facts_to_be_applied_edge[i][4], facts_to_be_applied_edge[i][5]
+				for fi in range(len(facts_to_be_applied_edge)):
+					if facts_to_be_applied_edge[fi][0] == t:
+						comp, l, bnd, static, graph_attribute = facts_to_be_applied_edge[fi][1], facts_to_be_applied_edge[fi][2], facts_to_be_applied_edge[fi][3], facts_to_be_applied_edge[fi][4], facts_to_be_applied_edge[fi][5]
 						# If the component is not in the graph, add it
 						if comp not in edges_set:
 							_add_edge(comp[0], comp[1], neighbors, reverse_neighbors, nodes, edges, label.Label(''), interpretations_node[t], interpretations_edge[t], predicate_map_edge, t)
 							edges_set.add(comp)
 						elif comp not in interpretations_edge[t]:
 							_add_edge_to_interpretation(comp, interpretations_edge[t])
-	
+
 						# Check if bnd is static. Then no need to update, just add to rule trace, check if graph attribute, and add ipl complement to rule trace as well
 						if l in interpretations_edge[t][comp].world and interpretations_edge[t][comp].world[l].is_static():
 							# Inverse of this is: if not save_graph_attributes_to_rule_trace and graph_attribute
 							if (save_graph_attributes_to_rule_trace or not graph_attribute) and store_interpretation_changes:
-								meta_name = facts_to_be_applied_edge_trace[i] if atom_trace else ''
+								meta_name = facts_to_be_applied_edge_trace[fi] if atom_trace else ''
 								rule_trace_edge.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, l, interpretations_edge[t][comp].world[l], True, 'Fact', meta_name, ''))
 								if atom_trace:
-									_update_rule_trace(rule_trace_edge_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), bnd, facts_to_be_applied_edge_trace[i])
+									_update_rule_trace(rule_trace_edge_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), bnd, facts_to_be_applied_edge_trace[fi])
 								for p1, p2 in ipl:
 									if p1 == l:
 										rule_trace_edge.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, p2, interpretations_edge[t][comp].world[p2], True, 'IPL', f'IPL: {l.get_value()}', ''))
 										if atom_trace:
-											_update_rule_trace(rule_trace_edge_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), interpretations_edge[t][comp].world[p2], facts_to_be_applied_edge_trace[i])
+											_update_rule_trace(rule_trace_edge_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), interpretations_edge[t][comp].world[p2], facts_to_be_applied_edge_trace[fi])
 									elif p2 == l:
 										rule_trace_edge.append((numba.types.uint16(t), numba.types.uint16(fp_cnt), comp, p1, interpretations_edge[t][comp].world[p1], True, 'IPL', f'IPL: {l.get_value()}', ''))
 										if atom_trace:
-											_update_rule_trace(rule_trace_edge_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), interpretations_edge[t][comp].world[p1], facts_to_be_applied_edge_trace[i])
+											_update_rule_trace(rule_trace_edge_atoms, numba.typed.List.empty_list(numba.typed.List.empty_list(node_type)), numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type)), interpretations_edge[t][comp].world[p1], facts_to_be_applied_edge_trace[fi])
 						else:
 							# Check for inconsistencies
 							if check_consistent_edge(interpretations_edge[t], comp, (l, bnd)):
 								mode = 'graph-attribute-fact' if graph_attribute else 'fact'
 								override = True if update_mode == 'override' else False
-								u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode=mode, override=override)
-	
+								u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, fi, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode=mode, override=override)
+
 								update = u or update
 								if update:
 									max_t_changes = max(max_t_changes, t)
@@ -489,10 +489,10 @@ class Interpretation:
 							else:
 								mode = 'graph-attribute-fact' if graph_attribute else 'fact'
 								if inconsistency_check:
-									resolve_inconsistency_edge(interpretations_edge[t], comp, (l, bnd), ipl, t, fp_cnt, i, atom_trace, rule_trace_edge, rule_trace_edge_atoms, rules_to_be_applied_edge_trace, facts_to_be_applied_edge_trace, store_interpretation_changes, mode=mode)
+									resolve_inconsistency_edge(interpretations_edge[t], comp, (l, bnd), ipl, t, fp_cnt, fi, atom_trace, rule_trace_edge, rule_trace_edge_atoms, rules_to_be_applied_edge_trace, facts_to_be_applied_edge_trace, store_interpretation_changes, mode=mode)
 								else:
-									u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, i, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode=mode, override=True)
-	
+									u, changes = _update_edge(interpretations_edge[t], predicate_map_edge, comp, (l, bnd), ipl, rule_trace_edge, fp_cnt, t, static, convergence_mode, atom_trace, save_graph_attributes_to_rule_trace, rules_to_be_applied_edge_trace, fi, facts_to_be_applied_edge_trace, rule_trace_edge_atoms, store_interpretation_changes, mode=mode, override=True)
+
 									update = u or update
 									if update:
 										max_t_changes = max(max_t_changes, t)
@@ -501,17 +501,17 @@ class Interpretation:
 										bound_delta = max(bound_delta, changes)
 									else:
 										changes_cnt += changes
-	
+
 						if static:
-							facts_to_be_applied_edge_new.append((numba.types.uint16(facts_to_be_applied_edge[i][0]+1), comp, l, bnd, static, graph_attribute))
+							facts_to_be_applied_edge_new.append((numba.types.uint16(facts_to_be_applied_edge[fi][0]+1), comp, l, bnd, static, graph_attribute))
 							if atom_trace:
-								facts_to_be_applied_edge_trace_new.append(facts_to_be_applied_edge_trace[i])
-	
+								facts_to_be_applied_edge_trace_new.append(facts_to_be_applied_edge_trace[fi])
+
 					# Time doesn't match, fact to be applied later
 					else:
-						facts_to_be_applied_edge_new.append(facts_to_be_applied_edge[i])
+						facts_to_be_applied_edge_new.append(facts_to_be_applied_edge[fi])
 						if atom_trace:
-							facts_to_be_applied_edge_trace_new.append(facts_to_be_applied_edge_trace[i])
+							facts_to_be_applied_edge_trace_new.append(facts_to_be_applied_edge_trace[fi])
 	
 				# Update list of facts with ones that have not been applied yet (delete applied facts)
 				facts_to_be_applied_edge[:] = facts_to_be_applied_edge_new.copy()
@@ -528,13 +528,13 @@ class Interpretation:
 					rules_to_be_applied_edge_trace_threadsafe = numba.typed.List([numba.typed.List.empty_list(rules_to_be_applied_trace_type) for _ in range(len(rules))])
 				edges_to_be_added_edge_rule_threadsafe = numba.typed.List([numba.typed.List.empty_list(edges_to_be_added_type) for _ in range(len(rules))])
 
-				for i in prange(len(rules)):
-					rule = rules[i]
+				for ri in prange(len(rules)):
+					rule = rules[ri]
 
 					# Only go through if the rule can be applied within the given timesteps, or we're running until convergence
 					delta_t = rule.get_delta()
 					if t + delta_t <= tmax or tmax == -1 or again:
-						applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node[t], interpretations_edge[t], predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, extended_ann_fn_flags[i], allow_ground_rules, t, head_functions, closed_world_predicates)
+						applicable_node_rules, applicable_edge_rules = _ground_rule(rule, interpretations_node[t], interpretations_edge[t], predicate_map_node, predicate_map_edge, nodes, edges, neighbors, reverse_neighbors, atom_trace, extended_ann_fn_flags[ri], allow_ground_rules, t, head_functions, closed_world_predicates)
 
 						# Loop through applicable rules and add them to the rules to be applied for later or next fp operation
 						for applicable_rule in applicable_node_rules:
@@ -567,9 +567,9 @@ class Interpretation:
 								bnd_u = min(max(bnd[1], 0), 1)
 								bnd = interval.closed(bnd_l, bnd_u)
 								max_rules_time = max(max_rules_time, t + delta_t)
-								rules_to_be_applied_node_threadsafe[i].append((numba.types.uint16(t + delta_t), n, rule.get_target(), bnd, rule.is_static_rule()))
+								rules_to_be_applied_node_threadsafe[ri].append((numba.types.uint16(t + delta_t), n, rule.get_target(), bnd, rule.is_static_rule()))
 								if atom_trace:
-									rules_to_be_applied_node_trace_threadsafe[i].append((qualified_nodes, qualified_edges, rule.get_name()))
+									rules_to_be_applied_node_trace_threadsafe[ri].append((qualified_nodes, qualified_edges, rule.get_name()))
 
 								# If delta_t is zero we apply the rules and check if more are applicable
 								if delta_t == 0:
@@ -610,29 +610,29 @@ class Interpretation:
 								bnd = interval.closed(bnd_l, bnd_u)
 								max_rules_time = max(max_rules_time, t+delta_t)
 								# edges_to_be_added_edge_rule.append(edges_to_add)
-								edges_to_be_added_edge_rule_threadsafe[i].append(edges_to_add)
-								rules_to_be_applied_edge_threadsafe[i].append((numba.types.uint16(t+delta_t), e, rule.get_target(), bnd, rule.is_static_rule()))
+								edges_to_be_added_edge_rule_threadsafe[ri].append(edges_to_add)
+								rules_to_be_applied_edge_threadsafe[ri].append((numba.types.uint16(t+delta_t), e, rule.get_target(), bnd, rule.is_static_rule()))
 								if atom_trace:
 									# rules_to_be_applied_edge_trace.append((qualified_nodes, qualified_edges, rule.get_name()))
-									rules_to_be_applied_edge_trace_threadsafe[i].append((qualified_nodes, qualified_edges, rule.get_name()))
+									rules_to_be_applied_edge_trace_threadsafe[ri].append((qualified_nodes, qualified_edges, rule.get_name()))
 
 								# If delta_t is zero we apply the rules and check if more are applicable
 								if delta_t == 0:
 									update = False
 
 				# Update lists after parallel run
-				for i in range(len(rules)):
-					if len(rules_to_be_applied_node_threadsafe[i]) > 0:
-						rules_to_be_applied_node.extend(rules_to_be_applied_node_threadsafe[i])
-					if len(rules_to_be_applied_edge_threadsafe[i]) > 0:
-						rules_to_be_applied_edge.extend(rules_to_be_applied_edge_threadsafe[i])
+				for ri in range(len(rules)):
+					if len(rules_to_be_applied_node_threadsafe[ri]) > 0:
+						rules_to_be_applied_node.extend(rules_to_be_applied_node_threadsafe[ri])
+					if len(rules_to_be_applied_edge_threadsafe[ri]) > 0:
+						rules_to_be_applied_edge.extend(rules_to_be_applied_edge_threadsafe[ri])
 					if atom_trace:
-						if len(rules_to_be_applied_node_trace_threadsafe[i]) > 0:
-							rules_to_be_applied_node_trace.extend(rules_to_be_applied_node_trace_threadsafe[i])
-						if len(rules_to_be_applied_edge_trace_threadsafe[i]) > 0:
-							rules_to_be_applied_edge_trace.extend(rules_to_be_applied_edge_trace_threadsafe[i])
-					if len(edges_to_be_added_edge_rule_threadsafe[i]) > 0:
-						edges_to_be_added_edge_rule.extend(edges_to_be_added_edge_rule_threadsafe[i])
+						if len(rules_to_be_applied_node_trace_threadsafe[ri]) > 0:
+							rules_to_be_applied_node_trace.extend(rules_to_be_applied_node_trace_threadsafe[ri])
+						if len(rules_to_be_applied_edge_trace_threadsafe[ri]) > 0:
+							rules_to_be_applied_edge_trace.extend(rules_to_be_applied_edge_trace_threadsafe[ri])
+					if len(edges_to_be_added_edge_rule_threadsafe[ri]) > 0:
+						edges_to_be_added_edge_rule.extend(edges_to_be_added_edge_rule_threadsafe[ri])
 
 				# Increment t, update number of ground atoms
 				t += 1
@@ -682,10 +682,10 @@ class Interpretation:
 				rules_to_remove_idx.add(idx)
 
 			# Remove from rules to be applied and edges to be applied lists after coming out from loop
-			rules_to_be_applied_node[:] = numba.typed.List([rules_to_be_applied_node[i] for i in range(len(rules_to_be_applied_node)) if i not in rules_to_remove_idx])
-			edges_to_be_added_node_rule[:] = numba.typed.List([edges_to_be_added_node_rule[i] for i in range(len(edges_to_be_added_node_rule)) if i not in rules_to_remove_idx])
+			rules_to_be_applied_node[:] = numba.typed.List([rules_to_be_applied_node[j] for j in range(len(rules_to_be_applied_node)) if j not in rules_to_remove_idx])
+			edges_to_be_added_node_rule[:] = numba.typed.List([edges_to_be_added_node_rule[j] for j in range(len(edges_to_be_added_node_rule)) if j not in rules_to_remove_idx])
 			if atom_trace:
-				rules_to_be_applied_node_trace[:] = numba.typed.List([rules_to_be_applied_node_trace[i] for i in range(len(rules_to_be_applied_node_trace)) if i not in rules_to_remove_idx])
+				rules_to_be_applied_node_trace[:] = numba.typed.List([rules_to_be_applied_node_trace[j] for j in range(len(rules_to_be_applied_node_trace)) if j not in rules_to_remove_idx])
 
 			# Edges
 			rules_to_remove_idx.clear()
@@ -766,10 +766,10 @@ class Interpretation:
 				rules_to_remove_idx.add(idx)
 
 			# Remove from rules to be applied and edges to be applied lists after coming out from loop
-			rules_to_be_applied_edge[:] = numba.typed.List([rules_to_be_applied_edge[i] for i in range(len(rules_to_be_applied_edge)) if i not in rules_to_remove_idx])
-			edges_to_be_added_edge_rule[:] = numba.typed.List([edges_to_be_added_edge_rule[i] for i in range(len(edges_to_be_added_edge_rule)) if i not in rules_to_remove_idx])
+			rules_to_be_applied_edge[:] = numba.typed.List([rules_to_be_applied_edge[j] for j in range(len(rules_to_be_applied_edge)) if j not in rules_to_remove_idx])
+			edges_to_be_added_edge_rule[:] = numba.typed.List([edges_to_be_added_edge_rule[j] for j in range(len(edges_to_be_added_edge_rule)) if j not in rules_to_remove_idx])
 			if atom_trace:
-				rules_to_be_applied_edge_trace[:] = numba.typed.List([rules_to_be_applied_edge_trace[i] for i in range(len(rules_to_be_applied_edge_trace)) if i not in rules_to_remove_idx])
+				rules_to_be_applied_edge_trace[:] = numba.typed.List([rules_to_be_applied_edge_trace[j] for j in range(len(rules_to_be_applied_edge_trace)) if j not in rules_to_remove_idx])
 			
 			# Check for convergence after each timestep (perfect convergence or convergence specified by user)
 			# Check number of changed interpretations or max bound change
@@ -1543,14 +1543,18 @@ def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groun
 	# We replace Y by the sources of Z
 	elif clause_var_1 not in groundings and clause_var_2 in groundings:
 		for n in groundings[clause_var_2]:
-			es = numba.typed.List([(nn, n) for nn in reverse_neighbors[n]])
+			es = numba.typed.List.empty_list(edge_type)
+			for nn in reverse_neighbors[n]:
+				es.append((nn, n))
 			edge_groundings.extend(es)
 
 	# Case 3:
 	# We replace Z by the neighbors of Y
 	elif clause_var_1 in groundings and clause_var_2 not in groundings:
 		for n in groundings[clause_var_1]:
-			es = numba.typed.List([(n, nn) for nn in neighbors[n]])
+			es = numba.typed.List.empty_list(edge_type)
+			for nn in neighbors[n]:
+				es.append((n, nn))
 			edge_groundings.extend(es)
 
 	# Case 4:
@@ -1563,7 +1567,10 @@ def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groun
 		else:
 			groundings_clause_var_2_set = set(groundings[clause_var_2])
 			for n in groundings[clause_var_1]:
-				es = numba.typed.List([(n, nn) for nn in neighbors[n] if nn in groundings_clause_var_2_set])
+				es = numba.typed.List.empty_list(edge_type)
+				for nn in neighbors[n]:
+					if nn in groundings_clause_var_2_set:
+						es.append((n, nn))
 				edge_groundings.extend(es)
 
 	return edge_groundings

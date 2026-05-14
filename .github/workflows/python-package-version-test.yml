@@ -20,6 +20,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v6
+    - name: Cache Numba JIT artifacts
+      uses: actions/cache@v4
+      with:
+        path: pyreason/cache
+        key: numba-${{ matrix.python-version }}-${{ hashFiles('pyreason/scripts/**/*.py') }}
+        restore-keys: |
+          numba-${{ matrix.python-version }}-
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
