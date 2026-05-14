@@ -28,7 +28,6 @@ dependencies = [
     "pandas>=2.0.0",
     "numba>=0.65.1",
     "numpy>=2.1,<2.5",
-    "memory_profiler",
 ]
 
 [project.optional-dependencies]
@@ -38,6 +37,7 @@ dev = [
     "pytest-cov",
     "pre-commit",
     "ruff",
+    "memory_profiler",
 ]
 docs = [
     "sphinx",
