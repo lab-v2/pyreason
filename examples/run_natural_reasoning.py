@@ -173,3 +173,12 @@ def entities_of(atom):
     if not m:
         return ()
     return tuple(n.strip() for n in m.group(1).split(',') if n.strip())
+
+# Step 4: Build graph and run PyReason
+g = nx.DiGraph()
+for f in facts:
+    names = entities_of(f)
+    g.add_nodes_from(names)
+    if len(names) == 2:
+        g.add_edge(names[0], names[1])
+pr.load_graph(g)
