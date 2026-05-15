@@ -111,3 +111,22 @@ response_convert = ollama.chat(
 )
 pyreason_output = response_convert["message"]["content"]
 
+# Step 3: Parse the LLM output into facts and rules
+
+parts = re.split(
+    r'\*{0,2}\s*rules\s*\*{0,2}s*:?',
+    pyreason_output, maxsplit=1, flags=re.IGNORECASE
+)
+if len(parts) < 2:
+    print("Error: could not parse LLM output.")
+    exit(1)
+
+facts_block, rules_block = parts[0], parts[1]
+facts = [l.strip() for l in facts_block.split("\n") if "):" in l]
+rules = [l.strip() for l in rules_block.split("\n") if "<-" in l]
+
+if not rules:
+    print("ERROR: No rules extracted.")
+    exit(1)
+    
+         
