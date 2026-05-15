@@ -97,7 +97,7 @@ RULE syntax:
 Constraints:
   1. Predicate names: lowercase_with_underscores, no spaces, no capital letters.
   2. Rule's head name describes WHAT, bound [l,u] describes HOW CERTAIN. Don't use uncertain name for rule's head.
-  3. Facts use specific names (john, mary) lower case is prefered in specific name. Rules use variables (X, Y).
+  3. Facts use specific names (john, mary) lower case is preferred in specific name. Rules use variables (X, Y).
   4. Negation in facts: use [0,0] on the SAME predicate, never invent a new predicate.
      e.g. "Alice is not student" → student(alice):[0,0]  NOT not_student(alice):[1,1]
   5. Rules with one condition use only X: good_grade(X) <- study_hard(X)
