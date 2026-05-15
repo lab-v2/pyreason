@@ -128,5 +128,48 @@ rules = [l.strip() for l in rules_block.split("\n") if "<-" in l]
 if not rules:
     print("ERROR: No rules extracted.")
     exit(1)
-    
-         
+
+# Relax rule body bounds:
+# Auto revise rules to allow inference fire later
+# PyReason set rule body clauses' bounds default as [1,1]
+# If last rule inferences strong_reputation(X):[0.8,1]
+# Next rule uses strong_reputation(X) as body, the rule will never fire because [0.8,1] not = [1,1]
+
+# Record the head bound of every rule.
+head_bounds = {}
+for r in rules:
+    head = r.split('<-')[0].strip()
+    pred = head.split('(')[0].lstrip('~').strip()
+    m = re.search(r':\[([^\]]+)\]', head)
+    if m:
+        head_bounds[pred] = m.group(1)
+
+def relax_body(rule_text):
+    """If a body clause references a derived predicate, copy its head bound."""
+    head, body = rule_text.split('<-', 1)
+    clauses = [c.strip() for c in body.split(',')]
+    fixed = []
+    for c in clauses:
+        if ':' in c:
+            fixed.append(c)
+            continue
+        pred = c.split('(')[0].lstrip('~').strip()
+        if pred in head_bounds:
+            fixed.append(f"{c}:[{head_bounds[pred]}]")
+        else:
+            fixed.append(c)
+    return f"{head.strip()} <- {', '.join(fixed)}"
+
+rules = [relax_body(r) for r in rules]
+
+# Helper Functions
+def predicate_of(atom):
+    """Return the predicate name from 'pred(args):[l,u]' or 'pred(args)'."""
+    return atom.split('(')[0].lstrip('~').strip()
+
+def entities_of(atom):
+    """Return a tuple of entity names from inside the parentheses."""
+    m = re.search(r'\(([^)]*)\)', atom)
+    if not m:
+        return ()
+    return tuple(n.strip() for n in m.group(1).split(',') if n.strip())
