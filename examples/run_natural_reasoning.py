@@ -1,10 +1,19 @@
 """
+Natural Language Reasoning with PyReason
+=========================================
+Wrapper script: user inputs a structured paragraph, sees reasoning results in English.
+
 Pipeline:
-Natural Language -> Logic -> Natural Language:
-User inputs English paragraph, the scipt calls LLM to extract Facts and Rules.
-Then calls LLM again to convert the Facts and Rules to PyReason Syntax.
-And run the PyReason Inference.
-Lastly, calls LLM again to "translate" the inference result in English as outputs.
+    Step 1: LLM extracts facts and rules in plain English
+    Step 2: LLM converts English into PyReason syntax
+    Step 3: Parse the LLM output
+    Step 4: Build graph, load facts/rules, run pr.reason()
+    Step 5: Split results into Input (relevant facts) and Output (derived conclusions)
+    Step 6: LLM summarizes each section in natural English
+
+Setup:
+    1. ollama pull qwen3:14b
+    2. pip install ollama pyreason networkx
 """
 
 import ollama
