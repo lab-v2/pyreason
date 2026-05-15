@@ -16,3 +16,16 @@ import io
 
 MODEL_NAME = "qwen3:14b"
 
+# Read User Input
+print("\nEnter text:")
+lines = []
+while True:
+    line = input()
+    if line == "" and lines:
+        break
+    lines.append(line)
+paragraph = " ".join(lines).strip()
+
+print("LLM is generating the conclusion... Please wait ~ 30 seconds")
+
+
