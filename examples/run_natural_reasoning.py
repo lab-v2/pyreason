@@ -130,6 +130,7 @@ if not rules:
     exit(1)
 
 # Relax rule body bounds:
+
 # Auto revise rules to allow inference fire later
 # PyReason set rule body clauses' bounds default as [1,1]
 # If last rule inferences strong_reputation(X):[0.8,1]
@@ -182,3 +183,73 @@ for f in facts:
     if len(names) == 2:
         g.add_edge(names[0], names[1])
 pr.load_graph(g)
+
+for f in facts:
+    pr.add_fact(pr.Fact(f))
+for r in rules:
+    pr.add_rule(pr.Rule(r))
+
+# Run reasoning silently
+pr.settings.verbose = False
+_buf = io.StringIO()
+_old_stdout = sys.stdout
+sys.stdout = _buf
+interpretation = pr.reason(timesteps=2)
+sys.stdout = _old_stdout
+
+# Step 5: Split the reasoning results into Input and Output
+
+# Input  = original facts about entities that triggered at least one rule
+# Output = new conclusions derived by rule firings
+# Entities that never triggered a rule are hidden from the user entirely.
+ 
+# Original (predicate, entities) pairs the user gave us.
+original_atoms = set()
+for f in facts:
+    original_atoms.add((predicate_of(f), entities_of(f)))
+ 
+# Predicate names that appear anywhere, split by arity.
+node_labels, edge_labels = set(), set()
+for atom in facts + [r.split('<-')[0] for r in rules]:
+    args = entities_of(atom)
+    if len(args) == 1:
+        node_labels.add(predicate_of(atom))
+    elif len(args) == 2:
+        edge_labels.add(predicate_of(atom))
+ 
+# Walk PyReason results: collect derived conclusions and mark useful entities.
+derived = []
+useful_entities = set()
+ 
+for label in sorted(node_labels):
+    for df in pr.filter_and_sort_nodes(interpretation, [label]):
+        for _, row in df.iterrows():
+            entity = row['component']
+            bound = row[label]
+            key = (label, (entity,))
+            if key not in original_atoms:
+                derived.append((label, (entity,), bound))
+                useful_entities.add(entity)
+ 
+for label in sorted(edge_labels):
+    for df in pr.filter_and_sort_edges(interpretation, [label]):
+        for _, row in df.iterrows():
+            e = row['component']
+            bound = row[label]
+            key = (label, (e[0], e[1]))
+            if key not in original_atoms:
+                derived.append((label, (e[0], e[1]), bound))
+                useful_entities.add(e[0])
+                useful_entities.add(e[1])
+ 
+# Input facts: keep only those involving a useful entity.
+input_lines = [
+    f for f in facts
+    if any(e in useful_entities for e in entities_of(f))
+]
+ 
+# Output conclusions: every derived atom.
+output_lines = [
+    f"{label}({','.join(ents)}):{bound}"
+    for label, ents, bound in derived
+]
