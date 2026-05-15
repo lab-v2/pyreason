@@ -253,3 +253,45 @@ output_lines = [
     f"{label}({','.join(ents)}):{bound}"
     for label, ents, bound in derived
 ]
+
+# Step 6: LLM summarizes each section
+# Send input_lines and output_lines to LLM, "translate" to Natural Language
+def summarize(reasoning_lines):
+    """Send reasoning lines to LLM and return natural-English sentences."""
+    if not reasoning_lines:
+        return ""
+    prompt = f"""Below are reasoning results from a logic engine.
+Each line is: predicate(entity):[lower, upper]
+ 
+Write ONE short English sentence per line:
+- [1.0, 1.0] = certain.   e.g. "Leo works overtime."
+- [0.0, 0.0] = false.     e.g. "Mia does not work overtime."
+- lower >= 0.5, upper = 1.0 = likely.  e.g. "Leo is 80% likely to manage projects."
+- Skip lines with [0.0, 1.0] (no information).
+ 
+Other rules:
+- Capitalize entity names (alice -> Alice).
+- Convert snake_case predicates to readable English (works_overtime -> "works overtime").
+- Use correct verb forms ("does not work", not "does not works").
+- For single-word noun predicates (engineer, doctor, dog), use "is a/an".
+- ONLY use the data given. Do NOT invent.
+- Output one sentence per line, no headings, no bullets.
+ 
+Reasoning results:
+{chr(10).join(reasoning_lines)}
+ 
+Output:
+"""
+    
+    response = ollama.chat(
+        model=MODEL_NAME,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    return response["message"]["content"].strip()
+
+print("\nInput")
+print(summarize(input_lines))
+
+print("\nOutputs")
+print(summarize(output_lines))
