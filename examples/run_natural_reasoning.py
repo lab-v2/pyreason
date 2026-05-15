@@ -12,8 +12,11 @@ Pipeline:
     Step 6: LLM summarizes each section in natural English
 
 Setup:
-    1. ollama pull qwen3:14b
-    2. pip install ollama pyreason networkx
+    1. Install Ollama from https://ollama.com
+    2. Pull the recommended model on terminal:
+           ollama pull qwen3:14b
+    3. Install Python dependencies:
+           pip install ollama pyreason networkx
 """
 
 import ollama
