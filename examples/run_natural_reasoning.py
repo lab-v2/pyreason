@@ -35,7 +35,7 @@ while True:
     lines.append(line)
 paragraph = " ".join(lines).strip()
 
-print("LLM is generating the conclusion... Please wait ~ 30 seconds")
+print("LLM is generating the conclusion... Please wait ~ 1-3 minutes")
 
 
 # Step 1: Extract facts and rules in English 
@@ -118,16 +118,16 @@ response_convert = ollama.chat(
     model=MODEL_NAME,
     messages=[{"role": "user", "content": PROMPT_CONVERT}]
 )
-pyreason_output = response_convert["message"]["content"]
+pyreason_output = response_convert["message"]["content"].strip()
 
 # Step 3: Parse the LLM output into facts and rules
 
 parts = re.split(
-    r'\*{0,2}\s*rules\s*\*{0,2}s*:?',
+    r'\*{0,2}\s*rules\s*\*{0,2}\s*:?',
     pyreason_output, maxsplit=1, flags=re.IGNORECASE
 )
 if len(parts) < 2:
-    print("Error: could not parse LLM output.")
+    print("ERROR: could not parse LLM output.")
     exit(1)
 
 facts_block, rules_block = parts[0], parts[1]
@@ -140,10 +140,10 @@ if not rules:
 
 # Relax rule body bounds:
 
-# Auto revise rules to allow inference fire later
-# PyReason set rule body clauses' bounds default as [1,1]
-# If last rule inferences strong_reputation(X):[0.8,1]
-# Next rule uses strong_reputation(X) as body, the rule will never fire because [0.8,1] not = [1,1]
+# Auto-revise rules so inference chains can fire correctly
+# PyReason defaults rule body clause bounds to [1,1]
+# If the last rule derives strong_reputation(X):[0.8,1]
+# Next rule uses strong_reputation(X) as body, the rule will never fire because [0.8,1] not equals to [1,1]
 
 # Record the head bound of every rule.
 head_bounds = {}
@@ -275,8 +275,7 @@ Each line is: predicate(entity):[lower, upper]
 Write ONE short English sentence per line:
 - [1.0, 1.0] = certain.   e.g. "Leo works overtime."
 - [0.0, 0.0] = false.     e.g. "Mia does not work overtime."
-- lower >= 0.5, upper = 1.0 = likely.  e.g. "Leo is 80% likely to manage projects."
-- Skip lines with [0.0, 1.0] (no information).
+- work_overtime(peng):[0.8,1.0] e.g. "Peng is 80% likely to work overtime."
  
 Other rules:
 - Capitalize entity names (alice -> Alice).
@@ -302,5 +301,5 @@ Output:
 print("\nInput")
 print(summarize(input_lines))
 
-print("\nOutputs")
+print("\nOutput")
 print(summarize(output_lines))
