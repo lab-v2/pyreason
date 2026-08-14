@@ -27,7 +27,11 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install ruff pytest
+        # Pinned: ruff 0.16.0 (2026-07-23) expanded the default rule set from
+        # 59 rules to 413, which fails this repo with ~289 findings. 0.15.22 is
+        # the last release with the old E4/E7/E9/F default. Unpin only together
+        # with an explicit `select` in pyproject.toml and the matching cleanup.
+        python -m pip install ruff==0.15.22 pytest
         pip install torch==2.6.0
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with ruff
