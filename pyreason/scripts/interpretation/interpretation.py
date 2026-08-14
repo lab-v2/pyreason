@@ -976,90 +976,94 @@ def _ground_rule(rule, interpretations_node, interpretations_edge, predicate_map
 			# is allocated K*N times (K head groundings * N clauses) below, but the data
 			# is rule-static. Hoist a precomputed `clause_variables_precomputed` list
 			# here and append references in the inner loop instead of fresh copies.
-			for head_grounding in groundings[head_var_1]:
-				qualified_nodes = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
-				qualified_edges = numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type))
-				annotations = numba.typed.List.empty_list(numba.typed.List.empty_list(interval.interval_type))
-				clause_labels_out = numba.typed.List.empty_list(label.label_type)
-				clause_variables_out = numba.typed.List.empty_list(numba.typed.List.empty_list(numba.types.string))
-				edges_to_be_added = (numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(node_type), rule_edges[-1])
 
-				# Check for satisfaction one more time in case the refining process has changed the groundings
+			# Recheck thresholds once after refining / head-var setup. The check does not
+			# take head_grounding, and this loop does not mutate groundings / interpretations
+			# between iterations, so repeating it per head is redundant.
+			# Skip the check when there are no head groundings (nothing to emit).
+			satisfaction = False
+			if len(groundings[head_var_1]) > 0:
 				satisfaction = check_all_clause_satisfaction(interpretations_node, interpretations_edge, clauses, thresholds, groundings, groundings_edges, closed_world_predicates)
-				if not satisfaction:
-					continue
+			if satisfaction:
+				for head_grounding in groundings[head_var_1]:
+					qualified_nodes = numba.typed.List.empty_list(numba.typed.List.empty_list(node_type))
+					qualified_edges = numba.typed.List.empty_list(numba.typed.List.empty_list(edge_type))
+					annotations = numba.typed.List.empty_list(numba.typed.List.empty_list(interval.interval_type))
+					clause_labels_out = numba.typed.List.empty_list(label.label_type)
+					clause_variables_out = numba.typed.List.empty_list(numba.typed.List.empty_list(numba.types.string))
+					edges_to_be_added = (numba.typed.List.empty_list(node_type), numba.typed.List.empty_list(node_type), rule_edges[-1])
 
-				for i, clause in enumerate(clauses):
-					clause_type = clause[0]
-					clause_label = clause[1]
-					clause_variables = clause[2]
+					for i, clause in enumerate(clauses):
+						clause_type = clause[0]
+						clause_label = clause[1]
+						clause_variables = clause[2]
 
 
-					if clause_type == 'node':
-						clause_var_1 = clause_variables[0]
+						if clause_type == 'node':
+							clause_var_1 = clause_variables[0]
 
-						# 1.
-						if atom_trace or extended_ann_fn:
-							if clause_var_1 == head_var_1:
-								qualified_nodes.append(numba.typed.List([head_grounding]))
-							else:
-								qualified_nodes.append(numba.typed.List(groundings[clause_var_1]))
-							qualified_edges.append(numba.typed.List.empty_list(edge_type))
-							if extended_ann_fn:
-								clause_labels_out.append(clause_label)
-								clause_variables_out.append(numba.typed.List(clause_variables))
-						# 2.
-						if ann_fn != '':
-							a = numba.typed.List.empty_list(interval.interval_type)
-							if clause_var_1 == head_var_1:
-								a.append(interpretations_node[head_grounding].world[clause_label])
-							else:
-								for qn in groundings[clause_var_1]:
-									a.append(interpretations_node[qn].world[clause_label])
-							annotations.append(a)
+							# 1.
+							if atom_trace or extended_ann_fn:
+								if clause_var_1 == head_var_1:
+									qualified_nodes.append(numba.typed.List([head_grounding]))
+								else:
+									qualified_nodes.append(numba.typed.List(groundings[clause_var_1]))
+								qualified_edges.append(numba.typed.List.empty_list(edge_type))
+								if extended_ann_fn:
+									clause_labels_out.append(clause_label)
+									clause_variables_out.append(numba.typed.List(clause_variables))
+							# 2.
+							if ann_fn != '':
+								a = numba.typed.List.empty_list(interval.interval_type)
+								if clause_var_1 == head_var_1:
+									a.append(interpretations_node[head_grounding].world[clause_label])
+								else:
+									for qn in groundings[clause_var_1]:
+										a.append(interpretations_node[qn].world[clause_label])
+								annotations.append(a)
 
-					elif clause_type == 'edge':
-						clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
-						# 1.
-						if atom_trace or extended_ann_fn:
-							# Cases: Both equal, one equal, none equal
-							qualified_nodes.append(numba.typed.List.empty_list(node_type))
-							if clause_var_1 == head_var_1:
-								es = numba.typed.List([e for e in groundings_edges[(clause_var_1, clause_var_2)] if e[0] == head_grounding])
-								qualified_edges.append(es)
-							elif clause_var_2 == head_var_1:
-								es = numba.typed.List([e for e in groundings_edges[(clause_var_1, clause_var_2)] if e[1] == head_grounding])
-								qualified_edges.append(es)
-							else:
-								qualified_edges.append(numba.typed.List(groundings_edges[(clause_var_1, clause_var_2)]))
-							if extended_ann_fn:
-								clause_labels_out.append(clause_label)
-								clause_variables_out.append(numba.typed.List(clause_variables))
-						# 2.
-						if ann_fn != '':
-							a = numba.typed.List.empty_list(interval.interval_type)
-							if clause_var_1 == head_var_1:
-								for e in groundings_edges[(clause_var_1, clause_var_2)]:
-									if e[0] == head_grounding:
-										a.append(interpretations_edge[e].world[clause_label])
-							elif clause_var_2 == head_var_1:
-								for e in groundings_edges[(clause_var_1, clause_var_2)]:
-									if e[1] == head_grounding:
-										a.append(interpretations_edge[e].world[clause_label])
-							else:
-								for qe in groundings_edges[(clause_var_1, clause_var_2)]:
-									a.append(interpretations_edge[qe].world[clause_label])
-							annotations.append(a)
-					else:
-						# Comparison clause (we do not handle for now)
-						pass
+						elif clause_type == 'edge':
+							clause_var_1, clause_var_2 = clause_variables[0], clause_variables[1]
+							# 1.
+							if atom_trace or extended_ann_fn:
+								# Cases: Both equal, one equal, none equal
+								qualified_nodes.append(numba.typed.List.empty_list(node_type))
+								if clause_var_1 == head_var_1:
+									es = numba.typed.List([e for e in groundings_edges[(clause_var_1, clause_var_2)] if e[0] == head_grounding])
+									qualified_edges.append(es)
+								elif clause_var_2 == head_var_1:
+									es = numba.typed.List([e for e in groundings_edges[(clause_var_1, clause_var_2)] if e[1] == head_grounding])
+									qualified_edges.append(es)
+								else:
+									qualified_edges.append(numba.typed.List(groundings_edges[(clause_var_1, clause_var_2)]))
+								if extended_ann_fn:
+									clause_labels_out.append(clause_label)
+									clause_variables_out.append(numba.typed.List(clause_variables))
+							# 2.
+							if ann_fn != '':
+								a = numba.typed.List.empty_list(interval.interval_type)
+								if clause_var_1 == head_var_1:
+									for e in groundings_edges[(clause_var_1, clause_var_2)]:
+										if e[0] == head_grounding:
+											a.append(interpretations_edge[e].world[clause_label])
+								elif clause_var_2 == head_var_1:
+									for e in groundings_edges[(clause_var_1, clause_var_2)]:
+										if e[1] == head_grounding:
+											a.append(interpretations_edge[e].world[clause_label])
+								else:
+									for qe in groundings_edges[(clause_var_1, clause_var_2)]:
+										a.append(interpretations_edge[qe].world[clause_label])
+								annotations.append(a)
+						else:
+							# Comparison clause (we do not handle for now)
+							pass
 
-				# Now that we're sure that the rule is satisfied, we add the head to the graph if needed (only for ground rules)
-				if add_head_var_node_to_graph:
-					_add_node(head_var_1, neighbors, reverse_neighbors, nodes, interpretations_node)
+					# Now that we're sure that the rule is satisfied, we add the head to the graph if needed (only for ground rules)
+					if add_head_var_node_to_graph:
+						_add_node(head_var_1, neighbors, reverse_neighbors, nodes, interpretations_node)
 
-				# For each grounding add a rule to be applied
-				applicable_rules_node.append((head_grounding, annotations, qualified_nodes, qualified_edges, edges_to_be_added, clause_labels_out, clause_variables_out))
+					# For each grounding add a rule to be applied
+					applicable_rules_node.append((head_grounding, annotations, qualified_nodes, qualified_edges, edges_to_be_added, clause_labels_out, clause_variables_out))
 
 		elif rule_type == 'edge':
 			head_var_1 = head_variables[0]
