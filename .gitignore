@@ -175,3 +175,8 @@ cython_debug/
 
 # Sphinx Documentation
 /docs/source/_static/css/fonts/
+
+# Pokec SNAP downloads (fixtures under benchmarks/pokec/fixtures/ are committed)
+benchmarks/pokec/data/
+benchmarks/pokec/fixtures/pokec-10k*
+*-report.json
