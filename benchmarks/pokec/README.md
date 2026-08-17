@@ -70,7 +70,7 @@ banked from Actions (see below).
 | Job | When | Notes |
 |-----|------|-------|
 | `pokec-2k` | every PR / push to main / manual | committed fixture; 45 min timeout |
-| `pokec-10k` | nightly + manual, or PR labeled `pokec-10k` | SNAP download only on cache miss; not on every PR |
+| `pokec-10k` | every PR / push to main / nightly / manual | SNAP download only on cache miss; 300 min timeout |
 
 Existing `python-package-version-test.yml` / `python-publish.yml` are untouched.
 

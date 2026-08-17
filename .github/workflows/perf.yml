@@ -2,7 +2,6 @@ name: perf
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
   push:
     branches: [main]
   schedule:
@@ -49,13 +48,10 @@ jobs:
           path: pokec-2k-report.json
 
   pokec-10k:
-    # Nightly, manual dispatch, or a PR labeled "pokec-10k" (opt-in; not every PR).
     if: >
-      github.event_name == 'schedule' ||
-      (github.event_name == 'workflow_dispatch' &&
-       (github.event.inputs.band == '10k' || github.event.inputs.band == 'both')) ||
-      (github.event_name == 'pull_request' &&
-       contains(join(github.event.pull_request.labels.*.name, ','), 'pokec-10k'))
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.band == '10k' ||
+      github.event.inputs.band == 'both'
     runs-on: ubuntu-latest
     timeout-minutes: 300
     steps:
