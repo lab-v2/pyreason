@@ -280,6 +280,13 @@ def _median(xs):
     return float(statistics.median(xs)) if xs else None
 
 
+def _load_baselines(path: Path) -> dict:
+    """Read baselines.json and return it as a dictionary."""
+    if not path.exists():
+        raise SystemExit(f"baselines file not found: {path}")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def _evaluate(type_name: str, report: dict, baselines: dict) -> list[str]:
     """Compare benchmark results against expected baselines and return any failures."""
     # Store any correctness or performance failures found during evaluation.
