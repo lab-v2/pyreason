@@ -8,7 +8,7 @@ on:
     - cron: "17 6 * * *"
   workflow_dispatch:
     inputs:
-      band:
+      type:
         description: "2k, 10k, or both"
         default: "both"
         type: choice
@@ -22,8 +22,8 @@ jobs:
     if: >
       github.event_name != 'schedule' &&
       (github.event_name != 'workflow_dispatch' ||
-       github.event.inputs.band == '2k' ||
-       github.event.inputs.band == 'both')
+       github.event.inputs.type == '2k' ||
+       github.event.inputs.type == 'both')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -35,12 +35,28 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install .
+      - name: Restore 2k fixture
+        id: fixture-cache
+        uses: actions/cache@v4
+        with:
+          path: benchmarks/pokec/fixtures/pokec-2k*
+          key: pokec-2k-fixture-${{ hashFiles('benchmarks/pokec/generate_fixtures.py') }}
+      - name: Generate 2k fixture (cache miss only)
+        if: steps.fixture-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p benchmarks/pokec/data
+          curl -sSf -o benchmarks/pokec/data/soc-pokec-relationships.txt.gz \
+            https://snap.stanford.edu/data/soc-pokec-relationships.txt.gz
+          curl -sSf -o benchmarks/pokec/data/soc-pokec-profiles.txt.gz \
+            https://snap.stanford.edu/data/soc-pokec-profiles.txt.gz
+          python benchmarks/pokec/generate_fixtures.py \
+            --data-dir benchmarks/pokec/data --size 2k --write
       - name: Pokec 2k bench
         run: |
           python benchmarks/pokec/run_bench.py \
             --fixture benchmarks/pokec/fixtures/pokec-2k.graphml \
             --customers benchmarks/pokec/fixtures/pokec-2k-customers.json \
-            --repeats 3 --band pokec-2k --out pokec-2k-report.json
+            --repeats 3 --type pokec-2k --out pokec-2k-report.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -50,8 +66,8 @@ jobs:
   pokec-10k:
     if: >
       github.event_name != 'workflow_dispatch' ||
-      github.event.inputs.band == '10k' ||
-      github.event.inputs.band == 'both'
+      github.event.inputs.type == '10k' ||
+      github.event.inputs.type == 'both'
     runs-on: ubuntu-latest
     timeout-minutes: 300
     steps:
@@ -78,13 +94,13 @@ jobs:
           curl -sSf -o benchmarks/pokec/data/soc-pokec-profiles.txt.gz \
             https://snap.stanford.edu/data/soc-pokec-profiles.txt.gz
           python benchmarks/pokec/generate_fixtures.py \
-            --data-dir benchmarks/pokec/data --rungs 10k --write
+            --data-dir benchmarks/pokec/data --size 10k --write
       - name: Pokec 10k bench
         run: |
           python benchmarks/pokec/run_bench.py \
             --fixture benchmarks/pokec/fixtures/pokec-10k.graphml \
             --customers benchmarks/pokec/fixtures/pokec-10k-customers.json \
-            --repeats 1 --band pokec-10k --out pokec-10k-report.json
+            --repeats 1 --type pokec-10k --out pokec-10k-report.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
