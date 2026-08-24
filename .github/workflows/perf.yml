@@ -42,9 +42,13 @@ jobs:
         with:
           python-version: "3.10"
       - name: Install package
+        # Editable on purpose. run_bench.py's child prepends the repo root to
+        # PYTHONPATH, so the code under measurement is the checkout either way;
+        # a non-editable install just leaves a never-imported copy in
+        # site-packages. -e says what is actually being benchmarked.
         run: |
           python -m pip install --upgrade pip
-          pip install .
+          pip install -e .
       - name: Unpack 2k fixture
         run: gunzip -kf benchmarks/pokec/fixtures/pokec-2k.graphml.gz
       - name: Pokec 2k bench
@@ -72,9 +76,13 @@ jobs:
         with:
           python-version: "3.10"
       - name: Install package
+        # Editable on purpose. run_bench.py's child prepends the repo root to
+        # PYTHONPATH, so the code under measurement is the checkout either way;
+        # a non-editable install just leaves a never-imported copy in
+        # site-packages. -e says what is actually being benchmarked.
         run: |
           python -m pip install --upgrade pip
-          pip install .
+          pip install -e .
       - name: Unpack 10k fixture
         run: gunzip -kf benchmarks/pokec/fixtures/pokec-10k.graphml.gz
       - name: Pokec 10k bench

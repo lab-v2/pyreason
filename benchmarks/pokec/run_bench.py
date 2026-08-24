@@ -94,8 +94,15 @@ def _parse_args(argv=None):
         action="store_true",
         help="Skip the untimed warmup child (debug only)",
     )
-    # Parse the supplied arguments and return them as an argparse Namespace.
-    return p.parse_args(argv)
+    # Parse the supplied arguments into an argparse Namespace.
+    args = p.parse_args(argv)
+    # A parent run with no timed repeats has no median to compare against the
+    # baseline. Reject it here rather than failing later inside statistics.median
+    # on an empty list, which reports nothing about the actual mistake.
+    if not args.child and args.repeats < 1:
+        p.error("--repeats must be at least 1")
+    # Return the validated arguments.
+    return args
 
 
 def _run_program(fixture: Path, customers_path: Path) -> dict:
@@ -269,7 +276,14 @@ def _spawn_child(args, warmup: bool = False) -> dict:
         )
     # The child prints its result as JSON to stdout.
     # Take the final output line in case PyReason printed extra text first.
-    line = proc.stdout.strip().splitlines()[-1]
+    lines = proc.stdout.strip().splitlines()
+    # A child that exits 0 while printing nothing means the JSON handoff broke.
+    # Name that failure instead of surfacing a bare IndexError on [-1].
+    if not lines:
+        raise SystemExit(
+            "child exited 0 but wrote no JSON result to stdout"
+        )
+    line = lines[-1]
     # Convert the JSON string back into a Python dictionary
     # and return the child's benchmark result to the parent.
     return json.loads(line)

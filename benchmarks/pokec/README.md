@@ -110,6 +110,19 @@ Fixtures are unpacked from the committed `.gz` files, so CI never contacts
 `snap.stanford.edu` — no cache step, no cold-miss download, and fork PRs
 (which cannot write to the Actions cache) behave identically to branch PRs.
 
+There is deliberately **no `paths:` filter**. A perf number depends on more
+than it looks like it does — the engine, the benchmark harness, the fixtures,
+the workflow, and the pinned dependencies in `setup.py` — and a filter that
+misses one of those turns a real regression into a job that silently never
+ran. Since perf is off the critical path and runner minutes are free, a filter
+would buy no wall clock and no money in exchange for that gap. A docs-only PR
+running the bench is the cheap side of the trade.
+
+The jobs install the package **editable**. `run_bench.py` prepends the repo
+root to each child's `PYTHONPATH`, so the checkout is what gets imported and
+measured regardless; `-e` makes that explicit instead of leaving an unused
+copy in `site-packages`.
+
 Existing `python-package-version-test.yml` / `python-publish.yml` are untouched.
 
 ## Re-banking baselines
