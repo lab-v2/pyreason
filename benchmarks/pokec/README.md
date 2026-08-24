@@ -11,13 +11,20 @@ no self-hosted runners.
 | `generate_fixtures.py` | Deterministic fixture builder from SNAP dumps |
 | `run_bench.py` | Fresh-process runner; times import / setup / reason |
 | `baselines.json` | Banked `relevance_rows` + `reason_s_max` thresholds |
-| `fixtures/pokec-2k.*` | Generated in CI on cache miss; **not** committed |
-| `fixtures/pokec-10k.*` | Generated in CI on cache miss; **not** committed |
-| `data/` | Local SNAP downloads; gitignored |
+| `fixtures/pokec-2k.graphml.gz` | Committed fixture, gzipped (75 KB) |
+| `fixtures/pokec-10k.graphml.gz` | Committed fixture, gzipped (509 KB) |
+| `fixtures/pokec-*-customers.json` | Committed customer id lists |
+| `data/` | Local SNAP dumps, needed only to regenerate; gitignored |
 
 ## Dataset (do not commit)
 
-Download once into `benchmarks/pokec/data/`:
+The fixtures are committed gzipped, so **neither CI nor a normal checkout needs
+the SNAP dumps** — CI just gunzips them. Both archives together are under
+600 KB, small enough to live in git directly; Git LFS would be the wrong tool
+at this size and would bill clone bandwidth to the repo owner.
+
+You only need the raw dumps to *regenerate* a fixture (spec change, new size).
+Download once into `benchmarks/pokec/data/` (~570 MB, gitignored):
 
 - https://snap.stanford.edu/data/soc-pokec-relationships.txt.gz
 - https://snap.stanford.edu/data/soc-pokec-profiles.txt.gz
@@ -32,7 +39,15 @@ python benchmarks/pokec/generate_fixtures.py \
 
 python benchmarks/pokec/generate_fixtures.py \
   --data-dir benchmarks/pokec/data --size 10k --write
+
+# Re-compress for commit. -n omits the timestamp so the archive is
+# byte-reproducible from identical GraphML.
+gzip -9 -n -kf benchmarks/pokec/fixtures/pokec-{2k,10k}.graphml
 ```
+
+The generator asserts the reference counts below, so a run that completes
+without an AssertionError has produced a correct fixture. The unpacked
+`.graphml` is gitignored; commit only the `.gz`.
 
 Spec (must match exactly for the verified 10k cross-check):
 
@@ -72,8 +87,28 @@ Banked on `ubuntu-latest` (3 Actions medians per type; cap = 2× worst median):
 
 | Job | When | Notes |
 |-----|------|-------|
-| `pokec-2k` | every PR / push to main / manual | SNAP download only on cache miss; 45 min timeout |
-| `pokec-10k` | every PR / push to main / nightly / manual | SNAP download only on cache miss; 300 min timeout |
+| `pokec-2k` | every PR / push to main / nightly / manual | 3 repeats; ~7 min; 20 min timeout |
+| `pokec-10k` | every PR / push to main / nightly / manual | 3 repeats; ~11 min; 30 min timeout |
+
+**Both sizes gate every PR, by design.** They run as two parallel jobs, so the
+gate costs the longer of the two (~11 min) rather than their sum — and the
+existing `python-package-version-test.yml` suite takes 29–35 min on the same
+PR. Perf therefore adds **zero** PR latency: it is never the critical path.
+Runner minutes are free on public repos, so wall clock is the only budget that
+matters here, and 2k is effectively free alongside 10k.
+
+Roughly 320 s of each job is size-independent Numba compilation in the warmup
+child. That is why 2k is not much cheaper than 10k, and why merging the two
+jobs to share one warmup would *raise* wall clock by serializing them.
+
+`workflow_dispatch` takes a `type` input (`2k` / `10k` / `both`) to run a
+single size manually; every other trigger runs both. The nightly cron is kept
+as a drift check against runner-image and dependency changes that no PR would
+surface.
+
+Fixtures are unpacked from the committed `.gz` files, so CI never contacts
+`snap.stanford.edu` — no cache step, no cold-miss download, and fork PRs
+(which cannot write to the Actions cache) behave identically to branch PRs.
 
 Existing `python-package-version-test.yml` / `python-publish.yml` are untouched.
 
