@@ -1,0 +1,98 @@
+name: perf
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Nightly drift check on main: catches regressions from runner image or
+    # dependency changes that no PR would surface.
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      type:
+        description: "2k, 10k, or both"
+        default: "both"
+        type: choice
+        options:
+          - both
+          - 2k
+          - 10k
+
+# A new push to a PR makes the in-flight perf run obsolete; cancel it.
+# Runs on main and nightly runs are kept so the baseline history stays complete.
+concurrency:
+  group: perf-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # Both sizes run on every PR. They run as parallel jobs and together finish
+  # well inside the functional suite's runtime, so the gate adds no PR latency.
+  # The only filter is the manual-dispatch size selector.
+  pokec-2k:
+    if: >
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.type == '2k' ||
+      github.event.inputs.type == 'both'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install package
+        # Editable on purpose. run_bench.py's child prepends the repo root to
+        # PYTHONPATH, so the code under measurement is the checkout either way;
+        # a non-editable install just leaves a never-imported copy in
+        # site-packages. -e says what is actually being benchmarked.
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+      - name: Unpack 2k fixture
+        run: gunzip -kf benchmarks/pokec/fixtures/pokec-2k.graphml.gz
+      - name: Pokec 2k bench
+        run: |
+          python benchmarks/pokec/run_bench.py \
+            --fixture benchmarks/pokec/fixtures/pokec-2k.graphml \
+            --customers benchmarks/pokec/fixtures/pokec-2k-customers.json \
+            --repeats 3 --type pokec-2k --out pokec-2k-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pokec-2k-report
+          path: pokec-2k-report.json
+
+  pokec-10k:
+    if: >
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.type == '10k' ||
+      github.event.inputs.type == 'both'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install package
+        # Editable on purpose. run_bench.py's child prepends the repo root to
+        # PYTHONPATH, so the code under measurement is the checkout either way;
+        # a non-editable install just leaves a never-imported copy in
+        # site-packages. -e says what is actually being benchmarked.
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+      - name: Unpack 10k fixture
+        run: gunzip -kf benchmarks/pokec/fixtures/pokec-10k.graphml.gz
+      - name: Pokec 10k bench
+        run: |
+          python benchmarks/pokec/run_bench.py \
+            --fixture benchmarks/pokec/fixtures/pokec-10k.graphml \
+            --customers benchmarks/pokec/fixtures/pokec-10k-customers.json \
+            --repeats 3 --type pokec-10k --out pokec-10k-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pokec-10k-report
+          path: pokec-10k-report.json

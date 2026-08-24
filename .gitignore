@@ -175,3 +175,9 @@ cython_debug/
 
 # Sphinx Documentation
 /docs/source/_static/css/fonts/
+
+# Local SNAP dumps used only to regenerate fixtures; never committed.
+benchmarks/pokec/data/
+# Fixtures ship gzipped; the unpacked GraphML is a build artifact.
+benchmarks/pokec/fixtures/*.graphml
+*-report.json

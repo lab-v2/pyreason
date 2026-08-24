@@ -1,0 +1,11 @@
+{
+  "runner": "ubuntu-latest",
+  "pokec-2k": {
+    "reason_s_max": 20.6428,
+    "relevance_rows": 1573
+  },
+  "pokec-10k": {
+    "reason_s_max": 154.8286,
+    "relevance_rows": 8006
+  }
+}
