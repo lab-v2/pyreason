@@ -74,7 +74,9 @@ Timed windows: `import_s`, `setup_s`, `reason_s`. Thresholds apply to
 `reason_s` only. After `reason()`, `relevance_rows` at the final timestep must
 **exactly** match `baselines.json` (semantics tripwire). First child is an
 untimed warmup so Numba compilation stays out of measured windows.
-`PYTHONHASHSEED=0` on every child.
+`PYTHONHASHSEED=0` on every child. Each timed child prints its own
+`reason_s` / `setup_s` / `import_s` / `relevance_rows` line; the PASS line
+also reports min / max / mean / stdev of `reason_s` for that job.
 
 Banked on `ubuntu-latest` (3 Actions medians per type; cap = 2× worst median):
 

@@ -294,6 +294,26 @@ def _median(xs):
     return float(statistics.median(xs)) if xs else None
 
 
+def _metric_stats(xs):
+    """Return min / max / mean / stdev / n for a list of floats."""
+    if not xs:
+        return {
+            "min": None,
+            "max": None,
+            "mean": None,
+            "stdev": None,
+            "n": 0,
+        }
+    return {
+        "min": float(min(xs)),
+        "max": float(max(xs)),
+        "mean": float(statistics.mean(xs)),
+        # Sample stdev needs ≥2 points; a single child has no spread.
+        "stdev": float(statistics.stdev(xs)) if len(xs) >= 2 else 0.0,
+        "n": len(xs),
+    }
+
+
 def _load_baselines(path: Path) -> dict:
     """Read baselines.json and return it as a dictionary."""
     if not path.exists():
@@ -374,7 +394,21 @@ def _parent_main(args) -> int:
         print(f"  timed run {i + 1}/{args.repeats}", flush=True)
         # Run one benchmark measurement in a fresh child process
         # and save its returned timing/correctness data.
-        runs.append(_spawn_child(args, warmup=False))
+        child = _spawn_child(args, warmup=False)
+        runs.append(child)
+        # Print this child's numbers so a CI log (or 10× refire) can be
+        # scraped for max / stdev without opening the JSON artifact.
+        print(
+            f"  child {i + 1}/{args.repeats}: "
+            f"reason_s={child['reason_s']:.4f}s "
+            f"setup_s={child['setup_s']:.4f}s "
+            f"import_s={child['import_s']:.4f}s "
+            f"relevance_rows={child['relevance_rows']}",
+            flush=True,
+        )
+    reason_vals = [r["reason_s"] for r in runs]
+    setup_vals = [r["setup_s"] for r in runs]
+    import_vals = [r["import_s"] for r in runs]
     # Build the final benchmark report using all measured runs.
     report = {
         # Record which benchmark type was executed.
@@ -390,12 +424,12 @@ def _parent_main(args) -> int:
         # Calculate one representative median value for each metric.
         "medians": {
             # Median PyReason import time across all measured runs.
-            "import_s": _median([r["import_s"] for r in runs]),
+            "import_s": _median(import_vals),
             # Median graph/rule/fact setup time.
-            "setup_s": _median([r["setup_s"] for r in runs]),
+            "setup_s": _median(setup_vals),
             # Median actual reasoning time.
             # This is the main performance metric.
-            "reason_s": _median([r["reason_s"] for r in runs]),
+            "reason_s": _median(reason_vals),
             # Median final relevance-row count.
             # Normally every run should already have exactly the same count.
             "relevance_rows": int(
@@ -403,6 +437,12 @@ def _parent_main(args) -> int:
                     [r["relevance_rows"] for r in runs]
                 )
             ),
+        },
+        # Per-job spread for banking a tighter cap (e.g. max × 1.05).
+        "stats": {
+            "reason_s": _metric_stats(reason_vals),
+            "setup_s": _metric_stats(setup_vals),
+            "import_s": _metric_stats(import_vals),
         },
         # Record the Python version used by the child processes.
         # If no runs somehow exist, fall back to the parent Python version.
@@ -460,12 +500,17 @@ def _parent_main(args) -> int:
     )
     # Create a short alias to the median metrics for easier printing.
     med = report["medians"]
+    reason_stats = report["stats"]["reason_s"]
     # Convert the boolean pass result into a readable status string.
     status = "PASS" if report["pass"] else "FAIL"
-    # Print a one-line benchmark summary.
+    # Print a one-line benchmark summary plus this job's reason_s spread.
     print(
         f"{status} {args.type}: "
         f"reason_s_med={med['reason_s']:.4f}s "
+        f"reason_s_min={reason_stats['min']:.4f}s "
+        f"reason_s_max={reason_stats['max']:.4f}s "
+        f"reason_s_mean={reason_stats['mean']:.4f}s "
+        f"reason_s_stdev={reason_stats['stdev']:.4f}s "
         f"setup_s_med={med['setup_s']:.4f}s "
         f"import_s_med={med['import_s']:.4f}s "
         f"relevance_rows={med['relevance_rows']} "
