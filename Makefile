@@ -83,12 +83,12 @@ test-api: ## Run only API tests (tests/api_tests)
 	@echo "$(BOLD)$(BLUE)Running API tests...$(RESET)"
 	$(RUN_TESTS) --suite api_tests
 
-test-jit: ## Run only JIT-disabled tests (tests/unit/disable_jit)
-	@echo "$(BOLD)$(BLUE)Running JIT-disabled tests...$(RESET)"
+test-jit: ## Run only JIT-enabled tests (tests/unit/dont_disable_jit)
+	@echo "$(BOLD)$(BLUE)Running JIT-enabled tests...$(RESET)"
 	$(RUN_TESTS) --suite dont_disable_jit
 
-test-no-jit: ## Run only JIT-enabled tests (tests/unit/dont_disable_jit)
-	@echo "$(BOLD)$(BLUE)Running JIT-enabled tests...$(RESET)"
+test-no-jit: ## Run only JIT-disabled tests (tests/unit/disable_jit)
+	@echo "$(BOLD)$(BLUE)Running JIT-disabled tests...$(RESET)"
 	$(RUN_TESTS) --suite disable_jit
 
 test-consistency: ## Run numba consistency tests
@@ -138,7 +138,7 @@ lint: ## Run linting checks
 	@echo "Fixing end of files..."
 	@pre-commit run end-of-file-fixer --all-files || true
 	@echo "Running ruff..."
-	./.venv/bin/python -m ruff check pyreason/scripts
+	ruff check pyreason/scripts
 
 check-deps: ## Check if required dependencies are installed
 	@echo "$(BOLD)$(BLUE)Checking dependencies...$(RESET)"

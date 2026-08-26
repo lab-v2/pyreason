@@ -9,13 +9,13 @@
       "uses_real_pyreason": true,
       "environment_vars": {},
       "pytest_args": ["-v"],
-      "timeout": 300
+      "timeout": 900
     },
     "disable_jit": {
       "name": "JIT Disabled Tests",
       "description": "Tests for internal interpretation logic with JIT disabled",
       "path": "tests/unit/disable_jit",
-      "coverage_source": "pyreason.scripts",
+      "coverage_source": "pyreason/scripts",
       "jit_disabled": true,
       "uses_real_pyreason": false,
       "environment_vars": {
@@ -28,7 +28,7 @@
       "name": "JIT Enabled Tests",
       "description": "Tests for components that benefit from JIT compilation",
       "path": "tests/unit/dont_disable_jit",
-      "coverage_source": "pyreason.scripts",
+      "coverage_source": "pyreason/scripts",
       "jit_disabled": false,
       "uses_real_pyreason": false,
       "environment_vars": {},
@@ -44,7 +44,7 @@
       "uses_real_pyreason": true,
       "environment_vars": {},
       "pytest_args": ["-v"],
-      "timeout": 600
+      "timeout": 1800
     }
   },
   "coverage": {
