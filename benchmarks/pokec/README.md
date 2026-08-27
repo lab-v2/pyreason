@@ -74,14 +74,16 @@ Timed windows: `import_s`, `setup_s`, `reason_s`. Thresholds apply to
 `reason_s` only. After `reason()`, `relevance_rows` at the final timestep must
 **exactly** match `baselines.json` (semantics tripwire). First child is an
 untimed warmup so Numba compilation stays out of measured windows.
-`PYTHONHASHSEED=0` on every child.
+`PYTHONHASHSEED=0` on every child. Each timed child prints its own
+`reason_s` / `setup_s` / `import_s` / `relevance_rows` line; the PASS line
+also reports min / max / mean / stdev of `reason_s` for that job.
 
-Banked on `ubuntu-latest` (3 Actions medians per type; cap = 2× worst median):
+Banked on `ubuntu-latest` (10 CI jobs × 3 children per size; cap = 1.05 × max observed child `reason_s`):
 
 | Type | `relevance_rows` | `reason_s_max` |
 |------|------------------|----------------|
-| 2k | **1573** | **20.6428** s |
-| 10k | **8006** | **154.8286** s |
+| 2k | **1573** | **10.8126** s |
+| 10k | **8006** | **72.0894** s |
 
 ## CI (`.github/workflows/perf.yml`)
 
@@ -130,11 +132,11 @@ Existing `python-package-version-test.yml` / `python-publish.yml` are untouched.
 Caps above are already banked in `baselines.json`. Re-banking is a
 **deliberate, reviewed** edit — never automatic.
 
-1. Run the type 3× on Actions, collect median `reason_s` from each report.
-2. Take the **worst** median, multiply by **2.0**, set `reason_s_max`.
-3. `relevance_rows` must stay identical across those runs; change it only if
+1. Run the size 10× on Actions (3 children per run = 30 child measurements).
+2. Take the **maximum observed child** `reason_s`, multiply by **1.05** (5% headroom), set `reason_s_max`.
+3. `relevance_rows` must stay identical across all runs; change it only if
    the count is stable and the semantics change is intentional.
-4. Cite the three report artifacts in the PR that edits `baselines.json`.
+4. Cite the campaign artifact / report data in the PR that edits `baselines.json`.
 
 `relevance_rows` mismatches are hard failures. `reason_s` over threshold fails
 with a message to re-run once before investigating (hosted-runner noise
