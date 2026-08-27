@@ -1,0 +1,314 @@
+{
+  "goal": "Collect 10 CI jobs × 3 children per type, then set reason_s_max = max(all child reason_s) × 1.05",
+  "runner": "ubuntu-latest",
+  "jobs_target": 10,
+  "children_per_job": 3,
+  "pokec-2k": {
+    "jobs": [
+      {
+        "job": 1,
+        "children": [
+          {"child": 1, "reason_s": 7.6855, "setup_s": 3.8062, "import_s": 1.9445, "relevance_rows": 1573},
+          {"child": 2, "reason_s": 7.7142, "setup_s": 3.8406, "import_s": 1.8453, "relevance_rows": 1573},
+          {"child": 3, "reason_s": 7.5947, "setup_s": 4.0568, "import_s": 1.8477, "relevance_rows": 1573}
+        ],
+        "job_summary": {
+          "reason_s_med": 7.6855,
+          "reason_s_min": 7.5947,
+          "reason_s_max": 7.7142,
+          "reason_s_mean": 7.6648,
+          "reason_s_stdev": 0.0624
+        }
+      },
+      {
+        "job": 2,
+        "children": [
+          {"child": 1, "reason_s": 9.3472, "setup_s": 5.6154, "import_s": 2.6527, "relevance_rows": 1573},
+          {"child": 2, "reason_s": 9.3922, "setup_s": 5.6230, "import_s": 2.6494, "relevance_rows": 1573},
+          {"child": 3, "reason_s": 9.5583, "setup_s": 5.6886, "import_s": 2.6497, "relevance_rows": 1573}
+        ],
+        "job_summary": {
+          "reason_s_med": 9.3922,
+          "reason_s_min": 9.3472,
+          "reason_s_max": 9.5583,
+          "reason_s_mean": 9.4326,
+          "reason_s_stdev": 0.1112
+        }
+      },
+      {
+        "job": 3,
+        "children": [
+          {"child": 1, "reason_s": 10.1664, "setup_s": 6.1032, "import_s": 2.9361, "relevance_rows": 1573},
+          {"child": 2, "reason_s": 10.2977, "setup_s": 6.1209, "import_s": 2.8601, "relevance_rows": 1573},
+          {"child": 3, "reason_s": 10.2672, "setup_s": 6.1633, "import_s": 2.9023, "relevance_rows": 1573}
+        ],
+        "job_summary": {
+          "reason_s_med": 10.2672,
+          "reason_s_min": 10.1664,
+          "reason_s_max": 10.2977,
+          "reason_s_mean": 10.2438,
+          "reason_s_stdev": 0.0687
+        }
+      },
+      {
+        "job": 4,
+        "children": [
+          {"child": 1, "reason_s": 9.2964, "setup_s": 5.9366, "import_s": 2.7192, "relevance_rows": 1573},
+          {"child": 2, "reason_s": 9.2649, "setup_s": 5.9168, "import_s": 2.6901, "relevance_rows": 1573},
+          {"child": 3, "reason_s": 9.3189, "setup_s": 5.9039, "import_s": 2.6971, "relevance_rows": 1573}
+        ],
+        "job_summary": {
+          "reason_s_med": 9.2964,
+          "reason_s_min": 9.2649,
+          "reason_s_max": 9.3189,
+          "reason_s_mean": 9.2934,
+          "reason_s_stdev": 0.0271
+        }
+      },
+      {
+        "job": 5,
+        "children": [
+          {"child": 1, "reason_s": 9.6295, "setup_s": 6.2064, "import_s": 2.8286, "relevance_rows": 1573},
+          {"child": 2, "reason_s": 9.7216, "setup_s": 6.1650, "import_s": 2.8088, "relevance_rows": 1573},
+          {"child": 3, "reason_s": 9.5436, "setup_s": 6.0924, "import_s": 2.7823, "relevance_rows": 1573}
+        ],
+        "job_summary": {
+          "reason_s_med": 9.6295,
+          "reason_s_min": 9.5436,
+          "reason_s_max": 9.7216,
+          "reason_s_mean": 9.6316,
+          "reason_s_stdev": 0.0890
+        }
+      },
+      {
+        "job": 6,
+        "children": [
+          {"child": 1, "reason_s": 9.3659, "setup_s": 5.9451, "import_s": 2.7442, "relevance_rows": 1573},
+          {"child": 2, "reason_s": 9.4344, "setup_s": 5.9832, "import_s": 2.7496, "relevance_rows": 1573},
+          {"child": 3, "reason_s": 9.4073, "setup_s": 5.9858, "import_s": 2.7453, "relevance_rows": 1573}
+        ],
+        "job_summary": {
+          "reason_s_med": 9.4073,
+          "reason_s_min": 9.3659,
+          "reason_s_max": 9.4344,
+          "reason_s_mean": 9.4026,
+          "reason_s_stdev": 0.0345
+        }
+      },
+      {
+        "job": 7,
+        "children": [
+          {"child": 1, "reason_s": 9.8594, "setup_s": 5.8226, "import_s": 2.8182, "relevance_rows": 1573},
+          {"child": 2, "reason_s": 9.9775, "setup_s": 6.0764, "import_s": 2.8914, "relevance_rows": 1573},
+          {"child": 3, "reason_s": 10.1897, "setup_s": 6.0478, "import_s": 2.8427, "relevance_rows": 1573}
+        ],
+        "job_summary": {
+          "reason_s_med": 9.9775,
+          "reason_s_min": 9.8594,
+          "reason_s_max": 10.1897,
+          "reason_s_mean": 10.0089,
+          "reason_s_stdev": 0.1674
+        }
+      },
+      {
+        "job": 8,
+        "children": [
+          {"child": 1, "reason_s": 7.7029, "setup_s": 4.6202, "import_s": 2.2212, "relevance_rows": 1573},
+          {"child": 2, "reason_s": 7.6472, "setup_s": 4.5873, "import_s": 2.2173, "relevance_rows": 1573},
+          {"child": 3, "reason_s": 7.7295, "setup_s": 4.6060, "import_s": 2.2271, "relevance_rows": 1573}
+        ],
+        "job_summary": {
+          "reason_s_med": 7.7029,
+          "reason_s_min": 7.6472,
+          "reason_s_max": 7.7295,
+          "reason_s_mean": 7.6932,
+          "reason_s_stdev": 0.0420
+        }
+      },
+      {
+        "job": 9,
+        "children": [
+          {"child": 1, "reason_s": 9.2472, "setup_s": 5.9282, "import_s": 2.7092, "relevance_rows": 1573},
+          {"child": 2, "reason_s": 9.2137, "setup_s": 5.8851, "import_s": 2.7034, "relevance_rows": 1573},
+          {"child": 3, "reason_s": 9.2525, "setup_s": 5.8881, "import_s": 2.7146, "relevance_rows": 1573}
+        ],
+        "job_summary": {
+          "reason_s_med": 9.2472,
+          "reason_s_min": 9.2137,
+          "reason_s_max": 9.2525,
+          "reason_s_mean": 9.2378,
+          "reason_s_stdev": 0.0210
+        }
+      },
+      {
+        "job": 10,
+        "children": [
+          {"child": 1, "reason_s": 9.5723, "setup_s": 6.0360, "import_s": 2.7702, "relevance_rows": 1573},
+          {"child": 2, "reason_s": 9.6950, "setup_s": 6.1249, "import_s": 2.8001, "relevance_rows": 1573},
+          {"child": 3, "reason_s": 9.6418, "setup_s": 6.1457, "import_s": 2.8046, "relevance_rows": 1573}
+        ],
+        "job_summary": {
+          "reason_s_med": 9.6418,
+          "reason_s_min": 9.5723,
+          "reason_s_max": 9.6950,
+          "reason_s_mean": 9.6364,
+          "reason_s_stdev": 0.0615
+        }
+      }
+    ]
+  },
+  "pokec-10k": {
+    "jobs": [
+      {
+        "job": 1,
+        "children": [
+          {"child": 1, "reason_s": 61.3486, "setup_s": 13.3036, "import_s": 2.8297, "relevance_rows": 8006},
+          {"child": 2, "reason_s": 60.5919, "setup_s": 13.4724, "import_s": 2.8008, "relevance_rows": 8006},
+          {"child": 3, "reason_s": 61.0907, "setup_s": 13.3693, "import_s": 2.7490, "relevance_rows": 8006}
+        ],
+        "job_summary": {
+          "reason_s_med": 61.0907,
+          "reason_s_min": 60.5919,
+          "reason_s_max": 61.3486,
+          "reason_s_mean": 61.0104,
+          "reason_s_stdev": 0.3847
+        }
+      },
+      {
+        "job": 2,
+        "children": [
+          {"child": 1, "reason_s": 56.4989, "setup_s": 13.5754, "import_s": 2.7762, "relevance_rows": 8006},
+          {"child": 2, "reason_s": 61.6788, "setup_s": 13.4386, "import_s": 2.7973, "relevance_rows": 8006},
+          {"child": 3, "reason_s": 62.2084, "setup_s": 13.7842, "import_s": 2.8540, "relevance_rows": 8006}
+        ],
+        "job_summary": {
+          "reason_s_med": 61.6788,
+          "reason_s_min": 56.4989,
+          "reason_s_max": 62.2084,
+          "reason_s_mean": 60.1287,
+          "reason_s_stdev": 3.1546
+        }
+      },
+      {
+        "job": 3,
+        "children": [
+          {"child": 1, "reason_s": 67.3815, "setup_s": 9.0419, "import_s": 2.0642, "relevance_rows": 8006},
+          {"child": 2, "reason_s": 66.9899, "setup_s": 9.1442, "import_s": 2.0869, "relevance_rows": 8006},
+          {"child": 3, "reason_s": 68.6566, "setup_s": 9.0728, "import_s": 2.1219, "relevance_rows": 8006}
+        ],
+        "job_summary": {
+          "reason_s_med": 67.3815,
+          "reason_s_min": 66.9899,
+          "reason_s_max": 68.6566,
+          "reason_s_mean": 67.6760,
+          "reason_s_stdev": 0.8715
+        }
+      },
+      {
+        "job": 4,
+        "children": [
+          {"child": 1, "reason_s": 54.7664, "setup_s": 12.3158, "import_s": 2.8277, "relevance_rows": 8006},
+          {"child": 2, "reason_s": 54.7528, "setup_s": 12.2771, "import_s": 2.8037, "relevance_rows": 8006},
+          {"child": 3, "reason_s": 54.5292, "setup_s": 12.4110, "import_s": 2.8328, "relevance_rows": 8006}
+        ],
+        "job_summary": {
+          "reason_s_med": 54.7528,
+          "reason_s_min": 54.5292,
+          "reason_s_max": 54.7664,
+          "reason_s_mean": 54.6828,
+          "reason_s_stdev": 0.1332
+        }
+      },
+      {
+        "job": 5,
+        "children": [
+          {"child": 1, "reason_s": 54.7477, "setup_s": 12.2123, "import_s": 2.7857, "relevance_rows": 8006},
+          {"child": 2, "reason_s": 54.5496, "setup_s": 12.4485, "import_s": 2.7793, "relevance_rows": 8006},
+          {"child": 3, "reason_s": 54.8248, "setup_s": 12.1688, "import_s": 2.7803, "relevance_rows": 8006}
+        ],
+        "job_summary": {
+          "reason_s_med": 54.7477,
+          "reason_s_min": 54.5496,
+          "reason_s_max": 54.8248,
+          "reason_s_mean": 54.7074,
+          "reason_s_stdev": 0.1420
+        }
+      },
+      {
+        "job": 6,
+        "children": [
+          {"child": 1, "reason_s": 53.5537, "setup_s": 11.8891, "import_s": 2.6605, "relevance_rows": 8006},
+          {"child": 2, "reason_s": 53.7185, "setup_s": 12.0079, "import_s": 2.6535, "relevance_rows": 8006},
+          {"child": 3, "reason_s": 54.0737, "setup_s": 12.0236, "import_s": 2.6744, "relevance_rows": 8006}
+        ],
+        "job_summary": {
+          "reason_s_med": 53.7185,
+          "reason_s_min": 53.5537,
+          "reason_s_max": 54.0737,
+          "reason_s_mean": 53.7820,
+          "reason_s_stdev": 0.2657
+        }
+      },
+      {
+        "job": 7,
+        "children": [
+          {"child": 1, "reason_s": 53.7327, "setup_s": 11.9361, "import_s": 2.6700, "relevance_rows": 8006},
+          {"child": 2, "reason_s": 53.7334, "setup_s": 11.9261, "import_s": 2.6430, "relevance_rows": 8006},
+          {"child": 3, "reason_s": 53.8189, "setup_s": 12.0504, "import_s": 2.6735, "relevance_rows": 8006}
+        ],
+        "job_summary": {
+          "reason_s_med": 53.7334,
+          "reason_s_min": 53.7327,
+          "reason_s_max": 53.8189,
+          "reason_s_mean": 53.7617,
+          "reason_s_stdev": 0.0496
+        }
+      },
+      {
+        "job": 8,
+        "children": [
+          {"child": 1, "reason_s": 52.6410, "setup_s": 12.5460, "import_s": 2.5177, "relevance_rows": 8006},
+          {"child": 2, "reason_s": 57.4740, "setup_s": 12.4863, "import_s": 2.5360, "relevance_rows": 8006},
+          {"child": 3, "reason_s": 57.6541, "setup_s": 12.5568, "import_s": 2.5209, "relevance_rows": 8006}
+        ],
+        "job_summary": {
+          "reason_s_med": 57.4740,
+          "reason_s_min": 52.6410,
+          "reason_s_max": 57.6541,
+          "reason_s_mean": 55.9231,
+          "reason_s_stdev": 2.8437
+        }
+      },
+      {
+        "job": 9,
+        "children": [
+          {"child": 1, "reason_s": 61.8219, "setup_s": 13.7398, "import_s": 2.8610, "relevance_rows": 8006},
+          {"child": 2, "reason_s": 62.2665, "setup_s": 13.6310, "import_s": 2.8898, "relevance_rows": 8006},
+          {"child": 3, "reason_s": 56.5094, "setup_s": 13.5053, "import_s": 2.8397, "relevance_rows": 8006}
+        ],
+        "job_summary": {
+          "reason_s_med": 61.8219,
+          "reason_s_min": 56.5094,
+          "reason_s_max": 62.2665,
+          "reason_s_mean": 60.1993,
+          "reason_s_stdev": 3.2032
+        }
+      },
+      {
+        "job": 10,
+        "children": [
+          {"child": 1, "reason_s": 55.6749, "setup_s": 7.7769, "import_s": 1.7840, "relevance_rows": 8006},
+          {"child": 2, "reason_s": 55.3314, "setup_s": 8.1678, "import_s": 1.7904, "relevance_rows": 8006},
+          {"child": 3, "reason_s": 55.3241, "setup_s": 7.7732, "import_s": 1.8116, "relevance_rows": 8006}
+        ],
+        "job_summary": {
+          "reason_s_med": 55.3314,
+          "reason_s_min": 55.3241,
+          "reason_s_max": 55.6749,
+          "reason_s_mean": 55.4435,
+          "reason_s_stdev": 0.2005
+        }
+      }
+    ]
+  }
+}
