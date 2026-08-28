@@ -4,7 +4,17 @@ import numpy as np
 
 
 class Interval(structref.StructRefProxy):
-    def __new__(cls, lower, upper, s=False):
+    def __new__(cls, lower, upper, s=False, *args):
+        if len(args) == 2:
+            prev_lower, prev_upper = args
+            obj = object.__new__(cls)
+            obj.l = lower
+            obj.u = upper
+            obj.s = s
+            obj.prev_l = prev_lower
+            obj.prev_u = prev_upper
+            return obj
+
         return structref.StructRefProxy.__new__(cls, lower, upper, s, lower, upper)
 
     @property
@@ -66,7 +76,7 @@ class Interval(structref.StructRefProxy):
         if lower > upper:
             lower = np.float64(0)
             upper = np.float64(1)
-        return Interval(lower, upper, False, self.lower, self.upper)
+        return Interval(lower, upper, False)
 
     def to_str(self):
         return self.__repr__()
