@@ -4,8 +4,12 @@ import numpy as np
 
 
 class Interval(structref.StructRefProxy):
-    def __new__(cls, lower, upper, s=False):
-        return structref.StructRefProxy.__new__(cls, lower, upper, s, lower, upper)
+    def __new__(cls, lower, upper, s=False, prev_l=None, prev_u=None):
+        if prev_l is None:
+            prev_l = lower
+        if prev_u is None:
+            prev_u = upper
+        return structref.StructRefProxy.__new__(cls, lower, upper, s, prev_l, prev_u)
 
     @property
     @njit

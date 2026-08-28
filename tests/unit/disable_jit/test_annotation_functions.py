@@ -4,8 +4,6 @@ from types import SimpleNamespace
 
 import pyreason.scripts.annotation_functions.annotation_functions as af
 
-af.interval = SimpleNamespace(closed=lambda l, u, static=False: SimpleNamespace(lower=l, upper=u))
-
 def _interval(lower, upper):
     return SimpleNamespace(lower=lower, upper=upper)
 
@@ -42,23 +40,27 @@ def test_check_bound(lower, upper, expected):
 def test_average():
     annotations, weights = _example_annotations()
     result = af.average(annotations, weights)
-    assert result.lower == pytest.approx(1.4 / 3)
-    assert result.upper == pytest.approx(0.6)
+    assert isinstance(result, tuple), f"expected tuple, got {type(result)}"
+    assert result[0] == pytest.approx(1.4 / 3)
+    assert result[1] == pytest.approx(0.6)
 
 def test_average_lower():
     annotations, weights = _example_annotations()
     result = af.average_lower(annotations, weights)
-    assert result.lower == pytest.approx(1.4 / 3)
-    assert result.upper == pytest.approx(0.6)
+    assert isinstance(result, tuple), f"expected tuple, got {type(result)}"
+    assert result[0] == pytest.approx(1.4 / 3)
+    assert result[1] == pytest.approx(0.6)
 
 def test_maximum():
     annotations, weights = _example_annotations()
     result = af.maximum(annotations, weights)
-    assert result.lower == pytest.approx(1.0)
-    assert result.upper == pytest.approx(1.0)
+    assert isinstance(result, tuple), f"expected tuple, got {type(result)}"
+    assert result[0] == pytest.approx(1.0)
+    assert result[1] == pytest.approx(1.0)
 
 def test_minimum():
     annotations, weights = _example_annotations()
     result = af.minimum(annotations, weights)
-    assert result.lower == pytest.approx(0.4)
-    assert result.upper == pytest.approx(0.6)
+    assert isinstance(result, tuple), f"expected tuple, got {type(result)}"
+    assert result[0] == pytest.approx(0.4)
+    assert result[1] == pytest.approx(0.6)
