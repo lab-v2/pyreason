@@ -50,7 +50,7 @@ interpretation = pr.reason(timesteps=2)
 pr.save_rule_trace(interpretation)
 
 interpretations_dict = interpretation.get_dict()
-print("stra")
+print("start")
 pprint(interpretations_dict)
 print("end")
 #Display the changes in the interpretation for each timestep
