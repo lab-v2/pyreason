@@ -469,11 +469,27 @@ class Interpretation:
 						# Delete rules that have been applied from list by adding index to list
 						rules_to_remove_idx.add(idx)
 
-				# Remove from rules to be applied and edges to be applied lists after coming out from loop
-				rules_to_be_applied_node[:] = numba.typed.List([rules_to_be_applied_node[i] for i in range(len(rules_to_be_applied_node)) if i not in rules_to_remove_idx])
-				edges_to_be_added_node_rule[:] = numba.typed.List([edges_to_be_added_node_rule[i] for i in range(len(edges_to_be_added_node_rule)) if i not in rules_to_remove_idx])
+				# After applying due node rules this timestep, drop them from the
+				# pending queue so later fixed-point passes do not fire them again.
+				# The three lists below are parallel: index i is one pending node
+				# rule, the edges that rule may add, and optional atom-trace data.
+				rules_to_be_applied_node_new = numba.typed.List.empty_list(rules_to_be_applied_node_type)
+				edges_to_be_added_node_rule_new = numba.typed.List.empty_list(edges_to_be_added_type)
+				rules_to_be_applied_node_trace_new = numba.typed.List.empty_list(rules_to_be_applied_trace_type)
+				for keep_idx in range(len(rules_to_be_applied_node)):
+					if keep_idx not in rules_to_remove_idx:
+						# Keep this still-pending node-rule firing for a later t or FP step.
+						rules_to_be_applied_node_new.append(rules_to_be_applied_node[keep_idx])
+						# Same index stores the edge endpoints that firing would introduce.
+						edges_to_be_added_node_rule_new.append(edges_to_be_added_node_rule[keep_idx])
+						if atom_trace:
+							# Same index stores the ground atoms used to explain that firing.
+							rules_to_be_applied_node_trace_new.append(rules_to_be_applied_node_trace[keep_idx])
+				# Swap the pending node-rule queues to the filtered, still-aligned copies.
+				rules_to_be_applied_node[:] = rules_to_be_applied_node_new
+				edges_to_be_added_node_rule[:] = edges_to_be_added_node_rule_new
 				if atom_trace:
-					rules_to_be_applied_node_trace[:] = numba.typed.List([rules_to_be_applied_node_trace[i] for i in range(len(rules_to_be_applied_node_trace)) if i not in rules_to_remove_idx])
+					rules_to_be_applied_node_trace[:] = rules_to_be_applied_node_trace_new
 
 				# Edges
 				rules_to_remove_idx.clear()
@@ -543,11 +559,27 @@ class Interpretation:
 						# Delete rules that have been applied from list by adding the index to list
 						rules_to_remove_idx.add(idx)
 
-				# Remove from rules to be applied and edges to be applied lists after coming out from loop
-				rules_to_be_applied_edge[:] = numba.typed.List([rules_to_be_applied_edge[i] for i in range(len(rules_to_be_applied_edge)) if i not in rules_to_remove_idx])
-				edges_to_be_added_edge_rule[:] = numba.typed.List([edges_to_be_added_edge_rule[i] for i in range(len(edges_to_be_added_edge_rule)) if i not in rules_to_remove_idx])
+				# After applying due edge rules this timestep, drop them from the
+				# pending queue so later fixed-point passes do not fire them again.
+				# The three lists below are parallel: index i is one pending edge
+				# rule, the edges that rule may add, and optional atom-trace data.
+				rules_to_be_applied_edge_new = numba.typed.List.empty_list(rules_to_be_applied_edge_type)
+				edges_to_be_added_edge_rule_new = numba.typed.List.empty_list(edges_to_be_added_type)
+				rules_to_be_applied_edge_trace_new = numba.typed.List.empty_list(rules_to_be_applied_trace_type)
+				for keep_idx in range(len(rules_to_be_applied_edge)):
+					if keep_idx not in rules_to_remove_idx:
+						# Keep this still-pending edge-rule firing for a later t or FP step.
+						rules_to_be_applied_edge_new.append(rules_to_be_applied_edge[keep_idx])
+						# Same index stores the edge endpoints that firing would introduce.
+						edges_to_be_added_edge_rule_new.append(edges_to_be_added_edge_rule[keep_idx])
+						if atom_trace:
+							# Same index stores the ground atoms used to explain that firing.
+							rules_to_be_applied_edge_trace_new.append(rules_to_be_applied_edge_trace[keep_idx])
+				# Swap the pending edge-rule queues to the filtered, still-aligned copies.
+				rules_to_be_applied_edge[:] = rules_to_be_applied_edge_new
+				edges_to_be_added_edge_rule[:] = edges_to_be_added_edge_rule_new
 				if atom_trace:
-					rules_to_be_applied_edge_trace[:] = numba.typed.List([rules_to_be_applied_edge_trace[i] for i in range(len(rules_to_be_applied_edge_trace)) if i not in rules_to_remove_idx])
+					rules_to_be_applied_edge_trace[:] = rules_to_be_applied_edge_trace_new
 
 				# Fixed point
 				if update:
@@ -1427,15 +1459,17 @@ def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groun
 	# We replace Y by the sources of Z
 	elif clause_var_1 not in groundings and clause_var_2 in groundings:
 		for n in groundings[clause_var_2]:
-			es = numba.typed.List([(nn, n) for nn in reverse_neighbors[n]])
-			edge_groundings.extend(es)
+			# Expand each grounded Z into candidate incoming edges (source, Z).
+			for nn in reverse_neighbors[n]:
+				edge_groundings.append((nn, n))
 
 	# Case 3:
 	# We replace Z by the neighbors of Y
 	elif clause_var_1 in groundings and clause_var_2 not in groundings:
 		for n in groundings[clause_var_1]:
-			es = numba.typed.List([(n, nn) for nn in neighbors[n]])
-			edge_groundings.extend(es)
+			# Expand each grounded Y into candidate outgoing edges (Y, neighbor).
+			for nn in neighbors[n]:
+				edge_groundings.append((n, nn))
 
 	# Case 4:
 	# We have seen both variables before
@@ -1447,8 +1481,10 @@ def get_rule_edge_clause_grounding(clause_var_1, clause_var_2, groundings, groun
 		else:
 			groundings_clause_var_2_set = set(groundings[clause_var_2])
 			for n in groundings[clause_var_1]:
-				es = numba.typed.List([(n, nn) for nn in neighbors[n] if nn in groundings_clause_var_2_set])
-				edge_groundings.extend(es)
+				# Restrict candidates to edges whose endpoints are already grounded.
+				for nn in neighbors[n]:
+					if nn in groundings_clause_var_2_set:
+						edge_groundings.append((n, nn))
 
 	return edge_groundings
 
