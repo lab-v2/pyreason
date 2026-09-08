@@ -685,23 +685,33 @@ class Interpretation:
 			# pending queue so later fixed-point passes do not fire them again.
 			# The three lists below are parallel: index i is one pending node
 			# rule, the edges that rule may add, and optional atom-trace data.
-			rules_to_be_applied_node_new = numba.typed.List.empty_list(rules_to_be_applied_node_type)
-			edges_to_be_added_node_rule_new = numba.typed.List.empty_list(edges_to_be_added_type)
-			rules_to_be_applied_node_trace_new = numba.typed.List.empty_list(rules_to_be_applied_trace_type)
-			for keep_idx in range(len(rules_to_be_applied_node)):
-				if keep_idx not in rules_to_remove_idx:
-					# Keep this still-pending node-rule firing for a later t or FP step.
-					rules_to_be_applied_node_new.append(rules_to_be_applied_node[keep_idx])
-					# Same index stores the edge endpoints that firing would introduce.
-					edges_to_be_added_node_rule_new.append(edges_to_be_added_node_rule[keep_idx])
-					if atom_trace:
-						# Same index stores the ground atoms used to explain that firing.
-						rules_to_be_applied_node_trace_new.append(rules_to_be_applied_node_trace[keep_idx])
-			# Swap the pending node-rule queues to the filtered, still-aligned copies.
-			rules_to_be_applied_node[:] = rules_to_be_applied_node_new
-			edges_to_be_added_node_rule[:] = edges_to_be_added_node_rule_new
-			if atom_trace:
-				rules_to_be_applied_node_trace[:] = rules_to_be_applied_node_trace_new
+			# Skip the rebuild when nothing was applied this pass (common inside
+			# the fixed-point loop once due rules for t are already drained).
+			if len(rules_to_remove_idx) > 0:
+				rules_to_be_applied_node_new = numba.typed.List.empty_list(rules_to_be_applied_node_type)
+				edges_to_be_added_node_rule_new = numba.typed.List.empty_list(edges_to_be_added_type)
+				if atom_trace:
+					rules_to_be_applied_node_trace_new = numba.typed.List.empty_list(rules_to_be_applied_trace_type)
+					for keep_idx in range(len(rules_to_be_applied_node)):
+						if keep_idx not in rules_to_remove_idx:
+							# Keep this still-pending node-rule firing for a later t or FP step.
+							rules_to_be_applied_node_new.append(rules_to_be_applied_node[keep_idx])
+							# Same index stores the edge endpoints that firing would introduce.
+							edges_to_be_added_node_rule_new.append(edges_to_be_added_node_rule[keep_idx])
+							# Same index stores the ground atoms used to explain that firing.
+							rules_to_be_applied_node_trace_new.append(rules_to_be_applied_node_trace[keep_idx])
+				else:
+					for keep_idx in range(len(rules_to_be_applied_node)):
+						if keep_idx not in rules_to_remove_idx:
+							# Keep this still-pending node-rule firing for a later t or FP step.
+							rules_to_be_applied_node_new.append(rules_to_be_applied_node[keep_idx])
+							# Same index stores the edge endpoints that firing would introduce.
+							edges_to_be_added_node_rule_new.append(edges_to_be_added_node_rule[keep_idx])
+				# Swap the pending node-rule queues to the filtered, still-aligned copies.
+				rules_to_be_applied_node[:] = rules_to_be_applied_node_new
+				edges_to_be_added_node_rule[:] = edges_to_be_added_node_rule_new
+				if atom_trace:
+					rules_to_be_applied_node_trace[:] = rules_to_be_applied_node_trace_new
 
 			# Edges
 			rules_to_remove_idx.clear()
@@ -785,24 +795,34 @@ class Interpretation:
 			# pending queue so later fixed-point passes do not fire them again.
 			# The three lists below are parallel: index i is one pending edge
 			# rule, the edges that rule may add, and optional atom-trace data.
-			rules_to_be_applied_edge_new = numba.typed.List.empty_list(rules_to_be_applied_edge_type)
-			edges_to_be_added_edge_rule_new = numba.typed.List.empty_list(edges_to_be_added_type)
-			rules_to_be_applied_edge_trace_new = numba.typed.List.empty_list(rules_to_be_applied_trace_type)
-			for keep_idx in range(len(rules_to_be_applied_edge)):
-				if keep_idx not in rules_to_remove_idx:
-					# Keep this still-pending edge-rule firing for a later t or FP step.
-					rules_to_be_applied_edge_new.append(rules_to_be_applied_edge[keep_idx])
-					# Same index stores the edge endpoints that firing would introduce.
-					edges_to_be_added_edge_rule_new.append(edges_to_be_added_edge_rule[keep_idx])
-					if atom_trace:
-						# Same index stores the ground atoms used to explain that firing.
-						rules_to_be_applied_edge_trace_new.append(rules_to_be_applied_edge_trace[keep_idx])
-			# Swap the pending edge-rule queues to the filtered, still-aligned copies.
-			rules_to_be_applied_edge[:] = rules_to_be_applied_edge_new
-			edges_to_be_added_edge_rule[:] = edges_to_be_added_edge_rule_new
-			if atom_trace:
-				rules_to_be_applied_edge_trace[:] = rules_to_be_applied_edge_trace_new
-			
+			# Skip the rebuild when nothing was applied this pass (common inside
+			# the fixed-point loop once due rules for t are already drained).
+			if len(rules_to_remove_idx) > 0:
+				rules_to_be_applied_edge_new = numba.typed.List.empty_list(rules_to_be_applied_edge_type)
+				edges_to_be_added_edge_rule_new = numba.typed.List.empty_list(edges_to_be_added_type)
+				if atom_trace:
+					rules_to_be_applied_edge_trace_new = numba.typed.List.empty_list(rules_to_be_applied_trace_type)
+					for keep_idx in range(len(rules_to_be_applied_edge)):
+						if keep_idx not in rules_to_remove_idx:
+							# Keep this still-pending edge-rule firing for a later t or FP step.
+							rules_to_be_applied_edge_new.append(rules_to_be_applied_edge[keep_idx])
+							# Same index stores the edge endpoints that firing would introduce.
+							edges_to_be_added_edge_rule_new.append(edges_to_be_added_edge_rule[keep_idx])
+							# Same index stores the ground atoms used to explain that firing.
+							rules_to_be_applied_edge_trace_new.append(rules_to_be_applied_edge_trace[keep_idx])
+				else:
+					for keep_idx in range(len(rules_to_be_applied_edge)):
+						if keep_idx not in rules_to_remove_idx:
+							# Keep this still-pending edge-rule firing for a later t or FP step.
+							rules_to_be_applied_edge_new.append(rules_to_be_applied_edge[keep_idx])
+							# Same index stores the edge endpoints that firing would introduce.
+							edges_to_be_added_edge_rule_new.append(edges_to_be_added_edge_rule[keep_idx])
+				# Swap the pending edge-rule queues to the filtered, still-aligned copies.
+				rules_to_be_applied_edge[:] = rules_to_be_applied_edge_new
+				edges_to_be_added_edge_rule[:] = edges_to_be_added_edge_rule_new
+				if atom_trace:
+					rules_to_be_applied_edge_trace[:] = rules_to_be_applied_edge_trace_new
+
 			# Check for convergence after each timestep (perfect convergence or convergence specified by user)
 			# Check number of changed interpretations or max bound change
 			# User specified convergence
