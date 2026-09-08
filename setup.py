@@ -22,16 +22,17 @@ setup(
     },
     classifiers=[
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent"
     ],
-    python_requires='>3.6',
+    python_requires='>=3.12,<3.13',
     install_requires=[
         'networkx',
         'pyyaml',
         'pandas',
-        'numba',
-        'numpy',
+        'numba==0.59.1',
+        'numpy==1.26.4',
         'memory_profiler',
         'pytest'
     ],
