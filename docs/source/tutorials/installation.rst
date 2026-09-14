@@ -13,7 +13,7 @@ Prerequisites
 
 .. note::
 
-    Use python version 3.9 or 3.10 .
+    Use Python version 3.10, 3.11, 3.12, or 3.13.
 
 
 Step-by-Step Guide
@@ -50,19 +50,19 @@ Step-by-Step Guide
 
 .. code-block:: bash
 
-  pyenv install 3.8
+  pyenv install 3.13
 
 4. Create a Virtual Environment
 
 .. code-block:: bash
 
-    pyenv virtualenv 3.8 pyreason_venv_3.8
+    pyenv virtualenv 3.13 pyreason_venv_3.13
 
 5. Activate the Virtual Environment
 
 .. code-block:: bash
 
-    pyenv activate pyreason_venv_3.8
+    pyenv activate pyreason_venv_3.13
 
 6. Install pyreason Using `pip`
 
