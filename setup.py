@@ -30,7 +30,6 @@ setup(
         'networkx',
         'pyyaml',
         'pandas',
-        'numba',
         'numpy',
         'memory_profiler',
         'pytest'

@@ -41,7 +41,7 @@ def main():
 
     # sns.relplot(data=df, x =x_axis_title, y=y_axis_title, kind = 'line', hue = 'type', palette = ['red', 'blue'])
     # ax = sns.relplot(data=df,  kind = 'line', ci=0)
-    # plt.plot(x_jit, y_jit, label='accelerated with numba for CPU')
+    # plt.plot(x_jit, y_jit, label='CPU timing curve')
     # plt.plot(x_old, y_old, label='first optimized version')
     # plt.plot(x_oldest, y_oldest, label='original version')
     plt.plot(x, y2, linestyle='dotted', marker='^', label='2 Timesteps')

@@ -1,4 +1,4 @@
-# Run this script after cloning repository to generate the numba caches. This script runs the hello-world program internally
+# Changed: used to warm Numba caches. Now it just runs hello-world once to smoke-check the install.
 print('Initializing PyReason caches')
 import pyreason as pr
     
