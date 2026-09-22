@@ -1,6 +1,5 @@
 # Changed: clause reorder packs plain lists — same order logic, zero JIT types.
-import pyreason.scripts.numba_wrapper.numba_types.label_type as label
-import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
+# (Dropped the old label/interval type imports — this file only shuffles clause tuples.)
 
 
 def reorder_clauses(rule):

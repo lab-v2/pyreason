@@ -19,7 +19,7 @@ class Fact:
         return self._component
 
     @property
-    def l(self):
+    def l(self):  # noqa: E743  # short name kept: old FactType field for the label
         return self._label
 
     @property

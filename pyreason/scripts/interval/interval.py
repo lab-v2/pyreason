@@ -32,7 +32,7 @@ class Interval:
 
     # Compat aliases used by older call sites / traces.
     @property
-    def l(self):
+    def l(self):  # noqa: E743  # short name kept: old Interval structref field for lower
         return self._lower
 
     @property

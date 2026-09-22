@@ -4,3 +4,6 @@ from pyreason.scripts.interval.interval import Interval, closed
 
 interval_type = Interval
 IntervalType = Interval
+
+# Re-exports for `import ...interval_type as interval` then interval.closed(...)
+__all__ = ["Interval", "closed", "interval_type", "IntervalType"]
