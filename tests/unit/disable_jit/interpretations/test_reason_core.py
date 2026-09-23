@@ -104,9 +104,12 @@ def make_copy_env(monkeypatch, persistent):
         def empty(self, *a, **k):
             return {}
 
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.typed, "Dict", _DictShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "Dict", _DictShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     class SimpleWorld:
         def __init__(self, *a, **k):

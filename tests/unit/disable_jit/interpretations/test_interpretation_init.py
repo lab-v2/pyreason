@@ -33,8 +33,10 @@ def shim_types(monkeypatch):
         def empty(self, *args, **kwargs):
             return {}
 
-    monkeypatch.setattr(interpretation.numba.typed, "List", ListShim())
-    monkeypatch.setattr(interpretation.numba.typed, "Dict", DictShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "Dict", DictShim())
 
     class World:
         def __init__(self, labels=None):
