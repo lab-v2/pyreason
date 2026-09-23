@@ -1,9 +1,9 @@
+# Changed: Numba is gone on this branch — no imports, no JIT, plain Python lists/dicts.
 # This is the file that will be imported when "import pyreason" is called. All content will be run automatically
 # ruff: noqa: F401 (Ignore Pyreason import * for public api)
 import importlib
 import json
 import networkx as nx
-import numba
 import time
 import sys
 import pandas as pd
@@ -458,21 +458,21 @@ class _Settings:
 
 # VARIABLES
 __graph: Optional[nx.DiGraph] = None
-__rules: Optional[numba.typed.List] = None
+__rules: Optional[list] = None
 __clause_maps: Optional[dict] = None
-__node_facts: Optional[numba.typed.List] = None
-__edge_facts: Optional[numba.typed.List] = None
+__node_facts: Optional[list] = None
+__edge_facts: Optional[list] = None
 __facts_name_set = set() # We want to warn the user if they add multiple facts with the same name
 __rules_name_set = set() # We want to warn the user if they add multiple rules with the same name
-__ipl: Optional[numba.typed.List] = None
-__specific_node_labels: Optional[numba.typed.List] = None
-__specific_edge_labels: Optional[numba.typed.List] = None
+__ipl: Optional[list] = None
+__specific_node_labels: Optional[list] = None
+__specific_edge_labels: Optional[list] = None
 __closed_world_predicates = set()
 
-__non_fluent_graph_facts_node: Optional[numba.typed.List] = None
-__non_fluent_graph_facts_edge: Optional[numba.typed.List] = None
-__specific_graph_node_labels: Optional[numba.typed.List] = None
-__specific_graph_edge_labels: Optional[numba.typed.List] = None
+__non_fluent_graph_facts_node: Optional[list] = None
+__non_fluent_graph_facts_edge: Optional[list] = None
+__specific_graph_node_labels: Optional[list] = None
+__specific_graph_edge_labels: Optional[list] = None
 
 __annotation_functions = []
 __head_functions = []
@@ -580,10 +580,10 @@ def load_graphml(path: str) -> None:
     if settings.graph_attribute_parsing:
         __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels = __graphml_parser.parse_graph_attributes(settings.static_graph_facts)
     else:
-        __non_fluent_graph_facts_node = numba.typed.List.empty_list(fact_node.fact_type)
-        __non_fluent_graph_facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
-        __specific_graph_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
-        __specific_graph_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
+        __non_fluent_graph_facts_node = []
+        __non_fluent_graph_facts_edge = []
+        __specific_graph_node_labels = {}
+        __specific_graph_edge_labels = {}
 
 
 def load_graph(graph: nx.DiGraph) -> None:
@@ -602,10 +602,10 @@ def load_graph(graph: nx.DiGraph) -> None:
     if settings.graph_attribute_parsing:
         __non_fluent_graph_facts_node, __non_fluent_graph_facts_edge, __specific_graph_node_labels, __specific_graph_edge_labels = __graphml_parser.parse_graph_attributes(settings.static_graph_facts)
     else:
-        __non_fluent_graph_facts_node = numba.typed.List.empty_list(fact_node.fact_type)
-        __non_fluent_graph_facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
-        __specific_graph_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
-        __specific_graph_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
+        __non_fluent_graph_facts_node = []
+        __non_fluent_graph_facts_edge = []
+        __specific_graph_node_labels = {}
+        __specific_graph_edge_labels = {}
 
 
 def load_inconsistent_predicate_list(path: str) -> None:
@@ -625,7 +625,7 @@ def add_inconsistent_predicate(pred1: str, pred2: str) -> None:
     """
     global __ipl
     if __ipl is None:
-        __ipl = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, label.label_type)))
+        __ipl = []
     __ipl.append((label.Label(pred1), label.Label(pred2)))
 
 
@@ -636,7 +636,7 @@ def add_rule(pr_rule: Rule) -> None:
 
     # Add to collection of rules
     if __rules is None:
-        __rules = numba.typed.List.empty_list(rule.rule_type)
+        __rules = []
 
     # Generate name for rule if not set
     if pr_rule.rule.get_rule_name() is None:
@@ -1139,9 +1139,9 @@ def add_fact(pyreason_fact: Fact) -> None:
     global __node_facts, __edge_facts
 
     if __node_facts is None:
-        __node_facts = numba.typed.List.empty_list(fact_node.fact_type)
+        __node_facts = []
     if __edge_facts is None:
-        __edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
+        __edge_facts = []
 
     if pyreason_fact.type == 'node':
         if pyreason_fact.name is None:
@@ -1415,7 +1415,7 @@ def add_fact_from_csv(csv_path: str, raise_errors = True) -> None:
 def add_annotation_function(function: Callable) -> None:
     """Function to add annotation functions to PyReason. The added functions can be used in rules.
 
-    The function must be ``@numba.njit``-decorated and must accept exactly one of the two
+    The function must accept exactly one of the two
     supported signatures:
 
     - 2 args (legacy)::
@@ -1454,7 +1454,7 @@ def add_annotation_function(function: Callable) -> None:
     ``TypeError`` here rather than producing a confusing failure inside the reasoning
     loop.
 
-    :param function: Function to be added. Must be ``@numba.njit``-decorated and must
+    :param function: Function to be added. Must
         match one of the two supported signatures above.
     :type function: Callable
     :return: None
@@ -1463,11 +1463,10 @@ def add_annotation_function(function: Callable) -> None:
     """
     # Make sure that the functions are jitted so that they can be passed around in other jitted functions
     # TODO: Remove if necessary
-    # assert hasattr(function, 'nopython_signatures'), 'The function to be added has to be under a `numba.njit` decorator'
 
     # Arity gate: only 2-arg and 6-arg signatures are supported by `annotate`.
     # Validating here keeps the error close to the user's call site and avoids
-    # `raise` inside numba.objmode (which would fail with_lifting).
+    # Changed: used to worry about raises inside numba.objmode — plain Python now, raise freely.
     py_func = getattr(function, 'py_func', function)
     nargs = py_func.__code__.co_argcount
     if nargs != 2 and nargs != 6:
@@ -1484,13 +1483,12 @@ def add_annotation_function(function: Callable) -> None:
 def add_head_function(function: Callable) -> None:
     """Function to add head functions to PyReason. The added functions can be used in rules
 
-    :param function: Function to be added. This has to be under a numba `njit` decorator. function has signature: one parameter as input -- annotations
+    :param function: Function to be added. Signature: annotations (and optional weights / grounding args).
     :type function: Callable
     :return: None
     """
     # Make sure that the functions are jitted so that they can be passed around in other jitted functions
     # TODO: Remove if necessary
-    # assert hasattr(function, 'nopython_signatures'), 'The function to be added has to be under a `numba.njit` decorator'
     __head_functions.append(function)
 
 
@@ -1551,16 +1549,16 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
 
 
     if __node_facts is None:
-        __node_facts = numba.typed.List.empty_list(fact_node.fact_type)
+        __node_facts = []
     if __edge_facts is None:
-        __edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
+        __edge_facts = []
 
     if __ipl is None:
-        __ipl = numba.typed.List.empty_list(numba.types.Tuple((label.label_type, label.label_type)))
+        __ipl = []
 
     # Add results of graph parse to existing specific labels and facts
-    __specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
-    __specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
+    __specific_node_labels = {}
+    __specific_edge_labels = {}
     for label_name, nodes in __specific_graph_node_labels.items():
         if label_name in __specific_node_labels:
             __specific_node_labels[label_name].extend(nodes)
@@ -1573,10 +1571,10 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
         else:
             __specific_edge_labels[label_name] = edges
 
-    all_node_facts = numba.typed.List.empty_list(fact_node.fact_type)
-    all_edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
-    all_node_facts.extend(numba.typed.List(__node_facts))
-    all_edge_facts.extend(numba.typed.List(__edge_facts))
+    all_node_facts = []
+    all_edge_facts = []
+    all_node_facts.extend(list(__node_facts))
+    all_edge_facts.extend(list(__edge_facts))
     all_node_facts.extend(__non_fluent_graph_facts_node)
     all_edge_facts.extend(__non_fluent_graph_facts_edge)
 
@@ -1584,7 +1582,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
     if not settings.store_interpretation_changes:
         settings.atom_trace = False
 
-    # Convert list of annotation functions into tuple to be numba compatible
+    # Pack annotation functions into a tuple (stable iterate order)
     annotation_functions = tuple(__annotation_functions)
     head_functions = tuple(__head_functions)
 
@@ -1600,7 +1598,7 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
         if settings.verbose:
             print('Optimizing rules by moving node clauses ahead of edge clauses')
         __rules_copy = __rules.copy()
-        __rules = numba.typed.List.empty_list(rule.rule_type)
+        __rules = []
         for i, r in enumerate(__rules_copy):
             r, __clause_maps[r.get_rule_name()] = reorder_clauses(r)
             __rules.append(r)
@@ -1610,11 +1608,11 @@ def _reason(timesteps, convergence_threshold, convergence_bound_threshold, queri
     __program.specific_node_labels = __specific_node_labels
     __program.specific_edge_labels = __specific_edge_labels
 
-    # Convert closed_world predicates to numba-compatible list of label types
-    closed_world_preds_numba = numba.typed.List.empty_list(label.label_type)
+    # Pack closed-world predicate names into Label objects
+    closed_world_preds = []
     for pred_name in __closed_world_predicates:
-        closed_world_preds_numba.append(label.Label(pred_name))
-    __program.closed_world_predicates = closed_world_preds_numba
+        closed_world_preds.append(label.Label(pred_name))
+    __program.closed_world_predicates = closed_world_preds
 
     # Run Program and get final interpretation
     interpretation = __program.reason(timesteps, convergence_threshold, convergence_bound_threshold, settings.verbose)
@@ -1631,10 +1629,10 @@ def _reason_again(timesteps, restart, convergence_threshold, convergence_bound_t
     assert __program is not None, 'To run `reason_again` you need to have reasoned once before'
 
     # Extend facts
-    all_node_facts = numba.typed.List.empty_list(fact_node.fact_type)
-    all_edge_facts = numba.typed.List.empty_list(fact_edge.fact_type)
-    all_node_facts.extend(numba.typed.List(__node_facts))
-    all_edge_facts.extend(numba.typed.List(__edge_facts))
+    all_node_facts = []
+    all_edge_facts = []
+    all_node_facts.extend(list(__node_facts))
+    all_edge_facts.extend(list(__edge_facts))
 
     # Run Program and get final interpretation
     interpretation = __program.reason_again(timesteps, restart, convergence_threshold, convergence_bound_threshold, all_node_facts, all_edge_facts, settings.verbose)

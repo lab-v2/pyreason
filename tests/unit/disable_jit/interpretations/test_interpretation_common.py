@@ -360,7 +360,8 @@ def test_is_satisfied_node_and_edge(interpretations):
 
 
 def test_get_qualified_groundings_filters(monkeypatch, interpretations):
-    monkeypatch.setattr(interpretation.numba.typed.List, "empty_list", lambda *a, **k: [])
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed.List, "empty_list", lambda *a, **k: [])
     mock_edge = Mock(side_effect=[False, True, True])
     mock_node = Mock(side_effect=[False, True, True])
     monkeypatch.setattr(interpretation, "is_satisfied_edge", mock_edge)
@@ -456,7 +457,8 @@ def test_check_consistent_functions(monkeypatch, check_fn_name):
 def test_resolve_inconsistency_updates_world_and_trace(monkeypatch, resolver_name, comp_key):
     resolver = globals()[resolver_name]
     monkeypatch.setattr(interpretation.interval, "closed", lambda lo, up: _Interval(lo, up))
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     class _ListShim:
         def __call__(self, iterable=()):
@@ -464,7 +466,8 @@ def test_resolve_inconsistency_updates_world_and_trace(monkeypatch, resolver_nam
         def empty_list(self, *args, **kwargs):
             return []
 
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
 
     calls = []
     monkeypatch.setattr(interpretation, "_update_rule_trace", lambda *a: calls.append(a))

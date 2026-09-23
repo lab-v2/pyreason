@@ -17,13 +17,89 @@ class Rule:
         self._static = static
         self._head_negated = head_negated
 
+    # Numba RuleType attribute names used inside the interpretation engines.
+    @property
+    def rule_name(self):
+        return self._rule_name
+
+    @property
+    def type(self):
+        return self._type
+
+    @property
+    def target(self):
+        return self._target
+
+    @property
+    def head_variables(self):
+        return self._head_variables
+
+    @property
+    def delta(self):
+        return self._delta
+
+    @property
+    def clauses(self):
+        return self._clauses
+
+    @clauses.setter
+    def clauses(self, clauses):
+        self._clauses = clauses
+
+    @property
+    def bnd(self):
+        return self._bnd
+
+    @property
+    def thresholds(self):
+        return self._thresholds
+
+    @thresholds.setter
+    def thresholds(self, thresholds):
+        self._thresholds = thresholds
+
+    @property
+    def ann_fn(self):
+        return self._ann_fn
+
+    @property
+    def weights(self):
+        return self._weights
+
+    @property
+    def head_fns(self):
+        return self._head_fns
+
+    @property
+    def head_fns_vars(self):
+        return self._head_fns_vars
+
+    @property
+    def edges(self):
+        return self._edges
+
+    @property
+    def static(self):
+        return self._static
+
+    @property
+    def head_negated(self):
+        return self._head_negated
+
     def get_rule_name(self):
+        return self._rule_name
+
+    def get_name(self):
+        # Numba overload name used by the engines.
         return self._rule_name
 
     def set_rule_name(self, rule_name):
         self._rule_name = rule_name
 
     def get_rule_type(self):
+        return self._type
+
+    def get_type(self):
         return self._type
 
     def get_target(self):
@@ -40,7 +116,7 @@ class Rule:
 
     def set_clauses(self, clauses):
         self._clauses = clauses
-    
+
     def get_bnd(self):
         return self._bnd
 
@@ -52,7 +128,7 @@ class Rule:
 
     def get_annotation_function(self):
         return self._ann_fn
-    
+
     def get_edges(self):
         return self._edges
 
@@ -66,6 +142,10 @@ class Rule:
         return self._head_fns_vars
 
     def is_static(self):
+        return self._static
+
+    def is_static_rule(self):
+        # Numba overload name used by the engines.
         return self._static
 
     def is_head_negated(self):

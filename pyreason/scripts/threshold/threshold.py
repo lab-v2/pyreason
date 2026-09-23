@@ -8,7 +8,7 @@ class Threshold:
         thresh (int): The numerical threshold value to compare against.  
   
     Methods:  
-        to_tuple(): Converts the Threshold instance into a tuple compatible with numba types.  
+        to_tuple(): Converts the Threshold instance into a plain tuple the engines understand.  
     """  
   
     def __init__(self, quantifier, quantifier_type, thresh):  
@@ -33,7 +33,7 @@ class Threshold:
 
     def to_tuple(self):  
         """  
-        Converts the Threshold instance into a tuple compatible with numba types.  
+        Converts the Threshold instance into a plain tuple the engines understand.  
   
         Returns:  
             tuple: A tuple representation of the Threshold instance.  

@@ -1,11 +1,9 @@
-# List of annotation functions will come here. All functions to be numba decorated and compatible
+# Changed: annotation helpers are plain Python now — no JIT decorator required.
 # Each function has access to the interpretations at a particular timestep, and the qualified nodes and qualified edges that made the rule fire
-import numba
 import numpy as np
 
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 
-@numba.njit
 def _get_weighted_sum(annotations, weights, mode='lower'):
     """
     Returns weighted sum plus the total number of annotations
@@ -25,7 +23,6 @@ def _get_weighted_sum(annotations, weights, mode='lower'):
 
     return weighted_sum, annotation_cnt
 
-@numba.njit
 def _check_bound(lower, upper):
     if lower > upper:
         return (0, 1)
@@ -35,7 +32,6 @@ def _check_bound(lower, upper):
         return (lower_bound, upper_bound)
 
 
-@numba.njit
 def average(annotations, weights):
     """
     Take average of lower bounds to make new lower bound, take average of upper bounds to make new upper bound
@@ -51,7 +47,6 @@ def average(annotations, weights):
 
     return interval.closed(lower, upper)
 
-@numba.njit
 def average_lower(annotations, weights):
     """
     Take average of lower bounds to make new lower bound, take max of upper bounds to make new upper bound
@@ -69,7 +64,6 @@ def average_lower(annotations, weights):
 
     return interval.closed(lower, upper)
 
-@numba.njit
 def maximum(annotations, weights):
     """
     Take max of lower bounds to make new lower bound, take max of upper bounds to make new upper bound
@@ -85,7 +79,6 @@ def maximum(annotations, weights):
     return interval.closed(lower, upper)
 
 
-@numba.njit
 def minimum(annotations, weights):
     """
     Take min of lower bounds to make new lower bound, take min of upper bounds to make new upper bound
