@@ -22,15 +22,21 @@ setup(
     },
     classifiers=[
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent"
     ],
-    python_requires='>3.6',
+    # HEY WE CHANGED THIS — Numba gone, so we can take the same 3.10–3.13
+    # range PR #163 already proved. pkg_resources was the 3.12 blocker.
+    python_requires='>=3.10,<3.14',
     install_requires=[
         'networkx',
         'pyyaml',
         'pandas',
-        'numpy',
+        'numpy>=1.26.4',
         'memory_profiler',
         'pytest'
     ],
