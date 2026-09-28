@@ -201,8 +201,9 @@ class _Settings:
 
     @property
     def parallel_computing(self) -> bool:
-        """Returns whether to use multiple CPU cores for inference. This will disable cacheing and pyreason will have
-        to be re-compiled at each run - but after compilation it will be faster. Default is False
+        """Returns whether to select parallel-compatibility mode. In the pure-Python Fable
+        engine, this preserves the original parallel mode's reasoning results but
+        currently uses the regular sequential schedule. Default is False
 
         :return: bool
         """
@@ -407,10 +408,11 @@ class _Settings:
 
     @parallel_computing.setter
     def parallel_computing(self, value: bool) -> None:
-        """Whether to use multiple CPU cores for inference. This will disable cacheing and pyreason will have
-        to be re-compiled at each run - but after compilation it will be faster. Default is False
+        """Whether to select parallel-compatibility mode. In the pure-Python Fable
+        engine, this preserves the original parallel mode's reasoning results but
+        currently uses the regular sequential schedule. Default is False
 
-        :param value: Whether to make inference run on parallel hardware (multiple CPU cores)
+        :param value: Whether to select parallel-compatibility mode
         :raises TypeError: If not bool raise error
         """
         if not isinstance(value, bool):

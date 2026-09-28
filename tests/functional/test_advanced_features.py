@@ -9,7 +9,6 @@ except ImportError:
     torch_available = False
 import networkx as nx
 # HEY WE CHANGED THIS — Numba is gone; annotation helpers are plain Python now.
-# import numba
 import numpy as np
 import pytest
 from pyreason.scripts.numba_wrapper.numba_types.interval_type import closed
@@ -29,7 +28,6 @@ def setup_mode(mode):
 
 
 # HEY WE CHANGED THIS — dropped @numba.njit; same function body, plain Python.
-# @numba.njit
 def probability_func(annotations, weights):
     prob_A = annotations[0][0].lower
     prob_B = annotations[1][0].lower
@@ -39,16 +37,13 @@ def probability_func(annotations, weights):
 
 
 # HEY WE CHANGED THIS — dropped @numba.njit + numba.typed.List.
-# @numba.njit
 def identity_func(annotations):
     """Head function that returns the input node lists as-is."""
-    # result = numba.typed.List([annotations[0][0]])
     result = [annotations[0][0]]
     return result
 
 
 # HEY WE CHANGED THIS — dropped @numba.njit.
-# @numba.njit
 def ann_fn_paired(annotations, weights, qualified_nodes, qualified_edges, clause_labels, clause_variables):
     # 6-arg annotation function: pair hasLabel(CB1,X) and hasLabel(CB2,Y) atoms
     # via conn(X,Y) groundings. Identify clauses by predicate + variable role
@@ -115,22 +110,20 @@ def ann_fn_paired(annotations, weights, qualified_nodes, qualified_edges, clause
 
 
 @pytest.mark.parametrize("mode", ["regular", "fp", "parallel"])
-def test_probability_func_consistency(mode):
-    """Ensure annotation function behaves the same with and without JIT."""
+def test_probability_func_expected_result(mode):
+    """Ensure the pure-Python function matches original PyReason."""
     setup_mode(mode)
-    # HEY WE CHANGED THIS — was numba.typed.List / .py_func; plain lists now.
-    # annotations = numba.typed.List()
-    # annotations.append(numba.typed.List([closed(0.01, 1.0)]))
-    # annotations.append(numba.typed.List([closed(0.2, 1.0)]))
-    # weights = numba.typed.List([1.0, 1.0])
-    annotations = []
-    annotations.append([closed(0.01, 1.0)])
-    annotations.append([closed(0.2, 1.0)])
+
+    annotations = [
+        [closed(0.01, 1.0)],
+        [closed(0.2, 1.0)],
+    ]
     weights = [1.0, 1.0]
-    jit_res = probability_func(annotations, weights)
-    # HEY WE CHANGED THIS — no Numba wrapper, so py_func falls back to the function itself.
-    py_res = getattr(probability_func, "py_func", probability_func)(annotations, weights)
-    assert jit_res == py_res
+
+    # Changed from JIT comparison to the verified original PyReason result.
+    result = probability_func(annotations, weights)
+
+    assert result == (0.21, 1)
 
 
 @pytest.mark.slow

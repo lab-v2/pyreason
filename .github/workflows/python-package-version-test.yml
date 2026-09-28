@@ -35,13 +35,15 @@ jobs:
         # with an explicit `select` in pyproject.toml and the matching cleanup.
         python -m pip install ruff==0.15.22 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        # Changed from testing only the source checkout to validating package installation.
+        python -m pip install -e . --no-deps
     - name: Lint with ruff
       run: |
         python -m ruff check pyreason/scripts
-    - name: Pytest Unit Tests with JIT Disabled
+    - name: Pytest Legacy Disable-JIT Unit Suite
       run: |
         pytest tests/unit/disable_jit --tb=short -q
-    - name: Pytest Unit Tests with JIT Enabled
+    - name: Pytest Legacy JIT Unit Suite
       run: |
         pytest tests/unit/dont_disable_jit --tb=short -q
     - name: Pytest API Tests
