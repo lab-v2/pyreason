@@ -1,8 +1,10 @@
 # # tests/conftest.py
 import os
-os.environ["NUMBA_DISABLE_JIT"] = "1"
-import numba
-numba.config.DISABLE_JIT = True
+# HEY WE CHANGED THIS — Numba is gone on the Fable branch.
+# Old JIT-disable env/import is dead; leave it here commented so history is obvious.
+# os.environ["NUMBA_DISABLE_JIT"] = "1"
+# import numba
+# numba.config.DISABLE_JIT = True
 import sys, types
 sys.modules.setdefault("pyreason.pyreason", types.ModuleType("pyreason.pyreason"))
 stub = sys.modules["pyreason.pyreason"]
@@ -56,9 +58,11 @@ def reason_env(monkeypatch, helpers_fixture):
         def empty(self, *args, **kwargs):
             return {}
 
-    monkeypatch.setattr(interp.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interp.numba.typed, "Dict", _DictShim())
-    monkeypatch.setattr(interp.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — engines no longer import numba, so there is no
+    # interp.numba to monkeypatch. Plain list/dict already in production.
+    # monkeypatch.setattr(interp.numba.typed, "List", _ListShim())
+    # monkeypatch.setattr(interp.numba.typed, "Dict", _DictShim())
+    # monkeypatch.setattr(interp.numba.types, "uint16", lambda x: x)
 
     class SimpleWorld:
         def __init__(self):

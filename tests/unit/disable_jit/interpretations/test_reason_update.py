@@ -51,8 +51,10 @@ def test_update_node_tracks_changes(monkeypatch):
             return []
 
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     l = label.Label("L")
     interpretations = {"n1": SimpleWorld()}
@@ -145,8 +147,10 @@ def test_update_edge_tracks_changes(monkeypatch):
             return []
 
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     l = label.Label("L")
     interpretations = {"e1": SimpleWorld()}
@@ -234,8 +238,10 @@ def test_update_node_override_sets_bounds(monkeypatch):
             return []
 
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     l = label.Label("L")
     world = NoUpdateWorld()
@@ -323,8 +329,10 @@ def test_update_node_skips_graph_attr_trace(monkeypatch):
             return []
 
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     l = label.Label("L")
     interpretations = {"n1": SimpleWorld()}
@@ -418,8 +426,10 @@ def test_update_node_records_rule_trace(monkeypatch, mode, save_attr, trace_key,
             return []
 
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     l = label.Label("L")
     interpretations = {"n1": SimpleWorld()}
@@ -511,8 +521,10 @@ def test_update_node_handles_ipl_and_predicate_map(monkeypatch):
             return []
 
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     calls = []
     monkeypatch.setattr(interpretation, "_update_rule_trace", lambda *a, **k: calls.append(a))
@@ -606,8 +618,10 @@ def test_update_node_complement_records_traces(monkeypatch, helpers_fixture):
     interpretation = helpers_fixture.interpretation
     label = helpers_fixture.label
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     calls = []
     monkeypatch.setattr(interpretation, "_update_rule_trace", lambda *a, **k: calls.append(a))
@@ -700,8 +714,10 @@ def test_update_node_complement_existing_predicate(monkeypatch, helpers_fixture)
     interpretation = helpers_fixture.interpretation
     label = helpers_fixture.label
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     calls = []
     monkeypatch.setattr(interpretation, "_update_rule_trace", lambda *a, **k: calls.append(a))
@@ -792,8 +808,10 @@ def test_update_node_predicate_map_appends_and_delta(monkeypatch, helpers_fixtur
     interpretation = helpers_fixture.interpretation
     label = helpers_fixture.label
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     l = label.Label("L")
     p3 = label.Label("L3")
@@ -880,8 +898,10 @@ def test_update_edge_handles_ipl_and_predicate_map(monkeypatch, helpers_fixture)
     interpretation = helpers_fixture.interpretation
     label = helpers_fixture.label
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     calls = []
     monkeypatch.setattr(interpretation, "_update_rule_trace", lambda *a, **k: calls.append(a))
@@ -976,8 +996,10 @@ def test_update_edge_predicate_map_append_override(monkeypatch, helpers_fixture)
     interpretation = helpers_fixture.interpretation
     label = helpers_fixture.label
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     l = label.Label("L")
     interpretations = {"e1": SimpleWorld()}
@@ -1060,8 +1082,10 @@ def test_update_edge_rule_atom_trace(monkeypatch, helpers_fixture):
     interpretation = helpers_fixture.interpretation
     label = helpers_fixture.label
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     calls = []
     monkeypatch.setattr(interpretation, "_update_rule_trace", lambda *a, **k: calls.append(a))
@@ -1192,8 +1216,10 @@ def test_update_edge_complement_delta_bound(monkeypatch, helpers_fixture):
     interpretation = helpers_fixture.interpretation
     label = helpers_fixture.label
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     calls = []
     monkeypatch.setattr(interpretation, "_update_rule_trace", lambda *a, **k: calls.append(a))
@@ -1289,8 +1315,10 @@ def test_update_edge_complement_records_traces(monkeypatch, helpers_fixture):
     interpretation = helpers_fixture.interpretation
     label = helpers_fixture.label
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     calls = []
     monkeypatch.setattr(interpretation, "_update_rule_trace", lambda *a, **k: calls.append(a))
@@ -1385,8 +1413,10 @@ def test_update_edge_complement_existing_predicate(monkeypatch, helpers_fixture)
     interpretation = helpers_fixture.interpretation
     label = helpers_fixture.label
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     l = label.Label("L")
     p2 = label.Label("L2")
@@ -1460,8 +1490,10 @@ def test_update_edge_missing_world(monkeypatch, helpers_fixture):
 
     label = helpers_fixture.label
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     update_edge = getattr(interpretation._update_edge, "py_func", interpretation._update_edge)
     sig = inspect.signature(update_edge)
@@ -1509,7 +1541,8 @@ def test_add_edge_existing_predicate_map_append(monkeypatch, helpers_fixture):
             return []
 
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
 
     l = label.Label("L")
     l.value = l.get_value()
@@ -1566,7 +1599,8 @@ def test_add_edge_existing_creates_predicate_map_entry(monkeypatch, helpers_fixt
             return []
 
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
 
     l = label.Label("L")
     l.value = l.get_value()
@@ -1677,8 +1711,10 @@ def test_update_node_ipl_complement_delta_bound_bug127(monkeypatch, helpers_fixt
     interpretation = helpers_fixture.interpretation
     label = helpers_fixture.label
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     infected = label.Label("infected")
     healthy = label.Label("healthy")
@@ -1833,8 +1869,10 @@ def test_update_edge_ipl_two_complements_bug125(monkeypatch, helpers_fixture):
     interpretation = helpers_fixture.interpretation
     label = helpers_fixture.label
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     infected = label.Label("infected")
     healthy = label.Label("healthy")

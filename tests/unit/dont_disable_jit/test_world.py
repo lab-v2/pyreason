@@ -1,4 +1,5 @@
-import numba
+# HEY WE CHANGED THIS — Numba is gone; plain dict instead of numba.typed.Dict.
+# import numba
 from pyreason.scripts.components.world import World
 import pyreason.scripts.numba_wrapper.numba_types.interval_type as interval
 import pyreason.scripts.numba_wrapper.numba_types.label_type as label
@@ -13,9 +14,11 @@ def test_init_empty_world_and_str():
 
 def test_make_world_and_bounds():
     l = label.Label("A")
-    world_dict = numba.typed.Dict.empty(
-        key_type=label.label_type, value_type=interval.interval_type
-    )
+    # HEY WE CHANGED THIS — was numba.typed.Dict.empty(...); plain dict now.
+    # world_dict = numba.typed.Dict.empty(
+    #     key_type=label.label_type, value_type=interval.interval_type
+    # )
+    world_dict = {}
     world_dict[l] = interval.closed(0.4, 0.6)
     w = World.make_world([l], world_dict)
     assert w.world is world_dict

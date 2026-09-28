@@ -40,6 +40,7 @@ class Program:
 
 		# Instantiate correct interpretation class based on whether we parallelize the code or not. (We cannot parallelize with cache on)
 		if self._parallel_computing:
+			# Changed from Numba parallel execution to the equivalent sequential Fable schedule.
 			self.interp = InterpretationParallel(self._graph, self._ipl, self._annotation_functions, self._head_functions, self._reverse_graph, self._atom_trace, self._save_graph_attributes_to_rule_trace, self._canonical, self._inconsistency_check, self._store_interpretation_changes, self._update_mode, self._allow_ground_rules)
 		elif self._fp_version:
 			self.interp = InterpretationFP(self._graph, self._ipl, self._annotation_functions, self._head_functions, self._reverse_graph, self._atom_trace, self._save_graph_attributes_to_rule_trace, self._canonical, self._inconsistency_check, self._store_interpretation_changes, self._update_mode, self._allow_ground_rules)

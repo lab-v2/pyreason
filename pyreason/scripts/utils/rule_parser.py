@@ -1,6 +1,6 @@
+# Changed: Numba typed lists/casts are gone — plain list/int all the way down.
 import math
 import re
-import numba
 import numpy as np
 from typing import Union
 
@@ -145,10 +145,10 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
     # thresholds = [t1, t2, t3, t4]
 
     # Array of thresholds to keep track of for each neighbor criterion. Form [(comparison, (number/percent, total/available), thresh)]
-    thresholds = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.UniTuple(numba.types.string, 2), numba.types.float64)))
+    thresholds = []
 
     # Array to store clauses for nodes: node/edge, [subset]/[subset1, subset2], label, interval, operator
-    clauses = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, label.label_type, numba.types.ListType(numba.types.string), interval.interval_type, numba.types.string)))
+    clauses = []
 
     # gather count of clauses for threshold validation
     num_clauses = len(body_clauses)
@@ -173,7 +173,7 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
                 thresholds.append(('greater_equal', ('number', 'total'), 1.0))
 
     # If no custom thresholds provided, use defaults
-    # otherwise loop through user-defined thresholds and convert to numba compatible format
+    # otherwise loop through user-defined thresholds and pack them as plain tuples
     elif not custom_thresholds:
         for _ in range(num_clauses):
             thresholds.append(('greater_equal', ('number', 'total'), 1.0))
@@ -186,7 +186,7 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
         if op:
             clause_type = 'comparison'
 
-        subset = numba.typed.List(variables)
+        subset = list(variables)
         label_obj = label.Label(predicate)
         bnd = interval.closed(bounds[0], bounds[1])
         clauses.append((clause_type, label_obj, subset, bnd, op))
@@ -226,21 +226,21 @@ def parse_rule(rule_text: str, name: str, custom_thresholds: Union[None, list, d
         if np.any(weights < 0):
             raise ValueError("weights must be non-negative")
 
-        # Ensure correct dtype for numba compatibility
+        # Keep weights as float64 numpy arrays (annotation math expects that)
         weights = weights.astype(np.float64)
 
-    head_variables = numba.typed.List(head_variables)
+    head_variables = list(head_variables)
 
-    # Convert head functions and their variables to numba types
-    head_fns_numba = numba.typed.List(head_fns)
-    head_fns_vars_numba = numba.typed.List.empty_list(numba.types.ListType(numba.types.string))
+    # Pack head functions / vars into plain lists
+    head_fns_list = list(head_fns)
+    head_fns_vars_list = []
     for vars_list in head_fns_vars:
-        typed_vars_list = numba.typed.List.empty_list(numba.types.string)
+        typed_vars_list = []
         for var in vars_list:
             typed_vars_list.append(var)
-        head_fns_vars_numba.append(typed_vars_list)
+        head_fns_vars_list.append(typed_vars_list)
 
-    result = rule.Rule(name, rule_type, target, head_variables, numba.types.uint16(delta_t), clauses, target_bound, thresholds, ann_fn, weights, head_fns_numba, head_fns_vars_numba, edges, set_static, head_negated)
+    result = rule.Rule(name, rule_type, target, head_variables, int(delta_t), clauses, target_bound, thresholds, ann_fn, weights, head_fns_list, head_fns_vars_list, edges, set_static, head_negated)
     return result
 
 

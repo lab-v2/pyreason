@@ -49,8 +49,10 @@ def test_resolve_inconsistency_node_rule_trace(monkeypatch):
             return []
 
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     l = label.Label("L")
     l.value = l.get_value()
@@ -118,8 +120,10 @@ def test_resolve_inconsistency_node_rule_trace_no_atom_trace(monkeypatch):
             return []
 
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval())
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     l = label.Label("L")
     world = SimpleWorld()
@@ -181,8 +185,10 @@ def test_resolve_inconsistency_edge_rule_trace(monkeypatch):
             return []
 
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval(l, u))
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     l = label.Label("L")
     l.value = l.get_value()
@@ -250,8 +256,10 @@ def test_resolve_inconsistency_edge_rule_trace_no_atom_trace(monkeypatch):
             return []
 
     monkeypatch.setattr(interpretation.interval, "closed", lambda l, u: SimpleInterval())
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
-    monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.types, "uint16", lambda x: x)
 
     l = label.Label("L")
     world = SimpleWorld()

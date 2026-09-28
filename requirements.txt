@@ -1,8 +1,8 @@
 networkx
 pyyaml
 pandas
-numba==0.59.1
-numpy==1.26.4
+# HEY WE CHANGED THIS — was ==1.26.4 (no 3.13 wheels). Floor stays; 3.13 pulls 2.x.
+numpy>=1.26.4
 memory_profiler
 pytest
 torch

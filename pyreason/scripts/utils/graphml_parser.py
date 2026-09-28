@@ -1,5 +1,5 @@
+# Changed: GraphML attribute facts land in plain lists/dicts (Numba typed stuff yanked).
 import networkx as nx
-import numba
 
 import pyreason.scripts.numba_wrapper.numba_types.fact_node_type as fact_node
 import pyreason.scripts.numba_wrapper.numba_types.fact_edge_type as fact_edge
@@ -25,10 +25,10 @@ class GraphmlParser:
         return self.graph
 
     def parse_graph_attributes(self, static_facts):
-        facts_node = numba.typed.List.empty_list(fact_node.fact_type)
-        facts_edge = numba.typed.List.empty_list(fact_edge.fact_type)
-        specific_node_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.string))
-        specific_edge_labels = numba.typed.Dict.empty(key_type=label.label_type, value_type=numba.types.ListType(numba.types.Tuple((numba.types.string, numba.types.string))))
+        facts_node = []
+        facts_edge = []
+        specific_node_labels = {}
+        specific_edge_labels = {}
         for n in self.graph.nodes:
             for key, value in self.graph.nodes[n].items():
                 # IF attribute is a float or int and it is less than 1, then make it a bound, else make it a label
@@ -55,7 +55,7 @@ class GraphmlParser:
                             pass
 
                 if label.Label(label_str) not in specific_node_labels.keys():
-                    specific_node_labels[label.Label(label_str)] = numba.typed.List.empty_list(numba.types.string)
+                    specific_node_labels[label.Label(label_str)] = []
                 specific_node_labels[label.Label(label_str)].append(n)
                 f = fact_node.Fact('graph-attribute-fact', n, label.Label(label_str), interval.closed(lower_bnd, upper_bnd), 0, 0, static=static_facts)
                 facts_node.append(f)
@@ -85,7 +85,7 @@ class GraphmlParser:
                             pass
 
                 if label.Label(label_str) not in specific_edge_labels.keys():
-                    specific_edge_labels[label.Label(label_str)] = numba.typed.List.empty_list(numba.types.Tuple((numba.types.string, numba.types.string)))
+                    specific_edge_labels[label.Label(label_str)] = []
                 specific_edge_labels[label.Label(label_str)].append((e[0], e[1]))
                 f = fact_edge.Fact('graph-attribute-fact', (e[0], e[1]), label.Label(label_str), interval.closed(lower_bnd, upper_bnd), 0, 0, static=static_facts)
                 facts_edge.append(f)

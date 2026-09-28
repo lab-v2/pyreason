@@ -90,7 +90,8 @@ def test_is_satisfied_edge_returns_false_when_comp_missing():
 
 def test_get_qualified_edge_and_node_groundings_filters_true_edges(interpretations, monkeypatch):
     # Use a plain list instead of a typed list for easy assertions
-    monkeypatch.setattr(interpretation.numba.typed.List, "empty_list", lambda *a, **k: [])
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed.List, "empty_list", lambda *a, **k: [])
 
     # Separate mocks so each gets exactly 3 calls
     mock_is_sat_edge = Mock(side_effect=[False, True, True])  # F, T, T
@@ -128,7 +129,8 @@ def test_get_qualified_edge_and_node_groundings_filters_true_edges(interpretatio
 
 def test_get_qualified_edge_and_node_groundings_none_qualify(interpretations, monkeypatch):
     # Return a plain list instead of a numba typed list for easy assertions
-    monkeypatch.setattr(interpretation.numba.typed.List, "empty_list", lambda *a, **k: [])
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed.List, "empty_list", lambda *a, **k: [])
 
     # Separate mocks so each gets exactly len(grounding) calls
     mock_is_sat_edge = Mock(return_value=False)
@@ -155,7 +157,8 @@ def test_get_qualified_edge_and_node_groundings_none_qualify(interpretations, mo
 
 
 def test_get_qualified_edge_and_node_groundings_all_qualify(interpretations, monkeypatch):
-    monkeypatch.setattr(interpretation.numba.typed.List, "empty_list", lambda *a, **k: [])
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed.List, "empty_list", lambda *a, **k: [])
 
     mock_is_sat_edge = Mock(return_value=True)
     mockis_satisfied_node = Mock(return_value=True)
@@ -248,7 +251,8 @@ def _patch_typed_list_to_plain_list(monkeypatch):
             return list(iterable)
         def empty_list(self, *a, **k):
             return []
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
 
 def test_rule_edge_clause_case1_uses_predicate_map_when_label_present(monkeypatch):
     _patch_typed_list_to_plain_list(monkeypatch)
@@ -774,7 +778,8 @@ def test_check_all_clause_satisfaction_multiple_clauses_no_short_circuit(interpr
 
 def test_add_node_minimal(monkeypatch):
     # Make typed empty lists just plain lists, and stub World
-    monkeypatch.setattr(interpretation.numba.typed.List, "empty_list", lambda *a, **k: [])
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed.List, "empty_list", lambda *a, **k: [])
     class DummyWorld:
         def __init__(self, labels):
             self.labels = labels
@@ -802,7 +807,8 @@ def _shim_typed_list(monkeypatch):
             return list(iterable)
         def empty_list(self, *a, **k):
             return []
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
 
 def _mock_add_node(monkeypatch):
     # Minimal in-place behavior so _add_edge can proceed,
@@ -939,7 +945,8 @@ def _shim_typed_list(monkeypatch):
     class _ListShim:
         def __call__(self, iterable): return list(iterable)
         def empty_list(self, *a, **k): return []
-    monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
+    # HEY WE CHANGED THIS — Numba gone; no interpretation.numba to patch.
+    # monkeypatch.setattr(interpretation.numba.typed, "List", _ListShim())
 
 def test_ground_rule_node_early_fail_breaks_and_returns_empty(monkeypatch):
     _shim_typed_list(monkeypatch)
