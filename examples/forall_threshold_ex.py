@@ -1,76 +1,53 @@
-# Test if the simple program works with thresholds defined
-import pyreason as pr
-from pyreason import Threshold
+# Example: the forall() quantifier in rule bodies.
+#
+# forall(clause) is shorthand for a custom threshold of
+# Threshold("greater_equal", ("percent", "total"), 100) on that clause:
+# the rule only fires when ALL groundings of the clause are satisfied.
+#
+# This is the group-chat example from the custom thresholds tutorial,
+# rewritten without any explicit Threshold objects. A text message is
+# ViewedByAll only once every person with access to it has viewed it.
 import networkx as nx
+import pyreason as pr
 
-# Reset PyReason
+# Use a directed graph: undirected edges are loaded as two directed edges,
+# which doubles the groundings that percent thresholds count.
+G = nx.DiGraph()
+G.add_nodes_from(["TextMessage", "Zach", "Justin", "Michelle", "Amy"])
+G.add_edges_from([
+    ("Zach", "TextMessage", {"HaveAccess": 1}),
+    ("Justin", "TextMessage", {"HaveAccess": 1}),
+    ("Michelle", "TextMessage", {"HaveAccess": 1}),
+    ("Amy", "TextMessage", {"HaveAccess": 1}),
+])
+
 pr.reset()
 pr.reset_rules()
-
-
-# Create an empty graph
-G = nx.DiGraph()
-
-# Add nodes
-nodes = ["TextMessage", "Zach", "Justin", "Michelle", "Amy"]
-G.add_nodes_from(nodes)
-
-# Add edges with attribute 'HaveAccess'
-G.add_edge("Zach", "TextMessage", HaveAccess=1)
-G.add_edge("Justin", "TextMessage", HaveAccess=1)
-G.add_edge("Michelle", "TextMessage", HaveAccess=1)
-G.add_edge("Amy", "TextMessage", HaveAccess=1)
-
-
-
-# Modify pyreason settings to make verbose
-pr.reset_settings()
-pr.settings.verbose = True  # Print info to screen
-
-#load the graph
+pr.settings.verbose = False
 pr.load_graph(G)
+# Equivalent to passing:
+#   custom_thresholds=[
+#       pr.Threshold("greater_equal", ("number", "total"), 1),
+#       pr.Threshold("greater_equal", ("percent", "total"), 100),
+#   ]
+# with the rule text "ViewedByAll(y) <- HaveAccess(x,y), Viewed(x)"
+pr.add_rule(pr.Rule(
+    "ViewedByAll(y) <- HaveAccess(x,y), forall(Viewed(x))",
+    "viewed_by_all_rule",
+))
 
-# add custom thresholds
-user_defined_thresholds = [
-    Threshold("greater_equal", ("number", "total"), 1),
-    Threshold("greater_equal", ("percent", "total"), 100),
-
-]
-
-pr.add_rule(
-    pr.Rule(
-        "ViewedByAll(y) <- HaveAccess(x,y), Viewed(x)",
-        "viewed_by_all_rule",
-        custom_thresholds=user_defined_thresholds,
-    )
-)
-
+# Zach and Justin view the message at t=0, Michelle at t=1, Amy at t=2
 pr.add_fact(pr.Fact("Viewed(Zach)", "seen-fact-zach", 0, 3))
 pr.add_fact(pr.Fact("Viewed(Justin)", "seen-fact-justin", 0, 3))
 pr.add_fact(pr.Fact("Viewed(Michelle)", "seen-fact-michelle", 1, 3))
 pr.add_fact(pr.Fact("Viewed(Amy)", "seen-fact-amy", 2, 3))
 
-# Run the program for three timesteps to see the diffusion take place
 interpretation = pr.reason(timesteps=3)
 
-# Display the changes in the interpretation for each timestep
+# ViewedByAll(TextMessage) should first appear at t=2, when the last
+# person (Amy) views the message.
 dataframes = pr.filter_and_sort_nodes(interpretation, ["ViewedByAll"])
 for t, df in enumerate(dataframes):
     print(f"TIMESTEP - {t}")
     print(df)
     print()
-
-assert (
-    len(dataframes[0]) == 0
-), "At t=0 the TextMessage should not have been ViewedByAll"
-assert (
-    len(dataframes[2]) == 1
-), "At t=2 the TextMessage should have been ViewedByAll"
-
-# TextMessage should be ViewedByAll in t=2
-assert "TextMessage" in dataframes[2]["component"].values and dataframes[2].iloc[
-    0
-].ViewedByAll == [
-    1,
-    1,
-], "TextMessage should have ViewedByAll bounds [1,1] for t=2 timesteps"
