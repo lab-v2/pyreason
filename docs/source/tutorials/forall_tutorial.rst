@@ -4,6 +4,9 @@ PyReason Forall Functionality
 =================================
 
 In this tutorial, we will look at how to utilize the forall function in a knowledge graph. The rule will fire only when all of the groundings of a given clause are true. 
+A grounding is what will substitute a value for a variable in a logic statment.
+In the example outlined in the tutorial, the groundings of x are the people who hve access to the message. 
+For Viewed(x), x is the variable, for Viewed(Zach), Zach is the value, and Viewed(Zach) is a grounding.
 
 
 .. note::
@@ -66,11 +69,17 @@ Considering that we only want a text message to be considered viewed by all if i
         "viewed_by_all_rule",
     ))
 
-The ``head`` of the rule is ``ViewedByAll(y)`` and the body is ``HaveAccess(x,y), forall(Viewed(x))``. The head and body are separated by an arrow which means the rule will start evaluating from
-timestep ``0``.
+The ``head`` of the rule is ``ViewedByAll(y)`` and the body is ``HaveAccess(x,y), forall(Viewed(x))``. 
+
+The arrow ``<-`` menas the head is inferred in the same timestep the body holds. 
+Therefore ``<-1`` would infer the head one timestamp after the body is true. 
+
+
 
 ``Viewed(x)`` checks to see if each grounding of ``x`` is true (or in this case has viewed the message). By wrapping the clause in ``forall(...)`` it fires only once all the groundings are true (in this case viewed the message).
 
+Without ``forall()``, ``Viewed(x)`` would fire at t=0 because Zach and Justin have seen the message at timestep ``0``. 
+Since ``forall()`` only fires when all users have seen the message at timestep ``2``. 
 
 Facts 
 -----
@@ -81,10 +90,10 @@ case they will be immutable later on. Adding PyReason facts gives us more flexib
 In our case we want one person to view the ``TextMessage`` at a particular timestep.
 For example, we create facts stating:
     
-    - ``Zach`` and ``Justin`` view the ``TextMessage`` from at timestep ``0``
+    - ``Zach`` and ``Justin`` view the ``TextMessage`` at timestep ``0``
     - ``Michelle`` views the ``TextMessage`` at timestep ``1``
     - ``Amy`` views the ``TextMessage`` at timestep ``2``
-    - ``3`` is the last timestep the rule is active for all.
+    - Viewed fact holds true until timestep ``3`` .
 
 This allows us to see at what timestamp the ``forall(..)`` rule fires. 
 
@@ -103,7 +112,7 @@ To run the reasoning in the file:
 
 .. code:: python
 
-    # Run the program for three timesteps to see the forall(..) function fire
+    # Run the program until timestep 3 to see the forall(..) function fire
     interpretation = pr.reason(timesteps=3)
 
     # filter and sort nodes based on specific attributes
@@ -114,8 +123,8 @@ To run the reasoning in the file:
         print(df)
         print()
 
-This specifies how many timesteps to run for.
-This formats the output to display the filtered node and edge data.
+This specifies how many timesteps to run for and will format the output to display the filtered node and edge data.
+Each pass through this loop will iterate through one timestep and display the dataframe entries at each one. 
 
 
 Expected output
@@ -148,4 +157,7 @@ After running the python file, the expected output is:
 1. For timestep 0, we set ``Zach -> Viewed: [1,1]`` and ``Justin -> Viewed: [1,1]`` in the facts
 2. For timestep 1, ``Michelle`` views the TextMessage as stated in facts ``Michelle -> Viewed: [1,1]``.
 3. For timestep 2, since ``Amy`` has just viewed the ``TextMessage``, therefore ``Amy -> Viewed: [1,1]``. As per the rule,
-   since all the people have viewed the ``TextMessage``, the message is marked as ``ViewedByAll``.
+   since all the people have viewed the ``TextMessage``, the message is marked as ``ViewedByAll``. Timestep 2 is the first 
+   timestep where every grounding holds, hence why ``forall()`` fires there.
+4. For timestep 3, ``forall()`` still holds true because the message is still ``ViewedByAll`` since ``Viewed`` facts hold 
+   through timestep 3.
