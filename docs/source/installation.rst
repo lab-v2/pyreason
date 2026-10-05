@@ -1,7 +1,7 @@
 Installation
 ==========
 
-PyReason is currently compatible with Python 3.9 and 3.10. To install PyReason, you can use pip:
+PyReason is currently compatible with Python 3.10, 3.11, 3.12, and 3.13. To install PyReason, you can use pip:
 
 .. code:: bash
 
@@ -12,7 +12,7 @@ Make sure you're using the correct version of Python. You can create a conda env
 
 .. code:: bash
 
-    conda create -n pyreason-env python=3.10
+    conda create -n pyreason-env python=3.13
 
 PyReason uses a JIT compiler called `Numba <https://numba.pydata.org/>`_ to speed up the reasoning process. This means that
 the first time PyReason is imported it will have to compile certain functions which will result in faster runtimes later on.

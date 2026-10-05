@@ -124,14 +124,15 @@ class TestRunner:
             if os.path.exists(venv_path):
                 return venv_path
 
-        # Try different python commands in order of preference
-        # Prioritize Python 3.9 as PyReason doesn't support 3.13+
+        # Try different python commands in order of preference.
+        # Prefer currently supported PyReason versions.
         candidates = [
-            'python3.9',
-            '/usr/bin/python3',      # System Python (often 3.9 on macOS)
+            'python3.13',
+            'python3.12',
+            'python3.11',
+            'python3.10',
             'python3',
             'python',
-            'python3.11'
         ]
 
         for cmd in candidates:
