@@ -4,8 +4,8 @@ PyReason Forall Functionality
 =================================
 
 In this tutorial, we will look at how to utilize the forall function in a knowledge graph. The rule will fire only when all of the groundings of a given clause are true. 
-A grounding is what will substitute a value for a variable in a logic statment.
-In the example outlined in the tutorial, the groundings of x are the people who hve access to the message. 
+A grounding is what will substitute a value for a variable in a logic statement.
+In the example outlined in the tutorial, the groundings of x are the people who have access to the message. 
 For Viewed(x), x is the variable, for Viewed(Zach), Zach is the value, and Viewed(Zach) is a grounding.
 
 
@@ -71,7 +71,7 @@ Considering that we only want a text message to be considered viewed by all if i
 
 The ``head`` of the rule is ``ViewedByAll(y)`` and the body is ``HaveAccess(x,y), forall(Viewed(x))``. 
 
-The arrow ``<-`` menas the head is inferred in the same timestep the body holds. 
+The arrow ``<-`` means the head is inferred in the same timestep the body holds. 
 Therefore ``<-1`` would infer the head one timestamp after the body is true. 
 
 
@@ -124,7 +124,7 @@ To run the reasoning in the file:
         print()
 
 This specifies how many timesteps to run for and will format the output to display the filtered node and edge data.
-Each pass through this loop will iterate through one timestep and display the dataframe entries at each one. 
+Each pass through this loop will iterate through one timestep and display the data frame entries at each one. 
 
 
 Expected output
