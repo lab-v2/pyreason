@@ -8,7 +8,7 @@ long_description = (this_directory / "README.md").read_text(encoding='UTF-8')
 
 setup(
     name='pyreason',
-    version='3.7.0',
+    version='4.0.0b2',
     author='Dyuman Aditya',
     author_email='dyuman.aditya@gmail.com',
     description='An explainable inference software supporting annotated, real valued, graph based and temporal logic',
