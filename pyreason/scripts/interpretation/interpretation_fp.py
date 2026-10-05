@@ -69,9 +69,13 @@ def _filter_pending_node_rules(rules_to_be_applied_node, edges_to_be_added_node_
 	for keep_idx in range(len(rules_to_be_applied_node)):
 		if keep_idx not in rules_to_remove_idx:
 			rules_to_be_applied_node_new.append(rules_to_be_applied_node[keep_idx])
-			edges_to_be_added_node_rule_new.append(edges_to_be_added_node_rule[keep_idx])
 			if atom_trace:
 				rules_to_be_applied_node_trace_new.append(rules_to_be_applied_node_trace[keep_idx])
+	# Node rules do not populate the edge list, so it need not match the rule queue.
+	# Preserve independent filtering instead of indexing it for each pending rule.
+	for keep_idx in range(len(edges_to_be_added_node_rule)):
+		if keep_idx not in rules_to_remove_idx:
+			edges_to_be_added_node_rule_new.append(edges_to_be_added_node_rule[keep_idx])
 	rules_to_be_applied_node[:] = rules_to_be_applied_node_new.copy()
 	edges_to_be_added_node_rule[:] = edges_to_be_added_node_rule_new.copy()
 	if atom_trace:
