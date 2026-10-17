@@ -22,6 +22,7 @@ setup(
     },
     classifiers=[
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
@@ -30,15 +31,17 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent"
     ],
-    python_requires='>=3.9,<3.14',
+    python_requires='>=3.8,<3.14',
     install_requires=[
         'networkx',
         'pyyaml',
         'pandas',
-        # Keep the existing Numba version on Python 3.9; 0.61+ requires 3.10+.
-        'numba==0.59.1; python_version < "3.10"',
+        # Use compatible Numba/NumPy versions for each supported Python version.
+        'numba==0.58.1; python_version < "3.9"',
+        'numba==0.59.1; python_version >= "3.9" and python_version < "3.10"',
         'numba>=0.61.0; python_version >= "3.10"',
-        'numpy>=1.26.4',
+        'numpy==1.24.4; python_version < "3.9"',
+        'numpy>=1.26.4; python_version >= "3.9"',
         'memory_profiler',
         'pytest'
     ],
