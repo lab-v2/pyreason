@@ -8,7 +8,7 @@ long_description = (this_directory / "README.md").read_text(encoding='UTF-8')
 
 setup(
     name='pyreason',
-    version='3.7.0',
+    version='3.8.0',
     author='Dyuman Aditya',
     author_email='dyuman.aditya@gmail.com',
     description='An explainable inference software supporting annotated, real valued, graph based and temporal logic',
@@ -31,17 +31,13 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent"
     ],
+    # range PR #163 already proved. pkg_resources was the 3.12 blocker.
     python_requires='>=3.8,<3.14',
     install_requires=[
         'networkx',
         'pyyaml',
         'pandas',
-        # Use compatible Numba/NumPy versions for each supported Python version.
-        'numba==0.58.1; python_version < "3.9"',
-        'numba==0.59.1; python_version >= "3.9" and python_version < "3.10"',
-        'numba>=0.61.0; python_version >= "3.10"',
-        'numpy==1.24.4; python_version < "3.9"',
-        'numpy>=1.26.4; python_version >= "3.9"',
+        'numpy>=1.26.4',
         'memory_profiler',
         'pytest'
     ],
