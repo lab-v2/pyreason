@@ -8,6 +8,7 @@ class Fact:
         self._label = label
         self._interval = interval
         self._static = static
+        self.static = static
 
     def get_name(self):
         return self._name

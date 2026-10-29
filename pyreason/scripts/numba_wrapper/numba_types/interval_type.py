@@ -142,4 +142,4 @@ def interval_contains(interval_1, interval_2):
 
 @njit
 def closed(lower, upper, static=False):
-    return Interval(np.float64(lower), np.float64(upper), static, np.float64(lower), np.float64(upper))
+    return Interval(np.float64(lower), np.float64(upper), static)
